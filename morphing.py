@@ -70,9 +70,9 @@ def getMorphs0(ob, morphset, sets, category):
                     cats = [category]
                 else:
                     raise DazError("Category must be a string or list but got '%s'" % category)
-                pgs = [cat.morphs for cat in ob.DazMorphCats if cat.name in cats]
+                pgs = [cat.morphs for cat in dazRna(ob).DazMorphCats if cat.name in cats]
             else:
-                pgs = [cat.morphs for cat in ob.DazMorphCats]
+                pgs = [cat.morphs for cat in dazRna(ob).DazMorphCats]
             return pgs
         else:
             pg = getattr(ob, "Daz"+morphset)
@@ -96,7 +96,7 @@ def prunePropGroup(ob, pg, morphset):
 def clearAllMorphs(rig, frame, useInsertKeys):
     def getAllLowerMorphNames(rig):
         props = []
-        for cat in rig.DazMorphCats:
+        for cat in dazRna(rig).DazMorphCats:
             props += [morph.name.lower() for morph in cat.morphs if isActiveMorph(morph.name, rig)]
         for morphset in MS.Standards:
             pg = getattr(rig, "Daz"+morphset)
@@ -123,8 +123,8 @@ def getMorphList(ob, morphset, sets=None):
 
 def isActiveMorph(key, rig):
     if rig:
-        return (key in rig.DazActivated.keys() and
-                rig.DazActivated[key].active)
+        return (key in dazRna(rig).DazActivated.keys() and
+                dazRna(rig).DazActivated[key].active)
     else:
         return True
 
@@ -162,29 +162,6 @@ def getMorphsExternal(ob, morphset, category, activeOnly):
                 if key in skeys.key_blocks.keys() and isActiveMorph(key, rig):
                     mdict[key] = skeys.key_blocks[key].value
     return mdict
-
-#------------------------------------------------------------------------
-#
-#------------------------------------------------------------------------
-
-if bpy.app.version < (2,90,0):
-    class DazCategory(bpy.types.PropertyGroup):
-        custom : StringProperty()
-        morphs : CollectionProperty(type = DazTextGroup)
-        active : BoolProperty(default=False)
-        index : IntProperty(default=0)
-
-    class DazActiveGroup(bpy.types.PropertyGroup):
-        active : BoolProperty(default=True)
-else:
-    class DazCategory(bpy.types.PropertyGroup):
-        custom : StringProperty()
-        morphs : CollectionProperty(type = DazTextGroup)
-        active : BoolProperty(default=False, override={'LIBRARY_OVERRIDABLE'})
-        index : IntProperty(default=0)
-
-    class DazActiveGroup(bpy.types.PropertyGroup):
-        active : BoolProperty(default=True, override={'LIBRARY_OVERRIDABLE'})
 
 #------------------------------------------------------------------
 #   Global lists of morph paths
@@ -544,9 +521,9 @@ class MorphLoader(LoadMorph, PosableMaker):
 
     def addUrl(self, asset, aliases, filepath):
         if self.mesh:
-            pgs = self.mesh.DazMorphUrls
+            pgs = dazRna(self.mesh).DazMorphUrls
         elif self.rig:
-            pgs = self.rig.DazMorphUrls
+            pgs = dazRna(self.rig).DazMorphUrls
         else:
             return
         if filepath not in pgs.keys():
@@ -1108,7 +1085,7 @@ class DAZ_OT_CreateBulges(DazOperator, FingerSkip, Selector):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'MESH' and len(ob.data.DazBulges) > 0)
+        return (ob and ob.type == 'MESH' and len(dazRna(ob.data).DazBulges) > 0)
 
     def invoke(self, context, event):
         ob = context.object
@@ -1181,12 +1158,12 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
         if pb is None:
             continue
         lr,comp = channel.split("_")
-        pg = ob.data.DazBulges.get("%s_%s" % (bname, comp))
+        pg = dazRna(ob.data).DazBulges.get("%s_%s" % (bname, comp))
         if pg is None:
             continue
         idx0 = ord(comp) - ord("x")
-        idx = pb.DazAxes[idx0]
-        flip = pb.DazFlips[idx0]
+        idx = dazRna(pb).DazAxes[idx0]
+        flip = dazRna(pb).DazFlips[idx0]
         if lr == "left":
             pos = -factor*pg["positive_left"]
             neg = factor*pg["negative_left"]
@@ -1203,7 +1180,7 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
         addTransformVar(fcu, "x", rottypes[idx], rig, rig, bname)
         removeModifiers(fcu)
 
-    ob.data.DazBulges.clear()
+    dazRna(ob.data).DazBulges.clear()
     for store in stores:
         store.restore(ob)
 
@@ -1494,9 +1471,9 @@ def addToCategories(ob, props, labels, category):
         from .modifier import getCanonicalKey
         labels = [getCanonicalKey(prop) for prop in props]
     if props and ob is not None:
-        cats = dict([(cat.name,cat) for cat in ob.DazMorphCats])
+        cats = dict([(cat.name,cat) for cat in dazRna(ob).DazMorphCats])
         if category not in cats.keys():
-            cat = ob.DazMorphCats.add()
+            cat = dazRna(ob).DazMorphCats.add()
             cat.name = category
         else:
             cat = cats[category]
@@ -1556,14 +1533,14 @@ class PropDrivers:
 
     def addPropDrivers(self):
         if self.useRigDrivers():
-            self.rig.DazCustomMorphs = True
+            dazRna(self.rig).DazCustomMorphs = True
         elif self.onDrivers in ['MESH', 'CATEGORY'] and self.shapekeys:
             from .driver import setFloatProp, addGeneralDriver
             props = self.shapekeys.keys()
             for mesh in self.meshes:
                 addToCategories(mesh, props, None, self.category)
-                mesh.DazMeshDrivers = (self.onDrivers == 'MESH')
-                mesh.DazMeshMorphs = True
+                dazRna(mesh).DazMeshDrivers = (self.onDrivers == 'MESH')
+                dazRna(mesh).DazMeshMorphs = True
 
 #------------------------------------------------------------------------
 #   Import custom morphs
@@ -1690,24 +1667,24 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
 
 
     def addMorphUrls(self, ob, struct):
-        if len(ob.DazMorphUrls) == 0:
+        if len(dazRna(ob).DazMorphUrls) == 0:
             return
         else:
             print(ob.name)
         from .finger import getFingerPrint
-        url = quote(ob.DazUrl)
+        url = quote(dazRna(ob).DazUrl)
         if url not in struct.keys():
             struct[url] = {}
         ostruct = struct[url]
         if ob.type == 'MESH':
-            if ob.data.DazFingerPrint:
-                ostruct["finger_print"] = ob.data.DazFingerPrint
+            if dazRna(ob.data).DazFingerPrint:
+                ostruct["finger_print"] = dazRna(ob.data).DazFingerPrint
             else:
                 ostruct["finger_print"] = getFingerPrint(ob)
         if "morphs" not in ostruct.keys():
             ostruct["morphs"] = {}
         mstruct = ostruct["morphs"]
-        for item in ob.DazMorphUrls:
+        for item in dazRna(ob).DazMorphUrls:
             if item.morphset == "Custom":
                 key = "Custom/%s" % item.category
             else:
@@ -1783,7 +1760,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
             raise DazError("This file does not contain favorite morphs")
         self.useTransferFace = False
         rig = self.rig = getRigFromContext(context)
-        rig.DazMorphUrls.clear()
+        dazRna(rig).DazMorphUrls.clear()
         self.loadPreset(rig, rig, struct, context)
         for ob in getMeshChildren(rig):
             if not isHDMesh(ob):
@@ -1806,7 +1783,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
                 if isinstance(ustruct, dict):
                     self.loadSinglePreset(ob, rig, ustruct, context)
         else:
-            url = quote(ob.DazUrl).lower()
+            url = quote(dazRna(ob).DazUrl).lower()
             lstruct = dict([(key.lower(),value) for key,value in struct.items()])
             if url not in lstruct.keys():
                 return
@@ -1818,8 +1795,8 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         from .finger import getFingerPrint
         if ("finger_print" in ustruct.keys() and
             (self.ignoreUrl or not self.ignoreFinger)):
-            if ob.data.DazFingerPrint:
-                finger = ob.data.DazFingerPrint
+            if dazRna(ob.data).DazFingerPrint:
+                finger = dazRna(ob.data).DazFingerPrint
             else:
                 finger = getFingerPrint(ob)
             if finger != ustruct["finger_print"]:
@@ -1838,12 +1815,12 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         self.onMorphSuffix = useSuffix
         for key in ustruct["morphs"].keys():
             if key[0:7] == "Custom/":
-                rig.DazCustomMorphs = True
+                dazRna(rig).DazCustomMorphs = True
                 self.adjuster = "Adjust %s" % key
                 self.loadMorphSet(context, key, ustruct, "Custom", key[7:], True)
 
         threshold = ustruct.get("override_vertex_groups", 0)
-        if threshold > 0 and ob.data.DazGraftGroup:
+        if threshold > 0 and dazRna(ob.data).DazGraftGroup:
             self.fixVertexGroups(context, ob, rig, threshold)
 
 
@@ -1861,7 +1838,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
                             rna.animation_data.drivers.remove(fcu)
 
         from .transfer import transferVertexGroups
-        nverts = ob.data.DazVertexCount
+        nverts = dazRna(ob.data).DazVertexCount
         children = getMeshChildren(rig)
         hums = [mesh for mesh in children if len(mesh.data.vertices) == nverts]
         if hums:
@@ -1904,7 +1881,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         if self.rig is None:
             return None
         elif self.morphset == "Custom":
-            cats = self.rig.DazMorphCats
+            cats = dazRna(self.rig).DazMorphCats
             if self.category not in cats.keys():
                 cat = cats.add()
                 cat.name = self.category
@@ -1961,7 +1938,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
         used = []
         facepaths = {}
         bodypaths = {}
-        for path,pg in self.rig.DazBakedFiles.items():
+        for path,pg in dazRna(self.rig).DazBakedFiles.items():
             folder = os.path.dirname(path)
             lfolder = folder.lower()
             if lfolder in used:
@@ -2012,7 +1989,7 @@ class ScanFinder:
 
     def setupScanned(self, ob):
         from .fileutils import DF
-        name = ob.DazUrl.rsplit("#", 1)[-1]
+        name = dazRna(ob).DazUrl.rsplit("#", 1)[-1]
         struct = DF.loadEntry(name, "scanned", False)
         self.directory = struct.get("directory")
         self.defs = struct.get("definitions", {})
@@ -2207,17 +2184,17 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
 
     def addFavoMorphs(self, ob, context, hasRig):
         from .scan import normKey
-        if len(ob.data.DazFavorites) > 0:
+        if len(dazRna(ob.data).DazFavorites) > 0:
             oldshapes = []
             if not hasRig and ob.data.shape_keys:
                 oldshapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
             self.setupScanned(ob)
-            for favo in ob.data.DazFavorites.keys():
+            for favo in dazRna(ob.data).DazFavorites.keys():
                 favo = favo.split("/",1)[0]
                 morph = normKey(favo)
                 if not self.findMorphs(morph, ob):
                     #self.missing.append(favo)
-                    self.addNamePath(morph, ob.DazScene, self.namepaths)
+                    self.addNamePath(morph, dazRna(ob).DazScene, self.namepaths)
             catname = "Favorites %s" % noMeshName(ob.name)
             self.setCategory(catname)
             self.adjuster = "Adjust Custom/%s" % catname
@@ -2229,8 +2206,8 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                     shapes.remove(shape)
                 if shapes:
                     addToCategories(ob, shapes, None, self.category)
-                    ob.DazMeshMorphs = True
-                    ob.DazMeshDrivers = True
+                    dazRna(ob).DazMeshMorphs = True
+                    dazRna(ob).DazMeshDrivers = True
             return True
         return False
 
@@ -2239,9 +2216,6 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
 #-------------------------------------------------------------
 
 classes = [
-    DazActiveGroup,
-    DazCategory,
-
     DAZ_OT_Update,
     DAZ_OT_SelectAllMorphs,
     DAZ_OT_ImportUnits,
@@ -2274,6 +2248,8 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    from .propgroups import DazCategory, DazActiveGroup
+
     bpy.types.Object.DazCustomMorphs = BoolProperty(default = False)
     bpy.types.Object.DazMeshMorphs = BoolProperty(default = False)
     bpy.types.Object.DazMeshDrivers = BoolProperty(default = False)
@@ -2288,12 +2264,8 @@ def register():
     bpy.types.Object.DazAlias = CollectionProperty(type = DazStringGroup)
     bpy.types.Mesh.DazFavorites = CollectionProperty(type = bpy.types.PropertyGroup)
 
-    if bpy.app.version < (2,90,0):
-        bpy.types.Object.DazActivated = CollectionProperty(type = DazActiveGroup)
-        bpy.types.Object.DazMorphCats = CollectionProperty(type = DazCategory)
-    else:
-        bpy.types.Object.DazActivated = CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
-        bpy.types.Object.DazMorphCats = CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
+    bpy.types.Object.DazActivated = CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
+    bpy.types.Object.DazMorphCats = CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
 
     bpy.types.Mesh.DazBodyPart = CollectionProperty(type = DazStringGroup)
     bpy.types.Mesh.DazBulges = CollectionProperty(type = DazBulgeGroup)

@@ -819,7 +819,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 lmeshes = []
             for ob in meshes[1:]:
                 finger = getFingerPrint(ob)
-                if ob.data.DazGraftGroup:
+                if dazRna(ob.data).DazGraftGroup:
                     hum = self.getGraftParent(ob, meshes)
                     if hum:
                         if hum.name not in geografts.keys():
@@ -1064,7 +1064,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
 
     def getGraftParent(self, ob, meshes):
         for hum in meshes:
-            if len(hum.data.vertices) == ob.data.DazVertexCount:
+            if len(hum.data.vertices) == dazRna(ob.data).DazVertexCount:
                 return hum
         return None
 

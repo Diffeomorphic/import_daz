@@ -87,15 +87,15 @@ class FrameConverter:
         from .convert import getConverter
         if self.useConvert:
             srctype = DF.SourceRigs[self.srcCharacter]
-        elif self.trgRig and not rig.DazRig.startswith("genesis"):
+        elif self.trgRig and not dazRna(rig).DazRig.startswith("genesis"):
             srctype = self.trgRig
         else:
             srctype = getRigType(banims, False)
         if srctype:
             print("Auto-detected %s character in duf/dsf file" % srctype)
             return getConverter(srctype, rig)
-        elif rig.DazRig.startswith(("mhx", "rigify")):
-            print("Convert to %s" % rig.DazRig)
+        elif dazRna(rig).DazRig.startswith(("mhx", "rigify")):
+            print("Convert to %s" % dazRna(rig).DazRig)
             return getConverter("genesis3", rig)
         else:
             print("Could not auto-detect character in duf/dsf file")
@@ -104,7 +104,7 @@ class FrameConverter:
 
     def getRigifyLocks(self, rig, conv):
         locks = []
-        if rig.DazRig.startswith("rigify"):
+        if dazRna(rig).DazRig.startswith("rigify"):
             for bname in conv.keys():
                 rname = self.getConvBone(conv[bname], rig)
                 if (rname in rig.pose.bones.keys() and
@@ -152,8 +152,9 @@ class FrameConverter:
     def setupBoneMap(self, anims, rig):
         truenames = dict([(bone.name, bone.name) for bone in rig.data.bones])
         for bone in rig.data.bones:
-            if "DazTrueName" in bone.keys():
-                truenames[bone["DazTrueName"]] = bone.name
+            truename = getDaz(bone, "DazTrueName")
+            if truename:
+                truenames[truename] = bone.name
         conv,twists = self.getConv(anims[0][0], rig)
         bonemap = OrderedDict()
         locks = self.getRigifyLocks(rig, conv)
@@ -258,8 +259,8 @@ class FrameConverter:
                     nname = bonemap.get("%sLower" % bname[:-5], nname)
             pb = rig.pose.bones.get(nname)
             if pb:
-                nxyzs[bname] = pb.DazRotMode
-                nrestmats[bname] = Euler(Vector(pb.bone.DazOrient)*D, 'XYZ').to_matrix()
+                nxyzs[bname] = dazRna(pb).DazRotMode
+                nrestmats[bname] = Euler(Vector(dazRna(pb.bone).DazOrient)*D, 'XYZ').to_matrix()
             else:
                 print('Missing "%s" "%s"' % (bname, nname))
 
@@ -423,7 +424,7 @@ class HideOperator(DazOperator):
             else:
                 for coll in self.rig.data.collections:
                     coll.is_visible = (coll.name in self.boneLayers.keys())
-            muteDazFcurves(self.rig, self.rig.DazDriversDisabled, muted=self.muted)
+            muteDazFcurves(self.rig, dazRna(self.rig).DazDriversDisabled, muted=self.muted)
         for layer in self.layerColls:
             layer.exclude = False
         for ob,hide in self.obhides:
@@ -503,8 +504,8 @@ def getGeograftItems(scn, context):
     enums = [("-", "-", "-")]
     rig = context.object
     for ob in rig.children:
-        if ob.DazMesh and ob.type == 'MESH':
-            enums += [(key,key,key) for key in ob.data.DazMergedGeografts.keys()]
+        if dazRna(ob).DazMesh and ob.type == 'MESH':
+            enums += [(key,key,key) for key in dazRna(ob.data).DazMergedGeografts.keys()]
             return enums
     return enums
 
@@ -579,10 +580,10 @@ class MorphOptions(PosableMaker):
     def loadMissingOld(self, context, rig, missing):
         global theMorphTables
         unfound = []
-        if rig.DazId in theMorphTables.keys():
-            table = theMorphTables[rig.DazId]
+        if dazRna(rig).DazId in theMorphTables.keys():
+            table = theMorphTables[dazRna(rig).DazId]
         else:
-            table = theMorphTables[rig.DazId] = self.setupMorphTable(rig)
+            table = theMorphTables[dazRna(rig).DazId] = self.setupMorphTable(rig)
         namepathTable = {}
         for mname in missing:
             lname = mname.lower()
@@ -619,7 +620,7 @@ class MorphOptions(PosableMaker):
             for cat, namepaths in customs.items():
                 mloader = CustomMorphLoader()
                 mloader.useMakePosable = self.useMakePosable
-                rig.DazCustomMorphs = True
+                dazRna(rig).DazCustomMorphs = True
                 mloader.getFingeredRigMeshes(context)
                 mloader.morphset = "Custom"
                 mloader.category = cat
@@ -656,13 +657,13 @@ class MorphOptions(PosableMaker):
         from .morphing import MP
         folders = getFoldersFromObject(rig, [""], match81=True)
         table = {}
-        mpaths = MP.getMorphPaths(rig.DazMesh)
+        mpaths = MP.getMorphPaths(dazRna(rig).DazMesh)
         mtypes = {}
         if mpaths:
             for morphset,paths in mpaths.items():
                 for path in paths:
                     mtypes[os.path.basename(path)] = morphset
-        print("Setting up morph table for %s" % rig.DazMesh)
+        print("Setting up morph table for %s" % dazRna(rig).DazMesh)
         for folder in folders:
             setupTable(folder, table, mtypes)
         return table
@@ -843,7 +844,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             setRigifyFkIk(rig, 1.0, self.useInsertKeys, frame)
             setRigifyLayers(rig, True, self.boneLayers)
             clearOtherRigify(rig, True, frame)
-        elif rig.get("MhxRig") or rig.DazRig == "mhx":
+        elif rig.get("MhxRig") or dazRna(rig).DazRig == "mhx":
             from .mhx_tools import setMhxToFk
             self.boneLayers = setMhxToFk(rig, self.boneLayers, self.useInsertKeys, frame)
         elif rig.get("DazSimpleIK"):
@@ -863,7 +864,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             scn.tool_settings.use_keyframe_insert_auto = useInsertKeys
             return auto
 
-        if rig.get("MhxRig") or rig.DazRig == "mhx":
+        if rig.get("MhxRig") or dazRna(rig).DazRig == "mhx":
             from .mhx_tools import setMhxToFk
             try:
                 auto = setAuto(scn, self.useInsertKeys)
@@ -906,7 +907,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 if fcu.data_path in paths:
                     act.fcurves.remove(fcu)
 
-        if rig.get("MhxRig") or rig.DazRig == "mhx":
+        if rig.get("MhxRig") or dazRna(rig).DazRig == "mhx":
             props = ["MhaArmIk_L", "MhaArmIk_R", "MhaLegIk_L", "MhaLegIk_R"]
             removeFcurves(act, props)
             for prop in props:
@@ -928,7 +929,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def updateWinders(self, rig, frame):
         if not self.affectBones:
             return
-        if rig.get("MhxRig") or rig.DazRig == "mhx":
+        if rig.get("MhxRig") or dazRna(rig).DazRig == "mhx":
             from .mhx_tools import mhx
             mhx.updateMhxWinders(rig, frame)
         elif rig.get("DazSimpleIK"):
@@ -1056,9 +1057,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def getMasterBone(self, rig):
-        if rig.DazRig == "mhx":
+        if dazRna(rig).DazRig == "mhx":
             master = "master"
-        elif rig.DazRig.startswith("rigify"):
+        elif dazRna(rig).DazRig.startswith("rigify"):
             master = "root"
         elif rig.get("DazSimpleIK"):
             master = "Root"
@@ -1342,7 +1343,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                     tfm.setScale(pb.scale, False)
                 oldStyle = (self.useConvert or
                             not rig.data.get("DazHasAxes") or
-                            rig.DazRig.startswith("rigify"))
+                            dazRna(rig).DazRig.startswith("rigify"))
                 setBoneTransform(tfm, pb, rig, bonemap=self.bonemap, oldStyle=oldStyle)
             imposeLocks(pb)
             if self.useInsertKeys:
@@ -1547,8 +1548,8 @@ class StandardAnimation:
     def setupAlias(self, rig):
         from .driver import getPropMinMax
         from .scan import normKey
-        alias1 = [(key, pg.s) for key,pg in rig.DazAlias.items()]
-        alias2 = [(pg.s, key) for key,pg in rig.DazAlias.items()]
+        alias1 = [(key, pg.s) for key,pg in dazRna(rig).DazAlias.items()]
+        alias2 = [(pg.s, key) for key,pg in dazRna(rig).DazAlias.items()]
         self.alias = dict(alias1 + alias2)
         for prop in rig.data.keys():
             if isFinal(prop):
@@ -1559,7 +1560,7 @@ class StandardAnimation:
 def loadAltMorphs(rig):
     if rig is None:
         return {}
-    char = rig.DazMesh.split("-",1)[0].lower()
+    char = dazRna(rig).DazMesh.split("-",1)[0].lower()
     struct = DF.loadEntry(char, "altmorphs", False)
     if struct:
         return struct["morphs"]
@@ -1572,7 +1573,7 @@ def loadAltMorphs(rig):
 
 class NodePose:
     def getId(self, ob):
-        return ob.DazUrl.rsplit("#",1)[-1]
+        return dazRna(ob).DazUrl.rsplit("#",1)[-1]
 
 
     def parseAnimations(self, struct, banims, vanims, rig):

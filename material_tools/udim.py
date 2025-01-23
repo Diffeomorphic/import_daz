@@ -117,7 +117,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
     def run(self, context):
         ob = context.object
-        if not ob.DazLocalTextures:
+        if not dazRna(ob).DazLocalTextures:
             if self.useSaveLocalTextures:
                 self.saveLocalTextures(context)
             else:

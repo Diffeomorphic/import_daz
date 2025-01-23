@@ -263,7 +263,7 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
     def getMohoKey(self, moho, rig):
         if moho in self.phonemes.keys():
             daz = self.phonemes[moho]
-            for item in rig.DazVisemes:
+            for item in dazRna(rig).DazVisemes:
                 if item.text == daz:
                     prop = item.name
                     if prop in rig.keys():

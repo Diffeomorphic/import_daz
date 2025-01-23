@@ -101,11 +101,11 @@ class LoadMorph(DriverUser):
         elif self.onDrivers == 'MESH' and self.mesh:
             self.obj = self.mesh
             self.amt = self.mesh.data
-            self.mesh.DazMeshMorphs = True
-            self.mesh.DazMeshDrivers = True
+            dazRna(self.mesh).DazMeshMorphs = True
+            dazRna(self.mesh).DazMeshDrivers = True
         elif self.onDrivers == 'CATEGORY' and self.mesh:
-            self.mesh.DazMeshMorphs = True
-            self.mesh.DazMeshDrivers = False
+            dazRna(self.mesh).DazMeshMorphs = True
+            dazRna(self.mesh).DazMeshDrivers = False
         elif self.obj:
             self.amt = self.obj
         if self.rig2:
@@ -160,7 +160,7 @@ class LoadMorph(DriverUser):
         name = namepaths[0][0]
         self.initAll()
         if self.rig:
-            self.baked = [self.bakedName(key) for key in self.rig.DazBaked.keys()]
+            self.baked = [self.bakedName(key) for key in dazRna(self.rig).DazBaked.keys()]
 
         if self.mesh:
             me = self.mesh.data
@@ -1975,8 +1975,8 @@ def getBoneVector(factor, comp, pb):
 
 
 def d2bBone(pb, channel, idx):
-    idx2 = pb.DazAxes[idx]
-    return idx2, (1 if channel == "scale" else pb.DazFlips[idx2])
+    idx2 = dazRna(pb).DazAxes[idx]
+    return idx2, (1 if channel == "scale" else dazRna(pb).DazFlips[idx2])
 
 
 def printName(char, name):

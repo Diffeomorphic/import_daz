@@ -95,7 +95,7 @@ class DAZ_OT_CreateGraftGroups(DazOperator):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'MESH' and ob.data.DazGraftGroup)
+        return (ob and ob.type == 'MESH' and dazRna(ob.data).DazGraftGroup)
 
     def run(self, context):
         graft = context.object

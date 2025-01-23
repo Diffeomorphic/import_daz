@@ -199,7 +199,7 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
                 self.saveFiles(context, child, ref.children, first)
                 urls.append(child.DazUrl)
             if first:
-                rigs = [ob for ob in ref.children if ob.type == 'ARMATURE' and ob.DazUrl not in urls]
+                rigs = [ob for ob in ref.children if ob.type == 'ARMATURE' and dazRna(ob).DazUrl not in urls]
                 meshes = [ob for ob in trg.children if ob.type == 'MESH']
                 for rig in rigs:
                     for ob in rig.children:
@@ -214,7 +214,7 @@ class DAZ_OT_SaveDazFigure(DazPropsOperator, MorphPreset, DufFile, IsMeshArmatur
 
     def getMatchingObject(self, objects, trg):
         for ob in objects:
-            if ob != trg and ob.DazUrl == trg.DazUrl:
+            if ob != trg and dazRna(ob).DazUrl == trg.DazUrl:
                 return ob
         return None
 

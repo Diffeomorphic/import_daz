@@ -457,8 +457,8 @@ def updatePose():
 #-------------------------------------------------------------
 
 def getFigure(ob):
-    if ob.DazFigure:
-        return ob.DazFigure
+    if dazRna(ob).DazFigure:
+        return dazRna(ob).DazFigure
     elif ob.parent:
         return ob.parent.DazUrl
     else:
@@ -731,6 +731,36 @@ def someMatch(keys, string):
 
 def canonicalPath(path):
     return path.replace("//", "/")
+
+#-------------------------------------------------------------
+#
+#-------------------------------------------------------------
+
+if False:
+    def dazRna(rna):
+        return rna
+
+    def getDaz(rna, prop, default=None):
+        return rna.get(prop, default)
+
+    def setDaz(rna, prop, value):
+        rna[prop] = value
+
+    def hasDaz(rna, prop):
+        return (prop in rna.keys())
+
+else:
+    def dazRna(rna):
+        return rna.daz_importer
+
+    def getDaz(rna, prop, default=None):
+        return getattr(rna.daz_importer, prop)
+
+    def setDaz(rna, prop, value):
+        setattr(rna.daz_importer, prop, value)
+
+    def hasDaz(rna, prop):
+        True
 
 #-------------------------------------------------------------
 #   Profiling

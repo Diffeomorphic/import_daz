@@ -178,8 +178,8 @@ def set_slider(ob, prop, value):
     ?value: Property value
     """
     ob[prop] = value
-    if prop in ob.DazAlias.keys():
-        alias = ob.DazAlias[prop].s
+    if prop in dazRna(ob).DazAlias.keys():
+        alias = dazRna(ob).DazAlias[prop].s
         ob[alias] = value
 
 #-------------------------------------------------------------

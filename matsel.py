@@ -250,7 +250,8 @@ def driveShellInfluence(ob):
                     prop = "INFLU %s" % node.label
                     setFloatProp(rig, prop, 1.0, 0.0, 10.0, True)
                     addDriver(node.inputs["Influence"], "default_value", rig, propRef(prop), "x")
-                    ob["DazVisibilityDrivers"] = rig["DazVisibilityDrivers"] = True
+                    setDaz(ob, "DazVisibilityDrivers", True)
+                    setDaz(rig, "DazVisibilityDrivers", True)
 
 
 ShellInputs = ["Influence", "BSDF", "UV", "Displacement"]

@@ -121,7 +121,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
     }
 
     def getDefaultDirectory(self, ob):
-        folder = self.Folders.get(ob.DazMesh, "")
+        folder = self.Folders.get(dazRna(ob).DazMesh, "")
         return "%sPoses/%s" % (folder, GS.author)
 
 
@@ -137,14 +137,14 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
     def run(self, context):
         self.Z = Matrix.Rotation(pi/2, 4, 'X')
         rig = getRigFromContext(context, strict=False, activate=True)
-        if self.useHierarchical and rig.DazRig.startswith(("mhx", "rigify")):
-            msg = "Hierarchical pose presets can only be made for original DAZ rigs.\nConsider generating %s rig with Keep DAZ Rig enabled" % rig.DazRig
+        if self.useHierarchical and dazRna(rig).DazRig.startswith(("mhx", "rigify")):
+            msg = "Hierarchical pose presets can only be made for original DAZ rigs.\nConsider generating %s rig with Keep DAZ Rig enabled" % dazRna(rig).DazRig
             raise DazError(msg)
         self.initData()
         if self.useBones:
             self.setupDriven(rig)
             self.setupConverter(rig)
-        for bname,pg in rig.DazAlias.items():
+        for bname,pg in dazRna(rig).DazAlias.items():
             self.alias[bname] = pg.s
         act = None
         if self.useAction and rig.animation_data:
@@ -256,7 +256,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
 
     def isValidMorph(self, rig, prop):
-        return (isinstance(rig[prop], float) and
+        return (isinstance(getDaz(rig, prop), float) and
                 prop[0:3] not in ["Daz", "Mha", "Mhh"])
 
 
@@ -313,9 +313,9 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
     def setupFlipper(self, rig):
         for pb in rig.pose.bones:
-            euler = Euler(Vector(pb.bone.DazOrient)*D, 'XYZ')
+            euler = Euler(Vector(dazRna(pb.bone).DazOrient)*D, 'XYZ')
             dmat = euler.to_matrix().to_4x4()
-            dmat.col[3][0:3] = Vector(pb.bone.DazHead)*GS.scale
+            dmat.col[3][0:3] = Vector(dazRna(pb.bone).DazHead)*GS.scale
             Fn = pb.bone.matrix_local.inverted() @ self.Z @ dmat
             Fn = Fn.to_quaternion().to_matrix().to_4x4()
             for bname in self.getBoneNames(pb.name):
@@ -458,10 +458,10 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                         self.setupConvBones(pb)
                     else:
                         self.removeConvChildren(pb, list(self.conv.keys()))
-            if rig.DazRig == "mhx":
+            if dazRna(rig).DazRig == "mhx":
                 from ..mhx_tools import L_CUSTOM
                 customLayer = L_CUSTOM
-            elif rig.DazRig.startswith("rigify"):
+            elif dazRna(rig).DazRig.startswith("rigify"):
                 from ..rigify_tools import R_CUSTOM
                 customLayer = R_CUSTOM
             else:
@@ -539,7 +539,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
     def getNodes(self, rig):
         nodes = {}
         self.ancestors = {}
-        figure = rig.DazUrl.rsplit("#",1)[1]
+        figure = dazRna(rig).DazUrl.rsplit("#",1)[1]
         node = {
             "id" : figure,
             "url" : "name://@selection/%s:" % quote(figure),
@@ -560,7 +560,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 nodes[idx] = []
             nodes[idx] += self.getAncestors(pb, rig, idx, figure)
         nodelist = []
-        nrigs = max(1, len(rig.data.DazMergedRigs))
+        nrigs = max(1, len(dazRna(rig.data).DazMergedRigs))
         for idx in range(nrigs):
             nodelist += nodes.get(idx, [])
         return nodelist
@@ -618,11 +618,11 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
 
     def getPathFigure(self, rig, idx):
-        pg = rig.data.DazMergedRigs.get(str(idx))
+        pg = dazRna(rig.data).DazMergedRigs.get(str(idx))
         if pg:
             string = pg.s
         else:
-            string = rig.DazUrl
+            string = dazRna(rig).DazUrl
         path,figure = string.rsplit("#",1)
         return path, figure, pg.b
 
@@ -655,7 +655,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
     def getBoneUrl(self, bname, pb, rig):
         if self.useHierarchical:
             if pb == rig:
-                path,figure = rig.DazId.rsplit("#", 1)
+                path,figure = dazRna(rig).DazId.rsplit("#", 1)
                 figure = quote(figure)
                 path = quote(path)
                 return "%s:%s#%s" % (figure, path, figure)
@@ -704,7 +704,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                     if self.isLocUnlocked(pb, bname):
                         locs = [L.to_translation() for L in Ls]
                         self.getTrans(bname, pb, rig, locs, 1/GS.scale, anims)
-                    rots = [L.to_euler(pb.DazRotMode) for L in Ls]
+                    rots = [L.to_euler(dazRna(pb).DazRotMode) for L in Ls]
                     self.getRot(bname, pb, rig, rots, 1/D, anims)
                     if self.useScale:
                         scales = [L.to_scale() for L in Ls]
@@ -754,7 +754,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         if self.driven.get(pb.name) and self.driven[pb.name].get("location"):
             return
         if pb == rig:
-            center = rig.DazCenter
+            center = dazRna(rig).DazCenter
             for idx,x in enumerate(["x","y","z"]):
                 anim = {}
                 anim["url"] = "%s:?translation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
@@ -891,7 +891,7 @@ class DAZ_OT_MakeControlRig(DazOperator, IsArmature):
                         if cns.type.startswith("LIMIT"):
                             cns.mute = True
                     copyTransform(pb, rb, rig)
-                    pb["DazSharedBone"] = True
+                    setDaz(pb, "DazSharedBone", True)
                     enableBoneNumLayer(pb.bone, ob, T_HIDDEN)
             enableRigNumLayer(ob, T_HIDDEN, False)
 

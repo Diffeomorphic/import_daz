@@ -102,14 +102,14 @@ def getHDMaterialVertNums(me, hdme):
 
 def addSkeyToUrls(ob, asset, skey):
     if asset.hd_url:
-        pgs = ob.data.DazDhdmFiles
+        pgs = dazRna(ob.data).DazDhdmFiles
         if skey.name not in pgs.keys():
             item = pgs.add()
             item.name = skey.name
             item.s = GS.getAbsPath(asset.hd_url)
             item.b = False
 
-    pgs = ob.data.DazMorphFiles
+    pgs = dazRna(ob.data).DazMorphFiles
     if skey.name not in pgs.keys():
         item = pgs.add()
         item.name = skey.name

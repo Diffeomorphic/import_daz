@@ -107,7 +107,7 @@ class Transform:
         if self.rot is None:
             return Zero
         elif isinstance(self.rot, Quaternion) or isinstance(self.rot, Matrix):
-            return Vector(self.rot.to_euler(pb.DazRotMode))/D
+            return Vector(self.rot.to_euler(dazRna(pb).DazRotMode))/D
         else:
             return Vector(self.rot)
 
@@ -120,7 +120,7 @@ class Transform:
         elif isinstance(self.rot, Matrix):
             return self.rot.to_4x4()
         else:
-            return getEulerMatrix(self.rot, pb.DazRotMode)
+            return getEulerMatrix(self.rot, dazRna(pb).DazRotMode)
 
 
     def getScaleMat(self):
@@ -136,7 +136,7 @@ class Transform:
 
 
     def setObject(self, ob):
-        ob.location = d2b(self.evalTrans() + Vector(ob.DazCenter))
+        ob.location = d2b(self.evalTrans() + Vector(dazRna(ob).DazCenter))
         rot = d2bu(self.evalRot())
         ob.rotation_euler = rot
         if hasattr(ob, "rotation_quaternion"):

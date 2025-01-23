@@ -754,7 +754,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
     def invoke(self, context, event):
         ob = context.object
-        self.strandType = ob.data.DazHairType
+        self.strandType = dazRna(ob.data).DazHairType
         self.colors.clear()
         for mat in ob.data.materials:
             if mat and mat.node_tree:

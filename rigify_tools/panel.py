@@ -7,6 +7,7 @@
 #----------------------------------------------------------
 
 import bpy
+from ..utils import *
 from ..panel import DAZ_PT_SetupTab
 class DAZ_PT_DazRigifyBuild(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_SetupRigging"
@@ -31,7 +32,7 @@ class DAZ_PT_DazRigifyProps(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         ob = context.object
-        return (ob and ob.DazRig.startswith("rigify"))
+        return (ob and dazRna(ob).DazRig.startswith("rigify"))
 
     def draw(self, context):
         rig = context.object

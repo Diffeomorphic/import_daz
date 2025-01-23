@@ -204,7 +204,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
+        return (ob and ob.type == 'ARMATURE' and dazRna(ob).DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
 
     useArms : BoolProperty(
         name = "Arm IK",
@@ -300,10 +300,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if self.useImproveIk:
             from ..rig_utils import improveIk
             improveIk(rig)
-        rig["DazSimpleIK"] = True
-        rig.DazArmIK_L = rig.DazArmIK_R = 1.0
-        rig.DazLegIK_L = rig.DazLegIK_R = 1.0
-        rig.DazStretchArms = rig.DazStretchLegs = 1.0
+        setDaz(rig, "DazSimpleIK", True)
+        dazRna(rig).DazArmIK_L = dazRna(rig).DazArmIK_R = 1.0
+        dazRna(rig).DazLegIK_L = dazRna(rig).DazLegIK_R = 1.0
+        dazRna(rig).DazStretchArms = dazRna(rig).DazStretchLegs = 1.0
         enableRigNumLayers(rig, [S_SPINE, S_FACE, S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK])
         assignOtherBones(rig, S_HIDDEN)
 
@@ -859,9 +859,9 @@ def setSimpleLayers(rig, layers, useIk):
 
 def setSimpleToFk(rig, layers, useInsertKeys, frame):
     for attr in ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R", "DazStretchArms", "DazStretchLegs"]:
-        setattr(rig, attr, 0)
+        setattr(dazRna(rig), attr, 0)
         if useInsertKeys:
-            rig.keyframe_insert(attr, frame=frame)
+            dazRna(rig).keyframe_insert(attr, frame=frame)
     return setSimpleLayers(rig, layers, False)
 
 #----------------------------------------------------------
@@ -1047,13 +1047,13 @@ class SimpleIKSnapper(SimpleIK):
         bnames = self.getLimbBoneNames(rig, prefix, type)
         if type == "Leg":
             revbones = self.getRevBones(prefix, rig)
-            if rig.DazRig == "genesis9":
+            if dazRna(rig).DazRig == "genesis9":
                 shldrik = "%s_thighIK" % prefix
             else:
                 shldrik = "%sThighIK" % prefix
         else:
             revbones = []
-            if rig.DazRig == "genesis9":
+            if dazRna(rig).DazRig == "genesis9":
                 shldrik = "%s_upperarmIK" % prefix
             else:
                 shldrik = "%sShldrIK" % prefix
@@ -1068,7 +1068,7 @@ class SimpleIKSnapper(SimpleIK):
 
     def getRevBones(self, prefix, rig):
         from ..fix import getPreSufName
-        if rig.DazRig == "genesis9":
+        if dazRna(rig).DazRig == "genesis9":
             bonelist = [
                 ("%s_heelIK" % prefix, "MCH-%s_heelIK" % prefix),
                 ("%s_tarsalsIK" % prefix, "MCH-%s_tarsalsIK" % prefix),

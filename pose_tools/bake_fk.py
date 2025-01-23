@@ -50,9 +50,9 @@ class DAZ_OT_BakeToFkRig(FrameRange, IsArmature):
     def run(self, context):
         rig = context.object
         scn = context.scene
-        if rig.DazRig in self.BakeBones.keys():
+        if dazRna(rig).DazRig in self.BakeBones.keys():
             self.banims = {}
-            for baker,baked in self.BakeBones[rig.DazRig].items():
+            for baker,baked in self.BakeBones[dazRna(rig).DazRig].items():
                 self.getBones(rig, baker, baked)
             if rig.animation_data and rig.animation_data.action:
                 act = rig.animation_data.action
@@ -72,7 +72,7 @@ class DAZ_OT_BakeToFkRig(FrameRange, IsArmature):
                 mats = self.addMats()
                 self.bake(mats, None, context)
         else:
-            print("Nothing to bake for %s rig" % rig.DazRig)
+            print("Nothing to bake for %s rig" % dazRna(rig).DazRig)
 
 
     def getBones(self, rig, baker, baked):

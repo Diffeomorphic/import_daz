@@ -38,12 +38,12 @@ def getEditBones(rig):
     tails = {}
     hdoffsets = {}
     for pb in rig.pose.bones:
-        if isOutlier(pb.DazHeadLocal):
-            pb.DazHeadLocal = pb.bone.head_local
-        if isOutlier(pb.DazTailLocal):
-            pb.DazTailLocal = pb.bone.tail_local
-        heads[pb.name] = Vector(pb.DazHeadLocal)
-        tails[pb.name] = Vector(pb.DazTailLocal)
+        if isOutlier(dazRna(pb).DazHeadLocal):
+            dazRna(pb).DazHeadLocal = pb.bone.head_local
+        if isOutlier(dazRna(pb).DazTailLocal):
+            dazRna(pb).DazTailLocal = pb.bone.tail_local
+        heads[pb.name] = Vector(dazRna(pb).DazHeadLocal)
+        tails[pb.name] = Vector(dazRna(pb).DazTailLocal)
         hdoffsets[pb.name] = d2b90(pb.HdOffset)
     for pb in rig.pose.bones:
         if pb.name[-5:] == "(drv)":

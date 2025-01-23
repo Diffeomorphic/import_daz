@@ -91,8 +91,8 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
     def draw(self, context):
         ob = context.object
         rig = getRigFromContext(context)
-        if ob and ob.type in ['ARMATURE', 'MESH'] and ob.DazId:
-            if rig and rig.DazDriversDisabled:
+        if ob and ob.type in ['ARMATURE', 'MESH'] and dazRna(ob).DazId:
+            if rig and dazRna(rig).DazDriversDisabled:
                 self.layout.label(text = "Morph Drivers Disabled")
                 self.layout.operator("daz.enable_drivers")
                 return
@@ -240,12 +240,12 @@ class DAZ_PT_ActivePoseBone(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
         if ob and pb:
             self.layout.label(text = "Active Bone: %s" % pb.name)
             if "DazTrueName" in pb.bone.keys():
-                self.layout.label(text = "True Bone: %s" % pb.bone["DazTrueName"])
-            self.propRow(self.layout, pb.bone, "DazHead")
-            self.propRow(self.layout, pb.bone, "DazOrient")
-            self.propRow(self.layout, pb, "DazRotMode")
-            self.propRow(self.layout, pb, "DazLocLocks")
-            self.propRow(self.layout, pb, "DazRotLocks")
+                self.layout.label(text = "True Bone: %s" % getDaz(pb.bone, "DazTrueName"))
+            self.propRow(self.layout, dazRna(pb.bone), "DazHead")
+            self.propRow(self.layout, dazRna(pb.bone), "DazOrient")
+            self.propRow(self.layout, dazRna(pb), "DazRotMode")
+            self.propRow(self.layout, dazRna(pb), "DazLocLocks")
+            self.propRow(self.layout, dazRna(pb), "DazRotLocks")
             mat = ob.matrix_world @ pb.matrix
             loc,quat,scale = mat.decompose()
             self.vecRow(self.layout, loc/GS.scale, "Location")
@@ -321,25 +321,25 @@ class DAZ_PT_LocksLimits(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
         col = row.column()
         col.label(text="Loc")
-        icon = ('CHECKBOX_HLT' if rig.DazLocLocks else 'CHECKBOX_DEHLT')
+        icon = ('CHECKBOX_HLT' if dazRna(rig).DazLocLocks else 'CHECKBOX_DEHLT')
         col.label(text="", icon=icon)
-        col.label(text="%.3f" % rig.DazLocLimits)
+        col.label(text="%.3f" % dazRna(rig).DazLocLimits)
 
         col = row.column()
         col.label(text="Rot")
-        icon = ('CHECKBOX_HLT' if rig.DazRotLocks else 'CHECKBOX_DEHLT')
+        icon = ('CHECKBOX_HLT' if dazRna(rig).DazRotLocks else 'CHECKBOX_DEHLT')
         col.label(text="", icon=icon)
-        col.label(text="%.3f" % rig.DazRotLimits)
+        col.label(text="%.3f" % dazRna(rig).DazRotLimits)
 
         col = row.column()
         col.label(text="Sca")
-        icon = ('CHECKBOX_HLT' if rig.DazScaleLocks else 'CHECKBOX_DEHLT')
+        icon = ('CHECKBOX_HLT' if dazRna(rig).DazScaleLocks else 'CHECKBOX_DEHLT')
         col.label(text="", icon=icon)
-        col.label(text="%.3f" % rig.DazScaleLimits)
+        col.label(text="%.3f" % dazRna(rig).DazScaleLimits)
 
         self.layout.prop(rig, "DazInheritScale")
         self.layout.operator("daz.impose_locks_limits")
-        if rig.DazDriversDisabled:
+        if dazRna(rig).DazDriversDisabled:
             self.layout.operator("daz.enable_drivers")
         else:
             self.layout.operator("daz.disable_drivers")
@@ -355,7 +355,7 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
     def poll(self, context):
         rig = self.getCurrentRig(self, context)
         return (rig and
-                not rig.DazDriversDisabled and
+                not dazRna(rig).DazDriversDisabled and
                 (self.hasTheseMorphs(self, rig) or self.hasAdjustProp(self, rig)))
 
 
@@ -460,7 +460,7 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
         rig = self.getCurrentRig(context)
         if not rig:
             return
-        if rig.DazDriversDisabled:
+        if dazRna(rig).DazDriversDisabled:
             self.layout.label(text = "Morph Drivers Disabled")
             self.layout.operator("daz.enable_drivers")
             return
@@ -469,7 +469,7 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
             split.operator("daz.disable_drivers")
             split.prop(context.scene, "showUsedPropsOnly")
         self.preamble(self.layout, context.scene, rig)
-        if GS.ercMethod in ('ARMATURE', 'ALL') and rig.DazRig.startswith("genesis"):
+        if GS.ercMethod in ('ARMATURE', 'ALL') and dazRna(rig).DazRig.startswith("genesis"):
             row = self.layout.row()
             row.operator("daz.morph_armature")
             row.prop(context.scene, "DazAutoMorphArmatures")
@@ -636,7 +636,7 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
     uilist = "DAZ_UL_Baked"
 
     def hasTheseMorphs(self, rig):
-        return rig.DazBaked #and GS.useBakedMorphs)
+        return dazRna(rig).DazBaked #and GS.useBakedMorphs)
 
     def draw(self, context):
         scn = context.scene
@@ -647,7 +647,7 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
             rig = self.getCurrentRig(context)
             if not self.hasTheseMorphs(rig):
                 return
-            for item in rig.DazBaked.values():
+            for item in dazRna(rig).DazBaked.values():
                 value = rig.get(item.name)
                 if value is not None:
                     self.layout.label(text = "%s : %.3f" % (item.text, value))
@@ -667,7 +667,7 @@ class CustomDrawItems:
         op.useMesh = self.useMesh
         row.operator("daz.update_scrollbars")
         self.layout.separator()
-        for cat in ob.DazMorphCats:
+        for cat in dazRna(ob).DazMorphCats:
             box = self.layout.box()
             if not cat.active:
                 box.prop(cat, "active", text=cat.name, icon="RIGHTARROW", emboss=False)
@@ -695,7 +695,7 @@ class DAZ_PT_CustomMorphs(CustomDrawItems, DAZ_PT_Morphs, bpy.types.Panel):
     morphset = "Custom"
 
     def hasTheseMorphs(self, ob):
-        return ob.DazCustomMorphs
+        return dazRna(ob).DazCustomMorphs
 
     def preamble(self, layout, scn, rig):
         pass
@@ -726,23 +726,23 @@ class DAZ_PT_CustomMeshMorphs(CustomDrawItems, DAZ_PT_Morphs, bpy.types.Panel):
         return (ob and ob.type == 'MESH' and self.hasTheseMorphs(self, ob))
 
     def hasTheseMorphs(self, ob):
-        return (ob.DazMeshMorphs or len(ob.DazAutoFollow) > 0)
+        return (dazRna(ob).DazMeshMorphs or len(dazRna(ob).DazAutoFollow) > 0)
 
     def draw(self, context):
         ob = context.object
         skeys = ob.data.shape_keys
-        if skeys and len(ob.DazAutoFollow) > 0:
+        if skeys and len(dazRna(ob).DazAutoFollow) > 0:
             box = self.layout.box()
             box.label(text = "Auto Follow")
-            for item in ob.DazAutoFollow:
+            for item in dazRna(ob).DazAutoFollow:
                 sname = item.name
                 if (sname in ob.keys() and
                     sname in skeys.key_blocks.keys()):
                     skey = skeys.key_blocks[sname]
                     self.drawAutoItem(box, ob, skey, sname, item.text)
             self.layout.separator()
-        if ob.DazMeshMorphs:
-            if ob.DazMeshDrivers:
+        if dazRna(ob).DazMeshMorphs:
+            if dazRna(ob).DazMeshDrivers:
                 prop = "Adjust Morph Strength"
                 if prop in ob.keys():
                     self.layout.prop(ob, propRef(prop))
@@ -791,7 +791,7 @@ class DAZ_PT_CustomMeshMorphs(CustomDrawItems, DAZ_PT_Morphs, bpy.types.Panel):
 
 
     def drawCustomBox(self, box, cat, scn, ob):
-        if ob.DazMeshDrivers:
+        if dazRna(ob).DazMeshDrivers:
             CustomDrawItems.drawCustomBox(self, box, cat, scn, ob)
             return
         skeys = ob.data.shape_keys

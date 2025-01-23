@@ -52,7 +52,7 @@ class GeneralMorphSelector(Selector):
         from ..morphing import getMorphList
         morphs = getMorphList(rig, self.morphset, sets=MS.Standards)
         keys = [(item.name, item.text, "All") for item in morphs]
-        for cat in rig.DazMorphCats:
+        for cat in dazRna(rig).DazMorphCats:
             for item in cat.morphs:
                 keys.append((item.name,item.text,cat.name))
         return keys
@@ -82,7 +82,7 @@ class GeneralMorphSelector(Selector):
         theMorphEnums.append(("Custom", "Custom", "Custom"))
         self.catnames = {}
         self.catnames["All"] = []
-        for cat in rig.DazMorphCats:
+        for cat in dazRna(rig).DazMorphCats:
             theCatEnums.append((cat.name, cat.name, cat.name))
             self.morphnames["All"] += list(cat.morphs.keys())
             self.catnames["All"] += list(cat.morphs.keys())
@@ -112,7 +112,7 @@ class DAZ_OT_RenameCategory(DazPropsOperator, CustomEnums, CategoryString, IsMes
 
     def run(self, context):
         rig = context.object
-        cat = rig.DazMorphCats[self.custom]
+        cat = dazRna(rig).DazMorphCats[self.custom]
         cat.name = self.category
         updateScrollbars(context)
 
@@ -126,7 +126,7 @@ class CategoryBasic:
 
     def getKeys(self, rig, ob):
         keys = []
-        for cat in ob.DazMorphCats:
+        for cat in dazRna(ob).DazMorphCats:
             key = cat.name
             keys.append((key,key,key))
         return keys
@@ -307,12 +307,12 @@ class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemov
 
     def removeUrls(self, ob, morphset):
         deletes = []
-        for idx,item in enumerate(ob.DazMorphUrls):
+        for idx,item in enumerate(dazRna(ob).DazMorphUrls):
             if item.morphset == morphset:
                 deletes.append(idx)
         deletes.reverse()
         for idx in deletes:
-            ob.DazMorphUrls.remove(idx)
+            dazRna(ob).DazMorphUrls.remove(idx)
 
 #------------------------------------------------------------------------
 #   Remove category
@@ -345,23 +345,23 @@ class DAZ_OT_RemoveCategories(DazOperator, CategorySelector, MorphRemover, IsArm
             for ob in getMeshChildren(rig):
                 self.removeUrls(ob, cats)
             for key in cats:
-                cat = rig.DazMorphCats[key]
+                cat = dazRna(rig).DazMorphCats[key]
                 for pg in cat.morphs:
                     self.removeRigProp(rig, pg.name)
         for idx,key in items:
-            rig.DazMorphCats.remove(idx)
-        if len(rig.DazMorphCats) == 0:
-            rig.DazMeshMorphs = False
+            dazRna(rig).DazMorphCats.remove(idx)
+        if len(dazRna(rig).DazMorphCats) == 0:
+            dazRna(rig).DazMeshMorphs = False
 
 
     def removeUrls(self, ob, cats):
         deletes = []
-        for idx,item in enumerate(ob.DazMorphUrls):
+        for idx,item in enumerate(dazRna(ob).DazMorphUrls):
             if item.category in cats:
                 deletes.append(idx)
         deletes.reverse()
         for idx in deletes:
-            ob.DazMorphUrls.remove(idx)
+            dazRna(ob).DazMorphUrls.remove(idx)
 
 #------------------------------------------------------------------------
 #   Join categories
@@ -382,13 +382,13 @@ class DAZ_OT_JoinCategories(DazOperator, CategorySelector, CustomEnums, Category
         labels = []
         for idx,key in items:
             if key != self.custom:
-                cat = ob.DazMorphCats[key]
+                cat = dazRna(ob).DazMorphCats[key]
                 props += [morph.name for morph in cat.morphs]
                 labels += [morph.text for morph in cat.morphs]
         addToCategories(ob, props, labels, self.custom)
         for idx,key in items:
             if key != self.custom:
-                ob.DazMorphCats.remove(idx)
+                dazRna(ob).DazMorphCats.remove(idx)
 
 #------------------------------------------------------------------------
 #   Apply morphs
@@ -433,8 +433,8 @@ def removeDrivingProps(rig, props):
     for prop,id in props.items():
         if rig == id:
             del rig[prop]
-    for cat in rig.DazCategories:
-        rig.DazCategories.remove(cat)
+    for cat in dazRna(rig).DazCategories:
+        dazRna(rig).DazCategories.remove(cat)
 
 
 #------------------------------------------------------------------
@@ -579,11 +579,11 @@ class RemoveAll(MorphRemover):
                 for prop in props:
                     self.removeRigProp(rig, prop)
                 self.removePropGroup(pgs)
-            for cat in rig.DazMorphCats.values():
+            for cat in dazRna(rig).DazMorphCats.values():
                 for pg in cat.morphs:
                     self.removeRigProp(rig, pg.name)
-            self.removePropGroup(rig.DazMorphCats)
-            rig.DazCustomMorphs = False
+            self.removePropGroup(dazRna(rig).DazMorphCats)
+            dazRna(rig).DazCustomMorphs = False
             for prop in list(rig.keys()):
                 if prop.lower().startswith(("ectrl", "ejcm", "pbm", "phm")):
                     del rig[prop]
@@ -796,7 +796,7 @@ class DAZ_OT_AddShapeToCategory(DazOperator, AddRemoveDriver, Selector, CustomEn
         for sname in self.getSelectedProps():
             skey = ob.data.shape_keys.key_blocks[sname]
             addToCategories(ob, [sname], None, cat)
-            ob.DazMeshMorphs = True
+            dazRna(ob).DazMeshMorphs = True
         updateScrollbars(context)
 
 
@@ -834,7 +834,7 @@ class DAZ_OT_AddShapekeyDrivers(DazOperator, AddRemoveDriver, Selector, Category
         if GS.useMuteDrivers:
             makePropDriver(propRef(final), skey, "mute", rig.data, "abs(x)<0.0001")
         addToCategories(rig, [sname], None, self.category)
-        rig.DazCustomMorphs = True
+        dazRna(rig).DazCustomMorphs = True
 
 
     def includeShapekey(self, skeys, sname):
@@ -862,7 +862,7 @@ class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelecto
             skey = ob.data.shape_keys.key_blocks[sname]
             snames.append(skey.name)
         if self.custom == "All":
-            for cat in ob.DazMorphCats:
+            for cat in dazRna(ob).DazMorphCats:
                 self.removeFromCategory(ob, snames, cat.name)
         else:
             self.removeFromCategory(ob, snames, self.custom)
@@ -875,7 +875,7 @@ class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelecto
 
 
     def getCategory(self, rig, ob, sname):
-        for cat in ob.DazMorphCats:
+        for cat in dazRna(ob).DazMorphCats:
             for morph in cat.morphs:
                 if sname == morph.name:
                     return cat.name
@@ -884,8 +884,8 @@ class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelecto
 
     def removeFromCategory(self, ob, props, category):
         from ..transfer import removeFromPropGroup
-        if category in ob.DazMorphCats.keys():
-            cat = ob.DazMorphCats[category]
+        if category in dazRna(ob).DazMorphCats.keys():
+            cat = dazRna(ob).DazMorphCats[category]
             for prop in props:
                 removeFromPropGroup(cat.morphs, prop)
 
@@ -970,7 +970,7 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
     def getCategory(self, rig, ob, sname):
         if rig is None:
             return ""
-        for cat in rig.DazMorphCats:
+        for cat in dazRna(rig).DazMorphCats:
             for morph in cat.morphs:
                 if sname == morph.name:
                     return cat.name
@@ -1018,7 +1018,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         rig = ob.parent
         if (rig is None or rig.type != 'ARMATURE' or mod is None):
             raise DazError("No armature found")
-        if rig.DazDriversDisabled:
+        if dazRna(rig).DazDriversDisabled:
             raise DazError("Drivers are disabled")
         if self.invoked:
             if self.useLabels:

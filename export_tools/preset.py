@@ -47,7 +47,7 @@ class Preset:
         self.layout.prop(self, "reldir")
 
     def getDefaultDirectory(self, ob):
-        folder = os.path.dirname(ob.DazUrl.split("#",1)[0])
+        folder = os.path.dirname(dazRna(ob).DazUrl.split("#",1)[0])
         return "%s/%s/%s" % (folder, self.subdir, GS.author)
 
     def getFullDirectory(self, scn):

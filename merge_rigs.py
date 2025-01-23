@@ -209,7 +209,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     if self.useMergeNonConforming in ['CHILDREN', 'ALL_RIGS']:
                         conforms = True
                     elif (self.useMergeNonConforming == 'CONTROLS' and
-                          rig.DazUrl.lower() in DF.WidgetControls):
+                          dazRna(rig).DazUrl.lower() in DF.WidgetControls):
                         conforms = True
                         widgets.append(rig)
                     if conforms:
@@ -244,9 +244,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             getObjects(root, root.parent, objects, infos, widgets, [])
 
         def addMergedProp(rig, subrig, idx):
-            pg = rig.data.DazMergedRigs.add()
+            pg = dazRna(rig.data).DazMergedRigs.add()
             pg.name = str(idx)
-            pg.s = subrig.DazUrl
+            pg.s = dazRna(subrig).DazUrl
             pg.b = (subrig.parent_bone is not None)
 
         # Add info about merge rigs
@@ -308,9 +308,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         for info,dups in zip(infos, dupss):
             rig,bones,_meshes = info[0]
             for subrig,subbones,submeshes in info[1:]:
-                for key,pg0 in subrig.data.DazBoneMap.items():
-                    if key not in rig.data.DazBoneMap.keys():
-                        pg = rig.data.DazBoneMap.add()
+                for key,pg0 in dazRna(subrig.data).DazBoneMap.items():
+                    if key not in dazRna(rig.data).DazBoneMap.keys():
+                        pg = dazRna(rig.data).DazBoneMap.add()
                         pg.name = pg0.name
                         pg.s = pg0.s
 

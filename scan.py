@@ -285,7 +285,7 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
         ob = self.mesh = context.object
         self.rig = getRigFromMesh(ob)
         folder = os.path.dirname(self.filepath)
-        url = self.mesh.DazUrl
+        url = dazRna(self.mesh).DazUrl
         name = url.rsplit("#", 1)[-1]
         scanpath = getScanPath(name)
         self.directory = GS.getRelativePath(folder).lower()
@@ -298,9 +298,9 @@ class DAZ_OT_ScanMorphDirectory(DazOperator, SingleFile, Scanner, IsMesh):
                 if os.path.isdir(subdir):
                     self.directory = GS.getRelativePath(subdir).lower()
                     self.scanMorphs(subdir, len(subdir))
-        if ob.data.DazGraftGroup:
+        if dazRna(ob.data).DazGraftGroup:
             graft = struct["geograft"] = {}
-            graft["vertex_count"] = ob.data.DazVertexCount
+            graft["vertex_count"] = dazRna(ob.data).DazVertexCount
         saveJson(struct, scanpath)
         print('Saved "%s"' % scanpath)
 
@@ -378,7 +378,7 @@ def getCharData(context, error):
             print(msg)
             return rig, None, "Unknown", None
     mesh = meshes[0]
-    relfile = mesh.DazUrl.rsplit("#",1)[0]
+    relfile = dazRna(mesh).DazUrl.rsplit("#",1)[0]
     relpath = os.path.dirname(relfile)
     name = os.path.basename(os.path.splitext(relfile)[0])
     return rig, mesh, name, relpath
@@ -436,7 +436,7 @@ def loadScannedInfo(self, name, rig, relpath):
     }
 
     if not relpath:
-        name = table.get(rig.DazMesh, rig.DazMesh)
+        name = table.get(dazRna(rig).DazMesh, dazRna(rig).DazMesh)
     scanpath = getScanPath(name)
     if not os.path.exists(scanpath):
         msg = "Scanned morphs for %s do not exist" % name
@@ -491,7 +491,7 @@ def loadMissingMorphs(self, context, rig, missing, cat):
         mloader.morphset = "Custom"
         mloader.category = cat
         mloader.hideable = True
-        rig.DazCustomMorphs = True
+        dazRna(rig).DazCustomMorphs = True
         print("\nLoading morphs in category %s" % cat)
         mloader.getAllMorphs(customs, context)
         props = [prop for (prop,path,ref) in customs]

@@ -68,9 +68,9 @@ class DAZ_OT_MakeDForce(DazPropsOperator, Collision, Cloth):
         if meshes:
             self.addClothCollection(context, meshes)
             for ob in meshes:
-                if ob.get("DazCloth", False):
+                if getDaz(ob, "DazCloth", False):
                     self.addCloth(ob)
-                elif ob.get("DazCollision", False):
+                elif getDaz(ob, "DazCollision", False):
                     self.addCollision(ob, self.collection)
 
 #-------------------------------------------------------------
@@ -168,9 +168,9 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, Collision, IsMesh):
         else:
             raise DazError("No armature found")
         selected = getSelectedMeshes(context)
-        char = hum.DazMesh.lower()
+        char = dazRna(hum).DazMesh.lower()
         struct = DF.loadEntry("softbody-%s" % char, "softbody")
-        rigtype = self.rig.DazRig.lower()
+        rigtype = dazRna(self.rig).DazRig.lower()
         bstruct = DF.loadEntry(rigtype, "softbody")
         self.bones = bstruct["bones"]
         self.fixDeformBones()

@@ -17,7 +17,7 @@ from .bone_data import BD
 def getMappedBone(bname, rig, mesh=None):
     def getBone(bname):
         bname = unquote(bname)
-        pg = rig.data.DazBoneMap.get(bname)
+        pg = dazRna(rig.data).DazBoneMap.get(bname)
         if pg and pg.s in rig.data.bones.keys():
             return pg.s
         elif bname in rig.pose.bones.keys():
@@ -295,12 +295,12 @@ class BoneInstance(Instance):
             return
         bone = rig.data.bones[self.name]
         bone.inherit_scale = self.defaultInherit()
-        bone.DazOrient = self.attributes["orientation"]
+        dazRna(bone).DazOrient = self.attributes["orientation"]
 
         rdata = self.getHeadTail(center)
         rdata0 = self.getHeadTail(center, False)
-        bone.DazHead = rdata.dazhead
-        bone.DazAngle = 0
+        dazRna(bone).DazHead = rdata.dazhead
+        dazRna(bone).DazAngle = 0
 
         vec = d2b00(rdata.tail) - d2b00(rdata.head)
         vec0 = d2b00(rdata0.tail) - d2b00(rdata0.head)
@@ -309,11 +309,11 @@ class BoneInstance(Instance):
             vec0 /= vec0.length
             sprod = vec.dot(vec0)
             if sprod < -0.99:
-                bone.DazAngle = pi
-                bone.DazNormal = vec.cross(vec0)
+                dazRna(bone).DazAngle = pi
+                dazRna(bone).DazNormal = vec.cross(vec0)
             elif sprod < 0.99:
-                bone.DazAngle = math.acos(sprod)
-                bone.DazNormal = vec.cross(vec0)
+                dazRna(bone).DazAngle = math.acos(sprod)
+                dazRna(bone).DazNormal = vec.cross(vec0)
 
         for child in self.children.values():
             if isinstance(child, BoneInstance):
@@ -393,21 +393,21 @@ class BoneInstance(Instance):
         mapped = self.node.mapped
         if (mapped and
             self.name != mapped and
-            mapped not in rig.data.DazBoneMap.keys()):
-            pg = rig.data.DazBoneMap.add()
+            mapped not in dazRna(rig.data).DazBoneMap.keys()):
+            pg = dazRna(rig.data).DazBoneMap.add()
             pg.name = mapped
             pg.s = self.name
         if self.id != self.name:
-            pb.bone["DazTrueName"] = unquote(self.id)
+            setDaz(pb.bone, "DazTrueName", unquote(self.id))
         if pb.name in figure.driven.keys():
             pb.rotation_mode = self.getRotationMode(pb, True)
             enableBoneNumLayer(pb.bone, rig, T_HIDDEN)
         else:
             pb.rotation_mode = self.getRotationMode(pb, False)
             enableBoneNumLayer(pb.bone, rig, T_BONES)
-        pb.DazRotMode = self.rotation_order
-        pb.DazAxes = self.axes
-        pb.DazFlips = [(-1 if flip else +1) for flip in self.flipped]
+        dazRna(pb).DazRotMode = self.rotation_order
+        dazRna(pb).DazAxes = self.axes
+        dazRna(pb).DazFlips = [(-1 if flip else +1) for flip in self.flipped]
         tchildren = self.targetTransform(pb, node, targets, rig)
         self.setRotationLockDaz(pb, rig)
         self.setLocationLockDaz(pb, rig)
@@ -441,13 +441,13 @@ class BoneInstance(Instance):
             tchildren = {}
         if LS.fitFile:
             if nonzero(tfm.rot):
-                pb.DazRestRotation = tfm.rot
+                dazRna(pb).DazRestRotation = tfm.rot
         else:
             setBoneTransform(tfm, pb, rig)
             if nonzero(tfm.trans):
-                pb.DazTranslation = tfm.trans
+                dazRna(pb).DazTranslation = tfm.trans
             if nonzero(tfm.rot):
-                pb.DazRotation = tfm.rot
+                dazRna(pb).DazRotation = tfm.rot
         return tchildren
 
 
@@ -489,7 +489,7 @@ class BoneInstance(Instance):
         # DazRotLocks used to update lock_rotation
         for n,lock in enumerate(locks):
             idx = self.axes[n]
-            pb.DazRotLocks[idx] = lock
+            dazRna(pb).DazRotLocks[idx] = lock
         if GS.useLockRot:
             for n,lock in enumerate(locks):
                 idx = self.axes[n]
@@ -535,7 +535,7 @@ class BoneInstance(Instance):
         # DazLocLocks used to update lock_location
         for n,lock in enumerate(locks):
             idx = self.axes[n]
-            pb.DazLocLocks[idx] = lock
+            dazRna(pb).DazLocLocks[idx] = lock
         if GS.useLockLoc:
             for n,lock in enumerate(locks):
                 idx = self.axes[n]

@@ -68,15 +68,15 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             nverts = len(ob.data.vertices)
             if nverts not in humans.keys() or isGenesis(ob):
                 humans[nverts] = ob
-                prio[nverts] = (not (not ob.data.DazGraftGroup))
+                prio[nverts] = (not (not dazRna(ob.data).DazGraftGroup))
 
         grafts = dict([(vert_count, []) for vert_count in humans.keys()])
         ngrafts = 0
         misses = []
         # Store geograft objects in grafts dictionary--lookup by number of vertices
         for ob in selected_meshes:
-            if ob.data.DazGraftGroup:
-                nhumverts = ob.data.DazVertexCount
+            if dazRna(ob.data).DazGraftGroup:
+                nhumverts = dazRna(ob.data).DazVertexCount
                 if nhumverts in grafts.keys():
                     grafts[nhumverts].append(ob)
                     ngrafts += 1

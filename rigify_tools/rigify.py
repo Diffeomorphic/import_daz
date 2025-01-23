@@ -176,12 +176,12 @@ class RigifyCommon:
             "daz_big_cat2" : "daz_big_cat2",
         }
 
-        self.daz_rig = table.get(rig.DazRig)
+        self.daz_rig = table.get(dazRna(rig).DazRig)
         if self.daz_rig:
             entry = DF.loadEntry(self.daz_rig, "rigify")
             print("Setup DAZ skeleton", self.daz_rig)
         else:
-            raise DazError("BUG: Rigify for %s not supported" % rig.DazRig)
+            raise DazError("BUG: Rigify for %s not supported" % dazRna(rig).DazRig)
         self.meta_type = entry["meta_type"]
         entry2 = DF.loadEntry(self.meta_type, "rigify")
         self.meta = MetaData(entry2)
@@ -262,7 +262,7 @@ class MetaMaker(RigifyCommon):
             raise DazError("Rigify: %s is neither an armature nor has armature parent" % ob)
         self.makeRealParents(context, rig)
 
-        if self.useOptimizePose and rig.DazRig.startswith("genesis"):
+        if self.useOptimizePose and dazRna(rig).DazRig.startswith("genesis"):
             from ..convert import optimizePose
             optimizePose(context, True)
         if self.keepRig:
@@ -310,7 +310,7 @@ class MetaMaker(RigifyCommon):
         if activateObject(context, rig):
             safeTransformApply()
 
-        print("  Fix bones", rig.DazRig)
+        print("  Fix bones", dazRna(rig).DazRig)
         if self.daz_rig == "genesis12":
             self.fixPelvis(rig)
             self.fixCarpals(rig)
@@ -389,7 +389,7 @@ class MetaMaker(RigifyCommon):
         print("  Set connected")
         setMode('EDIT')
         self.setConnected(meta, connect, disconnect)
-        self.recalcRoll(rig.DazRig, meta)
+        self.recalcRoll(dazRna(rig).DazRig, meta)
         setMode('OBJECT')
         print("Metarig created")
         return rig, meta, dazrig
@@ -799,7 +799,7 @@ class Rigifier(RigifyCommon):
         try:
             bpy.ops.pose.rigify_generate()
         except:
-            raise DazError("Cannot rigify %s rig %s    " % (rig.DazRig, rig.name))
+            raise DazError("Cannot rigify %s rig %s    " % (dazRna(rig).DazRig, rig.name))
         setMode('OBJECT')
 
         scn = context.scene
@@ -1038,7 +1038,7 @@ class Rigifier(RigifyCommon):
                     pb.lock_rotation = FFalse
 
         # Face bone and gizmos
-        if rig.DazRig == "genesis9":
+        if dazRna(rig).DazRig == "genesis9":
             rename = ["_pectoral", "_eye", "_ear", "_metatarsal"]
             rename += [bone.name[1:] for bone in gen.data.bones
                 if bone.name.endswith(("toe1", "toe2"))]
@@ -1456,7 +1456,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
         ob = context.object
         return (ob and
                 ob.type == 'ARMATURE' and
-                ob.DazRig.startswith(("genesis", "daz_dog", "daz_big_cat", "daz_horse")) and
+                dazRna(ob).DazRig.startswith(("genesis", "daz_dog", "daz_big_cat", "daz_horse")) and
                 not ob.get("DazSimpleIK"))
 
     useDeleteMeta : BoolProperty(
@@ -1478,7 +1478,7 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
         from ..driver import muteDazFcurves
         DazPropsOperator.storeState(self, context)
         rig = context.object
-        self.dazDriversDisabled = rig.DazDriversDisabled
+        self.dazDriversDisabled = dazRna(rig).DazDriversDisabled
         muteDazFcurves(rig, True)
 
 
@@ -1512,7 +1512,7 @@ class DAZ_OT_CreateMeta(DazPropsOperator, MetaMaker, Fixer, BendTwists):
         ob = context.object
         return (ob and
                 ob.type == 'ARMATURE' and
-                ob.DazRig.startswith(("genesis", "daz_dog", "daz_big_cat", "daz_horse")) and
+                dazRna(ob).DazRig.startswith(("genesis", "daz_dog", "daz_big_cat", "daz_horse")) and
                 not ob.get("DazSimpleIK"))
 
     def draw(self, context):

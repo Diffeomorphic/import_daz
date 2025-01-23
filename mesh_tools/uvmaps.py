@@ -99,7 +99,7 @@ class DAZ_OT_CollapseUDims(DazOperator):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'MESH' and not ob.DazUDimsCollapsed)
+        return (ob and ob.type == 'MESH' and not dazRna(ob).DazUDimsCollapsed)
 
     def run(self, context):
         for ob in getSelectedMeshes(context):
@@ -107,9 +107,9 @@ class DAZ_OT_CollapseUDims(DazOperator):
 
     def collapseUDims(self, ob):
         from ..material import addUdimTree
-        if ob.DazUDimsCollapsed:
+        if dazRna(ob).DazUDimsCollapsed:
             return
-        ob.DazUDimsCollapsed = True
+        dazRna(ob).DazUDimsCollapsed = True
         addUdimsToUVs(ob, False, 0, 0)
         for mn,mat in enumerate(ob.data.materials):
             if mat.DazUDimsCollapsed:
@@ -127,7 +127,7 @@ class DAZ_OT_RestoreUDims(DazOperator):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'MESH' and ob.DazUDimsCollapsed)
+        return (ob and ob.type == 'MESH' and dazRna(ob).DazUDimsCollapsed)
 
     def run(self, context):
         for ob in getSelectedMeshes(context):
@@ -135,9 +135,9 @@ class DAZ_OT_RestoreUDims(DazOperator):
 
     def restoreUDims(self, ob):
         from ..material import addUdimTree
-        if not ob.DazUDimsCollapsed:
+        if not dazRna(ob).DazUDimsCollapsed:
             return
-        ob.DazUDimsCollapsed = False
+        dazRna(ob).DazUDimsCollapsed = False
         addUdimsToUVs(ob, True, 0, 0)
         for mn,mat in enumerate(ob.data.materials):
             if not mat.DazUDimsCollapsed:

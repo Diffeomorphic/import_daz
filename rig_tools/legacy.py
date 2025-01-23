@@ -49,10 +49,10 @@ class DAZ_OT_SetAddExtraFaceBones(DazPropsOperator, ExtraBones, IsArmature):
         return True
 
     def changeLayer(self, eb, rig):
-        if rig.DazRig == "mhx":
+        if dazRna(rig).DazRig == "mhx":
             from ..mhx_tools import L_FACE
             enableBoneNumLayer(eb, rig, L_FACE)
-        elif rig.DazRig.startswith("rigify"):
+        elif dazRna(rig).DazRig.startswith("rigify"):
             from ..rigify_tools import R_DETAIL
             enableBoneNumLayer(eb, rig, R_DETAIL)
 

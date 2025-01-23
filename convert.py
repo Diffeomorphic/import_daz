@@ -13,8 +13,8 @@ from .fileutils import SingleFile, JsonFile, JsonExportFile, DF
 #-------------------------------------------------------------
 
 def getCharacterFromRig(rig):
-    if rig.DazMesh:
-        char = rig.DazMesh.lower().replace("-","_").replace("genesis", "genesis_")
+    if dazRna(rig).DazMesh:
+        char = dazRna(rig).DazMesh.lower().replace("-","_").replace("genesis", "genesis_")
         if char[-1] == "_":
             char = char[:-1]
         print("Character: %s" % char)
@@ -40,7 +40,7 @@ def loadPose(context, rig, entry):
     def loadBonePose(context, pb, pose):
         pbname = getBoneName(pb.name, pose)
         if pbname and pb.name[:-4] != "Copy":
-            rot, pb.bone.DazOrient, pb.DazRotMode = pose[pbname]
+            rot, dazRna(pb.bone).DazOrient, dazRna(pb).DazRotMode = pose[pbname]
             euler = Euler(rot)
             mat = euler.to_matrix()
             rmat = pb.bone.matrix_local.to_3x3()

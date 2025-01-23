@@ -58,13 +58,13 @@ class FigureInstance(Instance):
         if rig and meshes:
             mesh = meshes[0]
             char = chars[0]
-            rig.DazMesh = char
+            dazRna(rig).DazMesh = char
             for mesh,char in zip(meshes, chars):
-                mesh.DazMesh = char
+                dazRna(mesh).DazMesh = char
             self.poseChildren(rig, rig)
         elif meshes:
             for mesh,char in zip(meshes, chars):
-                mesh.DazMesh = char
+                dazRna(mesh).DazMesh = char
         Instance.finalize(self, context)
         if rig:
             enableRigNumLayers(rig, [T_BONES, T_WIDGETS])
@@ -109,10 +109,10 @@ class FigureInstance(Instance):
         activateObject(context, rig)
         setMode('OBJECT')
         self.poseArmature(rig)
-        rig.DazRotLocks = rig.DazHasRotLocks = GS.useLockRot
-        rig.DazLocLocks = rig.DazHasLocLocks = GS.useLockLoc
-        rig.DazRotLimits = rig.DazHasRotLimits = GS.useLimitRot
-        rig.DazLocLimits = rig.DazHasLocLimits = GS.useLimitLoc
+        dazRna(rig).DazRotLocks = dazRna(rig).DazHasRotLocks = GS.useLockRot
+        dazRna(rig).DazLocLocks = dazRna(rig).DazHasLocLocks = GS.useLockLoc
+        dazRna(rig).DazRotLimits = dazRna(rig).DazHasRotLimits = GS.useLimitRot
+        dazRna(rig).DazLocLimits = dazRna(rig).DazHasLocLimits = GS.useLimitLoc
         self.fixDependencyLoops(rig)
         setMode('OBJECT')
         self.loadAltMorphs()
@@ -270,9 +270,9 @@ class Figure(Node):
             amt.display_type = 'STICK'
             rig.show_in_front = True
             if GS.unflipped:
-                rig.data["DazUnflipped"] = True
-            rig.data["DazHasAxes"] = True
-            rig.DazInheritScale = False
+                setDaz(rig.data, "DazUnflipped", True)
+            setDaz(rig.data, "DazHasAxes", True)
+            dazRna(rig).DazInheritScale = False
         else:
             rig = amt = None
         for geonode in inst.geometries:
@@ -290,7 +290,7 @@ class Figure(Node):
         if self.pointing:
             self.pointBones(rig)
         setMode('OBJECT')
-        rig.DazRig = self.rigtype = getRigType1(inst.bones.keys(), False)
+        dazRna(rig).DazRig = self.rigtype = getRigType1(inst.bones.keys(), False)
         for child in inst.children.values():
             if isinstance(child, BoneInstance):
                 child.buildBoneProps(rig, center)
@@ -391,12 +391,12 @@ def copyBoneInfo(srcpb, trgpb):
     for attr in ["bbone_x", "bbone_z", "use_relative_parent", "use_local_location", "use_inherit_rotation", "inherit_scale", "DazAngle"]:
         setattr(trgpb.bone, attr, getattr(srcpb.bone, attr))
     for attr in ["DazOrient", "DazHead", "DazNormal"]:
-        setattr(trgpb.bone, attr, tuple(getattr(srcpb.bone, attr)))
+        setattr(dazRna(trgpb.bone), attr, tuple(getattr(dazRna(srcpb.bone), attr)))
     for key in ["DazRigIndex", "DazTrueName"]:
-        if key in srcpb.bone.keys():
-            trgpb.bone[key] = srcpb.bone[key]
+        if hasDaz(srcpb.bone, key):
+            setDaz(trgpb.bone, key, getDaz(srcpb.bone, key))
     for attr in ["DazRestRotation", "DazAxes", "DazFlips", "DazLocLocks", "DazRotLocks"]:
-        setattr(trgpb, attr, tuple(getattr(srcpb, attr)))
+        setattr(dazRna(trgpb), attr, tuple(getattr(dazRna(srcpb), attr)))
     for key in ["lock_ik", "ik_stiffness", "use_ik_limit", "ik_min", "ik_max"]:
         for x in ["x", "y", "z"]:
             attr = "%s_%s" % (key, x)
@@ -591,8 +591,8 @@ class ExtraBones(DriverUser):
                 pb.custom_shape_scale = db.custom_shape_scale
             else:
                 pb.custom_shape_scale_xyz = db.custom_shape_scale_xyz
-            pb.DazRotLocks = db.DazRotLocks
-            pb.DazLocLocks = db.DazLocLocks
+            dazRna(pb).DazRotLocks = db.DazRotLocks
+            dazRna(pb).DazLocLocks = db.DazLocLocks
             pb.bone.inherit_scale = db.bone.inherit_scale
 
 
@@ -629,8 +629,8 @@ class ExtraBones(DriverUser):
             else:
                 bone = rig.data.bones[bname]
                 db = rig.data.bones[drvBone(bname)]
-                if "DazExtraBone" in db.keys():
-                    bone["DazExtraBone"] = db["DazExtraBone"]
+                if hasDaz(db, "DazExtraBone"):
+                    setDaz(bone, "DazExtraBone", getDaz(db, "DazExtraBone"))
 
         setMode('EDIT')
         for bname in self.bnames:
@@ -753,8 +753,8 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones,
 
 
     def checkAllowed(self, rig):
-        if rig.DazRig.startswith(("mhx", "rigify")):
-            msg = "Rig type = %s" % rig.DazRig
+        if dazRna(rig).DazRig.startswith(("mhx", "rigify")):
+            msg = "Rig type = %s" % dazRna(rig).DazRig
         elif rig.get("DazSimpleIK"):
             msg = "Rig has simple IK"
         elif rig.data.get("DazFinalized", False):
@@ -792,7 +792,7 @@ def finalizeArmature(rig):
                     if cns.type == 'COPY_TRANSFORMS' and cns.subtarget == drvname:
                         pb.constraints.remove(cns)
                         break
-    rig.data["DazFinalized"] = True
+    setDaz(rig.data, "DazFinalized", True)
 
 
 class DAZ_OT_FinalizeArmature(DazOperator, IsArmature):

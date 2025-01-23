@@ -44,7 +44,7 @@ class ControlRigMuter(Framer):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and not ob.DazRig.startswith(("mhx", "rigify")))
+        return (ob and ob.type == 'ARMATURE' and not dazRna(ob).DazRig.startswith(("mhx", "rigify")))
 
 
     def bakeShapekeys(self, context, meshes, actname):

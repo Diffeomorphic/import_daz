@@ -524,7 +524,8 @@ def setShellInfluence(node, shellname, rig, ob):
         prop = "INFLU %s" % shellname
         setFloatProp(rig, prop, 1.0, 0.0, 10.0, True, False)
         addDriver(node.inputs["Influence"], "default_value", rig, propRef(prop), "x")
-        ob["DazVisibilityDrivers"] = rig["DazVisibilityDrivers"] = True
+        setDaz(ob, "DazVisibilityDrivers", True)
+        setDaz(rig, "DazVisibilityDrivers", True)
 
 #----------------------------------------------------------
 #   Assign Shell Maps
@@ -548,7 +549,7 @@ class DAZ_OT_AssignShellMap(MaterialSelector, DazPropsOperator):
         uvname = getActiveUvLayer(ob).name
         for mat in ob.data.materials:
             if mat and self.useMaterial(mat):
-                mat["DazShellMap"] = uvname
+                setDaz(mat, "DazShellMap", uvname)
 
 #----------------------------------------------------------
 #   Initialize

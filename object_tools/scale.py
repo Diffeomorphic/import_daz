@@ -75,7 +75,7 @@ class MaterialScaler(UnitsOperator):
         for mat in ob.data.materials:
             if mat:
                 if mat.DazScale == 0:
-                    mat.DazScale = ob.DazScale
+                    mat.DazScale = dazRna(ob).DazScale
                 scale = self.scale / mat.DazScale
                 for node in mat.node_tree.nodes:
                     if node.type == 'GROUP':
@@ -181,7 +181,7 @@ class DAZ_OT_ScaleObjects(MaterialScaler, DazPropsOperator, IsMeshArmature):
 
     def applyScale(self, context, ob):
         from ..apply import safeTransformApply
-        scale = self.scale / ob.DazScale
+        scale = self.scale / dazRna(ob).DazScale
         if ob.type in ['MESH', 'ARMATURE'] and activateObject(context, ob):
             self.parents[ob.name] = (ob.parent, ob.parent_type, ob.parent_bone)
             bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
@@ -200,7 +200,7 @@ class DAZ_OT_ScaleObjects(MaterialScaler, DazPropsOperator, IsMeshArmature):
 
 
     def restoreParent(self, context, ob):
-        ob.DazScale = self.scale
+        dazRna(ob).DazScale = self.scale
         if ob.name in self.parents.keys():
             wmat = ob.matrix_world.copy()
             (ob.parent, ob.parent_type, ob.parent_bone) = self.parents[ob.name]

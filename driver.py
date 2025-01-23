@@ -913,7 +913,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
             pgname = "Daz%s" % morphset
             pg = getattr(self.rig, pgname)
             collect(pg, pgname)
-        for cat in self.rig.DazMorphCats:
+        for cat in dazRna(self.rig).DazMorphCats:
             collect(cat.morphs, cat.name)
 
 
@@ -1002,7 +1002,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
 
         hum = None
         for ob,skeys in self.obskeys:
-            if ob.DazMesh.startswith("Genesis"):
+            if dazRna(ob).DazMesh.startswith("Genesis"):
                 hum = ob
                 hskeys = skeys
                 break
@@ -1058,7 +1058,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
                 rna.animation_data.drivers.remove(fcu)
                 if prop in rna.keys():
                     del rna[prop]
-        rna["DazOptimizedDrivers"] = True
+        setDaz(rna, "DazOptimizedDrivers", True)
         self.ndeleted += len(self.deldrivers)
         print("Deleted %d drivers from %s" % (len(self.deldrivers), rna.name))
 
@@ -1211,7 +1211,7 @@ class DAZ_OT_DisableDrivers(DazOperator):
     @classmethod
     def poll(self, context):
         rig = getRigFromContext(context)
-        return (rig and not rig.DazDriversDisabled)
+        return (rig and not dazRna(rig).DazDriversDisabled)
 
     def run(self, context):
         setMode('OBJECT')
@@ -1220,7 +1220,7 @@ class DAZ_OT_DisableDrivers(DazOperator):
         rigs.append(rig)
         for rig in set(rigs):
             muteDazFcurves(rig, True)
-            rig.DazDriversDisabled = True
+            dazRna(rig).DazDriversDisabled = True
 
 
 class DAZ_OT_EnableDrivers(DazOperator):
@@ -1232,7 +1232,7 @@ class DAZ_OT_EnableDrivers(DazOperator):
     @classmethod
     def poll(self, context):
         rig = getRigFromContext(context)
-        return (rig and rig.DazDriversDisabled)
+        return (rig and dazRna(rig).DazDriversDisabled)
 
     def run(self, context):
         setMode('OBJECT')
@@ -1241,7 +1241,7 @@ class DAZ_OT_EnableDrivers(DazOperator):
         rigs.append(rig)
         for rig in set(rigs):
             muteDazFcurves(rig, False)
-            rig.DazDriversDisabled = False
+            dazRna(rig).DazDriversDisabled = False
 
 #----------------------------------------------------------
 #   Clean drivers

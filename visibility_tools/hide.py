@@ -92,8 +92,8 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
                 obnames.append(ob.name)
         for ob in getMeshChildren(rig):
             self.createMaskVisibility(rig, ob, obnames)
-            ob["DazVisibilityDrivers"] = True
-        rig["DazVisibilityDrivers"] = True
+            setDaz(ob, "DazVisibilityDrivers", True)
+        setDaz(rig, "DazVisibilityDrivers", True)
         updateDrivers(rig)
 
         if self.useCollections:
@@ -148,7 +148,7 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
             for ob in selected:
                 coll = createSubCollection(rigcoll, ob.name)
                 moveToCollection(ob, coll)
-        rig["DazVisibilityCollections"] = True
+        setDaz(rig, "DazVisibilityCollections", True)
         print("Visibility collections created")
 
 #------------------------------------------------------------------------
@@ -196,7 +196,7 @@ class DAZ_OT_RemoveVisibility(DazPropsOperator):
             if isHideProp(prop):
                 del rig[prop]
         updateDrivers(rig)
-        rig["DazVisibilityDrivers"] = False
+        setDaz(rig, "DazVisibilityDrivers", False)
         print("Visibility drivers removed")
 
 #------------------------------------------------------------------------

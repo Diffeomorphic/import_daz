@@ -283,7 +283,7 @@ class TileFixer:
 
     def getKnownTiles(self, ob):
         from .fileutils import DF
-        char = ob.DazMesh.split("-",1)[0].lower()
+        char = dazRna(ob).DazMesh.split("-",1)[0].lower()
         if char == "genesis8":
             for mat in ob.data.materials:
                 if mat.name.startswith("Body"):

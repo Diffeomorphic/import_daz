@@ -89,8 +89,8 @@ class DAZ_OT_ClearCenter(DazOperator, IsObject):
     def run(self, context):
         for ob in getSelectedObjects(context):
             if ob.parent is None:
-                ob.location = d2b(ob.DazCenter)
-            ob.DazCenter = Zero
+                ob.location = d2b(dazRna(ob).DazCenter)
+            dazRna(ob).DazCenter = Zero
         bpy.ops.object.transform_apply(location=True, rotation=False, scale=False)
 
 #-------------------------------------------------------------
@@ -396,7 +396,7 @@ class DAZ_OT_AddWinders(Pinner, DazPropsOperator, GizmoUser, IsArmature):
     def invoke(self, context, event):
         if BLENDER3:
             rig = context.object
-            if rig and rig.DazRig == "mhx":
+            if rig and dazRna(rig).DazRig == "mhx":
                 self.winderLayer = 17
                 self.windedLayer = 18
         return DazPropsOperator.invoke(self, context, event)

@@ -63,8 +63,8 @@ def postloadMorphs(context, filepath):
             if isinstance(value, (float, int)):
                 ob[prop] = value*factor
                 setActivated(ob, prop, False)
-                if prop not in ob.DazBaked.keys():
-                    item = ob.DazBaked.add()
+                if prop not in dazRna(ob).DazBaked.keys():
+                    item = dazRna(ob).DazBaked.add()
                     item.name = prop
                     item.text = label
 

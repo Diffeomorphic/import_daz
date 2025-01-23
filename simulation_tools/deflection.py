@@ -56,7 +56,7 @@ class DAZ_OT_MakeDeflection(DazPropsOperator, Collision, IsMesh):
     def run(self, context):
         ob = context.object
         fac = self.offset*0.1*GS.scale
-        char = ob.DazMesh.lower()
+        char = dazRna(ob).DazMesh.lower()
         struct = DF.loadEntry(char, "lowpoly")
         vnums = struct["vertices"]
         verts = ob.data.vertices

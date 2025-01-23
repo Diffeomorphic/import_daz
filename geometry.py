@@ -171,9 +171,9 @@ class GeoNode(Node, SimNode):
             hdob = ob
         else:
             hdob = bpy.data.objects.new(HDName(ob.name), me)
-            hdob["DazVisibilityDrivers"] = ob.get("DazVisibilityDrivers", False)
+            setDaz(hdob, "DazVisibilityDrivers", getDaz(ob, "DazVisibilityDrivers", False))
             self.arrangeObject(hdob, inst, context, Zero)
-        hdob["DazHDMesh"] = True
+        setDaz(hdob, "DazHDMesh", True)
         self.hdobject = inst.hdobject = hdob
         LS.hdmeshes[LS.rigname].append(hdob)
         return hdob
@@ -211,7 +211,7 @@ class GeoNode(Node, SimNode):
                 hdob = self.buildHDObject(context, ob, inst, ob.data)
         if ob and self.data:
             if not self.conform_target:
-                ob["DazConforms"] = False
+                setDaz(ob, "DazConforms", False)
             self.data.buildRigidity(ob)
             if self.hdType == 'MULTIRES':
                 self.data.buildRigidity(self.hdobject)
@@ -285,7 +285,7 @@ class GeoNode(Node, SimNode):
             f.use_smooth = True
         self.data.setHairType(me)
         self.data.validateMesh(me, HDName(ob.name))
-        me["DazHDMesh"] = True
+        setDaz(me, "DazHDMesh", True)
         return me
 
 
@@ -408,7 +408,7 @@ class GeoNode(Node, SimNode):
                     ob.data.auto_smooth_angle = angle
 
 
-            self.scaleEyeMoisture(context, ob, ob.DazMesh)
+            self.scaleEyeMoisture(context, ob, dazRna(ob).DazMesh)
             if GS.useMaterialsByName:
                 sortMaterialsByName(ob)
             if hdob and hdob.data != ob.data:
@@ -419,7 +419,7 @@ class GeoNode(Node, SimNode):
                         hduvlayer.active = hduvlayer.active_render = True
                 #if GS.usePruneNodes:
                 #    pruneUvMaps(hdob)
-                self.scaleEyeMoisture(context, hdob, ob.DazMesh)
+                self.scaleEyeMoisture(context, hdob, dazRna(ob).DazMesh)
                 if GS.useMaterialsByName:
                     sortMaterialsByName(hdob)
                 if GS.useShellDrivers:
@@ -504,9 +504,9 @@ class GeoNode(Node, SimNode):
         hdob.parent_type = ob.parent_type
         hdob.parent_bone = ob.parent_bone
         setWorldMatrix(hdob, ob.matrix_world)
-        hdob.data.DazFingerPrint = getFingerPrint(hdob)
-        if hdob.data.DazFingerPrint == ob.data.DazFingerPrint:
-            hdob.DazMesh = ob.DazMesh
+        hddazRna(ob.data).DazFingerPrint = getFingerPrint(hdob)
+        if hddazRna(ob.data).DazFingerPrint == dazRna(ob.data).DazFingerPrint:
+            hddazRna(ob).DazMesh = dazRna(ob).DazMesh
         setWorldMatrix(hdob, ob.matrix_world)
         if hdob.name in LS.collection.objects:
             LS.collection.objects.unlink(hdob)
@@ -522,7 +522,7 @@ class GeoNode(Node, SimNode):
             self.addLSMesh(ob, inst, LS.rigname)
             for extra in self.extra:
                 for favo in extra.get("favorites", []):
-                    item = ob.data.DazFavorites.add()
+                    item = dazRna(ob.data).DazFavorites.add()
                     item.name = favo
 
 
@@ -537,7 +537,7 @@ class GeoNode(Node, SimNode):
                     return None
                 mname = words[1]
 
-        matnames = dict([(pg.name,pg.text) for pg in hdob.data.DazHDMaterials])
+        matnames = dict([(pg.name,pg.text) for pg in hddazRna(ob.data).DazHDMaterials])
         for mn,mname in enumerate(self.highdef.matgroups):
             mat = None
             if mname in matnames.keys():
@@ -553,14 +553,14 @@ class GeoNode(Node, SimNode):
         geo = self.data
         if ob.data is None:
             return
-        ob.data.DazVertexCount = geo.vertex_count
+        dazRna(ob.data).DazVertexCount = geo.vertex_count
         if geo.hidden_polys:
-            hgroup = ob.data.DazMaskGroup
+            hgroup = dazRna(ob.data).DazMaskGroup
             for fn in geo.hidden_polys:
                 elt = hgroup.add()
                 elt.a = fn
         if geo.vertex_pairs:
-            ggroup = ob.data.DazGraftGroup
+            ggroup = dazRna(ob.data).DazGraftGroup
             for vn,pvn in geo.vertex_pairs:
                 pair = ggroup.add()
                 pair.a = vn
@@ -1262,7 +1262,7 @@ class Geometry(Asset, Channels):
         from .finger import getFingerPrint
         me.DazFingerPrint = getFingerPrint(ob)
         if hasShells:
-            ob["DazVisibilityDrivers"] = True
+            setDaz(ob, "DazVisibilityDrivers", True)
 
         if USE_ATTRIBUTES:
             def addFaceMap(ob, aname, groups, indices):
@@ -1454,7 +1454,7 @@ class Geometry(Asset, Channels):
 
             strange = False
             for group in self.rigidity.get("groups", []):
-                rgroup = ob.data.DazRigidityGroups.add()
+                rgroup = dazRna(ob.data).DazRigidityGroups.add()
                 rgroup.id = group["id"]
                 rgroup.rotation_mode = group["rotation_mode"]
                 rgroup.scale_modes = " ".join(group["scale_modes"])
@@ -1474,7 +1474,7 @@ class Geometry(Asset, Channels):
                     return
                 wvalues = [w for vn,w in rweights]
                 if len(rweights) == nverts and min(wvalues) > 0.9999:
-                    ob.data["DazFullyRigid"] = True
+                    setDaz(ob.data, "DazFullyRigid", True)
 
 
     def makeShell(self, shname, shmat, uv):
@@ -1506,7 +1506,7 @@ def d2bList(verts):
 
 
 def isGeograft(ob):
-    return (ob.data.DazVertexCount > 0)
+    return (dazRna(ob.data).DazVertexCount > 0)
 
 #-------------------------------------------------------------
 #   Shell
@@ -1777,7 +1777,7 @@ def clearMeshProps(ob, keepVertex=False):
     me.DazPolylineMaterials.clear()
     me.DazMaterialSets.clear()
     me.DazHDMaterials.clear()
-    ob.DazMorphUrls.clear()
+    dazRna(ob).DazMorphUrls.clear()
     me.DazMaterialGroup.clear()
     me.DazPolygonGroup.clear()
     if USE_ATTRIBUTES:

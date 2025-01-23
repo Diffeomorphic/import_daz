@@ -292,11 +292,11 @@ def buildBakedMorph(inst, ref, value):
         if GS.verbosity > 2 and not ES.easy:
             print("Baked morph (%s): %s = %f" % (rig.name, unquote(raw), value))
         setActivated(rig, raw, False)
-        item = rig.DazBaked.add()
+        item = dazRna(rig).DazBaked.add()
         item.name = raw
         item.text = raw
-        if file not in rig.DazBakedFiles.keys():
-            item = rig.DazBakedFiles.add()
+        if file not in dazRna(rig).DazBakedFiles.keys():
+            item = dazRna(rig).DazBakedFiles.add()
             item.name = file
             item.f = value
             if GS.verbosity > 2 and not ES.easy:

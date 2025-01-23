@@ -177,7 +177,7 @@ class Selector():
 
 def getActiveCategories(scn, context):
     ob = context.object
-    cats = [(cat.name,cat.name,cat.name) for cat in ob.DazMorphCats]
+    cats = [(cat.name,cat.name,cat.name) for cat in dazRna(ob).DazMorphCats]
     cats.sort()
     return cats
 
@@ -209,7 +209,7 @@ class CustomSelector(Selector, CustomAllEnums):
 
     def getKeys(self, rig, ob):
         keys = []
-        for cat in rig.DazMorphCats:
+        for cat in dazRna(rig).DazMorphCats:
             for item in cat.morphs:
                 keys.append((item.name,item.text,cat.name))
         return keys
@@ -260,7 +260,7 @@ class JCMSelector(Selector):
 def classifyShapekeys(ob, skeys):
     morphs = {}
     bodyparts = {}
-    pgs = ob.data.DazBodyPart
+    pgs = dazRna(ob.data).DazBodyPart
     for skey in skeys.key_blocks[1:]:
         if skey.name in pgs.keys():
             item = pgs[skey.name]
@@ -316,7 +316,7 @@ class MorphGroup:
             for mset in MS.Standards:
                 pgs = getattr(rig, "Daz%s" % mset)
                 morphs += [key for key in pgs.keys()]
-            for cat in rig.DazMorphCats:
+            for cat in dazRna(rig).DazMorphCats:
                 morphs += [morph.name for morph in cat.morphs]
         else:
             if adjusters:
@@ -332,12 +332,12 @@ class MorphGroup:
         filtered = self.getFiltered()
         morphs = []
         if self.category:
-            for cat in ob.DazMorphCats:
+            for cat in dazRna(ob).DazMorphCats:
                 if cat.name == self.category:
                     morphs = [morph.name for morph,on in zip(cat.morphs, filtered) if on]
                     return morphs
         else:
-            for cat in ob.DazMorphCats:
+            for cat in dazRna(ob).DazMorphCats:
                 morphs += [morph.name for morph,on in zip(cat.morphs, filtered) if on]
         return morphs
 
@@ -352,11 +352,11 @@ class MorphGroup:
         filtered = self.getFiltered()
         cats = []
         if self.category:
-            cat = ob.DazMorphCats.get(self.category)
+            cat = dazRna(ob).DazMorphCats.get(self.category)
             if cat:
                 cats = [cat]
         else:
-            cats = ob.DazMorphCats
+            cats = dazRna(ob).DazMorphCats
         morphs = []
         for cat in cats:
             morphs += [morph for morph,on in zip(cat.morphs, filtered) if on]
@@ -401,18 +401,18 @@ def getActivated(ob, rna, key, force=False):
 
 
 def getExistingActivateGroup(rig, key):
-    if key in rig.DazActivated.keys():
-        return rig.DazActivated[key]
+    if key in dazRna(rig).DazActivated.keys():
+        return dazRna(rig).DazActivated[key]
     else:
         return None
 
 
 def getActivateGroup(rig, key):
-    if key in rig.DazActivated.keys():
-        return rig.DazActivated[key]
+    if key in dazRna(rig).DazActivated.keys():
+        return dazRna(rig).DazActivated[key]
     else:
         try:
-            pg = rig.DazActivated.add()
+            pg = dazRna(rig).DazActivated.add()
             pg.name = key
             return pg
         except TypeError as err:
@@ -657,7 +657,7 @@ class DAZ_OT_ToggleAllCats(DazOperator, IsMeshArmature):
     def run(self, context):
         rig = getRigFromContext(context, self.useMesh)
         if rig:
-            for cat in rig.DazMorphCats:
+            for cat in dazRna(rig).DazMorphCats:
                 cat["active"] = self.useOpen
 
 #-------------------------------------------------------------

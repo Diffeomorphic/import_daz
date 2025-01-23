@@ -275,10 +275,10 @@ class Instance(Accessor, Channels, SimNode):
 
 
     def setCollision(self, value, ob):
-        ob["DazCollision"] = value
+        setDaz(ob, "DazCollision", value)
         for geonode in self.geometries:
             if geonode.rna:
-                geonode.rna["DazCollision"] = value
+                setDaz(geonode.rna, "DazCollision", value)
 
 
     def hideViewport(self, value, ob):
@@ -692,7 +692,8 @@ class Instance(Accessor, Channels, SimNode):
             parrig = inst.rna
             if rig and parrig:
                 for key in rig.keys():
-                    if key in parrig.DazBaked.keys() and key in parrig.keys():
+                    if (key in dazRna(parrig).DazBaked.keys() and
+                        key in parrig.keys()):
                         rig[key] = rig.data[finalProp(key)] = parrig[key]
             for geonode,pargeonode in zip(self.geometries, inst.geometries):
                 ob = geonode.rna
@@ -994,18 +995,18 @@ class Node(Asset, Formula, Channels):
             'ZYX' : 'YZX',
         }
         ob.rotation_mode = blenderRotMode[self.rotation_order]
-        ob.DazRotMode = self.rotation_order
+        dazRna(ob).DazRotMode = self.rotation_order
         LS.collection.objects.link(ob)
         if LS.hdcollection and ob.type != 'MESH':
             LS.hdcollection.link(ob)
-        ob.DazId = self.id
-        ob.DazUrl = unquote(self.url)
+        dazRna(ob).DazId = self.id
+        dazRna(ob).DazUrl = unquote(self.url)
         if self.figure:
-            ob.DazFigure = unquote(self.figure.url)
-        ob.DazScene = LS.scene
-        ob.DazScale = GS.scale
-        ob.DazOrient = inst.attributes["orientation"]
-        ob.DazCenter = inst.attributes["center_point"]
+            dazRna(ob).DazFigure = unquote(self.figure.url)
+        dazRna(ob).DazScene = LS.scene
+        dazRna(ob).DazScale = GS.scale
+        dazRna(ob).DazOrient = inst.attributes["orientation"]
+        dazRna(ob).DazCenter = inst.attributes["center_point"]
         self.subtractCenter(ob, inst, center)
 
 
@@ -1058,8 +1059,8 @@ def clearParent(ob):
 
 
 def getDazMatrix(bone):
-    dmat = Euler(Vector(bone.DazOrient)*D, 'XYZ').to_matrix().to_4x4()
-    dmat.col[3][0:3] = d2b00(bone.DazHead)
+    dmat = Euler(Vector(dazRna(bone).DazOrient)*D, 'XYZ').to_matrix().to_4x4()
+    dmat.col[3][0:3] = d2b00(dazRna(bone).DazHead)
     return dmat
 
 
@@ -1093,7 +1094,7 @@ def getTransformMatrices(pb, rig, bonemap):
     else:
         parent = pb.parent
     if parent:
-        rmat = Matrix.Rotation(parent.bone.DazAngle, 4, parent.bone.DazNormal)
+        rmat = Matrix.Rotation(dazRna(parent.bone).DazAngle, 4, dazRna(parent.bone).DazNormal)
     else:
         rmat = Matrix()
     return dmat,bmat,rmat,parent
@@ -1132,7 +1133,7 @@ def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
         mat.col[3] = trans
     if pb.name in TestBones:
         print("SBT", pb.name, tfm.rot)
-        print("ROT", getAngle(tfm.getRotMat(pb), pb.DazRotMode))
+        print("ROT", getAngle(tfm.getRotMat(pb), dazRna(pb).DazRotMode))
         print("BBB", getAngle(mat, pb.rotation_mode))
         print(mat)
     pb.matrix_basis = mat
@@ -1141,8 +1142,8 @@ def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
 def flipAxes(vec, pb):
     fvec = Vector((0,0,0))
     for idx in range(3):
-        idx2 = pb.DazAxes[idx]
-        fvec[idx2] = pb.DazFlips[idx] * vec[idx]
+        idx2 = dazRna(pb).DazAxes[idx]
+        fvec[idx2] = dazRna(pb).DazFlips[idx] * vec[idx]
     return fvec
 
 

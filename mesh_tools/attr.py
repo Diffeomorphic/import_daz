@@ -48,7 +48,7 @@ class DAZ_OT_CopyAttributes(DazPropsOperator, IsMesh):
             fing = getFingerPrint(ob)
             if ob != src and fing == srcFing:
                 print("Copy attributes %s => %s" % (src.name, ob.name))
-                ob.data.DazFingerPrint = src.data.DazFingerPrint
+                dazRna(ob.data).DazFingerPrint = src.data.DazFingerPrint
                 for aname, atype, domain in attrs:
                     self.copyAttributes(src, ob, aname, atype, domain)
 
@@ -107,7 +107,7 @@ class DisplayFaceGroup(DazPropsOperator):
 
 def getMaterialGroups(scn, context):
     ob = context.object
-    return [(str(gn), gname, gname) for gn,gname in enumerate(ob.data.DazMaterialGroup.keys())]
+    return [(str(gn), gname, gname) for gn,gname in enumerate(dazRna(ob.data).DazMaterialGroup.keys())]
 
 
 class DAZ_OT_DisplayMaterialGroup(DisplayFaceGroup, IsMesh):
@@ -123,7 +123,7 @@ class DAZ_OT_DisplayMaterialGroup(DisplayFaceGroup, IsMesh):
 
 def getPolygonGroups(scn, context):
     ob = context.object
-    return [(str(gn), gname, gname) for gn,gname in enumerate(ob.data.DazPolygonGroup.keys())]
+    return [(str(gn), gname, gname) for gn,gname in enumerate(dazRna(ob.data).DazPolygonGroup.keys())]
 
 class DAZ_OT_DisplayPolygonGroup(DisplayFaceGroup, IsMesh):
     bl_idname = "daz.display_polygon_group"

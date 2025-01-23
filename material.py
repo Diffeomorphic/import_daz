@@ -1010,7 +1010,7 @@ class LocalTextureSaver(HiddenTextureUser):
                         self.saveNodesInTree(mat.node_tree)
             for psys in ob.particle_systems:
                 self.saveTextureSlots(psys.settings)
-            ob.DazLocalTextures = True
+            dazRna(ob).DazLocalTextures = True
 
         for src,img in self.images:
             if src.startswith(self.basepath):

@@ -140,7 +140,7 @@ def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
     def getSingleChar(rig, char):
         if isinstance(char, tuple):
             if rig:
-                url = rig.DazUrl.rsplit("#",1)[-1]
+                url = dazRna(rig).DazUrl.rsplit("#",1)[-1]
                 if url.startswith("Genesis"):
                     if "Female" in url:
                         return char[0]
@@ -159,8 +159,8 @@ def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
         finger = getFingerPrint(ob)
         if finger in FingerPrints.keys():
             char = FingerPrints[finger]
-        elif useOrig and ob.data.DazFingerPrint in FingerPrints.keys():
-            char = FingerPrints[ob.data.DazFingerPrint]
+        elif useOrig and dazRna(ob.data).DazFingerPrint in FingerPrints.keys():
+            char = FingerPrints[dazRna(ob.data).DazFingerPrint]
             modded = True
         else:
             if verbose:

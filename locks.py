@@ -58,32 +58,32 @@ class LockEnabler:
 
     def enableLocksLimits(self, rig, lock, limit, mute):
         from .driver import getDrivenBoneFcurves
-        exclude = ["Hint"] if rig.DazRig == "mhx" else []
+        exclude = ["Hint"] if dazRna(rig).DazRig == "mhx" else []
         driven = getDrivenBoneFcurves(rig, useRigifySafe=True)
         if self.useLocks:
             if self.useLocation:
-                rig.DazLocLocks = lock
+                dazRna(rig).DazLocLocks = lock
                 if self.useKeying:
                     rig.keyframe_insert("DazLocLocks")
             if self.useRotation:
-                rig.DazRotLocks = lock
+                dazRna(rig).DazRotLocks = lock
                 if self.useKeying:
                     rig.keyframe_insert("DazRotLocks")
             if self.useScale:
-                rig.DazScaleLocks = lock
+                dazRna(rig).DazScaleLocks = lock
                 if self.useKeying:
                     rig.keyframe_insert("DazScaleLocks")
         if self.useLimits:
             if self.useLocation:
-                rig.DazLocLimits = limit
+                dazRna(rig).DazLocLimits = limit
                 if self.useKeying:
                     rig.keyframe_insert("DazLocLimits")
             if self.useRotation:
-                rig.DazRotLimits = limit
+                dazRna(rig).DazRotLimits = limit
                 if self.useKeying:
                     rig.keyframe_insert("DazRotLimits")
             if self.useScale:
-                rig.DazScaleLimits = limit
+                dazRna(rig).DazScaleLimits = limit
                 if self.useKeying:
                     rig.keyframe_insert("DazScaleLimits")
         for pb in rig.pose.bones:
@@ -120,11 +120,11 @@ class DAZ_OT_EnableLocksLimits(DazPropsOperator, LockEnabler, IsMeshArmature):
 
     def setLocks(self, pb):
         if self.useLocation:
-            pb.lock_location = pb.DazLocLocks
+            pb.lock_location = dazRna(pb).DazLocLocks
         if self.useRotation:
-            pb.lock_rotation = pb.DazRotLocks
+            pb.lock_rotation = dazRna(pb).DazRotLocks
         if self.useScale:
-            pb.lock_scale = pb.DazScaleLocks
+            pb.lock_scale = dazRna(pb).DazScaleLocks
 
 
 class DAZ_OT_DisableLocksLimits(DazPropsOperator, LockEnabler, IsMeshArmature):

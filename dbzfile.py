@@ -492,11 +492,11 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
                     self.buildRigMorph(context, rig, meshes, dbz)
         if self.useRigDrivers():
             addToCategories(rig, props, None, self.category)
-            rig.DazCustomMorphs = True
+            dazRna(rig).DazCustomMorphs = True
         elif self.useShapeCats():
             for ob in meshes:
                 addToCategories(ob, props, None, self.category)
-                ob.DazMeshMorphs = True
+                dazRna(ob).DazMeshMorphs = True
         self.makePosable(context, rig)
         updateScrollbars(context)
 

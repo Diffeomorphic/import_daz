@@ -20,7 +20,7 @@ from .mhx_data import MHX
 
 def getBoneCopy(bname, model, rpbs, lock):
     pb = rpbs[bname]
-    pb.DazRotMode = model.DazRotMode
+    dazRna(pb).DazRotMode = model.DazRotMode
     pb.rotation_mode = model.rotation_mode
     if lock:
         pb.lock_location = TTrue
@@ -147,7 +147,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and ob.DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
+        return (ob and ob.type == 'ARMATURE' and dazRna(ob).DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
 
     def draw(self, context):
         self.layout.prop(self, "usePoleTargets")
@@ -183,7 +183,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     def restoreState(self, context):
         from ..driver import muteDazFcurves
         rig = self.activeObject
-        muteDazFcurves(rig, rig.DazDriversDisabled)
+        muteDazFcurves(rig, dazRna(rig).DazDriversDisabled)
         DazPropsOperator.restoreState(self, context)
 
 
@@ -255,7 +255,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         for pb in rig.pose.bones:
             pb.driver_remove("HdOffset")
             pb.driver_remove("TlOffset")
-        if rig.DazRig in ["genesis3", "genesis8"]:
+        if dazRna(rig).DazRig in ["genesis3", "genesis8"]:
             self.bendTwistGenesis = MHX.BendTwistGenesis38
             for pb in rig.pose.bones:
                 if pb.name.endswith(("Bend", "Twist")):
@@ -270,7 +270,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             bendTwistChildren = self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
             showProgress(6, 25, "  Fix knees")
             self.fixKnees(rig)
-        elif rig.DazRig == "genesis9":
+        elif dazRna(rig).DazRig == "genesis9":
             if self.keepG9Twist:
                 showProgress(4, 25, "  Rename bones")
                 self.rename2Mhx(rig)
@@ -287,13 +287,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 bendTwistChildren = self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
                 for ob in getMeshChildren(rig):
                     self.joinVertexGroups(ob, MHX.BendTwistGenesis9)
-        elif rig.DazRig in ["genesis", "genesis2"]:
+        elif dazRna(rig).DazRig in ["genesis", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
             connectToParent(rig, connectAll=False)
             self.rename2Mhx(rig)
             self.fixGenesis2Problems(rig)
-        elif rig.DazRig.endswith(".suffix"):
+        elif dazRna(rig).DazRig.endswith(".suffix"):
             raise DazError("%s has suffix bones.\nConvert to prefix before converting to MHX" % rig.name)
         else:
             raise DazError("Cannot convert %s to MHX" % rig.name)
@@ -351,7 +351,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         if self.driverRotationMode:
             from ..fix import setDriverModes
             setDriverModes(rig, self.driverRotationMode, False)
-        if rig.DazRig in ["genesis3", "genesis8"]:
+        if dazRna(rig).DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, "head", 4)
         showProgress(22, 25, "  Collect deform bones")
         self.collectDeformBones(rig)
@@ -363,7 +363,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         rig["MhxRig"] = True
         rig.data.MhaFeatures |= F_IDPROPS
         enableRigNumLayers(rig, [L_MAIN, L_SPINE, L_LARMIK, L_LLEGIK, L_RARMIK, L_RLEGIK])
-        rig.DazRig = "mhx"
+        dazRna(rig).DazRig = "mhx"
 
         for pb in rig.pose.bones:
             pb.bone.select = False
@@ -524,7 +524,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                     twistname in rig.pose.bones.keys()):
                 continue
             pb = rig.pose.bones[bendname]
-            rotmodes[bname] = pb.DazRotMode
+            rotmodes[bname] = dazRna(pb).DazRotMode
             self.store.storeConstraints(bname, pb)
             self.store.removeConstraints(pb)
             self.deleteBoneDrivers(rig, bendname)
@@ -567,7 +567,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         for bname,rotmode in rotmodes.items():
             if bname in rig.pose.bones.keys():
                 pb = rig.pose.bones[bname]
-                pb.DazRotMode = rotmode
+                dazRna(pb).DazRotMode = rotmode
 
         from ..figure import copyBoneInfo
         for bname,tname,stretch in bendTwistBones:
@@ -576,7 +576,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             trgbone = rig.pose.bones.get(bname)
             if srcbone and trgbone:
                 copyBoneInfo(srcbone, trgbone)
-                trgbone.DazRotLocks = FFalse
+                trgdazRna(bone).DazRotLocks = FFalse
 
         setMode('EDIT')
         for bname,tname,stretch in bendTwistBones:
@@ -1427,7 +1427,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         if self.useShaftWinder:
             ignore += self.getShaftBones(rig)
         self.store.restoreAllConstraints(context, rig, ignore)
-        if rig.DazRig not in ["genesis3", "genesis8"]:
+        if dazRna(rig).DazRig not in ["genesis3", "genesis8"]:
             return
         for bname, bendname, twistnames in self.bendTwistGenesis:
             clist = self.store.constraints.get(bendname, [])
@@ -1529,12 +1529,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         if flip:
             self.flips[bname.replace(".fk", "")] = flip
             pb = rig.pose.bones[bname]
-            flips = list(pb.DazFlips)
+            flips = list(dazRna(pb).DazFlips)
             axes = [2,1,0]
-            for n,i in enumerate(list(pb.DazAxes)):
+            for n,i in enumerate(list(dazRna(pb).DazAxes)):
                 j = axes[i]
-                pb.DazAxes[n] = j
-                pb.DazFlips[n] = flips[j]
+                dazRna(pb).DazAxes[n] = j
+                dazRna(pb).DazFlips[n] = flips[j]
             cns = getConstraint(pb, 'LIMIT_ROTATION')
             if cns:
                 usex, minx, maxx = cns.use_limit_x, cns.min_x, cns.max_x

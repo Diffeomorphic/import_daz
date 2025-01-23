@@ -111,7 +111,7 @@ class DAZ_UL_CustomMorphs(DAZ_UL_MorphList):
 class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
     def draw_item(self, context, layout, cat, morph, icon, active, indexProp):
         ob = context.object
-        if ob.DazMeshDrivers:
+        if dazRna(ob).DazMeshDrivers:
             DAZ_UL_MorphList.draw_item(self, context, layout, cat, morph, icon, active, indexProp)
             return
         skeys = ob.data.shape_keys
@@ -156,7 +156,7 @@ class DAZ_OT_UpdateScrollbars(bpy.types.Operator):
 def updateScrollbars(context):
     def updateRigScrollbars(scn, rig):
         global theMorphScrollbars
-        for cat in rig.DazMorphCats:
+        for cat in dazRna(rig).DazMorphCats:
             catname = canonizeCat(cat.name)
             if catname not in theMorphScrollbars.keys():
                 classname = "DAZ_UL_Custom_%s" % catname
@@ -166,7 +166,7 @@ def updateScrollbars(context):
 
     def updateMeshScrollbars(scn, ob):
         global theShapeScrollbars
-        for cat in ob.DazMorphCats:
+        for cat in dazRna(ob).DazMorphCats:
             catname = canonizeCat(cat.name)
             if catname not in theShapeScrollbars.keys():
                 classname = "DAZ_UL_Shape_%s" % catname

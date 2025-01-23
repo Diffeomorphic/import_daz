@@ -529,7 +529,7 @@ class SkinBinding(Modifier):
                     for comp in ["x", "y", "z"]:
                         bweights = joint["bulge_weights"].get(comp, {})
                         if bweights:
-                            pg = ob.data.DazBulges.add()
+                            pg = dazRna(ob.data).DazBulges.add()
                             pg.name = "%s_%s" % (vgname, comp)
                             bvalues = {}
                             for bulge in bweights.get("bulges", []):
@@ -543,7 +543,7 @@ class SkinBinding(Modifier):
                             if right and (bvalues.get("positive_right") or bvalues.get("negative_right")):
                                 buildVertexGroup(ob, "%s:right_%s" % (vgname,comp), right["values"])
 
-            if rig.DazRig == "genesis9" and vgname in ["l_upperarm", "r_upperarm"]:
+            if dazRna(rig).DazRig == "genesis9" and vgname in ["l_upperarm", "r_upperarm"]:
                 continue
             elif GS.ignoreG9TwistBones and vgname.endswith(("twist1", "twist2")):
                 bname = vgname[:-6]
@@ -690,7 +690,7 @@ class SkinBinding(Modifier):
         twists = {}
         for pb in rig.pose.bones:
             vgrp1 = vgrp2 = vgrp3 = None
-            for m,n in enumerate(pb.DazAxes):
+            for m,n in enumerate(dazRna(pb).DazAxes):
                 if n == 0:
                     vgrp1 = getTriaxGroup(pb, m)
                 elif n == 1:

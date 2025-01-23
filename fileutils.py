@@ -207,7 +207,7 @@ def getFoldersFromObject(ob, subdirs, match81=True, usePeople=False):
 def getReldirFromObject(ob, usePeople):
     if ob is None:
         return None
-    fileref = ob.DazUrl.split("#")[0]
+    fileref = dazRna(ob).DazUrl.split("#")[0]
     if len(fileref) < 2:
         return None
     reldir = os.path.dirname(unquote(fileref))

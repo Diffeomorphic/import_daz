@@ -58,7 +58,7 @@ class MatchOperator(DazPropsOperator):
         for ob in getSelectedMeshes(context):
             if (ob != src and
                 len(ob.data.polygons) > 0 and
-                (ob.get("DazConforms", True) or self.useNonConforming)):
+                (getDaz(ob, "DazConforms", True) or self.useNonConforming)):
                 objects.append(ob)
                 checkObjectTransforms(ob)
                 if (ob.parent and
@@ -515,10 +515,10 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                         if (vertex_group_weight > 0):
                             newbonename.weight = rigidity_map_weight_sum/vertex_group_weight
 
-                    if ob.name in rig.data.DazRigidityScaleFactors:
-                        rigidity_group = rig.data.DazRigidityScaleFactors[ob.name]
+                    if ob.name in dazRna(rig.data).DazRigidityScaleFactors:
+                        rigidity_group = dazRna(rig.data).DazRigidityScaleFactors[ob.name]
                     else:
-                        rigidity_group = rig.data.DazRigidityScaleFactors.add()
+                        rigidity_group = dazRna(rig.data).DazRigidityScaleFactors.add()
                         rigidity_group.name = ob.name
                         rigidity_group.base_center_coord = base_center_vector
 
@@ -854,7 +854,7 @@ def removeFromAllMorphsets(rig, prop):
     for morphset in MS.Standards:
         pgs = getattr(rig, "Daz" + morphset)
         removeFromPropGroup(pgs, prop)
-    for cat in rig.DazMorphCats.values():
+    for cat in dazRna(rig).DazMorphCats.values():
         removeFromPropGroup(cat.morphs, prop)
 
 #----------------------------------------------------------

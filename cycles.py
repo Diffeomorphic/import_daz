@@ -50,7 +50,7 @@ class CyclesMaterial(Material):
             color = LS.skinColor
             mtype = 'SKIN'
         elif (ob.data and
-              (ob.data.DazGraftGroup or not ob.data.vertices)):
+              (dazRna(ob.data).DazGraftGroup or not ob.data.vertices)):
             color = LS.skinColor
             mtype = 'SKIN'
         guessMaterialColor(mat, GS.viewportColors, False, color, mtype)

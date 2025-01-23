@@ -94,7 +94,7 @@ class LoadMaps(MultiFile, ImageFile, Layouter, MaterialSelector):
             filepaths = [path for path in filepaths
                          if os.path.splitext(path)[0].endswith(str(self.tile))]
         self.props = {}
-        for item in ob.data.DazDhdmFiles:
+        for item in dazRna(ob.data).DazDhdmFiles:
             key = os.path.splitext(os.path.basename(item.s))[0].lower()
             self.props[key] = item.name
         args = []
