@@ -10,7 +10,6 @@ from ..bone_data import BD
 from ..animation import FrameRange
 from .layers import *
 
-
 S_ARMIK = (S_LARMIK, S_RARMIK)
 S_ARMFK = (S_LARMFK, S_RARMFK)
 S_LEGIK = (S_LLEGIK, S_RLEGIK)
@@ -92,10 +91,10 @@ class SimpleIK:
         self.frame = scn.frame_current
 
 
-    def setProp(self, rna, prop, value):
-        setattr(rna, prop, value)
+    def setProp(self, rig, prop, value):
+        setattr(dazRna(rig), prop, value)
         if self.auto:
-            rna.keyframe_insert(prop, frame=self.frame)
+            dazRna(rig).keyframe_insert(prop, frame=self.frame)
 
 
     def linearizeFcurve(self, rna, prop):
@@ -814,7 +813,7 @@ def copyOffsetDrivers(rig):
         missing = []
         for bname1,bname0 in bones.items():
             pb1 = rig.pose.bones[bname1]
-            setattr(pb1, attr, Zero)
+            setattr(dazRna(pb1), attr, Zero)
             if bname0 in fcus.keys():
                 for fcu0 in fcus[bname0]:
                     fcu1 = rig.animation_data.drivers.from_existing(src_driver=fcu0)
@@ -1222,6 +1221,7 @@ class DAZ_OT_ToggleFkIk(SimpleIKSnapper, DazOperator):
     def run(self, context):
         rig = context.object
         setattr(dazRna(rig), self.prop, self.value)
+        updateDrivers(rig)
 
 #----------------------------------------------------------
 #   Connect bone chains

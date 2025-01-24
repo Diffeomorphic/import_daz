@@ -750,6 +750,12 @@ if DAZ_PROPS:
     def hasDaz(rna, prop):
         True
 
+    def rnaRef(prop):
+        if prop.startswith("Daz"):
+            return "daz_importer.%s" % prop
+        else:
+            return propRef(prop)
+
 else:
     def dazRna(rna):
         return rna
@@ -762,6 +768,9 @@ else:
 
     def hasDaz(rna, prop):
         return (prop in rna.keys())
+
+    def rnaRef(prop):
+        return propRef(prop)
 
 #-------------------------------------------------------------
 #   Profiling
