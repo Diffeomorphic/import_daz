@@ -10,6 +10,7 @@ from ..bone_data import BD
 from ..animation import FrameRange
 from .layers import *
 
+
 S_ARMIK = (S_LARMIK, S_RARMIK)
 S_ARMFK = (S_LARMFK, S_RARMFK)
 S_LEGIK = (S_LLEGIK, S_RLEGIK)
@@ -91,10 +92,10 @@ class SimpleIK:
         self.frame = scn.frame_current
 
 
-    def setProp(self, rig, prop, value):
-        setattr(dazRna(rig), prop, value)
+    def setProp(self, rna, prop, value):
+        setattr(rna, prop, value)
         if self.auto:
-            dazRna(rig).keyframe_insert(prop, frame=self.frame)
+            rna.keyframe_insert(prop, frame=self.frame)
 
 
     def linearizeFcurve(self, rna, prop):
@@ -203,7 +204,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and dazRna(ob).DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
+        return (ob and ob.type == 'ARMATURE' and
+                dazRna(ob).DazRig.startswith("genesis") and not ob.get("DazSimpleIK"))
 
     useArms : BoolProperty(
         name = "Arm IK",
@@ -299,10 +301,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if self.useImproveIk:
             from ..rig_utils import improveIk
             improveIk(rig)
-        setDaz(rig, "DazSimpleIK", True)
-        dazRna(rig).DazArmIK_L = dazRna(rig).DazArmIK_R = 1.0
-        dazRna(rig).DazLegIK_L = dazRna(rig).DazLegIK_R = 1.0
-        dazRna(rig).DazStretchArms = dazRna(rig).DazStretchLegs = 1.0
+        rig["DazSimpleIK"] = True
+        rig.DazArmIK_L = rig.DazArmIK_R = 1.0
+        rig.DazLegIK_L = rig.DazLegIK_R = 1.0
+        rig.DazStretchArms = rig.DazStretchLegs = 1.0
         enableRigNumLayers(rig, [S_SPINE, S_FACE, S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK])
         assignOtherBones(rig, S_HIDDEN)
 
@@ -813,7 +815,7 @@ def copyOffsetDrivers(rig):
         missing = []
         for bname1,bname0 in bones.items():
             pb1 = rig.pose.bones[bname1]
-            setattr(dazRna(pb1), attr, Zero)
+            setattr(pb1, attr, Zero)
             if bname0 in fcus.keys():
                 for fcu0 in fcus[bname0]:
                     fcu1 = rig.animation_data.drivers.from_existing(src_driver=fcu0)
@@ -858,9 +860,9 @@ def setSimpleLayers(rig, layers, useIk):
 
 def setSimpleToFk(rig, layers, useInsertKeys, frame):
     for attr in ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R", "DazStretchArms", "DazStretchLegs"]:
-        setattr(dazRna(rig), attr, 0)
+        setattr(rig, attr, 0)
         if useInsertKeys:
-            dazRna(rig).keyframe_insert(attr, frame=frame)
+            rig.keyframe_insert(attr, frame=frame)
     return setSimpleLayers(rig, layers, False)
 
 #----------------------------------------------------------
@@ -1220,7 +1222,7 @@ class DAZ_OT_ToggleFkIk(SimpleIKSnapper, DazOperator):
 
     def run(self, context):
         rig = context.object
-        setattr(dazRna(rig), self.prop, self.value)
+        setattr(rig, self.prop, self.value)
         updateDrivers(rig)
 
 #----------------------------------------------------------
@@ -1462,8 +1464,16 @@ classes = [
 ]
 
 def register():
+    bpy.types.Object.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
+    bpy.types.Object.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
+    bpy.types.Object.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
+    bpy.types.Object.DazLegIK_R = FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
+    bpy.types.Object.DazStretchArms = FloatProperty(name="Stretchy Arms", default=0.0, precision=3, min=0.0, max=1.0)
+    bpy.types.Object.DazStretchLegs = FloatProperty(name="Stretchy Legs", default=0.0, precision=3, min=0.0, max=1.0)
+
     for cls in classes:
         bpy.utils.register_class(cls)
+
 
 def unregister():
     for cls in classes:

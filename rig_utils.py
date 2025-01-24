@@ -78,12 +78,13 @@ def setMhx(rna, prop, value):
 
 
 def mhxProp(prop):
-    print("MMM", prop, rnaRef(prop))
+    if prop.startswith("Daz"):
+        print("MMM", prop, propRef(prop))
     if isinstance(prop, str):
-        return rnaRef(prop)
+        return propRef(prop)
     else:
         prop1,prop2 = prop
-        return (rnaRef(prop1), rnaRef(prop2))
+        return (propRef(prop1), propRef(prop2))
 
 
 def addMuteDriver(cns, rig, prop):

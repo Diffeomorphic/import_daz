@@ -211,12 +211,6 @@ if DAZ_PROPS:
         DazAlias : CollectionProperty(type = DazStringGroup)
         DazActivated : CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
         DazMorphCats : CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
-        DazArmIK_L : FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-        DazArmIK_R : FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-        DazLegIK_L : FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-        DazLegIK_R : FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-        DazStretchArms : FloatProperty(name="Stretchy Arms", default=0.0, precision=3, min=0.0, max=1.0)
-        DazStretchLegs : FloatProperty(name="Stretchy Legs", default=0.0, precision=3, min=0.0, max=1.0)
         DazLocalTextures : BoolProperty(default = False)
         DazVisibilityDrivers : BoolProperty(default = False)
         DazVisibilityCollections : BoolProperty(default = False)
@@ -329,7 +323,7 @@ if DAZ_PROPS:
                         try:
                             setattr(rna.daz_importer, prop, rna[prop])
                         except AttributeError:
-                            for
+                            pass
                         del rna[prop]
 
             updateProps(context.scene)
@@ -460,12 +454,6 @@ def register():
         bpy.types.Object.DazAlias = CollectionProperty(type = DazStringGroup)
         bpy.types.Object.DazActivated = CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
         bpy.types.Object.DazMorphCats = CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
-        bpy.types.Object.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-        bpy.types.Object.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-        bpy.types.Object.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-        bpy.types.Object.DazLegIK_R = FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-        bpy.types.Object.DazStretchArms = FloatProperty(name="Stretchy Arms", default=0.0, precision=3, min=0.0, max=1.0)
-        bpy.types.Object.DazStretchLegs = FloatProperty(name="Stretchy Legs", default=0.0, precision=3, min=0.0, max=1.0)
         bpy.types.Object.DazLocalTextures = BoolProperty()
         bpy.types.Object.DazVisibilityDrivers = BoolProperty(default = False)
         bpy.types.Object.DazVisibilityCollections = BoolProperty(default = False)
