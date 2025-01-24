@@ -109,10 +109,10 @@ class FigureInstance(Instance):
         activateObject(context, rig)
         setMode('OBJECT')
         self.poseArmature(rig)
-        dazRna(rig).DazRotLocks = dazRna(rig).DazHasRotLocks = GS.useLockRot
-        dazRna(rig).DazLocLocks = dazRna(rig).DazHasLocLocks = GS.useLockLoc
-        dazRna(rig).DazRotLimits = dazRna(rig).DazHasRotLimits = GS.useLimitRot
-        dazRna(rig).DazLocLimits = dazRna(rig).DazHasLocLimits = GS.useLimitLoc
+        dazRna(rig).DazHasRotLocks = GS.useLockRot
+        dazRna(rig).DazHasLocLocks = GS.useLockLoc
+        dazRna(rig).DazHasRotLimits = GS.useLimitRot
+        dazRna(rig).DazHasLocLimits = GS.useLimitLoc
         self.fixDependencyLoops(rig)
         setMode('OBJECT')
         self.loadAltMorphs()

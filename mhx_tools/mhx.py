@@ -18,10 +18,10 @@ from .mhx_data import MHX
 #
 #-------------------------------------------------------------
 
-def getBoneCopy(bname, model, rpbs, lock):
+def getBoneCopy(bname, src, rpbs, lock):
     pb = rpbs[bname]
-    dazRna(pb).DazRotMode = model.DazRotMode
-    pb.rotation_mode = model.rotation_mode
+    dazRna(pb).DazRotMode = dazRna(src).DazRotMode
+    pb.rotation_mode = src.rotation_mode
     if lock:
         pb.lock_location = TTrue
     return pb
@@ -576,7 +576,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             trgbone = rig.pose.bones.get(bname)
             if srcbone and trgbone:
                 copyBoneInfo(srcbone, trgbone)
-                trgdazRna(bone).DazRotLocks = FFalse
+                dazRna(trgbone).DazRotLocks = FFalse
 
         setMode('EDIT')
         for bname,tname,stretch in bendTwistBones:

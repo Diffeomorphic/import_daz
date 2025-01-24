@@ -369,7 +369,7 @@ def getCharData(context, error):
     from .finger import getFingeredCharacters
     rig,meshes,chars,modded = getFingeredCharacters(context.object, True, useGenesis=True)
     if not (meshes and
-            meshes[0].DazUrl and
+            dazRna(meshes[0]).DazUrl and
             chars[0].startswith("Genesis")):
         msg = "Cannot scan database because no Genesis mesh was found"
         if error:

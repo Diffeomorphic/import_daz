@@ -134,25 +134,7 @@ class DazActiveGroup(bpy.types.PropertyGroup):
 #   DAZ props
 #-------------------------------------------------------------
 
-classes = [
-    DazIntGroup,
-    DazBoolGroup,
-    DazFloatGroup,
-    DazStringGroup,
-    DazStringBoolGroup,
-    DazPairGroup,
-    DazRigidityGroup,
-    DazAffectedBone,
-    DazShapekeyScaleFactor,
-    DazRigidityScaleFactor,
-    DazStringStringGroup,
-    DazTextGroup,
-    DazMorphInfoGroup,
-    DazBulgeGroup,
-    DazActiveGroup,
-    DazCategory,
-    EditSlotGroup,
-]
+propClasses = []
 
 def getRootEnums(scn, context):
     return [(folder,folder,folder) for folder in GS.getDazPaths()]
@@ -331,25 +313,85 @@ if DAZ_PROPS:
             default = "")
 
 
-    classes += [
+    class DAZ_OT_UpdateDazProperties(DazOperator):
+        bl_idname = "daz.update_daz_properties"
+        bl_label = "Update DAZ Properties"
+        bl_description = "Update DAZ properties for all objects in scene"
+        bl_options = {'UNDO'}
+
+        def run(self, context):
+            def updateProps(rna):
+                for prop in dir(rna.daz_importer):
+                    if prop.startswith("Daz") and prop in rna.keys():
+                        print("LLL", prop, rna[prop])
+                        pgs = getattr(rna.daz_importer, prop)
+
+                        try:
+                            setattr(rna.daz_importer, prop, rna[prop])
+                        except AttributeError:
+                            for
+                        del rna[prop]
+
+            updateProps(context.scene)
+            for ob in context.view_layer.objects:
+                updateProps(ob)
+                if ob.type == 'MESH':
+                    updateProps(ob.data)
+                    for mat in ob.data.materials:
+                        if mat:
+                            updateProps(mat)
+                elif ob.type == 'ARMATURE':
+                    updateProps(ob.data)
+                    for pb in ob.pose.bones:
+                        updateProps(pb.bone)
+                        updateProps(pb)
+
+
+    propsclasses = [
         DazImporterBone,
         DazImporterPoseBone,
         DazImporterObject,
         DazImporterArmature,
         DazImporterMaterial,
         DazImporterMesh,
-        DazImporterScene
+        DazImporterScene,
+        DAZ_OT_UpdateDazProperties
         ]
 
 #-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
 
+
+classes = [
+    DazIntGroup,
+    DazBoolGroup,
+    DazFloatGroup,
+    DazStringGroup,
+    DazStringBoolGroup,
+    DazPairGroup,
+    DazRigidityGroup,
+    DazAffectedBone,
+    DazShapekeyScaleFactor,
+    DazRigidityScaleFactor,
+    DazStringStringGroup,
+    DazTextGroup,
+    DazMorphInfoGroup,
+    DazBulgeGroup,
+    DazActiveGroup,
+    DazCategory,
+    EditSlotGroup,
+]
+
 def register():
-    for cls in classes:
+    for cls in classes + propsclasses:
         bpy.utils.register_class(cls)
 
     from .morphing import MS
+
+    bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
+    bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
+    bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
 
     if DAZ_PROPS:
         for morphset in MS.Morphsets:
@@ -385,9 +427,6 @@ def register():
         bpy.types.PoseBone.DazRotLocks = BoolVectorProperty(size=3, default=FFalse)
         bpy.types.PoseBone.DazLocLocks = BoolVectorProperty(size=3, default=FFalse)
         bpy.types.PoseBone.DazScaleLocks = BoolVectorProperty(size=3, default=FFalse)
-        bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
-        bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
-        bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
 
         bpy.types.Object.DazId = StringProperty()
         bpy.types.Object.DazUrl = StringProperty()
@@ -430,7 +469,6 @@ def register():
         bpy.types.Object.DazLocalTextures = BoolProperty()
         bpy.types.Object.DazVisibilityDrivers = BoolProperty(default = False)
         bpy.types.Object.DazVisibilityCollections = BoolProperty(default = False)
-
 
         bpy.types.Material.DazScale = FloatProperty(default=0.01)
         bpy.types.Material.DazShader = StringProperty(default='NONE')
@@ -517,5 +555,5 @@ def register():
 
 
 def unregister():
-    for cls in classes:
+    for cls in classes + propsclasses:
         bpy.utils.unregister_class(cls)

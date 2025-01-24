@@ -174,6 +174,8 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Utilities"
 
     def draw(self, context):
+        self.layout.operator("daz.update_daz_properties")
+        self.layout.separator()
         self.layout.operator("daz.scan_absolute_paths")
         self.layout.operator("daz.add_content_dirs")
         self.layout.separator()
@@ -469,8 +471,8 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
     def drawItems(self, scn, rig):
         self.layout.template_list( self.uilist, "",
-                                   rig, "Daz%s" % self.morphset,
-                                   rig.data, "DazIndex%s" % self.morphset )
+                                   dazRna(rig), "Daz%s" % self.morphset,
+                                   dazRna(rig.data), "DazIndex%s" % self.morphset )
 
 
 class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
