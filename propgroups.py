@@ -134,7 +134,7 @@ class DazActiveGroup(bpy.types.PropertyGroup):
 #   DAZ props
 #-------------------------------------------------------------
 
-propClasses = []
+propsclasses = []
 
 def getRootEnums(scn, context):
     return [(folder,folder,folder) for folder in GS.getDazPaths()]
@@ -311,21 +311,59 @@ if DAZ_PROPS:
         bl_options = {'UNDO'}
 
         def run(self, context):
+            def cast(data, default):
+                if isinstance(default, bool):
+                    return bool(int(data))
+                elif isinstance(default, int):
+                    return int(data)
+                elif isinstance(default, float):
+                    return float(data)
+                else:
+                    return data
+
             def updateProps(rna):
                 for prop in dir(rna.daz_importer):
                     if prop.startswith("Daz") and prop in rna.keys():
-                        print("LLL", prop, rna[prop])
-                        pgs = getattr(rna.daz_importer, prop)
+                        if prop not in ["DazMorphCats"]:
+                            continue
+                        default = getattr(rna.daz_importer, prop)
+                        value = rna[prop]
+                        print("LLL '%s' '%s'" % (prop, default), hasattr(default, "__len__"))
+                        if hasattr(default, "__len__"):
+                            if len(value) == 0:
+                                continue
+                            elif isinstance(default, str):
+                                setattr(rna.daz_importer, prop, default)
+                            elif isinstance(value[0], (bool, int, float)):
+                                model = value[0]
+                                for idx,value in enumerate(rna[prop]):
+                                    default[idx] = cast(value, model)
+                            else:
+                                pgs1 = value
+                                pgs2 = default
+                                print("KK", pgs1, pgs2)
+                                for pg1 in pgs1:
+                                    pg2 = pgs2.add()
+                                    print("HH", pg1, pg2)
+                                    print("PG1", dir(pg1))
+                                    print("PG2", dir(pg2))
+                                    for key in dir(pg2):
+                                        if not key[0] == "_":
+                                            model = getattr(pg2, key)
+                                            value = cast(getattr(pg1, key), model)
+                                            print("RR", key, model, value)
+                                            setattr(pg2, key, value)
+                        else:
+                            setattr(rna.daz_importer, prop, cast(rna[prop], default))
+                        #del rna[prop]
 
-                        try:
-                            setattr(rna.daz_importer, prop, rna[prop])
-                        except AttributeError:
-                            pass
-                        del rna[prop]
-
+            ob = context.object
+            updateProps(ob)
+            return
             updateProps(context.scene)
             for ob in context.view_layer.objects:
                 updateProps(ob)
+                continue
                 if ob.type == 'MESH':
                     updateProps(ob.data)
                     for mat in ob.data.materials:
