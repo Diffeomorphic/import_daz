@@ -342,13 +342,13 @@ class GeoNode(Node, SimNode):
                         if isGeograft(ob):
                             addToTable(ob.data.materials, "%s_" % child.id)
             for mg in matgroups:
-                pg = self.hdobject.data.DazHDMaterials.add()
+                pg = dazRna(self.hdobject.data).DazHDMaterials.add()
                 pg.name = mg
                 pg.text = table.get(mg, mg)
             return
 
         for mat in mats:
-            pg = self.hdobject.data.DazHDMaterials.add()
+            pg = dazRna(self.hdobject.data).DazHDMaterials.add()
             pg.name = prefix + stripName(mat.name)
             pg.text = mat.name
         if self.data and self.data.vertex_pairs:
@@ -1266,7 +1266,7 @@ class Geometry(Asset, Channels):
 
         if USE_ATTRIBUTES:
             def addFaceMap(ob, aname, groups, indices):
-                pgs = getattr(ob.data, aname)
+                pgs = getattr(dazRna(ob.data), aname)
                 for group in groups:
                     pg = pgs.add()
                     pg.name = group
@@ -1814,26 +1814,8 @@ classes = [
 ]
 
 def register():
-    from .propgroups import DazIntGroup, DazFloatGroup, DazPairGroup, DazRigidityGroup, DazRigidityScaleFactor, DazStringStringGroup, DazStringBoolGroup, DazTextGroup
     for cls in classes:
         bpy.utils.register_class(cls)
-
-    bpy.types.Armature.DazRigidityScaleFactors = bpy.props.CollectionProperty(type=DazRigidityScaleFactor)
-    bpy.types.Mesh.DazRigidityGroups = CollectionProperty(type = DazRigidityGroup)
-    bpy.types.Mesh.DazFingerPrint = StringProperty(name = "Original Fingerprint", default="")
-    bpy.types.Mesh.DazGraftGroup = CollectionProperty(type = DazPairGroup)
-    bpy.types.Mesh.DazMaskGroup = CollectionProperty(type = DazIntGroup)
-    bpy.types.Mesh.DazPolylineMaterials = CollectionProperty(type = DazIntGroup)
-    bpy.types.Mesh.DazVertexCount = IntProperty(default=0)
-    bpy.types.Mesh.DazMaterialSets = CollectionProperty(type = DazStringStringGroup)
-    bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)
-    bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = bpy.types.PropertyGroup)
-    bpy.types.Mesh.DazHairType = StringProperty(default = 'SHEET')
-    bpy.types.Mesh.DazDhdmFiles = CollectionProperty(type = DazStringBoolGroup)
-    bpy.types.Mesh.DazMorphFiles = CollectionProperty(type = DazStringBoolGroup)
-    bpy.types.Mesh.DazPolygonGroup = CollectionProperty(type = bpy.types.PropertyGroup)
-    bpy.types.Mesh.DazMaterialGroup = CollectionProperty(type = bpy.types.PropertyGroup)
-
 
 def unregister():
     for cls in classes:

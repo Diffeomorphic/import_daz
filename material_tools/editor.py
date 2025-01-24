@@ -6,6 +6,7 @@ import bpy
 from collections import OrderedDict
 from ..utils import *
 from ..error import *
+from ..propgroups import EditSlotGroup
 from ..matsel import MaterialSelector
 from ..tree import XSIZE, YSIZE, YSTEP, MixRGB, colorOutput, beautifyNodeTree
 from ..material import WHITE, isWhite
@@ -141,29 +142,6 @@ TweakableChannels = OrderedDict([
 # ---------------------------------------------------------------------
 #   Mini material editor
 # ---------------------------------------------------------------------
-
-class EditSlotGroup(bpy.types.PropertyGroup):
-    ncomps : IntProperty(default = 0)
-
-    color : FloatVectorProperty(
-        name = "Color",
-        subtype = "COLOR",
-        size = 4,
-        min = 0.0, max = 1.0,
-        default = (1,1,1,1)
-    )
-
-    vector : FloatVectorProperty(
-        name = "Vector",
-        size = 3,
-        precision = 4,
-        min = 0.0,
-        default = (0,0,0)
-    )
-
-    number : FloatProperty(default = 0.0, precision=4)
-    new : BoolProperty()
-
 
 def printItem(string, item):
     print(string, "<Factor %s %.4f (%.4f %.4f %.4f %.4f) %s>" % (item.key, item.value, item.color[0], item.color[1], item.color[2], item.color[3], item.new))
@@ -468,10 +446,10 @@ class DAZ_OT_LaunchEditor(MaterialSelector, DazPropsOperator, ChannelSetter, IsM
 
 
     def getObjectSlot(self, mat, key):
-        for item in mat.DazSlots:
+        for item in dazRna(mat).DazSlots:
             if item.name == key:
                 return item
-        item = mat.DazSlots.add()
+        item = dazRna(mat).DazSlots.add()
         item.name = key
         item.new = True
         return item
@@ -531,10 +509,10 @@ class DAZ_OT_ResetMaterials(DazOperator, ChannelSetter, IsMesh):
     def resetObject(self, ob):
         for mat in ob.data.materials:
             if mat:
-                for item in mat.DazSlots:
+                for item in dazRna(mat).DazSlots:
                     self.setChannelCycles(mat, item)
                     item.new = True
-                mat.DazSlots.clear()
+                dazRna(mat).DazSlots.clear()
 
 
     def setOriginal(self, socket, ncomps, item, key):
@@ -552,7 +530,6 @@ class DAZ_OT_ResetMaterials(DazOperator, ChannelSetter, IsMesh):
 
 classes = [
     ShowGroup,
-    EditSlotGroup,
     DAZ_OT_LaunchEditor,
     DAZ_OT_ResetMaterials,
 ]
@@ -560,9 +537,6 @@ classes = [
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-
-    bpy.types.Material.DazSlots = CollectionProperty(type = EditSlotGroup)
-
 
 def unregister():
     for cls in classes:

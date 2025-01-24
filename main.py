@@ -772,7 +772,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         basecoll = LS.collection
         hdcoll = LS.hdcollection
         firstMesh = (meshes[0] if meshes else None)
-        mainMesh = (firstMesh if firstMesh and firstMesh.DazMesh.startswith("Genesis") else None)
+        mainMesh = (firstMesh if firstMesh and dazRna(firstMesh).DazMesh.startswith("Genesis") else None)
         mainChar = (isGenesis(mainRig) if mainRig else None)
         if mainChar:
             print("Main character: %s" % mainChar)
@@ -1268,12 +1268,6 @@ classes = [
 ]
 
 def register():
-    bpy.types.Scene.DazFavoPath = StringProperty(
-        name = "Favorite Morphs",
-        description = "Path to favorite morphs",
-        subtype = 'FILE_PATH',
-        default = "")
-
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)

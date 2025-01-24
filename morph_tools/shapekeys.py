@@ -31,7 +31,7 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
 
         self.morphnames = {}
         for morphset in MS.Standards:
-            pgs = getattr(rig, "Daz"+morphset)
+            pgs = getattr(dazRna(rig), "Daz%s" % morphset)
             for pg in pgs:
                 self.morphnames[pg.name] = pg.text
         for cat in dazRna(rig).DazMorphCats:

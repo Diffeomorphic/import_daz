@@ -146,8 +146,8 @@ class TileFixer:
         for mn,mat in enumerate(ob.data.materials):
             if mat:
                 tile,udim,vdim = self.getTile(ucoords[mn], vcoords[mn])
-                mat.DazUDim = udim
-                mat.DazVDim = vdim
+                dazRna(mat).DazUDim = udim
+                dazRna(mat).DazVDim = vdim
                 self.mattiles[mn] = tile
         print("Tile assignment:")
         for mn,mat in enumerate(ob.data.materials):
@@ -229,7 +229,7 @@ class TileFixer:
             return ucoord, vcoord
 
         cuvlayer = hum.data.uv_layers.active
-        fmasked = [face.a for face in graft.data.DazMaskGroup]
+        fmasked = [face.a for face in dazRna(graft.data).DazMaskGroup]
         tiles = {}
         udims = {}
         vdims = {}

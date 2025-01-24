@@ -7,6 +7,7 @@
 #------------------------------------------------------------------------
 
 import bpy
+from ..utils import *
 from .layers import *
 from ..panel import DAZ_PT_SetupTab, DAZ_PT_RuntimeTab
 
@@ -26,7 +27,7 @@ class DAZ_PT_DazSimpleIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         ob = context.object
-        return (ob and ob.get("DazSimpleIK"))
+        return (ob and dazRna(ob).get("DazSimpleIK"))
 
     def draw(self, context):
         rig = context.object
@@ -74,7 +75,7 @@ class DAZ_PT_DazSimpleFKIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
     def draw(self, context):
         def toggleFKIK(row, prop, limb):
-            if getattr(rig, prop) > 0.5:
+            if getattr(dazRna(rig), prop) > 0.5:
                 text = "IK"
                 value = 0.0
             else:
@@ -97,15 +98,15 @@ class DAZ_PT_DazSimpleFKIK(DAZ_PT_RuntimeTab, bpy.types.Panel):
         toggleFKIK(row, "DazLegIK_R", "Leg")
         layout.label(text="IK Influence")
         row = layout.row()
-        row.prop(rig, "DazArmIK_L", text="Arm")
-        row.prop(rig, "DazArmIK_R", text="Arm")
+        row.prop(dazRna(rig), "DazArmIK_L", text="Arm")
+        row.prop(dazRna(rig), "DazArmIK_R", text="Arm")
         row = layout.row()
-        row.prop(rig, "DazLegIK_L", text="Leg")
-        row.prop(rig, "DazLegIK_R", text="Leg")
+        row.prop(dazRna(rig), "DazLegIK_L", text="Leg")
+        row.prop(dazRna(rig), "DazLegIK_R", text="Leg")
         layout.label(text="IK Stretchiness")
         row = layout.row()
-        row.prop(rig, "DazStretchArms", text="Arms")
-        row.prop(rig, "DazStretchLegs", text="Legs")
+        row.prop(dazRna(rig), "DazStretchArms", text="Arms")
+        row.prop(dazRna(rig), "DazStretchLegs", text="Legs")
 
         layout.label(text="Snap FK bones")
         row = layout.row()

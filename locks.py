@@ -178,48 +178,8 @@ classes = [
 ]
 
 def register():
-    bpy.types.Object.DazRotLocks = bpy.props.BoolProperty(
-        name = "Rot",
-        description = "Rotation Locks",
-        default = True,
-        override={'LIBRARY_OVERRIDABLE'})
-
-    bpy.types.Object.DazLocLocks = bpy.props.BoolProperty(
-        name = "Loc",
-        description = "Location Locks",
-        default = True,
-        override={'LIBRARY_OVERRIDABLE'})
-
-    bpy.types.Object.DazScaleLocks = bpy.props.BoolProperty(
-        name = "Sca",
-        description = "Scale Locks",
-        default = True,
-        override={'LIBRARY_OVERRIDABLE'})
-
-    bpy.types.Object.DazRotLimits = bpy.props.FloatProperty(
-        name = "Rot",
-        description = "Rotation Limits",
-        min = 0.0, max = 1.0,
-        default = 1.0,
-        override={'LIBRARY_OVERRIDABLE'})
-
-    bpy.types.Object.DazLocLimits = bpy.props.FloatProperty(
-        name = "Loc",
-        description = "Location Limits",
-        min = 0.0, max = 1.0,
-        default = 1.0,
-        override={'LIBRARY_OVERRIDABLE'})
-
-    bpy.types.Object.DazScaleLimits = bpy.props.FloatProperty(
-        name = "Sca",
-        description = "Scale Limits",
-        min = 0.0, max = 1.0,
-        default = 1.0,
-        override={'LIBRARY_OVERRIDABLE'})
-
     for cls in classes:
         bpy.utils.register_class(cls)
-
 
 def unregister():
     for cls in classes:

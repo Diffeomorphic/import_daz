@@ -386,10 +386,14 @@ class LegacyFigure(Figure):
 #-------------------------------------------------------------
 
 def copyBoneInfo(srcpb, trgpb):
-    for attr in ["rotation_mode", "lock_location", "lock_rotation", "lock_scale", "DazRotMode"]:
+    for attr in ["rotation_mode", "lock_location", "lock_rotation", "lock_scale"]:
         setattr(trgpb, attr, getattr(srcpb, attr))
-    for attr in ["bbone_x", "bbone_z", "use_relative_parent", "use_local_location", "use_inherit_rotation", "inherit_scale", "DazAngle"]:
+    for attr in ["bbone_x", "bbone_z", "use_relative_parent", "use_local_location", "use_inherit_rotation", "inherit_scale"]:
         setattr(trgpb.bone, attr, getattr(srcpb.bone, attr))
+    for attr in ["DazRotMode"]:
+        setattr(dazRna(trgpb), attr, getattr(dazRna(srcpb), attr))
+    for attr in ["DazAngle"]:
+        setattr(dazRna(trgpb.bone), attr, getattr(dazRna(srcpb.bone), attr))
     for attr in ["DazOrient", "DazHead", "DazNormal"]:
         setattr(dazRna(trgpb.bone), attr, tuple(getattr(dazRna(srcpb.bone), attr)))
     for key in ["DazRigIndex", "DazTrueName"]:
@@ -591,14 +595,13 @@ class ExtraBones(DriverUser):
                 pb.custom_shape_scale = db.custom_shape_scale
             else:
                 pb.custom_shape_scale_xyz = db.custom_shape_scale_xyz
-            dazRna(pb).DazRotLocks = db.DazRotLocks
-            dazRna(pb).DazLocLocks = db.DazLocLocks
+            dazRna(pb).DazRotLocks = dazRna(db).DazRotLocks
+            dazRna(pb).DazLocLocks = dazRna(db).DazLocLocks
             pb.bone.inherit_scale = db.bone.inherit_scale
-
 
         from .driver import getShapekeyDriver
         from .store import ConstraintStore
-        if getattr(rig.data, self.attr):
+        if getattr(dazRna(rig.data), self.attr):
             msg = "Rig %s already has extra %s bones" % (rig.name, self.type)
             print(msg)
 
@@ -672,7 +675,7 @@ class ExtraBones(DriverUser):
         self.updateScriptedDrivers(rig.data)
         if not ES.easy:
             print("  Update drivers")
-        setattr(rig.data, self.attr, True)
+        setattr(dazRna(rig.data), self.attr, True)
         updateDrivers(rig)
 
         if not ES.easy:
@@ -878,26 +881,8 @@ classes = [
 ]
 
 def register():
-    from .propgroups import DazStringGroup, toggleMorphArmatures
-
-    bpy.types.Object.DazInheritScale = bpy.props.BoolProperty(
-        name = "Inherit Scale",
-        description = "Bones inherit scale",
-        default = True,
-        update = toggleInheritScale,
-        override={'LIBRARY_OVERRIDABLE'})
-
-    bpy.types.Scene.DazAutoMorphArmatures = BoolProperty(
-        name = "Auto Morph Armatures",
-        description = "Automatically morph armatures on frame change",
-        default = False,
-        update = toggleMorphArmatures)
-
-    bpy.types.Armature.DazBoneMap = CollectionProperty(type=DazStringGroup)
-
     for cls in classes:
         bpy.utils.register_class(cls)
-
 
 def unregister():
     for cls in classes:

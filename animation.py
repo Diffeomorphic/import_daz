@@ -917,7 +917,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         elif rig.data.get("rig_id"):
             from .rigify_tools import setRigifyLayers
             setRigifyLayers(rig, False, self.boneLayers)
-        elif rig.get("DazSimpleIK"):
+        elif dazRna(rig).get("DazSimpleIK"):
             props = ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R"]
             removeFcurves(act, props)
             for prop in props:

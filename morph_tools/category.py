@@ -76,7 +76,7 @@ class GeneralMorphSelector(Selector):
         self.morphnames["All"] = []
         for morphset in MS.Standards:
             theMorphEnums.append((morphset, morphset, morphset))
-            pg = getattr(self.rig, "Daz"+morphset)
+            pg = getattr(dazRna(self.rig), "Daz%s" % morphset)
             self.morphnames["All"] += list(pg.keys())
             self.morphnames[morphset] = pg.keys()
         theMorphEnums.append(("Custom", "Custom", "Custom"))
@@ -256,7 +256,7 @@ class MorphRemover(CategoryBasic):
     def removeFromPropGroups(self, rig, prop):
         from ..transfer import removeFromPropGroup
         for morphset in MS.Standards:
-            pgs = getattr(rig, "Daz%s" % morphset)
+            pgs = getattr(dazRna(rig), "Daz%s" % morphset)
             removeFromPropGroup(pgs, prop)
 
 
@@ -299,7 +299,7 @@ class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemov
         self.removeUrls(rig, morphset)
         for ob in getMeshChildren(rig):
             self.removeUrls(ob, morphset)
-        pgs = getattr(rig, "Daz%s" % morphset)
+        pgs = getattr(dazRna(rig), "Daz%s" % morphset)
         props = [pg.name for pg in pgs]
         for prop in props:
             self.removeRigProp(rig, prop)
@@ -574,7 +574,7 @@ class RemoveAll(MorphRemover):
 
         for rig in rigs:
             for morphset in MS.Morphsets:
-                pgs = getattr(rig, "Daz%s" % morphset)
+                pgs = getattr(dazRna(rig), "Daz%s" % morphset)
                 props = [pg.name for pg in pgs]
                 for prop in props:
                     self.removeRigProp(rig, prop)

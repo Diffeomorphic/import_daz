@@ -77,7 +77,8 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         if not flt_flags:
             flt_flags = [self.bitflag_filter_item] * len(morphs)
 
-        if context.scene.showUsedPropsOnly and isinstance(data, bpy.types.Object):
+        scn = context.scene
+        if dazRna(scn).DazUsedPropsOnly and isinstance(data, bpy.types.Object):
             flt_flags = [flag * (data.get(morph.name, 0.0) != 0.0)
                          for flag,morph in zip(flt_flags, morphs)]
 

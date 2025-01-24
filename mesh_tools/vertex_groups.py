@@ -108,12 +108,12 @@ class DAZ_OT_CreateGraftGroups(DazOperator):
         hum = objects[0]
         gname = "%s:Graft" % graft.data.name
         mname = "%s:Mask" % graft.data.name
-        avnums = [pair.a for pair in graft.data.DazGraftGroup]
+        avnums = [pair.a for pair in dazRna(graft.data).DazGraftGroup]
         self.createVertexGroup(graft, gname, avnums)
-        bvnums = [pair.b for pair in graft.data.DazGraftGroup]
+        bvnums = [pair.b for pair in dazRna(graft.data).DazGraftGroup]
         self.createVertexGroup(hum, gname, bvnums)
         mask = {}
-        for face in graft.data.DazMaskGroup:
+        for face in dazRna(graft.data).DazMaskGroup:
             for vn in hum.data.polygons[face.a].vertices:
                 if vn not in bvnums:
                     mask[vn] = True

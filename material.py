@@ -349,7 +349,7 @@ class Material(Asset, Channels):
             mat = self.rna = bpy.data.materials.new(self.name)
             LS.materials[self.name] = mat
         scn = self.scene = context.scene
-        mat.DazShader = self.shader
+        dazRna(mat).DazShader = self.shader
         if self.uv_set:
             self.uv_sets[self.uv_set.name] = self.uv_set
         geonode = self.geometry
@@ -409,10 +409,10 @@ class Material(Asset, Channels):
         if mat is None:
             return
         try:
-            mat.DazUDim = udim
+            dazRna(mat).DazUDim = udim
         except ValueError:
             print("UDIM out of range: %d" % udim)
-        mat.DazVDim = 0
+        dazRna(mat).DazVDim = 0
         addUdimTree(mat.node_tree, udim, 0)
 
 
@@ -1153,8 +1153,8 @@ class MaterialCombiner:
                     if norm(mat.diffuse_color) < norm(mat2.diffuse_color):
                         diffuse[mat2.name] = (mat.name, mat.diffuse_color)
                     taken = True
-                    if mat.DazMaterialType == 'SKIN':
-                        mat2.DazMaterialType = 'SKIN'
+                    if dazRna(mat).DazMaterialType == 'SKIN':
+                        dazRna(mat2).DazMaterialType = 'SKIN'
                     break
             if not taken:
                 table[mat.name] = mat
@@ -2213,9 +2213,6 @@ classes = [
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-
-    bpy.types.Object.DazLocalTextures = BoolProperty(default = False)
-
 
 def unregister():
     for cls in classes:

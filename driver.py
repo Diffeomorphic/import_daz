@@ -1424,8 +1424,6 @@ classes = [
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Object.DazDriversDisabled = BoolProperty(default=False)
-
 
 def unregister():
     for cls in classes:

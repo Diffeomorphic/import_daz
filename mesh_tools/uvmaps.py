@@ -79,11 +79,11 @@ def addUdimsToUVs(ob, restore, udim, vdim):
         for fn,f in enumerate(ob.data.polygons):
             mat = ob.data.materials[f.material_index]
             if restore:
-                ushift = mat.DazUDim
-                vshift = mat.DazVDim
+                ushift = dazRna(mat).DazUDim
+                vshift = dazRna(mat).DazVDim
             else:
-                ushift = udim - mat.DazUDim
-                vshift = vdim - mat.DazVDim
+                ushift = udim - dazRna(mat).DazUDim
+                vshift = vdim - dazRna(mat).DazVDim
             for n in range(len(f.vertices)):
                 uvlayer.data[m].uv[0] += ushift
                 uvlayer.data[m].uv[1] += vshift
@@ -112,10 +112,10 @@ class DAZ_OT_CollapseUDims(DazOperator):
         dazRna(ob).DazUDimsCollapsed = True
         addUdimsToUVs(ob, False, 0, 0)
         for mn,mat in enumerate(ob.data.materials):
-            if mat.DazUDimsCollapsed:
+            if dazRna(mat).DazUDimsCollapsed:
                 continue
-            mat.DazUDimsCollapsed = True
-            addUdimTree(mat.node_tree, -mat.DazUDim, -mat.DazVDim)
+            dazRna(mat).DazUDimsCollapsed = True
+            addUdimTree(mat.node_tree, -dazRna(mat).DazUDim, -dazRna(mat).DazVDim)
 
 
 class DAZ_OT_RestoreUDims(DazOperator):
@@ -140,10 +140,10 @@ class DAZ_OT_RestoreUDims(DazOperator):
         dazRna(ob).DazUDimsCollapsed = False
         addUdimsToUVs(ob, True, 0, 0)
         for mn,mat in enumerate(ob.data.materials):
-            if not mat.DazUDimsCollapsed:
+            if not dazRna(mat).DazUDimsCollapsed:
                 continue
-            mat.DazUDimsCollapsed = False
-            addUdimTree(mat.node_tree, mat.DazUDim, mat.DazVDim)
+            dazRna(mat).DazUDimsCollapsed = False
+            addUdimTree(mat.node_tree, dazRna(mat).DazUDim, dazRna(mat).DazVDim)
 
 #----------------------------------------------------------
 #   Copy UV maps

@@ -292,7 +292,7 @@ class MetaMaker(RigifyCommon):
 
         print("  Fix metarig")
         meta = context.object
-        meta.DazRigifyType = self.meta.rigify_type
+        meta["DazRigifyType"] = self.meta.rigify_type
         makeBoneCollections(meta, RigifyLayers)
         cns = meta.constraints.new('COPY_SCALE')
         cns.name = "Rigify Source"
@@ -936,7 +936,7 @@ class Rigifier(RigifyCommon):
             copyProp(key, rig.data, gen.data, False)
 
         # Some more bones
-        conv = DF.loadEntry("genesis-%s" % meta.DazRigifyType, "converters")
+        conv = DF.loadEntry("genesis-%s" % meta.get("DazRigifyType", ""), "converters")
         for srcname,trgname in conv.items():
             self.copyBoneInfo(srcname, trgname, rig, gen)
 
@@ -1073,7 +1073,7 @@ class Rigifier(RigifyCommon):
         print("  Clean up")
         #gen.data.display_type = 'WIRE'
         gen.show_in_front = True
-        gen.DazRig = meta.DazRigifyType
+        gen.DazRig = meta.get("DazRigifyType", "")
         name = rig.name
         if coll:
             if gen.name in scn.collection.objects:
@@ -1600,8 +1600,6 @@ def register():
         default = 0.0,
         description = "Tongue bones controlled by IK",
         override={'LIBRARY_OVERRIDABLE'})
-
-    bpy.types.Object.DazRigifyType = StringProperty(default="")
 
     for cls in classes:
         bpy.utils.register_class(cls)

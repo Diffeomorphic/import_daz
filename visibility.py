@@ -71,12 +71,8 @@ classes = [
 ]
 
 def register():
-    bpy.types.Object.DazVisibilityDrivers = BoolProperty(default = False)
-    bpy.types.Object.DazVisibilityCollections = BoolProperty(default = False)
-
     for cls in classes:
         bpy.utils.register_class(cls)
-
 
 def unregister():
     for cls in classes:

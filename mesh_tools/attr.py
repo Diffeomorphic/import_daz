@@ -48,7 +48,7 @@ class DAZ_OT_CopyAttributes(DazPropsOperator, IsMesh):
             fing = getFingerPrint(ob)
             if ob != src and fing == srcFing:
                 print("Copy attributes %s => %s" % (src.name, ob.name))
-                dazRna(ob.data).DazFingerPrint = src.data.DazFingerPrint
+                dazRna(ob.data).DazFingerPrint = dazRna(src.data).DazFingerPrint
                 for aname, atype, domain in attrs:
                     self.copyAttributes(src, ob, aname, atype, domain)
 
@@ -60,8 +60,8 @@ class DAZ_OT_CopyAttributes(DazPropsOperator, IsMesh):
             ndata = len(src.data.vertices)
         else:
             ndata = len(src.data.polygons)
-            srcpgs = getattr(src.data, aname)
-            trgpgs = getattr(trg.data, aname)
+            srcpgs = getattr(dazRna(src.data), aname)
+            trgpgs = getattr(dazRna(trg.data), aname)
             trgpgs.clear()
             for key in srcpgs.keys():
                 pg = trgpgs.add()
@@ -91,7 +91,7 @@ class DisplayFaceGroup(DazPropsOperator):
         bpy.ops.mesh.select_all(action='DESELECT')
         setMode('OBJECT')
         ob = context.object
-        pgs = getattr(ob.data, self.attr)
+        pgs = getattr(dazRna(ob.data), self.attr)
         if self.group:
             gn = int(self.group)
         else:

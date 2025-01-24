@@ -8,8 +8,8 @@ from .utils import *
 from .error import *
 
 def getMaterialType(mat, defaultType='CLOTHES'):
-    if mat.DazMaterialType:
-        return mat.DazMaterialType
+    if dazRna(mat).DazMaterialType:
+        return dazRna(mat).DazMaterialType
 
     SkinMaterials = {
         "eyelash" : 'BLACK',
@@ -77,7 +77,8 @@ def setDiffuse(mat, color):
 def guessMaterialColor(mat, choose, enforce, default, defaultType='CLOTHES'):
     if mat is None:
         return
-    mtype = mat.DazMaterialType = getMaterialType(mat, defaultType)
+    mtype = getMaterialType(mat, defaultType)
+    dazRna(mat).DazMaterialType = mtype
     if not hasDiffuseTexture(mat, enforce):
         return
 
@@ -192,13 +193,8 @@ classes = [
 ]
 
 def register():
-    bpy.types.Material.DazMaterialType = StringProperty(
-        name = "Material Type",
-        default = ""
-    )
     for cls in classes:
         bpy.utils.register_class(cls)
-
 
 def unregister():
     for cls in classes:

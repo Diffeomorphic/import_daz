@@ -74,15 +74,15 @@ class MaterialScaler(UnitsOperator):
     def scaleMaterials(self, ob):
         for mat in ob.data.materials:
             if mat:
-                if mat.DazScale == 0:
-                    mat.DazScale = dazRna(ob).DazScale
-                scale = self.scale / mat.DazScale
+                if dazRna(mat).DazScale == 0:
+                    dazRna(mat).DazScale = dazRna(ob).DazScale
+                scale = self.scale / dazRna(mat).DazScale
                 for node in mat.node_tree.nodes:
                     if node.type == 'GROUP':
                         self.fixNode(node, node.node_tree.name, scale)
                     else:
                         self.fixNode(node, node.type, scale)
-                mat.DazScale = self.scale
+                dazRna(mat).DazScale = self.scale
                 if self.auto:
                     mat.keyframe_insert("DazScale")
 

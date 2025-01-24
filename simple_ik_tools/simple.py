@@ -606,7 +606,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
     def addConstraints(self, rig, IK):
         def copyBoneProps(src, trg):
-            trg.DazRotMode = src.DazRotMode
+            dazRna(trg).DazRotMode = dazRna(src).DazRotMode
             trg.rotation_mode = src.rotation_mode
             trg.custom_shape = src.custom_shape
 
@@ -1221,7 +1221,7 @@ class DAZ_OT_ToggleFkIk(SimpleIKSnapper, DazOperator):
 
     def run(self, context):
         rig = context.object
-        setattr(rig, self.prop, self.value)
+        setattr(dazRna(rig), self.prop, self.value)
 
 #----------------------------------------------------------
 #   Connect bone chains
@@ -1462,16 +1462,8 @@ classes = [
 ]
 
 def register():
-    bpy.types.Object.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazLegIK_R = FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazStretchArms = FloatProperty(name="Stretchy Arms", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazStretchLegs = FloatProperty(name="Stretchy Legs", default=0.0, precision=3, min=0.0, max=1.0)
-
     for cls in classes:
         bpy.utils.register_class(cls)
-
 
 def unregister():
     for cls in classes:

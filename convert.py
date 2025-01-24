@@ -85,7 +85,7 @@ def optimizePose(context, useApplyRestPose):
 def getConverter(srctype, trg):
     if srctype == "genesis8":
         srctype = "genesis3"
-    trgtype = trg.DazRig
+    trgtype = dazRna(trg).DazRig
     if trgtype[-7:] == ".suffix":
         trgtype = trgtype[:-7]
     if trgtype == "genesis8":
@@ -109,6 +109,6 @@ def getConverter(srctype, trg):
         file = "%s-%s" % (srctype, trgtype)
     conv = DF.loadEntry(file, "converters")
     if not conv:
-        print("No converter", srctype, trg.DazRig)
+        print("No converter", srctype, dazRna(trg).DazRig)
     return conv, twists
 

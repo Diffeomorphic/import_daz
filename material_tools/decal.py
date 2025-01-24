@@ -191,13 +191,6 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.Scene.DazDecalMask = StringProperty(
-        name = "Decal Mask",
-        description = "Path to decal mask texture",
-        subtype = 'FILE_PATH',
-        default = "")
-
-
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)

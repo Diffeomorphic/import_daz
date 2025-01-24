@@ -198,12 +198,12 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         nfaces = len(hum.data.polygons)
         self.fmasked = dict([(fn,False) for fn in range(nfaces)])
         for graft in grafts:
-            for face in graft.data.DazMaskGroup:
+            for face in dazRna(graft.data).DazMaskGroup:
                 self.fmasked[face.a] = True
 
         # If hum is itself a geograft, make sure to keep tbe boundary
-        if hum.data.DazGraftGroup:
-            body_pair_a_verts = [pair.a for pair in hum.data.DazGraftGroup]
+        if dazRna(hum.data).DazGraftGroup:
+            body_pair_a_verts = [pair.a for pair in dazRna(hum.data).DazGraftGroup]
         else:
             body_pair_a_verts = []
 
@@ -214,8 +214,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         self.hummasks = {}
         for graft in grafts:
             hummask = self.hummasks[graft.name] = dict([(vn, False) for vn in range(nverts)])
-            graft_pair_b_verts = [pair.b for pair in graft.data.DazGraftGroup]
-            for face in graft.data.DazMaskGroup:
+            graft_pair_b_verts = [pair.b for pair in dazRna(graft.data).DazGraftGroup]
+            for face in dazRna(graft.data).DazMaskGroup:
                 fverts = hum.data.polygons[face.a].vertices
                 vdelete = []
                 for vn in fverts:
@@ -247,9 +247,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             self.origlocs = [v.co.copy() for v in hum.data.vertices]
 
         # If hum is itself a geograft, store locations
-        if hum.data.DazGraftGroup:
+        if dazRna(hum.data).DazGraftGroup:
             verts = hum.data.vertices
-            self.locations = dict([(pair.a, verts[pair.a].co.copy()) for pair in hum.data.DazGraftGroup])
+            self.locations = dict([(pair.a, verts[pair.a].co.copy()) for pair in dazRna(hum.data).DazGraftGroup])
 
         # Delete the masked verts
         self.deleteSelectedVerts()
@@ -267,7 +267,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             ngraftverts = len(graft.data.vertices)
             graftedge = self.graftedges[graft.name] = dict([(vn,False) for vn in range(ngraftverts)])
             humedge = self.humedges[graft.name] = dict([(vn,False) for vn in range(nverts)])
-            pg = hum.data.DazMergedGeografts.add()
+            pg = dazRna(hum.data).DazMergedGeografts.add()
             pg.name = graft.name
 
             # Add custom attribute which will store the vertex to be paired, and accessible via geometry node
@@ -288,7 +288,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             for idx, v in enumerate(graft.data.vertices):
                 paired_vert_list[idx] = -1
 
-            for pair in graft.data.DazGraftGroup:
+            for pair in dazRna(graft.data).DazGraftGroup:
                 graft.data.vertices[pair.a].select = True
                 if pair.b in assoc.keys():
                     # Set value to be added as attribute
@@ -303,8 +303,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 attribute.data.foreach_set("value", list(paired_vert_list.values()))
 
         # Also select hum graft group. These will not be removed.
-        if hum.data.DazGraftGroup:
-            for pair in hum.data.DazGraftGroup:
+        if dazRna(hum.data).DazGraftGroup:
+            for pair in dazRna(hum.data).DazGraftGroup:
                 hvn = assoc[pair.a]
                 hum.data.vertices[hvn].select = True
 
@@ -398,8 +398,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             smod.vertex_group = vgrp.name
 
         # Update hum graft group
-        if hum.data.DazGraftGroup and selected:
-            for pair in hum.data.DazGraftGroup:
+        if dazRna(hum.data).DazGraftGroup and selected:
+            for pair in dazRna(hum.data).DazGraftGroup:
                 x = self.locations[pair.a]
                 dists = [((x-y).length, vn) for vn,y in selected.items()]
                 dists.sort()
@@ -545,7 +545,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             if prop not in hum.keys():
                 hum[prop] = value
                 setOverridable(hum, prop)
-                hum["DazVisibilityDrivers"] = True
+                setDaz(hum, "DazVisibilityDrivers", True)
         for graft in grafts:
             for mat in graft.data.materials:
                 if mat and mat.node_tree and mat.node_tree.animation_data:
@@ -640,8 +640,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
 
     def copyBodyPart(self, graft, hum):
-        apgs = graft.data.DazBodyPart
-        cpgs = hum.data.DazBodyPart
+        apgs = dazRna(graft.data).DazBodyPart
+        cpgs = dazRna(hum.data).DazBodyPart
         for sname,apg in apgs.items():
             if sname not in cpgs.keys():
                 cpg = cpgs.add()
@@ -654,7 +654,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         cvgroups = dict([(vgrp.index, vgrp.name) for vgrp in hum.vertex_groups])
         averts = graft.data.vertices
         cverts = hum.data.vertices
-        for pair in graft.data.DazGraftGroup:
+        for pair in dazRna(graft.data).DazGraftGroup:
             avert = averts[pair.a]
             cvert = cverts[pair.b]
             avert.co = cvert.co
@@ -682,11 +682,11 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     cdata = cskeys.key_blocks[askey.name].data
                 else:
                     cdata = cverts
-                for pair in graft.data.DazGraftGroup:
+                for pair in dazRna(graft.data).DazGraftGroup:
                     askey.data[pair.a].co = cdata[pair.b].co
 
         # Copy vertex groups
-        for pair in graft.data.DazGraftGroup:
+        for pair in dazRna(graft.data).DazGraftGroup:
             for agrp in graft.vertex_groups:
                 agrp.remove([pair.a])
             cv = cverts[pair.b]

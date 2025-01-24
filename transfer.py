@@ -301,7 +301,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                 for g in v.groups:
                     rigidity_table[g.group][v.index] = g.weight
             rigidity_groups = []
-            for rgroup in trg.data.DazRigidityGroups:
+            for rgroup in dazRna(trg.data).DazRigidityGroups:
                 refverts = getVertsFromGroup(trg, rgroup.reference_vertices)
                 if len(refverts) == 0:
                     continue
@@ -852,7 +852,7 @@ def removeFromPropGroup(pgs, prop):
 
 def removeFromAllMorphsets(rig, prop):
     for morphset in MS.Standards:
-        pgs = getattr(rig, "Daz" + morphset)
+        pgs = getattr(dazRna(rig), "Daz%s" % morphset)
         removeFromPropGroup(pgs, prop)
     for cat in dazRna(rig).DazMorphCats.values():
         removeFromPropGroup(cat.morphs, prop)

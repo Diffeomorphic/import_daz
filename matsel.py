@@ -110,8 +110,8 @@ class MaterialSelector:
     def selectSkin(self, context):
         ob = context.object
         for mat,item in zip(ob.data.materials, self.umats.values()):
-            if mat.DazMaterialType:
-                item.bool = (mat.DazMaterialType == 'SKIN')
+            if dazRna(mat).DazMaterialType:
+                item.bool = (dazRna(mat).DazMaterialType == 'SKIN')
             else:
                 item.bool = (mat.diffuse_color[0:3] == self.skinColor)
 
@@ -121,8 +121,8 @@ class MaterialSelector:
             item.bool = self.isSkinRedMaterial(mat)
 
     def isSkinRedMaterial(self, mat):
-        if mat.DazMaterialType:
-            return (mat.DazMaterialType in ['SKIN', 'RED'])
+        if dazRna(mat).DazMaterialType:
+            return (dazRna(mat).DazMaterialType in ['SKIN', 'RED'])
         elif mat.diffuse_color[0:3] == self.skinColor:
             return True
         from .guess import getMaterialType
@@ -207,7 +207,7 @@ def getShellProps(context):
     filter = dazRna(scn).DazFilter.lower()
     rig = getRigFromContext(context)
     if rig:
-        objects = [rig] + [ob for ob in rig.children if ob.get("DazVisibilityDrivers", False)]
+        objects = [rig] + [ob for ob in rig.children if getDaz(ob, "DazVisibilityDrivers")]
     else:
         objects = [context.object]
     props = {}
@@ -372,13 +372,6 @@ classes = [
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-
-    bpy.types.Scene.DazFilter = StringProperty(
-        name = "Filter",
-        description = "Show only items containing this string",
-        default = ""
-    )
-
 
 def unregister():
     for cls in classes:

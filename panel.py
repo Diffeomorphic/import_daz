@@ -337,7 +337,7 @@ class DAZ_PT_LocksLimits(DAZ_PT_RuntimeTab, bpy.types.Panel):
         col.label(text="", icon=icon)
         col.label(text="%.3f" % dazRna(rig).DazScaleLimits)
 
-        self.layout.prop(rig, "DazInheritScale")
+        self.layout.prop(dazRna(rig), "DazInheritScale")
         self.layout.operator("daz.impose_locks_limits")
         if dazRna(rig).DazDriversDisabled:
             self.layout.operator("daz.enable_drivers")
@@ -373,7 +373,7 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
     def hasTheseMorphs(self, rig):
         prop = "Daz%s" % self.morphset
-        return getattr(rig, prop)
+        return getattr(dazRna(rig), prop)
 
 
     def hasAdjustProp(self, rig):
@@ -468,7 +468,7 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
         else:
             split = self.layout.split()
             split.operator("daz.disable_drivers")
-            split.prop(scn, "showUsedPropsOnly")
+            split.prop(dazRna(scn), "DazUsedPropsOnly")
         self.preamble(self.layout, context.scene, rig)
         if GS.ercMethod in ('ARMATURE', 'ALL') and dazRna(rig).DazRig.startswith("genesis"):
             row = self.layout.row()
@@ -931,23 +931,6 @@ classes = [
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-
-    bpy.types.Scene.showUsedPropsOnly = BoolProperty(
-        name = "Show Used Morphs Only",
-        description = "Only display morphs with nonzero \"final\" value",
-        default = False)
-
-    bpy.types.Scene.morphFactor = FloatProperty(
-        name = "Factor",
-        description = "Multiply all morphs in this section with this",
-        min = 0.1, max = 10,
-        default = 1.0)
-
-    bpy.types.Scene.DazModifyBakedMorphs = BoolProperty(
-        name = "Modify Baked Morphs",
-        default = False)
-
-
 
 def unregister():
     for cls in reversed(classes):

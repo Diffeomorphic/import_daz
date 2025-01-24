@@ -547,7 +547,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         self.ancestors[figure] = True
         if rig.parent:
             if rig.parent_type == 'OBJECT':
-                parent = rig.parent.DazUrl.rsplit("#",1)[1]
+                parent = dazRna(rig.parent).DazUrl.rsplit("#",1)[1]
                 node["parent"] = "#%s" % quote(parent)
             elif rig.parent_type == 'BONE':
                 node["parent"] = "#%s" % quote(rig.parent_bone)

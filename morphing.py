@@ -99,7 +99,7 @@ def clearAllMorphs(rig, frame, useInsertKeys):
         for cat in dazRna(rig).DazMorphCats:
             props += [morph.name.lower() for morph in cat.morphs if isActiveMorph(morph.name, rig)]
         for morphset in MS.Standards:
-            pg = getattr(rig, "Daz"+morphset)
+            pg = getattr(dazRna(rig), "Daz"+morphset)
             props += [prop.lower() for prop in pg.keys() if isActiveMorph(prop, rig)]
         return [prop for prop in props if "jcm" not in prop]
 
@@ -180,8 +180,8 @@ def copyMorphsets(rig1, rig2):
         pg1 = getMorphs0(rig1, morphset, None, None)[0]
         pg2 = getMorphs0(rig2, morphset, None, None)[0]
         copyMorphset(pg1, pg2)
-    cats1 = rig1.DazMorphCats
-    cats2 = rig2.DazMorphCats
+    cats1 = dazRna(rig1).DazMorphCats
+    cats2 = dazRna(rig2).DazMorphCats
     for cat1 in cats1:
         if cat1.name not in cats2.keys():
             cat2 = cats2.add()
@@ -434,7 +434,7 @@ class MorphSuffix:
                 self.uniqueSuffix = ":%s" % self.mesh.name
             else:
                 self.uniqueSuffix = ""
-        elif self.onMorphSuffix == 'GEOGRAFT' and self.mesh.data.DazGraftGroup:
+        elif self.onMorphSuffix == 'GEOGRAFT' and dazRna(self.mesh.data).DazGraftGroup:
             self.uniqueSuffix = ":%s" % self.mesh.name
         elif self.onMorphSuffix == 'ALL':
             self.uniqueSuffix = ":%s" % self.morphSuffix
@@ -755,7 +755,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
         return True
 
     def findPropGroup(self, prop):
-        return getattr(self.rig, "Daz%s" % self.morphset)
+        return getattr(dazRna(self.rig), "Daz%s" % self.morphset)
 
     def getPaths(self, context):
         return
@@ -1367,7 +1367,8 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
             elif self.rig:
                 meshes = getMeshChildren(self.rig)
             for mesh in meshes:
-                if len(mesh.data.DazBulges) > 0 and activateObject(context, mesh):
+                if (len(dazRna(mesh.data).DazBulges) > 0 and
+                    activateObject(context, mesh)):
                     createBulges(mesh, self.rig, ignoreFingers=self.ignoreFingers)
         self.makePosable(context, self.rig)
         self.faceshapes = self.allfaceshapes
@@ -1443,7 +1444,7 @@ class CustomMorphLoader(MorphSuffix, MorphLoader):
             return None
         if self.morphset != "Custom":
             return getattr(self.obj, "Daz%s" % self.morphset)
-        cats = self.obj.DazMorphCats
+        cats = dazRna(self.obj).DazMorphCats
         if self.category not in cats.keys():
             cat = cats.add()
             cat.name = self.category
@@ -1456,10 +1457,10 @@ class CustomMorphLoader(MorphSuffix, MorphLoader):
         self.morphset = "Custom"
         self.category = cat
         if self.obj:
-            if cat not in self.obj.DazMorphCats.keys():
-                pg = self.obj.DazMorphCats.add()
+            if cat not in dazRna(self.obj).DazMorphCats.keys():
+                pg = dazRna(self.obj).DazMorphCats.add()
                 pg.name = cat
-            self.obj.DazCustomMorphs = True
+            dazRna(self.obj).DazCustomMorphs = True
 
 #------------------------------------------------------------------------
 #   Categories
@@ -1490,11 +1491,11 @@ def addToCategories(ob, props, labels, category):
 
 def copyCategories(src, trg):
     from .driver import setBoolProp
-    for srccat in src.DazMorphCats:
-        trg.DazCustomMorphs = True
-        trgcat = trg.DazMorphCats.get(srccat.name)
+    for srccat in dazRna(src).DazMorphCats:
+        dazRna(trg).DazCustomMorphs = True
+        trgcat = dazRna(trg).DazMorphCats.get(srccat.name)
         if trgcat is None:
-            trgcat = trg.DazMorphCats.add()
+            trgcat = dazRna(trg).DazMorphCats.add()
             trgcat.name = srccat.name
             setBoolProp(trgcat, "active", True, True)
         for srcmorph in srccat.morphs:
@@ -1889,7 +1890,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
                 cat = cats[self.category]
             return cat.morphs
         else:
-            return getattr(self.rig, "Daz%s" % self.morphset)
+            return getattr(dazRna(self.rig), "Daz%s" % self.morphset)
 
 #-------------------------------------------------------------
 #   Import baked
@@ -2068,7 +2069,7 @@ class ScanFinder:
     def getParent(self, ob, url):
         rig = getRigFromMesh(ob)
         for child in rig.children:
-            if child.DazUrl == url:
+            if dazRna(child).DazUrl == url:
                 return child
         return None
 
@@ -2247,39 +2248,6 @@ classes = [
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-
-    from .propgroups import DazCategory, DazActiveGroup
-
-    bpy.types.Object.DazCustomMorphs = BoolProperty(default = False)
-    bpy.types.Object.DazMeshMorphs = BoolProperty(default = False)
-    bpy.types.Object.DazMeshDrivers = BoolProperty(default = False)
-    bpy.types.Object.DazMorphAuto = BoolProperty(default = False)
-
-    for morphset in MS.Morphsets:
-        setattr(bpy.types.Object, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
-        setattr(bpy.types.Armature, "DazIndex%s" % morphset, IntProperty(default=0))
-    bpy.types.Object.DazBakedFiles = CollectionProperty(type = DazFloatGroup)
-    bpy.types.Object.DazMorphUrls = CollectionProperty(type = DazMorphInfoGroup)
-    bpy.types.Object.DazAutoFollow = CollectionProperty(type = DazTextGroup)
-    bpy.types.Object.DazAlias = CollectionProperty(type = DazStringGroup)
-    bpy.types.Mesh.DazFavorites = CollectionProperty(type = bpy.types.PropertyGroup)
-
-    bpy.types.Object.DazActivated = CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
-    bpy.types.Object.DazMorphCats = CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
-
-    bpy.types.Mesh.DazBodyPart = CollectionProperty(type = DazStringGroup)
-    bpy.types.Mesh.DazBulges = CollectionProperty(type = DazBulgeGroup)
-    bpy.types.Scene.DazMorphCatsContent = EnumProperty(
-        items = [],
-        name = "Morph")
-
-    bpy.types.Scene.DazNewCatName = StringProperty(
-        name = "New Name",
-        default = "Name")
-
-    folder = os.path.expanduser("~/Documents")
-    if not os.path.exists(folder):
-        folder = os.path.expanduser("~")
 
 
 def unregister():

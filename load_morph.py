@@ -339,7 +339,7 @@ class LoadMorph(DriverUser):
 
 
     def setAlias(self, prop, alias):
-        pgs = self.obj.DazAlias
+        pgs = dazRna(self.obj).DazAlias
         if alias in pgs.keys():
             pg = pgs[alias]
             printName(" ==", "%s %s %s" % (prop, alias, pg.s))
@@ -413,7 +413,7 @@ class LoadMorph(DriverUser):
             if self.usePropDrivers():
                 final = self.addNewProp(prop)
                 self.addShapeDriver(skey, final)
-            pgs = self.mesh.data.DazBodyPart
+            pgs = dazRna(self.mesh.data).DazBodyPart
             if prop in pgs.keys():
                 item = pgs[prop]
             else:
@@ -429,8 +429,8 @@ class LoadMorph(DriverUser):
         from .modifier import Morph
         if (isinstance(asset, Morph) and
             self.mesh and
-            self.mesh.data.DazVertexCount == asset.vertex_count and
-            self.mesh.data.DazGraftGroup and
+            dazRna(self.mesh.data).DazVertexCount == asset.vertex_count and
+            dazRna(self.mesh.data).DazGraftGroup and
             self.rig):
             for ob in self.rig.children:
                 if ob.type == 'MESH' and len(ob.data.vertices) == asset.vertex_count:
@@ -564,7 +564,7 @@ class LoadMorph(DriverUser):
     def setFloatLimits(self, rna, prop, asset, skey, ovr):
         value = asset.value
         baseprop = prop.split(":", 1)[0]
-        if ((self.obj and baseprop in self.obj.DazBaked.keys()) or
+        if ((self.obj and baseprop in dazRna(self.obj).DazBaked.keys()) or
             baseprop in ALWAYS_BAKED):
             value = 0
             print("Baked %s = 0" % baseprop)

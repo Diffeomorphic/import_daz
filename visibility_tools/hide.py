@@ -164,7 +164,7 @@ class DAZ_OT_RemoveVisibility(DazPropsOperator):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and ob.get("DazVisibilityDrivers", False))
+        return (ob and ob.type == 'ARMATURE' and getDaz(ob, "DazVisibilityDrivers"))
 
     useAllMeshes : BoolProperty(
         name = "All Meshes In Scene",
@@ -454,7 +454,7 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
             form = "%s"
         props = []
         for clo in clothes:
-            if not clo.get("DazVisibilityDrivers", False):
+            if not getDaz(clo, "DazVisibilityDrivers"):
                 raise DazError("Create visibility drivers first")
             prop = getHidePropName(clo.name)
             if prop not in rig.keys():

@@ -314,7 +314,7 @@ class MorphGroup:
                 if adj in rig.keys():
                     morphs.append(adj)
             for mset in MS.Standards:
-                pgs = getattr(rig, "Daz%s" % mset)
+                pgs = getattr(dazRna(rig), "Daz%s" % mset)
                 morphs += [key for key in pgs.keys()]
             for cat in dazRna(rig).DazMorphCats:
                 morphs += [morph.name for morph in cat.morphs]
@@ -323,7 +323,7 @@ class MorphGroup:
                 adj = "Adjust %s" % self.morphset
                 if adj in rig.keys():
                     morphs.append(adj)
-            pgs = getattr(rig, "Daz%s" % self.morphset)
+            pgs = getattr(dazRna(rig), "Daz%s" % self.morphset)
             morphs += [key for key,on in zip(pgs.keys(), filtered) if on]
         return morphs
 

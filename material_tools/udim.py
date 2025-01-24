@@ -137,7 +137,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 if actmat is None or mat.name == self.trgmat:
                     actmat = mat
                     amnum = mn
-                    acttile = 1001 + mat.DazUDim
+                    acttile = 1001 + dazRna(mat).DazUDim
 
         if actmat is None:
             raise DazError("No materials selected")
@@ -166,7 +166,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 imgname = actnode.image.name
             else:
                 imgname = actnode.name
-            basename = "T_%s" % self.getBaseName(imgname, actmat.DazUDim)
+            basename = "T_%s" % self.getBaseName(imgname, actdazRna(mat).DazUDim)
             udims = {}
             for mat in mats:
                 nodes = texnodes[mat.name]
@@ -181,9 +181,9 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 if node and node.image:
                     img = node.image
                     if found:
-                        self.updateImage(img, basename, mat.DazUDim)
-                    if mat.DazUDim not in udims.keys():
-                        udims[mat.DazUDim] = mat.name
+                        self.updateImage(img, basename, dazRna(mat).DazUDim)
+                    if dazRna(mat).DazUDim not in udims.keys():
+                        udims[dazRna(mat).DazUDim] = mat.name
                     if mat == actmat:
                         img.name = self.makeImageName(basename, acttile, img)
                         node.label = basename
@@ -296,7 +296,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 if folder1 == folder2:
                     basename = basenames.get(img.filepath)
                     if basename:
-                        self.updateImage(img, basename, mat.DazUDim)
+                        self.updateImage(img, basename, dazRna(mat).DazUDim)
                     return actnode
         return None
 
@@ -371,8 +371,8 @@ def getUVDims(tile):
 
 
 def shiftUVs(mat, mn, ob, udim, vdim):
-    ushift = udim - mat.DazUDim
-    vshift = vdim - mat.DazVDim
+    ushift = udim - dazRna(mat).DazUDim
+    vshift = vdim - dazRna(mat).DazVDim
     print(" Shift", mat.name, mn, ushift, vshift)
     if ushift == 0 and vshift == 0:
         return
@@ -423,8 +423,8 @@ class DAZ_OT_SetUDims(DazPropsOperator, MaterialSelector):
                 mat = ob.data.materials[umat.name]
                 shiftUVs(mat, mn, ob, udim, vdim)
                 addUdimTree(mat.node_tree, udim, vdim)
-                mat.DazUDim = udim
-                mat.DazVDim = vdim
+                dazRna(mat).DazUDim = udim
+                dazRna(mat).DazVDim = vdim
 
 #----------------------------------------------------------
 #   Initialize

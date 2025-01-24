@@ -92,6 +92,32 @@ class DazRigidityScaleFactor(bpy.types.PropertyGroup):
     affected_bones: bpy.props.CollectionProperty(type=DazAffectedBone)
 
 #-------------------------------------------------------------
+#   Edit Slot group
+#-------------------------------------------------------------
+
+class EditSlotGroup(bpy.types.PropertyGroup):
+    ncomps : IntProperty(default = 0)
+
+    color : FloatVectorProperty(
+        name = "Color",
+        subtype = "COLOR",
+        size = 4,
+        min = 0.0, max = 1.0,
+        default = (1,1,1,1)
+    )
+
+    vector : FloatVectorProperty(
+        name = "Vector",
+        size = 3,
+        precision = 4,
+        min = 0.0,
+        default = (0,0,0)
+    )
+
+    number : FloatProperty(default = 0.0, precision=4)
+    new : BoolProperty()
+
+#-------------------------------------------------------------
 #   Morphing
 #-------------------------------------------------------------
 
@@ -105,164 +131,7 @@ class DazActiveGroup(bpy.types.PropertyGroup):
     active : BoolProperty(default=True, override={'LIBRARY_OVERRIDABLE'})
 
 #-------------------------------------------------------------
-#   Bone
-#-------------------------------------------------------------
-
-class DazImporterBone(bpy.types.PropertyGroup):
-    DazHead : FloatVectorProperty(size=3, default=(0,0,0))
-    DazOrient : FloatVectorProperty(size=3, default=(0,0,0))
-    DazNormal : FloatVectorProperty(size=3, default=(0,0,0))
-    DazAngle : FloatProperty()
-    DazTrueName : StringProperty()
-    DazExtraBone : StringProperty()
-
-
-class DazImporterPoseBone(bpy.types.PropertyGroup):
-    DazRotMode : StringProperty(default='XYZ')
-    DazAxes : IntVectorProperty(size=3, default=(0,1,2))
-    DazFlips : IntVectorProperty(size=3, default=(1,1,1))
-    DazTranslation : FloatVectorProperty(size=3, default=(0,0,0))
-    DazRotation : FloatVectorProperty(size=3, default=(0,0,0))
-    DazRestRotation : FloatVectorProperty(size=3, default=(0,0,0))
-    DazRotLocks : BoolVectorProperty(size=3, default=FFalse)
-    DazLocLocks : BoolVectorProperty(size=3, default=FFalse)
-    DazScaleLocks : BoolVectorProperty(size=3, default=FFalse)
-    #DazHeadLocal : bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
-    #DazTailLocal : bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
-    #HdOffset : bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
-
-
-class DazImporterObject(bpy.types.PropertyGroup):
-    DazId : StringProperty()
-    DazUrl : StringProperty()
-    DazFigure : StringProperty()
-    DazScene : StringProperty()
-    DazRig : StringProperty()
-    DazMesh : StringProperty()
-    DazScale : FloatProperty(default=0.01, precision=4)
-    DazOrient : FloatVectorProperty(size=3, default=(0,0,0))
-    DazCenter : FloatVectorProperty(size=3, default=(0,0,0))
-    DazRotMode : StringProperty(default='XYZ')
-    DazHasLocLocks : BoolProperty()
-    DazHasRotLocks : BoolProperty()
-    DazHasLocLimits : BoolProperty()
-    DazHasRotLimits : BoolProperty()
-    DazUDimsCollapsed : BoolProperty()
-    DazCollision : BoolProperty()
-    DazCloth : BoolProperty()
-    DazConforms : BoolProperty(default=True)
-    DazCloth : BoolProperty()
-    DazSimpleIK : BoolProperty()
-    DazInheritScale : BoolProperty()
-    DazDriversDisabled : BoolProperty()
-    DazCustomMorphs : BoolProperty()
-    DazMeshMorphs : BoolProperty()
-    DazMeshDrivers : BoolProperty()
-    DazMorphAuto : BoolProperty()
-    DazBakedFiles : CollectionProperty(type = DazFloatGroup)
-    DazMorphUrls : CollectionProperty(type = DazMorphInfoGroup)
-    DazAutoFollow : CollectionProperty(type = DazTextGroup)
-    DazAlias : CollectionProperty(type = DazStringGroup)
-    DazActivated : CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
-    DazMorphCats : CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
-
-
-class DazImporterMaterial(bpy.types.PropertyGroup):
-    DazScale : FloatProperty(default=0.01)
-    DazShader : StringProperty(default='NONE')
-    DazUDimsCollapsed : BoolProperty()
-    DazUDim : IntProperty()
-    DazVDim : IntProperty()
-
-
-class DazImporterArmature(bpy.types.PropertyGroup):
-    DazExtraFaceBones : BoolProperty()
-    DazExtraDrivenBones : BoolProperty()
-    DazUnflipped : BoolProperty()
-    DazHasAxes : BoolProperty()
-    DazBoneMap : CollectionProperty(type=DazStringGroup)
-    DazMergedRigs : CollectionProperty(type = DazStringBoolGroup)
-
-
-class DazImporterMesh(bpy.types.PropertyGroup):
-    DazRigidityGroups : CollectionProperty(type = DazRigidityGroup)
-    DazFingerPrint : StringProperty(name = "Original Fingerprint", default="")
-    DazGraftGroup : CollectionProperty(type = DazPairGroup)
-    DazMaskGroup : CollectionProperty(type = DazIntGroup)
-    DazPolylineMaterials : CollectionProperty(type = DazIntGroup)
-    DazVertexCount : IntProperty(default=0)
-    DazMaterialSets : CollectionProperty(type = DazStringStringGroup)
-    DazHDMaterials : CollectionProperty(type = DazTextGroup)
-    DazMergedGeografts : CollectionProperty(type = bpy.types.PropertyGroup)
-    DazHairType : StringProperty(default = 'SHEET')
-    DazDhdmFiles : CollectionProperty(type = DazStringBoolGroup)
-    DazMorphFiles : CollectionProperty(type = DazStringBoolGroup)
-    DazPolygonGroup : CollectionProperty(type = bpy.types.PropertyGroup)
-    DazMaterialGroup : CollectionProperty(type = bpy.types.PropertyGroup)
-    DazFavorites : CollectionProperty(type = bpy.types.PropertyGroup)
-
-
-def getRootEnums(scn, context):
-    return [(folder,folder,folder) for folder in GS.getDazPaths()]
-
-def toggleMorphArmatures(self, context):
-    GS.toggleMorphArmatures(context.scene)
-
-class DazImporterScene(bpy.types.PropertyGroup):
-    DazPreferredRoot : EnumProperty(
-        items = getRootEnums,
-        name = "Preferred Root Directory",
-        description = "Preferred root directory used by some import tools")
-
-    DazAutoMorphArmatures : BoolProperty(
-        name = "Auto Morph Armatures",
-        description = "Automatically morph armatures on frame change",
-        default = False,
-        update = toggleMorphArmatures)
-
-    DazFavoPath : StringProperty(
-        name = "Favorite Morphs",
-        description = "Path to favorite morphs",
-        subtype = 'FILE_PATH',
-        default = "")
-
-    DazFilter : StringProperty(
-        name = "Filter",
-        description = "Show only items containing this string",
-        default = ""
-    )
-
-    DazMorphCatsContent : EnumProperty(
-        items = [],
-        name = "Morph")
-
-    DazNewCatName : StringProperty(
-        name = "New Name",
-        default = "Name")
-
-    showUsedPropsOnly : BoolProperty(
-        name = "Show Used Morphs Only",
-        description = "Only display morphs with nonzero \"final\" value",
-        default = False)
-
-    morphFactor : FloatProperty(
-        name = "Factor",
-        description = "Multiply all morphs in this section with this",
-        min = 0.1, max = 10,
-        default = 1.0)
-
-    DazModifyBakedMorphs : BoolProperty(
-        name = "Modify Baked Morphs",
-        default = False)
-
-    DazDecalMask : StringProperty(
-        name = "Decal Mask",
-        description = "Path to decal mask texture",
-        subtype = 'FILE_PATH',
-        default = "")
-
-#-------------------------------------------------------------
-#   Initialize
+#   DAZ props
 #-------------------------------------------------------------
 
 classes = [
@@ -280,35 +149,361 @@ classes = [
     DazTextGroup,
     DazMorphInfoGroup,
     DazBulgeGroup,
-
     DazActiveGroup,
     DazCategory,
+    EditSlotGroup,
+]
 
-    DazImporterBone,
-    DazImporterPoseBone,
-    DazImporterObject,
-    DazImporterArmature,
-    DazImporterMaterial,
-    DazImporterMesh,
-    DazImporterScene
-    ]
+def getRootEnums(scn, context):
+    return [(folder,folder,folder) for folder in GS.getDazPaths()]
+
+def toggleMorphArmatures(self, context):
+    GS.toggleMorphArmatures(context.scene)
+
+if DAZ_PROPS:
+
+    class DazImporterBone(bpy.types.PropertyGroup):
+        DazHead : FloatVectorProperty(size=3, default=(0,0,0))
+        DazOrient : FloatVectorProperty(size=3, default=(0,0,0))
+        DazNormal : FloatVectorProperty(size=3, default=(0,0,0))
+        DazAngle : FloatProperty()
+        DazTrueName : StringProperty()
+        DazExtraBone : StringProperty()
+
+
+    class DazImporterPoseBone(bpy.types.PropertyGroup):
+        DazRotMode : StringProperty(default='XYZ')
+        DazAxes : IntVectorProperty(size=3, default=(0,1,2))
+        DazFlips : IntVectorProperty(size=3, default=(1,1,1))
+        DazTranslation : FloatVectorProperty(size=3, default=(0,0,0))
+        DazRotation : FloatVectorProperty(size=3, default=(0,0,0))
+        DazRestRotation : FloatVectorProperty(size=3, default=(0,0,0))
+        DazRotLocks : BoolVectorProperty(size=3, default=FFalse)
+        DazLocLocks : BoolVectorProperty(size=3, default=FFalse)
+        DazScaleLocks : BoolVectorProperty(size=3, default=FFalse)
+        #DazHeadLocal : bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
+        #DazTailLocal : bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
+        #HdOffset : bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
+
+
+    class DazImporterObject(bpy.types.PropertyGroup):
+        DazId : StringProperty()
+        DazUrl : StringProperty()
+        DazFigure : StringProperty()
+        DazScene : StringProperty()
+        DazRig : StringProperty()
+        DazMesh : StringProperty()
+        DazScale : FloatProperty(default=0.01, precision=4)
+        DazOrient : FloatVectorProperty(size=3, default=(0,0,0))
+        DazCenter : FloatVectorProperty(size=3, default=(0,0,0))
+        DazRotMode : StringProperty(default='XYZ')
+        DazHasLocLocks : BoolProperty()
+        DazHasRotLocks : BoolProperty()
+        DazHasLocLimits : BoolProperty()
+        DazHasRotLimits : BoolProperty()
+        DazUDimsCollapsed : BoolProperty()
+        DazCollision : BoolProperty()
+        DazCloth : BoolProperty()
+        DazConforms : BoolProperty(default=True)
+        DazCloth : BoolProperty()
+        DazSimpleIK : BoolProperty()
+        DazInheritScale : BoolProperty()
+        DazDriversDisabled : BoolProperty()
+        DazCustomMorphs : BoolProperty()
+        DazMeshMorphs : BoolProperty()
+        DazMeshDrivers : BoolProperty()
+        DazMorphAuto : BoolProperty()
+        DazBakedFiles : CollectionProperty(type = DazFloatGroup)
+        DazMorphUrls : CollectionProperty(type = DazMorphInfoGroup)
+        DazAutoFollow : CollectionProperty(type = DazTextGroup)
+        DazAlias : CollectionProperty(type = DazStringGroup)
+        DazActivated : CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
+        DazMorphCats : CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
+        DazArmIK_L : FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
+        DazArmIK_R : FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
+        DazLegIK_L : FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
+        DazLegIK_R : FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
+        DazStretchArms : FloatProperty(name="Stretchy Arms", default=0.0, precision=3, min=0.0, max=1.0)
+        DazStretchLegs : FloatProperty(name="Stretchy Legs", default=0.0, precision=3, min=0.0, max=1.0)
+        DazLocalTextures : BoolProperty(default = False)
+        DazVisibilityDrivers : BoolProperty(default = False)
+        DazVisibilityCollections : BoolProperty(default = False)
+
+
+    class DazImporterMaterial(bpy.types.PropertyGroup):
+        DazScale : FloatProperty(default=0.01)
+        DazShader : StringProperty(default='NONE')
+        DazUDimsCollapsed : BoolProperty()
+        DazUDim : IntProperty()
+        DazVDim : IntProperty()
+        DazSlots : CollectionProperty(type = EditSlotGroup)
+        DazMaterialType = StringProperty()
+
+
+    class DazImporterArmature(bpy.types.PropertyGroup):
+        DazExtraFaceBones : BoolProperty()
+        DazExtraDrivenBones : BoolProperty()
+        DazUnflipped : BoolProperty()
+        DazHasAxes : BoolProperty()
+        DazBoneMap : CollectionProperty(type=DazStringGroup)
+        DazMergedRigs : CollectionProperty(type = DazStringBoolGroup)
+
+
+    class DazImporterMesh(bpy.types.PropertyGroup):
+        DazRigidityGroups : CollectionProperty(type = DazRigidityGroup)
+        DazFingerPrint : StringProperty(name = "Original Fingerprint", default="")
+        DazGraftGroup : CollectionProperty(type = DazPairGroup)
+        DazMaskGroup : CollectionProperty(type = DazIntGroup)
+        DazPolylineMaterials : CollectionProperty(type = DazIntGroup)
+        DazVertexCount : IntProperty(default=0)
+        DazMaterialSets : CollectionProperty(type = DazStringStringGroup)
+        DazHDMaterials : CollectionProperty(type = DazTextGroup)
+        DazMergedGeografts : CollectionProperty(type = bpy.types.PropertyGroup)
+        DazHairType : StringProperty(default = 'SHEET')
+        DazDhdmFiles : CollectionProperty(type = DazStringBoolGroup)
+        DazMorphFiles : CollectionProperty(type = DazStringBoolGroup)
+        DazPolygonGroup : CollectionProperty(type = bpy.types.PropertyGroup)
+        DazMaterialGroup : CollectionProperty(type = bpy.types.PropertyGroup)
+        DazFavorites : CollectionProperty(type = bpy.types.PropertyGroup)
+        DazBodyPart : CollectionProperty(type = DazStringGroup)
+
+    class DazImporterScene(bpy.types.PropertyGroup):
+        DazPreferredRoot : EnumProperty(
+            items = getRootEnums,
+            name = "Preferred Root Directory",
+            description = "Preferred root directory used by some import tools")
+
+        DazAutoMorphArmatures : BoolProperty(
+            name = "Auto Morph Armatures",
+            description = "Automatically morph armatures on frame change",
+            default = False,
+            update = toggleMorphArmatures)
+
+        DazFavoPath : StringProperty(
+            name = "Favorite Morphs",
+            description = "Path to favorite morphs",
+            subtype = 'FILE_PATH',
+            default = "")
+
+        DazFilter : StringProperty(
+            name = "Filter",
+            description = "Show only items containing this string",
+            default = ""
+        )
+
+        DazMorphCatsContent : EnumProperty(
+            items = [],
+            name = "Morph")
+
+        DazNewCatName : StringProperty(
+            name = "New Name",
+            default = "Name")
+
+        DazUsedPropsOnly : BoolProperty(
+            name = "Show Used Morphs Only",
+            description = "Only display morphs with nonzero \"final\" value",
+            default = False)
+
+        DazMorphFactor : FloatProperty(
+            name = "Factor",
+            description = "Multiply all morphs in this section with this",
+            min = 0.1, max = 10,
+            default = 1.0)
+
+        DazModifyBakedMorphs : BoolProperty(
+            name = "Modify Baked Morphs",
+            default = False)
+
+        DazDecalMask : StringProperty(
+            name = "Decal Mask",
+            description = "Path to decal mask texture",
+            subtype = 'FILE_PATH',
+            default = "")
+
+
+    classes += [
+        DazImporterBone,
+        DazImporterPoseBone,
+        DazImporterObject,
+        DazImporterArmature,
+        DazImporterMaterial,
+        DazImporterMesh,
+        DazImporterScene
+        ]
+
+#-------------------------------------------------------------
+#   Initialize
+#-------------------------------------------------------------
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
     from .morphing import MS
-    for morphset in MS.Morphsets:
-        setattr(DazImporterObject, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
-        setattr(DazImporterArmature, "DazIndex%s" % morphset, IntProperty(default=0))
 
-    bpy.types.Bone.daz_importer = PointerProperty(type=DazImporterBone)
-    bpy.types.PoseBone.daz_importer = PointerProperty(type=DazImporterPoseBone)
-    bpy.types.Object.daz_importer = PointerProperty(type=DazImporterObject)
-    bpy.types.Armature.daz_importer = PointerProperty(type=DazImporterArmature)
-    bpy.types.Mesh.daz_importer = PointerProperty(type=DazImporterMesh)
-    bpy.types.Material.daz_importer = PointerProperty(type=DazImporterMaterial)
-    bpy.types.Scene.daz_importer = PointerProperty(type=DazImporterScene)
+    if DAZ_PROPS:
+        for morphset in MS.Morphsets:
+            setattr(DazImporterObject, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
+            setattr(DazImporterArmature, "DazIndex%s" % morphset, IntProperty(default=0))
+
+        bpy.types.Bone.daz_importer = PointerProperty(type=DazImporterBone)
+        bpy.types.PoseBone.daz_importer = PointerProperty(type=DazImporterPoseBone)
+        bpy.types.Object.daz_importer = PointerProperty(type=DazImporterObject)
+        bpy.types.Armature.daz_importer = PointerProperty(type=DazImporterArmature)
+        bpy.types.Mesh.daz_importer = PointerProperty(type=DazImporterMesh)
+        bpy.types.Material.daz_importer = PointerProperty(type=DazImporterMaterial)
+        bpy.types.Scene.daz_importer = PointerProperty(type=DazImporterScene)
+
+    else:
+        for morphset in MS.Morphsets:
+            setattr(bpy.types.Object, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
+            setattr(bpy.types.Armature, "DazIndex%s" % morphset, IntProperty(default=0))
+
+        bpy.types.Bone.DazHead = FloatVectorProperty(size=3, default=(0,0,0))
+        bpy.types.Bone.DazOrient = FloatVectorProperty(size=3, default=(0,0,0))
+        bpy.types.Bone.DazNormal = FloatVectorProperty(size=3, default=(0,0,0))
+        bpy.types.Bone.DazAngle = FloatProperty()
+        bpy.types.Bone.DazTrueName = StringProperty()
+        bpy.types.Bone.DazExtraBone = StringProperty()
+
+        bpy.types.PoseBone.DazRotMode = StringProperty(default='XYZ')
+        bpy.types.PoseBone.DazAxes = IntVectorProperty(size=3, default=(0,1,2))
+        bpy.types.PoseBone.DazFlips = IntVectorProperty(size=3, default=(1,1,1))
+        bpy.types.PoseBone.DazTranslation = FloatVectorProperty(size=3, default=(0,0,0))
+        bpy.types.PoseBone.DazRotation = FloatVectorProperty(size=3, default=(0,0,0))
+        bpy.types.PoseBone.DazRestRotation = FloatVectorProperty(size=3, default=(0,0,0))
+        bpy.types.PoseBone.DazRotLocks = BoolVectorProperty(size=3, default=FFalse)
+        bpy.types.PoseBone.DazLocLocks = BoolVectorProperty(size=3, default=FFalse)
+        bpy.types.PoseBone.DazScaleLocks = BoolVectorProperty(size=3, default=FFalse)
+        bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
+        bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
+        bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
+
+        bpy.types.Object.DazId = StringProperty()
+        bpy.types.Object.DazUrl = StringProperty()
+        bpy.types.Object.DazFigure = StringProperty()
+        bpy.types.Object.DazScene = StringProperty()
+        bpy.types.Object.DazRig = StringProperty()
+        bpy.types.Object.DazMesh = StringProperty()
+        bpy.types.Object.DazScale = FloatProperty(default=0.01, precision=4)
+        bpy.types.Object.DazOrient = FloatVectorProperty(size=3, default=(0,0,0))
+        bpy.types.Object.DazCenter = FloatVectorProperty(size=3, default=(0,0,0))
+        bpy.types.Object.DazRotMode = StringProperty(default='XYZ')
+        bpy.types.Object.DazHasLocLocks = BoolProperty()
+        bpy.types.Object.DazHasRotLocks = BoolProperty()
+        bpy.types.Object.DazHasLocLimits = BoolProperty()
+        bpy.types.Object.DazHasRotLimits = BoolProperty()
+        bpy.types.Object.DazUDimsCollapsed = BoolProperty()
+        bpy.types.Object.DazCollision = BoolProperty()
+        bpy.types.Object.DazCloth = BoolProperty()
+        bpy.types.Object.DazConforms = BoolProperty(default=True)
+        bpy.types.Object.DazCloth = BoolProperty()
+        bpy.types.Object.DazSimpleIK = BoolProperty()
+        bpy.types.Object.DazInheritScale = BoolProperty()
+        bpy.types.Object.DazDriversDisabled = BoolProperty()
+        bpy.types.Object.DazCustomMorphs = BoolProperty()
+        bpy.types.Object.DazMeshMorphs = BoolProperty()
+        bpy.types.Object.DazMeshDrivers = BoolProperty()
+        bpy.types.Object.DazMorphAuto = BoolProperty()
+        bpy.types.Object.DazBakedFiles = CollectionProperty(type = DazFloatGroup)
+        bpy.types.Object.DazMorphUrls = CollectionProperty(type = DazMorphInfoGroup)
+        bpy.types.Object.DazAutoFollow = CollectionProperty(type = DazTextGroup)
+        bpy.types.Object.DazAlias = CollectionProperty(type = DazStringGroup)
+        bpy.types.Object.DazActivated = CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
+        bpy.types.Object.DazMorphCats = CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
+        bpy.types.Object.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
+        bpy.types.Object.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
+        bpy.types.Object.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
+        bpy.types.Object.DazLegIK_R = FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
+        bpy.types.Object.DazStretchArms = FloatProperty(name="Stretchy Arms", default=0.0, precision=3, min=0.0, max=1.0)
+        bpy.types.Object.DazStretchLegs = FloatProperty(name="Stretchy Legs", default=0.0, precision=3, min=0.0, max=1.0)
+        bpy.types.Object.DazLocalTextures = BoolProperty()
+        bpy.types.Object.DazVisibilityDrivers = BoolProperty(default = False)
+        bpy.types.Object.DazVisibilityCollections = BoolProperty(default = False)
+
+
+        bpy.types.Material.DazScale = FloatProperty(default=0.01)
+        bpy.types.Material.DazShader = StringProperty(default='NONE')
+        bpy.types.Material.DazUDimsCollapsed = BoolProperty()
+        bpy.types.Material.DazUDim = IntProperty()
+        bpy.types.Material.DazVDim = IntProperty()
+        bpy.types.Material.DazMaterialType = StringProperty()
+
+        bpy.types.Armature.DazExtraFaceBones = BoolProperty()
+        bpy.types.Armature.DazExtraDrivenBones = BoolProperty()
+        bpy.types.Armature.DazUnflipped = BoolProperty()
+        bpy.types.Armature.DazHasAxes = BoolProperty()
+        bpy.types.Armature.DazBoneMap = CollectionProperty(type=DazStringGroup)
+        bpy.types.Armature.DazMergedRigs = CollectionProperty(type = DazStringBoolGroup)
+
+        bpy.types.Mesh.DazRigidityGroups = CollectionProperty(type = DazRigidityGroup)
+        bpy.types.Mesh.DazFingerPrint = StringProperty(name = "Original Fingerprint", default="")
+        bpy.types.Mesh.DazGraftGroup = CollectionProperty(type = DazPairGroup)
+        bpy.types.Mesh.DazMaskGroup = CollectionProperty(type = DazIntGroup)
+        bpy.types.Mesh.DazPolylineMaterials = CollectionProperty(type = DazIntGroup)
+        bpy.types.Mesh.DazVertexCount = IntProperty(default=0)
+        bpy.types.Mesh.DazMaterialSets = CollectionProperty(type = DazStringStringGroup)
+        bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)
+        bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = bpy.types.PropertyGroup)
+        bpy.types.Mesh.DazHairType = StringProperty(default = 'SHEET')
+        bpy.types.Mesh.DazDhdmFiles = CollectionProperty(type = DazStringBoolGroup)
+        bpy.types.Mesh.DazMorphFiles = CollectionProperty(type = DazStringBoolGroup)
+        bpy.types.Mesh.DazPolygonGroup = CollectionProperty(type = bpy.types.PropertyGroup)
+        bpy.types.Mesh.DazMaterialGroup = CollectionProperty(type = bpy.types.PropertyGroup)
+        bpy.types.Mesh.DazFavorites = CollectionProperty(type = bpy.types.PropertyGroup)
+        bpy.types.Mesh.DazBodyPart = CollectionProperty(type = DazStringGroup)
+
+        bpy.types.Scene.DazPreferredRoot = EnumProperty(
+            items = getRootEnums,
+            name = "Preferred Root Directory",
+            description = "Preferred root directory used by some import tools")
+
+        bpy.types.Scene.DazAutoMorphArmatures = BoolProperty(
+            name = "Auto Morph Armatures",
+            description = "Automatically morph armatures on frame change",
+            default = False,
+            update = toggleMorphArmatures)
+
+        bpy.types.Scene.DazFavoPath = StringProperty(
+            name = "Favorite Morphs",
+            description = "Path to favorite morphs",
+            subtype = 'FILE_PATH',
+            default = "")
+
+        bpy.types.Scene.DazFilter = StringProperty(
+            name = "Filter",
+            description = "Show only items containing this string",
+            default = ""
+        )
+
+        bpy.types.Scene.DazMorphCatsContent = EnumProperty(
+            items = [],
+            name = "Morph")
+
+        bpy.types.Scene.DazNewCatName = StringProperty(
+            name = "New Name",
+            default = "Name")
+
+        bpy.types.Scene.DazUsedPropsOnly = BoolProperty(
+            name = "Show Used Morphs Only",
+            description = "Only display morphs with nonzero \"final\" value",
+            default = False)
+
+        bpy.types.Scene.DazMorphFactor = FloatProperty(
+            name = "Factor",
+            description = "Multiply all morphs in this section with this",
+            min = 0.1, max = 10,
+            default = 1.0)
+
+        bpy.types.Scene.DazModifyBakedMorphs = BoolProperty(
+            name = "Modify Baked Morphs",
+            default = False)
+
+        bpy.types.Scene.DazDecalMask = StringProperty(
+            name = "Decal Mask",
+            description = "Path to decal mask texture",
+            subtype = 'FILE_PATH',
+            default = "")
 
 
 def unregister():
