@@ -254,6 +254,31 @@ class DAZ_PT_ActivePoseBone(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
             self.layout.label(text = "No active bone")
 
 
+class DAZ_PT_DazProperties(DAZ_PT_SetupTab, bpy.types.Panel):
+    bl_idname = "DAZ_PT_DazProperties"
+    bl_parent_id = "DAZ_PT_Utils"
+    bl_label = "DAZ Importer Properties"
+
+    def draw(self, context):
+        ob = context.object
+        if ob:
+            dazRna(ob).show("OBJECT", ob, self.layout)
+            if ob.type == 'ARMATURE':
+                dazRna(ob.data).show("ARMATURE", ob.data, self.layout)
+            elif ob.type == 'MESH':
+                dazRna(ob.data).show("MESH", ob.data, self.layout)
+                mat = ob.active_material
+                if mat:
+                    dazRna(mat).show("MATERIAL", mat, self.layout)
+        pb = context.active_pose_bone
+        if pb:
+            dazRna(pb.bone).show("BONE", pb.bone, self.layout)
+            dazRna(pb).show("POSEBONE", pb, self.layout)
+        scn = context.scene
+        if scn:
+            dazRna(scn).show("SCENE", scn, self.layout)
+
+
 class DAZ_PT_Debugging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_idname = "DAZ_PT_Debugging"
     bl_parent_id = "DAZ_PT_Utils"
@@ -885,6 +910,7 @@ classes = [
     DAZ_PT_Utils,
     DAZ_PT_ActiveObject,
     DAZ_PT_ActivePoseBone,
+    DAZ_PT_DazProperties,
     DAZ_PT_Debugging,
     DAZ_PT_Runtime,
     DAZ_PT_Posing,

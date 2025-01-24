@@ -161,8 +161,18 @@ def toggleMorphArmatures(self, context):
     GS.toggleMorphArmatures(context.scene)
 
 if DAZ_PROPS:
+    class DazProperties(bpy.types.PropertyGroup):
+        def show(self, text, rna, layout):
+            layout.label(text = "%s: %s" % (text, rna.name))
+            for prop in dir(self):
+                if prop.startswith("Daz"):
+                    split = layout.split(factor = 0.4)
+                    split.label(text = prop)
+                    split.prop(self, prop, text="")
+            layout.separator()
 
-    class DazImporterBone(bpy.types.PropertyGroup):
+
+    class DazImporterBone(DazProperties):
         DazHead : FloatVectorProperty(size=3, default=(0,0,0))
         DazOrient : FloatVectorProperty(size=3, default=(0,0,0))
         DazNormal : FloatVectorProperty(size=3, default=(0,0,0))
@@ -171,7 +181,7 @@ if DAZ_PROPS:
         DazExtraBone : StringProperty()
 
 
-    class DazImporterPoseBone(bpy.types.PropertyGroup):
+    class DazImporterPoseBone(DazProperties):
         DazRotMode : StringProperty(default='XYZ')
         DazAxes : IntVectorProperty(size=3, default=(0,1,2))
         DazFlips : IntVectorProperty(size=3, default=(1,1,1))
@@ -186,7 +196,7 @@ if DAZ_PROPS:
         #HdOffset : bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
 
 
-    class DazImporterObject(bpy.types.PropertyGroup):
+    class DazImporterObject(DazProperties):
         DazId : StringProperty()
         DazUrl : StringProperty()
         DazFigure : StringProperty()
@@ -230,7 +240,7 @@ if DAZ_PROPS:
         DazVisibilityCollections : BoolProperty(default = False)
 
 
-    class DazImporterMaterial(bpy.types.PropertyGroup):
+    class DazImporterMaterial(DazProperties):
         DazScale : FloatProperty(default=0.01)
         DazShader : StringProperty(default='NONE')
         DazUDimsCollapsed : BoolProperty()
@@ -240,7 +250,7 @@ if DAZ_PROPS:
         DazMaterialType = StringProperty()
 
 
-    class DazImporterArmature(bpy.types.PropertyGroup):
+    class DazImporterArmature(DazProperties):
         DazExtraFaceBones : BoolProperty()
         DazExtraDrivenBones : BoolProperty()
         DazUnflipped : BoolProperty()
@@ -249,7 +259,7 @@ if DAZ_PROPS:
         DazMergedRigs : CollectionProperty(type = DazStringBoolGroup)
 
 
-    class DazImporterMesh(bpy.types.PropertyGroup):
+    class DazImporterMesh(DazProperties):
         DazRigidityGroups : CollectionProperty(type = DazRigidityGroup)
         DazFingerPrint : StringProperty(name = "Original Fingerprint", default="")
         DazGraftGroup : CollectionProperty(type = DazPairGroup)
@@ -267,7 +277,7 @@ if DAZ_PROPS:
         DazFavorites : CollectionProperty(type = bpy.types.PropertyGroup)
         DazBodyPart : CollectionProperty(type = DazStringGroup)
 
-    class DazImporterScene(bpy.types.PropertyGroup):
+    class DazImporterScene(DazProperties):
         DazPreferredRoot : EnumProperty(
             items = getRootEnums,
             name = "Preferred Root Directory",
