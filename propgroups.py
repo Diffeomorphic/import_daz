@@ -173,9 +173,6 @@ if DAZ_PROPS:
         DazRotLocks : BoolVectorProperty(size=3, default=FFalse)
         DazLocLocks : BoolVectorProperty(size=3, default=FFalse)
         DazScaleLocks : BoolVectorProperty(size=3, default=FFalse)
-        #DazHeadLocal : bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
-        #DazTailLocal : bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
-        #HdOffset : bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
 
 
     class DazImporterObject(DazProperties):
@@ -382,9 +379,6 @@ def register():
         bpy.utils.register_class(cls)
 
     from .morphing import MS
-
-    bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
-    bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
 
     if DAZ_PROPS:

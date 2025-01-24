@@ -78,8 +78,6 @@ def setMhx(rna, prop, value):
 
 
 def mhxProp(prop):
-    if prop.startswith("Daz"):
-        print("MMM", prop, propRef(prop))
     if isinstance(prop, str):
         return propRef(prop)
     else:

@@ -312,6 +312,8 @@ def register():
     for modname in Modules:
         if modname in Regnames:
             exec("%s.register()" % modname)
+    from .runtime import morph_armature
+    morph_armature.register()
 
     bpy.utils.register_class(DazPreferences)
     addon = bpy.context.preferences.addons.get(__name__)
@@ -369,6 +371,8 @@ def register():
 
 
 def unregister():
+    from .runtime import morph_armature
+    morph_armature.unregister()
     for modname in Modules:
         exec("from . import %s" % modname)
     for modname in reversed(Modules):
