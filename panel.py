@@ -174,8 +174,6 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Utilities"
 
     def draw(self, context):
-        self.layout.operator("daz.update_daz_properties")
-        self.layout.separator()
         self.layout.operator("daz.scan_absolute_paths")
         self.layout.operator("daz.add_content_dirs")
         self.layout.separator()
@@ -262,23 +260,35 @@ class DAZ_PT_DazProperties(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "DAZ Importer Properties"
 
     def draw(self, context):
+        def showDazProps(text, rna, layout):
+            layout.label(text = "%s: %s" % (text, rna.name))
+            for prop in dir(dazRna(rna)):
+                if prop.startswith("Daz"):
+                    split = layout.split(factor = 0.4)
+                    split.label(text = prop)
+                    split.prop(dazRna(rna), prop, text="")
+            layout.separator()
+
+        if DAZ_PROPS:
+            self.layout.operator("daz.update_daz_properties")
+            self.layout.separator()
         ob = context.object
         if ob:
-            dazRna(ob).show("OBJECT", ob, self.layout)
+            showDazProps("OBJECT", ob, self.layout)
             if ob.type == 'ARMATURE':
-                dazRna(ob.data).show("ARMATURE", ob.data, self.layout)
+                showDazProps("ARMATURE", ob.data, self.layout)
             elif ob.type == 'MESH':
-                dazRna(ob.data).show("MESH", ob.data, self.layout)
+                showDazProps("MESH", ob.data, self.layout)
                 mat = ob.active_material
                 if mat:
-                    dazRna(mat).show("MATERIAL", mat, self.layout)
+                    showDazProps("MATERIAL", mat, self.layout)
         pb = context.active_pose_bone
         if pb:
-            dazRna(pb.bone).show("BONE", pb.bone, self.layout)
-            dazRna(pb).show("POSEBONE", pb, self.layout)
+            showDazProps("BONE", pb.bone, self.layout)
+            showDazProps("POSEBONE", pb, self.layout)
         scn = context.scene
         if scn:
-            dazRna(scn).show("SCENE", scn, self.layout)
+            showDazProps("SCENE", scn, self.layout)
 
 
 class DAZ_PT_Debugging(DAZ_PT_SetupTab, bpy.types.Panel):

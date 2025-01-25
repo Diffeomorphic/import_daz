@@ -758,9 +758,9 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones,
     def checkAllowed(self, rig):
         if dazRna(rig).DazRig.startswith(("mhx", "rigify")):
             msg = "Rig type = %s" % dazRna(rig).DazRig
-        elif rig.get("DazSimpleIK"):
+        elif getDaz(rig, "DazSimpleIK"):
             msg = "Rig has simple IK"
-        elif rig.data.get("DazFinalized", False):
+        elif getDaz(rig.data, "DazFinalized", False):
             msg = "Rig has been finalized"
         else:
             return True
