@@ -614,6 +614,7 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
     def makeMaterial(self, ob, img):
         from ..tree import hideAllBut
         mat = bpy.data.materials.new(img.name)
+        setModernProps(mat)
         ob.data.materials.append(mat)
         ob.active_material = mat
         mat.use_nodes = True

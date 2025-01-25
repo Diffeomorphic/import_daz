@@ -171,9 +171,10 @@ class GeoNode(Node, SimNode):
             hdob = ob
         else:
             hdob = bpy.data.objects.new(HDName(ob.name), me)
-            setDaz(hdob, "DazVisibilityDrivers", getDaz(ob, "DazVisibilityDrivers", False))
+            setModernProps(hdob)
+            dazRna(hdob).DazVisibilityDrivers = dazRna(ob).DazVisibilityDrivers
             self.arrangeObject(hdob, inst, context, Zero)
-        setDaz(hdob, "DazHDMesh", True)
+        dazRna(hdob).DazHDMesh = True
         self.hdobject = inst.hdobject = hdob
         LS.hdmeshes[LS.rigname].append(hdob)
         return hdob
@@ -211,7 +212,7 @@ class GeoNode(Node, SimNode):
                 hdob = self.buildHDObject(context, ob, inst, ob.data)
         if ob and self.data:
             if not self.conform_target:
-                setDaz(ob, "DazConforms", False)
+                dazRna(ob).DazConforms = False
             self.data.buildRigidity(ob)
             if self.hdType == 'MULTIRES':
                 self.data.buildRigidity(self.hdobject)
@@ -277,6 +278,7 @@ class GeoNode(Node, SimNode):
         mnums = [f[4] for f in self.highdef.faces]
         nverts = len(verts)
         me = bpy.data.meshes.new(HDName(ob.data.name))
+        setModernProps(me)
         print("Build HD mesh for %s: %d verts, %d faces, %d edges" % (ob.name, nverts, len(faces), len(edges)))
         me.from_pydata(verts, edges, faces)
         print("HD mesh %s built" % me.name)
@@ -285,7 +287,7 @@ class GeoNode(Node, SimNode):
             f.use_smooth = True
         self.data.setHairType(me)
         self.data.validateMesh(me, HDName(ob.name))
-        setDaz(me, "DazHDMesh", True)
+        dazRna(me).DazHDMesh = True
         return me
 
 
@@ -977,6 +979,7 @@ class Geometry(Asset, Channels):
             return LS.hiddenMaterial
         from .cycles import setRenderMethod, setShadowMethod
         mat = LS.hiddenMaterial = bpy.data.materials.new("HIDDEN")
+        setModernProps(mat)
         mat.diffuse_color[3] = 0
         mat.use_nodes = True
         setRenderMethod(mat, False, True)
@@ -1189,6 +1192,7 @@ class Geometry(Asset, Channels):
                 reportError(msg)
 
         me = self.rna = bpy.data.meshes.new(geonode.getName())
+        setModernProps(me)
 
         verts = self.verts
         edges = []
@@ -1259,10 +1263,11 @@ class Geometry(Asset, Channels):
 
         obname = geonode.getObjectName(inst)
         ob = bpy.data.objects.new(obname, me)
+        setModernProps(ob)
         from .finger import getFingerPrint
         dazRna(me).DazFingerPrint = getFingerPrint(ob)
         if hasShells:
-            setDaz(ob, "DazVisibilityDrivers", True)
+            dazRna(ob).DazVisibilityDrivers = True
 
         if USE_ATTRIBUTES:
             def addFaceMap(ob, aname, groups, indices):
@@ -1286,8 +1291,10 @@ class Geometry(Asset, Channels):
         guideOb = None
         if guideVerts:
             guideMe = bpy.data.meshes.new("%s_GUIDE" % geonode.getName())
+            setModernProps(guideMe)
             guideMe.from_pydata(guideVerts, guideEdges, [])
             guideOb = bpy.data.objects.new("%s_GUIDE" % inst.name, guideMe)
+            setModernProps(guideOb)
             guideMe.DazFingerPrint = getFingerPrint(guideOb)
             self.setHairMatNums(guideMe, guidePolymats)
             for mat in me.materials:
@@ -1474,7 +1481,7 @@ class Geometry(Asset, Channels):
                     return
                 wvalues = [w for vn,w in rweights]
                 if len(rweights) == nverts and min(wvalues) > 0.9999:
-                    setDaz(ob.data, "DazFullyRigid", True)
+                    dazRna(ob.data).DazFullyRigid = True
 
 
     def makeShell(self, shname, shmat, uv):

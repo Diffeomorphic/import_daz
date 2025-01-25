@@ -264,14 +264,15 @@ class Figure(Node):
             geonode.rna.location = Zero
         if GS.useArmature:
             amt = self.data = bpy.data.armatures.new(noHDName(inst.name))
+            setModernProps(amt)
             self.buildObject(context, inst, center)
             rig = self.rna
             LS.rigs[LS.rigname].append(rig)
             amt.display_type = 'STICK'
             rig.show_in_front = True
             if GS.unflipped:
-                setDaz(rig.data, "DazUnflipped", True)
-            setDaz(rig.data, "DazHasAxes", True)
+                dazRna(rig.data).DazUnflipped = True
+            dazRna(rig.data).DazHasAxes = True
             dazRna(rig).DazInheritScale = False
         else:
             rig = amt = None
@@ -392,13 +393,10 @@ def copyBoneInfo(srcpb, trgpb):
         setattr(trgpb.bone, attr, getattr(srcpb.bone, attr))
     for attr in ["DazRotMode"]:
         setattr(dazRna(trgpb), attr, getattr(dazRna(srcpb), attr))
-    for attr in ["DazAngle"]:
+    for attr in ["DazAngle", "DazRigIndex", "DazTrueName"]:
         setattr(dazRna(trgpb.bone), attr, getattr(dazRna(srcpb.bone), attr))
     for attr in ["DazOrient", "DazHead", "DazNormal"]:
         setattr(dazRna(trgpb.bone), attr, tuple(getattr(dazRna(srcpb.bone), attr)))
-    for key in ["DazRigIndex", "DazTrueName"]:
-        if hasDaz(srcpb.bone, key):
-            setDaz(trgpb.bone, key, getDaz(srcpb.bone, key))
     for attr in ["DazRestRotation", "DazAxes", "DazFlips", "DazLocLocks", "DazRotLocks"]:
         setattr(dazRna(trgpb), attr, tuple(getattr(dazRna(srcpb), attr)))
     for key in ["lock_ik", "ik_stiffness", "use_ik_limit", "ik_min", "ik_max"]:
@@ -632,8 +630,7 @@ class ExtraBones(DriverUser):
             else:
                 bone = rig.data.bones[bname]
                 db = rig.data.bones[drvBone(bname)]
-                if hasDaz(db, "DazExtraBone"):
-                    setDaz(bone, "DazExtraBone", getDaz(db, "DazExtraBone"))
+                dazRna(bone).DazExtraBone = dazRna(db).DazExtraBone
 
         setMode('EDIT')
         for bname in self.bnames:
@@ -758,9 +755,9 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones,
     def checkAllowed(self, rig):
         if dazRna(rig).DazRig.startswith(("mhx", "rigify")):
             msg = "Rig type = %s" % dazRna(rig).DazRig
-        elif getDaz(rig, "DazSimpleIK"):
+        elif dazRna(rig).DazSimpleIK:
             msg = "Rig has simple IK"
-        elif getDaz(rig.data, "DazFinalized", False):
+        elif dazRna(rig.data).DazFinalized:
             msg = "Rig has been finalized"
         else:
             return True
@@ -795,7 +792,7 @@ def finalizeArmature(rig):
                     if cns.type == 'COPY_TRANSFORMS' and cns.subtarget == drvname:
                         pb.constraints.remove(cns)
                         break
-    setDaz(rig.data, "DazFinalized", True)
+    dazRna(rig.data).DazFinalized = True
 
 
 class DAZ_OT_FinalizeArmature(DazOperator, IsArmature):

@@ -283,6 +283,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         rigname = "%s Rig" % hairname
         amt = bpy.data.armatures.new(rigname)
         hairrig = bpy.data.objects.new(rigname, amt)
+        setModernProps(hairrig)
         hairrig.parent = rig
         hairrig.parent_type = 'BONE'
         hairrig.parent_bone = self.headName

@@ -545,7 +545,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             if prop not in hum.keys():
                 hum[prop] = value
                 setOverridable(hum, prop)
-                setDaz(hum, "DazVisibilityDrivers", True)
+                dazRna(hum).DazVisibilityDrivers = True
         for graft in grafts:
             for mat in graft.data.materials:
                 if mat and mat.node_tree and mat.node_tree.animation_data:

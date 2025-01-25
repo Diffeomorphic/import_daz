@@ -58,7 +58,7 @@ class MatchOperator(DazPropsOperator):
         for ob in getSelectedMeshes(context):
             if (ob != src and
                 len(ob.data.polygons) > 0 and
-                (getDaz(ob, "DazConforms", True) or self.useNonConforming)):
+                (dazRna(ob).DazConforms or self.useNonConforming)):
                 objects.append(ob)
                 checkObjectTransforms(ob)
                 if (ob.parent and
@@ -422,7 +422,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
             # If the center doesn't move, we can remove the shapekey if the mesh is fully rigid.
             diff = base_center_coords-shapekey_center_coords
             dist = np.sum(np.abs(diff))
-            if dist < self.eps and ob.data.get("DazFullyRigid", False):
+            if dist < self.eps and dazRna(ob.data).DazFullyRigid:
                 return True
 
             rotmode = rgroup.rotation_mode

@@ -52,7 +52,7 @@ class DynSim(DForce):
             return
         ob = geonode.rna
         if ob and ob.type == 'MESH':
-            setDaz(ob, "DazCloth", True)
+            dazRna(ob).DazCloth = True
             self.addPinVertexGroup(ob, geonode)
 
 

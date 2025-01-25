@@ -61,7 +61,7 @@ class UVLayerMerger:
                     uvmaps[uvname] = True
                 elif isShellNode(node):
                     uvname = getUvMap(node.inputs.get("UV"), "**")
-                    mat["DazShellMap"] = uvname
+                    dazRna(mat).DazShellMap = uvname
                     shellmaps[uvname] = True
 
         for uvname in uvmaps.keys():

@@ -68,9 +68,9 @@ class DAZ_OT_MakeDForce(DazPropsOperator, Collision, Cloth):
         if meshes:
             self.addClothCollection(context, meshes)
             for ob in meshes:
-                if getDaz(ob, "DazCloth", False):
+                if dazRna(ob).DazCloth:
                     self.addCloth(ob)
-                elif getDaz(ob, "DazCollision", False):
+                elif dazRna(ob).DazCollision:
                     self.addCollision(ob, self.collection)
 
 #-------------------------------------------------------------

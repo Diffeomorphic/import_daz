@@ -12,7 +12,7 @@ from .settings import GS, LS, ES
 
 BLENDER3 = (bpy.app.version < (4,0,0))
 USE_ATTRIBUTES = (bpy.app.version >= (3,0,0))
-DAZ_PROPS = False
+DAZ_PROPS = True
 
 #-------------------------------------------------------------
 #   Bone layers
@@ -739,29 +739,23 @@ def canonicalPath(path):
 
 if DAZ_PROPS:
     def dazRna(rna):
-        return rna.daz_importer
+        return (rna if rna.daz_importer.legacy else rna.daz_importer)
 
-    def getDaz(rna, prop, default=None):
-        return getattr(rna.daz_importer, prop)
+    def setModernProps(rna):
+        rna.daz_importer.legacy = False
 
-    def setDaz(rna, prop, value):
-        setattr(rna.daz_importer, prop, value)
-
-    def hasDaz(rna, prop):
-        True
+    def hasLegacyProps(rna):
+        return rna.daz_importer.legacy
 
 else:
     def dazRna(rna):
         return rna
 
-    def getDaz(rna, prop, default=None):
-        return rna.get(prop, default)
+    def setModernProps(rna):
+        pass
 
-    def setDaz(rna, prop, value):
-        rna[prop] = value
-
-    def hasDaz(rna, prop):
-        return (prop in rna.keys())
+    def hasLegacyProps(rna):
+        return True
 
 #-------------------------------------------------------------
 #   Profiling

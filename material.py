@@ -347,6 +347,7 @@ class Material(Asset, Channels):
         mat = self.rna
         if mat is None:
             mat = self.rna = bpy.data.materials.new(self.name)
+            setModernProps(mat)
             LS.materials[self.name] = mat
         scn = self.scene = context.scene
         dazRna(mat).DazShader = self.shader

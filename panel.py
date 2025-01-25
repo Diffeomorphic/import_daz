@@ -238,8 +238,7 @@ class DAZ_PT_ActivePoseBone(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
         ob = context.object
         if ob and pb:
             self.layout.label(text = "Active Bone: %s" % pb.name)
-            if "DazTrueName" in pb.bone.keys():
-                self.layout.label(text = "True Bone: %s" % getDaz(pb.bone, "DazTrueName"))
+            self.layout.label(text = "True Bone: %s" % dazRna(pb.bone).DazTrueName)
             self.propRow(self.layout, dazRna(pb.bone), "DazHead")
             self.propRow(self.layout, dazRna(pb.bone), "DazOrient")
             self.propRow(self.layout, dazRna(pb), "DazRotMode")
@@ -261,8 +260,14 @@ class DAZ_PT_DazProperties(DAZ_PT_SetupTab, bpy.types.Panel):
 
     def draw(self, context):
         def showDazProps(text, rna, layout):
-            layout.label(text = "%s: %s" % (text, rna.name))
-            for prop in dir(dazRna(rna)):
+            if hasLegacyProps(rna):
+                type = "LEGACY"
+                data = rna
+            else:
+                type = "MODERN"
+                data = dazRna(rna)
+            layout.label(text = "%s: %s (%s)" % (text, rna.name, type))
+            for prop in dir(data):
                 if prop.startswith("Daz"):
                     split = layout.split(factor = 0.4)
                     split.label(text = prop)
@@ -358,21 +363,21 @@ class DAZ_PT_LocksLimits(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
         col = row.column()
         col.label(text="Loc")
-        icon = ('CHECKBOX_HLT' if dazRna(rig).DazLocLocks else 'CHECKBOX_DEHLT')
+        icon = ('CHECKBOX_HLT' if dazRna(rig).DazHasLocLocks else 'CHECKBOX_DEHLT')
         col.label(text="", icon=icon)
-        col.label(text="%.3f" % dazRna(rig).DazLocLimits)
+        col.label(text="%.3f" % dazRna(rig).DazHasLocLimits)
 
         col = row.column()
         col.label(text="Rot")
-        icon = ('CHECKBOX_HLT' if dazRna(rig).DazRotLocks else 'CHECKBOX_DEHLT')
+        icon = ('CHECKBOX_HLT' if dazRna(rig).DazHasRotLocks else 'CHECKBOX_DEHLT')
         col.label(text="", icon=icon)
-        col.label(text="%.3f" % dazRna(rig).DazRotLimits)
+        col.label(text="%.3f" % dazRna(rig).DazHasRotLimits)
 
         col = row.column()
         col.label(text="Sca")
-        icon = ('CHECKBOX_HLT' if dazRna(rig).DazScaleLocks else 'CHECKBOX_DEHLT')
+        icon = ('CHECKBOX_HLT' if dazRna(rig).DazHasScaleLocks else 'CHECKBOX_DEHLT')
         col.label(text="", icon=icon)
-        col.label(text="%.3f" % dazRna(rig).DazScaleLimits)
+        col.label(text="%.3f" % dazRna(rig).DazHasScaleLimits)
 
         self.layout.prop(dazRna(rig), "DazInheritScale")
         self.layout.operator("daz.impose_locks_limits")

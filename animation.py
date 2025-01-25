@@ -152,7 +152,7 @@ class FrameConverter:
     def setupBoneMap(self, anims, rig):
         truenames = dict([(bone.name, bone.name) for bone in rig.data.bones])
         for bone in rig.data.bones:
-            truename = getDaz(bone, "DazTrueName")
+            truename = dazRna(bone).DazTrueName
             if truename:
                 truenames[truename] = bone.name
         conv,twists = self.getConv(anims[0][0], rig)

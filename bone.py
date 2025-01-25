@@ -398,7 +398,7 @@ class BoneInstance(Instance):
             pg.name = mapped
             pg.s = self.name
         if self.id != self.name:
-            setDaz(pb.bone, "DazTrueName", unquote(self.id))
+            dazRna(pb.bone).DazTrueName = unquote(self.id)
         if pb.name in figure.driven.keys():
             pb.rotation_mode = self.getRotationMode(pb, True)
             enableBoneNumLayer(pb.bone, rig, T_HIDDEN)

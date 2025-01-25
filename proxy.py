@@ -616,6 +616,7 @@ class Proxifier(DriverUser):
             for g in range(3):
                 for b in range(3):
                     mat = bpy.data.materials.new("Mat-%02d" % n)
+                    setModernProps(mat)
                     n += 1
                     mat.diffuse_color[0:3] = (r/2, g/2, b/2)
                     me.materials.append(mat)

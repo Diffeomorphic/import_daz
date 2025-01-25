@@ -62,30 +62,30 @@ class LockEnabler:
         driven = getDrivenBoneFcurves(rig, useRigifySafe=True)
         if self.useLocks:
             if self.useLocation:
-                dazRna(rig).DazLocLocks = lock
+                dazRna(rig).DazHasLocLocks = lock
                 if self.useKeying:
-                    rig.keyframe_insert("DazLocLocks")
+                    rig.keyframe_insert("DazHasLocLocks")
             if self.useRotation:
-                dazRna(rig).DazRotLocks = lock
+                dazRna(rig).DazHasRotLocks = lock
                 if self.useKeying:
-                    rig.keyframe_insert("DazRotLocks")
+                    rig.keyframe_insert("DazHasRotLocks")
             if self.useScale:
-                dazRna(rig).DazScaleLocks = lock
+                dazRna(rig).DazHasScaleLocks = lock
                 if self.useKeying:
-                    rig.keyframe_insert("DazScaleLocks")
+                    rig.keyframe_insert("DazHasScaleLocks")
         if self.useLimits:
             if self.useLocation:
-                dazRna(rig).DazLocLimits = limit
+                dazRna(rig).DazHasLocLimits = limit
                 if self.useKeying:
-                    rig.keyframe_insert("DazLocLimits")
+                    rig.keyframe_insert("DazHasLocLimits")
             if self.useRotation:
-                dazRna(rig).DazRotLimits = limit
+                dazRna(rig).DazHasRotLimits = limit
                 if self.useKeying:
-                    rig.keyframe_insert("DazRotLimits")
+                    rig.keyframe_insert("DazHasRotLimits")
             if self.useScale:
-                dazRna(rig).DazScaleLimits = limit
+                dazRna(rig).DazHasScaleLimits = limit
                 if self.useKeying:
-                    rig.keyframe_insert("DazScaleLimits")
+                    rig.keyframe_insert("DazHasScaleLimits")
         for pb in rig.pose.bones:
             if pb.name in driven.keys():
                 continue

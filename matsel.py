@@ -207,7 +207,7 @@ def getShellProps(context):
     filter = dazRna(scn).DazFilter.lower()
     rig = getRigFromContext(context)
     if rig:
-        objects = [rig] + [ob for ob in rig.children if getDaz(ob, "DazVisibilityDrivers")]
+        objects = [rig] + [ob for ob in rig.children if dazRna(ob).DazVisibilityDrivers]
     else:
         objects = [context.object]
     props = {}
@@ -251,8 +251,8 @@ def driveShellInfluence(ob):
                     prop = "INFLU %s" % node.label
                     setFloatProp(rig, prop, 1.0, 0.0, 10.0, True)
                     addDriver(node.inputs["Influence"], "default_value", rig, propRef(prop), "x")
-                    setDaz(ob, "DazVisibilityDrivers", True)
-                    setDaz(rig, "DazVisibilityDrivers", True)
+                    dazRna(ob).DazVisibilityDrivers = True
+                    dazRna(rig).DazVisibilityDrivers = True
 
 
 ShellInputs = ["Influence", "BSDF", "UV", "Displacement"]
@@ -325,6 +325,7 @@ def getInvisibleMaterial(mname="Invisio", color=(0.8,0.8,0.8,0)):
         return bpy.data.materials[mname]
     from .cycles import setRenderMethod, setShadowMethod
     mat = bpy.data.materials.new(mname)
+    setModernProps(mat)
     setRenderMethod(mat, False, True)
     setShadowMethod(mat, False)
     mat.diffuse_color = color

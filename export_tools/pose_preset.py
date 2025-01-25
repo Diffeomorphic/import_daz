@@ -256,7 +256,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
 
     def isValidMorph(self, rig, prop):
-        return (isinstance(getDaz(rig, prop), float) and
+        return (isinstance(rig[prop], float) and
                 prop[0:3] not in ["Daz", "Mha", "Mhh"])
 
 
@@ -529,7 +529,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         if not self.useHierarchical:
             return bname
         if idx is None:
-            idx = pb.bone.get("DazRigIndex", 0)
+            idx = dazRna(pb.bone).DazRigIndex
         if idx == 0:
             return bname
         else:
@@ -555,7 +555,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         for pb in rig.pose.bones:
             if self.skipBone(pb):
                 continue
-            idx = pb.bone.get("DazRigIndex", 0)
+            idx = dazRna(pb.bone).DazRigIndex
             if idx not in nodes.keys():
                 nodes[idx] = []
             nodes[idx] += self.getAncestors(pb, rig, idx, figure)
@@ -660,7 +660,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 path = quote(path)
                 return "%s:%s#%s" % (figure, path, figure)
             else:
-                idx = pb.bone.get("DazRigIndex", 0)
+                idx = dazRna(pb.bone).DazRigIndex
                 path,figure,boneparent = self.getPathFigure(rig, idx)
                 id = pb.bone.get("DazTrueName", pb.name)
                 return"%s:%s#%s" % (quote(bname), quote(path), quote(id))
@@ -891,7 +891,7 @@ class DAZ_OT_MakeControlRig(DazOperator, IsArmature):
                         if cns.type.startswith("LIMIT"):
                             cns.mute = True
                     copyTransform(pb, rb, rig)
-                    setDaz(pb, "DazSharedBone", True)
+                    dazRna(pb).DazSharedBone = True
                     enableBoneNumLayer(pb.bone, ob, T_HIDDEN)
             enableRigNumLayer(ob, T_HIDDEN, False)
 

@@ -1058,7 +1058,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
                 rna.animation_data.drivers.remove(fcu)
                 if prop in rna.keys():
                     del rna[prop]
-        setDaz(rna, "DazOptimizedDrivers", True)
+        dazRna(rna).DazOptimizedDrivers = True
         self.ndeleted += len(self.deldrivers)
         print("Deleted %d drivers from %s" % (len(self.deldrivers), rna.name))
 

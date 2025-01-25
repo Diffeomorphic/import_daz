@@ -180,6 +180,7 @@ def addToons(context):
         mat = bpy.data.materials.get(oname)
         if mat is None:
             mat = bpy.data.materials.new(oname)
+            setModernProps(mat)
         mat.use_nodes = True
         mat.use_backface_culling = True
         if hasattr(mat, "use_backface_culling_shadow"):

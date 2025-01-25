@@ -275,10 +275,10 @@ class Instance(Accessor, Channels, SimNode):
 
 
     def setCollision(self, value, ob):
-        setDaz(ob, "DazCollision", value)
+        dazRna(ob).DazCollision = value
         for geonode in self.geometries:
             if geonode.rna:
-                setDaz(geonode.rna, "DazCollision", value)
+                dazRna(geonode.rna).DazCollision = value
 
 
     def hideViewport(self, value, ob):
@@ -967,8 +967,10 @@ class Node(Asset, Formula, Channels):
             ob,ob2 = self.data.buildData(context, self, inst, center)
             if not isinstance(ob, bpy.types.Object):
                 ob = bpy.data.objects.new(obname, self.data.rna)
+                setModernProps(ob)
         else:
             ob = bpy.data.objects.new(obname, self.data)
+            setModernProps(ob)
         self.rna = inst.rna = ob
         ob.empty_display_size = 10*GS.scale
         LS.objects[LS.rigname].append(ob)

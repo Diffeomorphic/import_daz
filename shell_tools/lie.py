@@ -187,7 +187,7 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
             mats = []
             for mat in ob.data.materials:
                 if mat and materialBaseName(mat.name) == mname:
-                    if not self.useGeografts or mat.get("DazShellMap"):
+                    if not self.useGeografts or dazRna(mat).DazShellMap:
                         mats.append(mat)
             return mats
 
@@ -387,7 +387,7 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
             return node,uvset
 
         def fixNode(mat, node, label, key, value, img, mask, uvsets):
-            uvset1 = mat.get("DazShellMap")
+            uvset1 = dazRna(mat).DazShellMap
             if node is None:
                 pass
             elif node.type == 'TEX_IMAGE':
@@ -456,7 +456,7 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, Mul
         if self.useDriveInfluence:
             setFloatProp(rig, prop, 1.0, 0.0, 10.0, True, False)
             addDriver(node.inputs[label], "default_value", rig, propRef(prop), "x")
-            setDaz(rig, "DazVisibilityDrivers", True)
+            dazRna(rig).DazVisibilityDrivers = True
         else:
             node.inputs[label].default_value = 1.0
             if prop in rig.keys():

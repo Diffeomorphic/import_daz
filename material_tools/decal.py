@@ -122,7 +122,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, MaterialSelector, IsM
             setColorSpaceNone(mask)
 
         ob = context.object
-        setDaz(ob, "DazVisibilityDrivers", True)
+        dazRna(ob).DazVisibilityDrivers = True
         fname = os.path.splitext(os.path.basename(self.filepath))[0]
         if self.reuseEmpty and self.emptyName != 'NONE':
             empty = bpy.data.objects[self.emptyName]

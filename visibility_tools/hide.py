@@ -92,8 +92,8 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
                 obnames.append(ob.name)
         for ob in getMeshChildren(rig):
             self.createMaskVisibility(rig, ob, obnames)
-            setDaz(ob, "DazVisibilityDrivers", True)
-        setDaz(rig, "DazVisibilityDrivers", True)
+            dazRna(ob).DazVisibilityDrivers = True
+        dazRna(rig).DazVisibilityDrivers = True
         updateDrivers(rig)
 
         if self.useCollections:
@@ -148,7 +148,7 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
             for ob in selected:
                 coll = createSubCollection(rigcoll, ob.name)
                 moveToCollection(ob, coll)
-        setDaz(rig, "DazVisibilityCollections", True)
+        dazRna(rig).DazVisibilityCollections = True
         print("Visibility collections created")
 
 #------------------------------------------------------------------------
@@ -164,7 +164,7 @@ class DAZ_OT_RemoveVisibility(DazPropsOperator):
     @classmethod
     def poll(self, context):
         ob = context.object
-        return (ob and ob.type == 'ARMATURE' and getDaz(ob, "DazVisibilityDrivers"))
+        return (ob and ob.type == 'ARMATURE' and dazRna(ob).DazVisibilityDrivers)
 
     useAllMeshes : BoolProperty(
         name = "All Meshes In Scene",
@@ -196,7 +196,7 @@ class DAZ_OT_RemoveVisibility(DazPropsOperator):
             if isHideProp(prop):
                 del rig[prop]
         updateDrivers(rig)
-        setDaz(rig, "DazVisibilityDrivers", False)
+        dazRna(rig).DazVisibilityDrivers = False
         print("Visibility drivers removed")
 
 #------------------------------------------------------------------------
@@ -454,7 +454,7 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
             form = "%s"
         props = []
         for clo in clothes:
-            if not getDaz(clo, "DazVisibilityDrivers"):
+            if not dazRna(clo).DazVisibilityDrivers:
                 raise DazError("Create visibility drivers first")
             prop = getHidePropName(clo.name)
             if prop not in rig.keys():
