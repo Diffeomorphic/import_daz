@@ -630,7 +630,7 @@ class ExtraBones(DriverUser):
             else:
                 bone = rig.data.bones[bname]
                 db = rig.data.bones[drvBone(bname)]
-                dazRna(bone).DazExtraBone = dazRna(db).DazExtraBone
+                bone["DazExtraBone"] = db.get("DazExtraBone", False)
 
         setMode('EDIT')
         for bname in self.bnames:
@@ -755,7 +755,7 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones,
     def checkAllowed(self, rig):
         if dazRna(rig).DazRig.startswith(("mhx", "rigify")):
             msg = "Rig type = %s" % dazRna(rig).DazRig
-        elif dazRna(rig).DazSimpleIK:
+        elif rig.get("DazSimpleIK"):
             msg = "Rig has simple IK"
         elif dazRna(rig.data).DazFinalized:
             msg = "Rig has been finalized"

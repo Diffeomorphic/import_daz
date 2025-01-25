@@ -917,7 +917,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         elif rig.data.get("rig_id"):
             from .rigify_tools import setRigifyLayers
             setRigifyLayers(rig, False, self.boneLayers)
-        elif dazRna(rig).get("DazSimpleIK"):
+        elif rig.get("DazSimpleIK"):
             props = ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R"]
             removeFcurves(act, props)
             for prop in props:
@@ -1342,7 +1342,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 if not self.affectScale:
                     tfm.setScale(pb.scale, False)
                 oldStyle = (self.useConvert or
-                            not rig.data.get("DazHasAxes") or
+                            not dazRna(rig.data).DazHasAxes or
                             dazRna(rig).DazRig.startswith("rigify"))
                 setBoneTransform(tfm, pb, rig, bonemap=self.bonemap, oldStyle=oldStyle)
             imposeLocks(pb)

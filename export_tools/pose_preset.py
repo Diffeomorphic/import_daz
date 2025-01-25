@@ -662,7 +662,9 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
             else:
                 idx = dazRna(pb.bone).DazRigIndex
                 path,figure,boneparent = self.getPathFigure(rig, idx)
-                id = pb.bone.get("DazTrueName", pb.name)
+                id = dazRna(pb.bone).DazTrueName
+                if not id:
+                    id = pb.name
                 return"%s:%s#%s" % (quote(bname), quote(path), quote(id))
         else:
             if pb == rig:

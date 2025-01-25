@@ -385,22 +385,6 @@ class DAZ_OT_Update(DazOperator):
     def run(self, context):
         MP.setupMorphPaths(True)
 
-
-class DAZ_OT_SelectAllMorphs(DazOperator):
-    bl_idname = "daz.select_all_morphs"
-    bl_label = "Select All"
-    bl_description = "Select/Deselect all morphs in this section"
-    bl_options = {'UNDO'}
-
-    type : StringProperty()
-    value : BoolProperty()
-
-    def run(self, context):
-        scn = context.scene
-        names = MP.morphNames[self.morphset]
-        for name in names.values():
-            scn["Daz%s" % name] = self.value
-
 #------------------------------------------------------------------
 #   Load typed morphs base class
 #------------------------------------------------------------------
@@ -2218,7 +2202,6 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
 
 classes = [
     DAZ_OT_Update,
-    DAZ_OT_SelectAllMorphs,
     DAZ_OT_ImportUnits,
     DAZ_OT_ImportExpressions,
     DAZ_OT_ImportVisemes,

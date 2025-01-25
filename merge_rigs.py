@@ -178,7 +178,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             if (rig.type == 'ARMATURE' and
                 rig.parent_type == 'OBJECT' and
                 rig not in excluded):
-                rig["DazTiedRig"] = root.name
+                dazRna(rig).DazTiedRig = root.name
                 for pb in rig.pose.bones:
                     rb = root.pose.bones.get(pb.name)
                     if rb:

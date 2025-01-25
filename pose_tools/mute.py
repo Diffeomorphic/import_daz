@@ -79,7 +79,7 @@ class ControlRigMuter(Framer):
 
     def muteConstraints(self, rig, mute):
         for pb in rig.pose.bones:
-            if pb.get("DazSharedBone"):
+            if dazRna(pb).DazSharedBone:
                 continue
             for cns in pb.constraints:
                 if self.useMuteAll or cns.type.startswith("COPY"):
@@ -139,7 +139,8 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
         bpy.ops.nla.bake(frame_start=self.frame_start, frame_end=self.frame_end, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
 
         act = getCurrentAction(rig)
-        shared = dict([(pb.name, pb) for pb in rig.pose.bones if pb.get("DazSharedBone")])
+        shared = dict([(pb.name, pb) for pb in rig.pose.bones
+                        if dazRna(pb).DazSharedBone])
         for fcu in list(act.fcurves):
             bname,channel,cnsname = getBoneChannel(fcu)
             if (bname in shared.keys() or

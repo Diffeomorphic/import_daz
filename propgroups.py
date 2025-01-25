@@ -153,7 +153,6 @@ if DAZ_PROPS:
         DazNormal : FloatVectorProperty(size=3, default=(0,0,0))
         DazAngle : FloatProperty()
         DazTrueName : StringProperty()
-        DazExtraBone : StringProperty()
         DazRigIndex : IntProperty(default=0)
 
 
@@ -168,7 +167,7 @@ if DAZ_PROPS:
         DazLocLocks : BoolVectorProperty(size=3, default=FFalse)
         DazScaleLocks : BoolVectorProperty(size=3, default=FFalse)
         DazShellMap : BoolProperty()
-
+        DazSharedBone : BoolProperty()
 
     class DazImporterObject(DazImporterGroup):
         DazId : StringProperty()
@@ -192,7 +191,6 @@ if DAZ_PROPS:
         DazCloth : BoolProperty()
         DazConforms : BoolProperty(default=True)
         DazCloth : BoolProperty()
-        DazSimpleIK : BoolProperty()
         DazInheritScale : BoolProperty()
         DazDriversDisabled : BoolProperty()
         DazCustomMorphs : BoolProperty()
@@ -205,9 +203,10 @@ if DAZ_PROPS:
         DazAlias : CollectionProperty(type = DazStringGroup)
         DazActivated : CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
         DazMorphCats : CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
-        DazLocalTextures : BoolProperty(default = False)
-        DazVisibilityDrivers : BoolProperty(default = False)
-        DazVisibilityCollections : BoolProperty(default = False)
+        DazLocalTextures : BoolProperty()
+        DazVisibilityDrivers : BoolProperty()
+        DazVisibilityCollections : BoolProperty()
+        DazTiedRig : BoolProperty()
 
 
     class DazImporterMaterial(DazImporterGroup):
@@ -226,6 +225,7 @@ if DAZ_PROPS:
         DazExtraDrivenBones : BoolProperty()
         DazUnflipped : BoolProperty()
         DazHasAxes : BoolProperty()
+        DazOptimizedDrivers : BoolProperty()
         DazFinalized  : BoolProperty()
         DazBoneMap : CollectionProperty(type=DazStringGroup)
         DazMergedRigs : CollectionProperty(type = DazStringBoolGroup)
@@ -250,6 +250,7 @@ if DAZ_PROPS:
         DazFavorites : CollectionProperty(type = bpy.types.PropertyGroup)
         DazBodyPart : CollectionProperty(type = DazStringGroup)
         DazFullyRigid : BoolProperty()
+        DazOptimizedDrivers : BoolProperty()
 
 
     class DazImporterScene(DazImporterGroup):
@@ -306,11 +307,20 @@ if DAZ_PROPS:
             default = "")
 
 
-    class DAZ_OT_UpdateDazProperties(DazOperator):
+    class DAZ_OT_UpdateDazProperties(DazPropsOperator):
         bl_idname = "daz.update_daz_properties"
         bl_label = "Update DAZ Properties"
-        bl_description = "Update DAZ properties for all objects in scene"
+        bl_description = "Update DAZ properties"
         bl_options = {'UNDO'}
+
+        useAllProps : BoolProperty(
+            name = "All Properties",
+            description = "Update all properties in scene rather than selected objects only",
+            default = True)
+
+        def draw(self, context):
+            self.layout.prop(self, "useAllProps")
+
 
         def run(self, context):
             def cast(data, default):
@@ -364,19 +374,29 @@ if DAZ_PROPS:
 
             registerDazProperties()
             updateProps(context.scene)
-            for ob in context.view_layer.objects:
+            if self.useAllProps:
+                objects = context.view_layer.objects
+            else:
+                objects = getSelectedObjects(context)
+            for ob in objects:
                 print("Update %s %s" % (ob.type, ob.name))
                 updateProps(ob)
+                setModernProps(ob)
                 if ob.type == 'MESH':
                     updateProps(ob.data)
+                    setModernProps(ob.data)
                     for mat in ob.data.materials:
                         if mat:
                             updateProps(mat)
+                            setModernProps(mat)
                 elif ob.type == 'ARMATURE':
                     updateProps(ob.data)
+                    setModernProps(ob.data)
                     for pb in ob.pose.bones:
                         updateProps(pb.bone)
+                        setModernProps(pb.bone)
                         updateProps(pb)
+                        setModernProps(pb)
 
 
     propsclasses = [
@@ -449,7 +469,6 @@ def registerDazProperties():
     bpy.types.Bone.DazNormal = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.Bone.DazAngle = FloatProperty()
     bpy.types.Bone.DazTrueName = StringProperty()
-    bpy.types.Bone.DazExtraBone = StringProperty()
     bpy.types.Bone.DazRigIndex = IntProperty(default=0)
 
     bpy.types.PoseBone.DazRotMode = StringProperty(default='XYZ')
@@ -462,6 +481,7 @@ def registerDazProperties():
     bpy.types.PoseBone.DazLocLocks = BoolVectorProperty(size=3, default=FFalse)
     bpy.types.PoseBone.DazScaleLocks = BoolVectorProperty(size=3, default=FFalse)
     bpy.types.PoseBone.DazShellMap = BoolProperty()
+    bpy.types.PoseBone.DazSharedBone = BoolProperty()
 
     bpy.types.Object.DazId = StringProperty()
     bpy.types.Object.DazUrl = StringProperty()
@@ -484,7 +504,6 @@ def registerDazProperties():
     bpy.types.Object.DazCloth = BoolProperty()
     bpy.types.Object.DazConforms = BoolProperty(default=True)
     bpy.types.Object.DazCloth = BoolProperty()
-    bpy.types.Object.DazSimpleIK = BoolProperty()
     bpy.types.Object.DazInheritScale = BoolProperty()
     bpy.types.Object.DazDriversDisabled = BoolProperty()
     bpy.types.Object.DazCustomMorphs = BoolProperty()
@@ -498,8 +517,9 @@ def registerDazProperties():
     bpy.types.Object.DazActivated = CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
     bpy.types.Object.DazMorphCats = CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
     bpy.types.Object.DazLocalTextures = BoolProperty()
-    bpy.types.Object.DazVisibilityDrivers = BoolProperty(default = False)
-    bpy.types.Object.DazVisibilityCollections = BoolProperty(default = False)
+    bpy.types.Object.DazVisibilityDrivers = BoolProperty()
+    bpy.types.Object.DazVisibilityCollections = BoolProperty()
+    bpy.types.Object.DazTiedRig = BoolProperty()
 
     bpy.types.Material.DazScale = FloatProperty(default=0.01)
     bpy.types.Material.DazShader = StringProperty(default='NONE')
@@ -513,6 +533,7 @@ def registerDazProperties():
     bpy.types.Armature.DazExtraDrivenBones = BoolProperty()
     bpy.types.Armature.DazUnflipped = BoolProperty()
     bpy.types.Armature.DazHasAxes = BoolProperty()
+    bpy.types.Armature.DazOptimizedDrivers = BoolProperty()
     bpy.types.Armature.DazFinalized = BoolProperty()
     bpy.types.Armature.DazBoneMap = CollectionProperty(type=DazStringGroup)
     bpy.types.Armature.DazMergedRigs = CollectionProperty(type = DazStringBoolGroup)
@@ -535,6 +556,7 @@ def registerDazProperties():
     bpy.types.Mesh.DazFavorites = CollectionProperty(type = bpy.types.PropertyGroup)
     bpy.types.Mesh.DazBodyPart = CollectionProperty(type = DazStringGroup)
     bpy.types.Mesh.DazFullyRigid = BoolProperty()
+    bpy.types.Mesh.DazOptimizedDrivers = BoolProperty()
 
     bpy.types.Scene.DazPreferredRoot = EnumProperty(
         items = getRootEnums,

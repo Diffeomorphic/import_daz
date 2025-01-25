@@ -177,7 +177,7 @@ class LoadMorph(DriverUser):
         self.adjustable = {}
         self.origMorphset = self.morphset
 
-        if self.amt and self.amt.get("DazOptimizedDrivers"):
+        if self.amt and dazRna(self.amt).DazOptimizedDrivers:
             raise DazError("Cannot add new morphs to an armature with optimized drivers")
 
         if GS.verbosity >= 3:

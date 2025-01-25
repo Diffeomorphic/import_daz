@@ -542,7 +542,7 @@ def isHDName(string):
 
 def isHDMesh(ob):
     #return isHDName(ob.name)
-    return ob.get("DazHDMesh", False)
+    return dazRna(ob).DazHDMesh
 
 def isDrvBone(string):
     return string.endswith("(drv)")

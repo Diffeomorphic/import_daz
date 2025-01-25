@@ -68,7 +68,7 @@ class MaterialScaler(UnitsOperator):
 
     def invoke(self, context, event):
         if context.object:
-            self.objectScale = context.object.DazScale
+            self.objectScale = dazRna(context.object).DazScale
         return UnitsOperator.invoke(self, context, event)
 
     def scaleMaterials(self, ob):

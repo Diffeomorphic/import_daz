@@ -32,7 +32,6 @@ def getEditBones(rig):
             heads[bname2] = heads[bname1]
             tails[bname2]= tails[bname1]
 
-
     scale = rig.get("DazScale", 0.01)
     heads = {}
     tails = {}

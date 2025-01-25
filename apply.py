@@ -122,7 +122,7 @@ def applyRestPoses(context, rig, useMergeTiedBones=False):
             if activateObject(context, ob):
                 children.append((ob, ob.parent_type, ob.parent_bone, ob.matrix_world.copy()))
                 bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-                if ob.get("DazTiedRig") is not None:
+                if dazRna(ob).DazTiedRig:
                     tied.append((ob, list(ob.children)))
                     applyModifiers(ob, children, hasamt, tied)
                 elif ob.type == 'MESH' and ob.parent_type == 'OBJECT':
