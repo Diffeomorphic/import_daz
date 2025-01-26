@@ -1833,7 +1833,8 @@ class DAZ_OT_ChangeResolution(DazOperator, ChangeResolution):
 
     @classmethod
     def poll(self, context):
-        return (context.object and context.object.DazLocalTextures)
+        ob = context.object
+        return (ob and dazRna(ob).DazLocalTextures)
 
     def draw(self, context):
         self.layout.prop(self, "steps")
@@ -1859,7 +1860,8 @@ class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution)
 
     @classmethod
     def poll(self, context):
-        return (context.object and context.object.DazLocalTextures)
+        ob = context.object
+        return (ob and dazRna(ob).DazLocalTextures)
 
     def draw(self, context):
         self.layout.prop(self, "steps")

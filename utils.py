@@ -541,7 +541,6 @@ def isHDName(string):
     return baseName(string).endswith("HD")
 
 def isHDMesh(ob):
-    #return isHDName(ob.name)
     return dazRna(ob).DazHDMesh
 
 def isDrvBone(string):

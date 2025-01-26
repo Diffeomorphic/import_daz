@@ -287,7 +287,6 @@ class GeoNode(Node, SimNode):
             f.use_smooth = True
         self.data.setHairType(me)
         self.data.validateMesh(me, HDName(ob.name))
-        dazRna(me).DazHDMesh = True
         return me
 
 

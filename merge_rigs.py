@@ -294,6 +294,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                             binfo.setEditBone(bname, rig.data.edit_bones, subrig)
                             taken.append(bname)
             setMode('OBJECT')
+        modernizeBones(rig)
         if hasNew:
             enableRigNumLayer(rig, T_CUSTOM)
 

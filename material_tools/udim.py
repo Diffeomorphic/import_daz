@@ -40,7 +40,8 @@ class DAZ_OT_FixTextureTiles(DazOperator, LocalTextureSaver, TileFixer):
 
     @classmethod
     def poll(self, context):
-        return (context.object and context.object.DazLocalTextures)
+        ob = context.object
+        return (ob and dazRna(ob).DazLocalTextures)
 
     def run(self, context):
         ob = context.object
