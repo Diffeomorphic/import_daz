@@ -285,7 +285,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     }
 
     def run(self, context):
-        from ..propgroups import modernizeBones
         rig = context.object
         IK = SimpleIK(self)
         LS.__init__()

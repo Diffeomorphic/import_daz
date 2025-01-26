@@ -747,6 +747,13 @@ if DAZ_PROPS:
     def hasLegacyProps(rna):
         return rna.daz_importer.legacy
 
+    def modernizeBones(rig):
+        for pb in rig.pose.bones:
+            modernizeBone(pb)
+
+    def modernizeBone(pb):
+        pb.daz_importer.legacy = False
+        pb.bone.daz_importer.legacy = False
 else:
     def dazRna(rna):
         return rna
@@ -756,6 +763,12 @@ else:
 
     def hasLegacyProps(rna):
         return True
+
+    def modernizeBones(rig):
+        pass
+
+    def modernizeBone(pb):
+        pass
 
 #-------------------------------------------------------------
 #   Profiling

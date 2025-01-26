@@ -48,6 +48,7 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
 
     from .figure import copyBoneInfo
     setMode('OBJECT')
+    modernizeBones(rig)
     wind = rig.pose.bones["MCH-%s" % windname]
     fkwind = rig.pose.bones[windname]
     ikwind = rig.pose.bones["ik_%s" % windname]
@@ -111,6 +112,7 @@ def addWinder(rig, windname, bnames, layers,
     pb = rig.pose.bones[bnames[0]]
     pbones = [pb]
     winder = rig.pose.bones[windname]
+    modernizeBone(winder)
     if gizmo:
         winder.custom_shape = gizmo
         winder.bone.show_wire = True

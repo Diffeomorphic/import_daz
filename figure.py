@@ -253,7 +253,6 @@ class Figure(Node):
     def build(self, context, inst):
         from .bone import BoneInstance
         from .asset import Asset
-        from .propgroups import modernizeBones
         scn = context.scene
         if GS.verbosity >= 4:
             print("Build figure %s" % self.name)
@@ -642,7 +641,6 @@ class ExtraBones(DriverUser):
         if not ES.easy:
             print("  Change constraints")
         setMode('OBJECT')
-        from .propgroups import modernizeBones
         modernizeBones(rig)
         store = ConstraintStore()
         for bname in self.bnames:

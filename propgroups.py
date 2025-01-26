@@ -134,27 +134,17 @@ class DazActiveGroup(bpy.types.PropertyGroup):
 #   DAZ props
 #-------------------------------------------------------------
 
+propsclasses = []
+
 def getRootEnums(scn, context):
     return [(folder,folder,folder) for folder in GS.getDazPaths()]
 
 def toggleMorphArmatures(self, context):
     GS.toggleMorphArmatures(context.scene)
 
-if not DAZ_PROPS:
-    propsclasses = []
-
-    def modernizeBones(rig):
-        pass
-else:
-    def modernizeBones(rig):
-        for pb in rig.pose.bones:
-            setModernProps(pb)
-            setModernProps(pb.bone)
-
-
+if DAZ_PROPS:
     class DazImporterGroup(bpy.types.PropertyGroup):
         legacy : BoolProperty(default=True)
-
 
     class DazImporterBone(DazImporterGroup):
         DazHead : FloatVectorProperty(size=3, default=(0,0,0))
@@ -473,14 +463,15 @@ def registerDazProperties():
         setattr(bpy.types.Object, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
         setattr(bpy.types.Armature, "DazIndex%s" % morphset, IntProperty(default=0))
 
-    #bpy.types.Bone.DazHead = FloatVectorProperty(size=3, default=(0,0,0))
+    '''
+    bpy.types.Bone.DazHead = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.Bone.DazOrient = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.Bone.DazNormal = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.Bone.DazAngle = FloatProperty()
     bpy.types.Bone.DazTrueName = StringProperty()
     bpy.types.Bone.DazRigIndex = IntProperty(default=0)
 
-    #bpy.types.PoseBone.DazRotMode = StringProperty(default='XYZ')
+    bpy.types.PoseBone.DazRotMode = StringProperty(default='XYZ')
     bpy.types.PoseBone.DazAxes = IntVectorProperty(size=3, default=(0,1,2))
     bpy.types.PoseBone.DazFlips = IntVectorProperty(size=3, default=(1,1,1))
     bpy.types.PoseBone.DazTranslation = FloatVectorProperty(size=3, default=(0,0,0))
@@ -491,7 +482,7 @@ def registerDazProperties():
     bpy.types.PoseBone.DazScaleLocks = BoolVectorProperty(size=3, default=FFalse)
     bpy.types.PoseBone.DazShellMap = BoolProperty()
     bpy.types.PoseBone.DazSharedBone = BoolProperty()
-
+    '''
     bpy.types.Object.DazId = StringProperty()
     bpy.types.Object.DazUrl = StringProperty()
     bpy.types.Object.DazFigure = StringProperty()

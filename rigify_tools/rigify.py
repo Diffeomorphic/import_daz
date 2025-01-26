@@ -906,6 +906,7 @@ class Rigifier(RigifyCommon):
             self.addTongueIkBones(gen, R_FACE, R_DEF)
 
         setMode('OBJECT')
+        modernizeBones(gen)
 
         # Lock extras
         print("  Lock extras")
@@ -1073,7 +1074,7 @@ class Rigifier(RigifyCommon):
         print("  Clean up")
         #gen.data.display_type = 'WIRE'
         gen.show_in_front = True
-        gen.DazRig = meta.get("DazRigifyType", "")
+        dazRna(gen).DazRig = meta.get("DazRigifyType", "")
         name = rig.name
         if coll:
             if gen.name in scn.collection.objects:

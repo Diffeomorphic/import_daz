@@ -37,6 +37,7 @@ def addFingerIk(rig, ikname, bnames, parname, layers, prop1, prop2):
     makeBone(ikname, rig, last.tail, 2*last.tail-last.head, last.roll, layers[0], parent)
     setMode('OBJECT')
     ikgoal = rig.pose.bones[ikname]
+    modernizeBone(ikgoal)
     first = rig.pose.bones[bnames[0]]
     influ = 1.0/(nbones+1)
     cns = dampedTrack(first, ikgoal, rig, prop2, "%.3f*x" % influ)
@@ -564,6 +565,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             eb.name = bname2
 
         setMode('OBJECT')
+        modernizeBones(rig)
         for bname,rotmode in rotmodes.items():
             if bname in rig.pose.bones.keys():
                 pb = rig.pose.bones[bname]
@@ -910,6 +912,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         setMhx(rig, "MhaNeckFollowsSpine", 1.0)
         hip = rig.pose.bones["hip"]
         neckpar = rig.pose.bones["neckParent"]
+        setModernProps(neckpar)
         cns = copyRotation(neckpar, hip, rig, "MhaNeckFollowsSpine", "1-x", space='POSE')
 
     #-------------------------------------------------------------
@@ -954,8 +957,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                     if eb.name in self.noTweakParents:
                         eb.parent = sb
 
-        setMode('OBJECT')
         from ..figure import copyBoneInfo
+        setMode('OBJECT')
+        modernizeBones(rig)
         rpbs = rig.pose.bones
         for bname in self.tweakBones:
             if bname and bname in rpbs.keys():
@@ -964,7 +968,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 pb = getBoneCopy(bname, tb, rpbs, False)
                 copyBoneInfo(tb, pb)
                 tb.lock_location = tb.lock_rotation = tb.lock_scale = FFalse
-        setMode('OBJECT')
 
 
     def getTweakBoneName(self, bname):
@@ -1039,6 +1042,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         fingers.roll = link.roll
         setMode('OBJECT')
         fingers = rig.pose.bones[fingname]
+        modernizeBone(fingers)
         link = rig.pose.bones[linkname]
         fingers.rotation_mode = link.rotation_mode
         fingers.lock_rotation = (False,True,True)
@@ -1221,6 +1225,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
         from ..figure import copyBoneInfo
         setMode('OBJECT')
+        modernizeBones(rig)
         rpbs = rig.pose.bones
         master = rpbs["master"]
         for suffix in ["L", "R"]:
