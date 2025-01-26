@@ -276,6 +276,7 @@ class DAZ_PT_DazProperties(DAZ_PT_SetupTab, bpy.types.Panel):
 
         if DAZ_PROPS:
             self.layout.operator("daz.update_daz_properties")
+            self.layout.operator("daz.select_legacy_posebones")
             self.layout.separator()
         ob = context.object
         if ob:

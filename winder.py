@@ -48,7 +48,6 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
 
     from .figure import copyBoneInfo
     setMode('OBJECT')
-    modernizeBones(rig)
     wind = rig.pose.bones["MCH-%s" % windname]
     fkwind = rig.pose.bones[windname]
     ikwind = rig.pose.bones["ik_%s" % windname]

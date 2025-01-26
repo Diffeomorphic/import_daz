@@ -344,9 +344,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             return
 
         def fixFaceGroup(aname, graft, hum):
-            pgs = getattr(hum.data, aname)
+            pgs = getattr(dazRna(hum.data), aname)
             n0 = len(pgs)
-            graftpgs = getattr(graft.data, aname)
+            graftpgs = getattr(dazRna(graft.data), aname)
             for gname in graftpgs.keys():
                 pg = pgs.add()
                 pg.name = gname

@@ -312,13 +312,26 @@ if DAZ_PROPS:
         bl_description = "Update DAZ properties"
         bl_options = {'UNDO'}
 
+        useScene : BoolProperty(
+            name = "Scene",
+            description = "Update scene properties",
+            default = True)
+
+        useObjects : BoolProperty(
+            name = "Objects",
+            description = "Update object properties",
+            default = True)
+
         useAllProps : BoolProperty(
             name = "All Properties",
             description = "Update all properties in scene rather than selected objects only",
             default = True)
 
         def draw(self, context):
-            self.layout.prop(self, "useAllProps")
+            self.layout.prop(self, "useScene")
+            self.layout.prop(self, "useObjects")
+            if self.useObjects:
+                self.layout.prop(self, "useAllProps")
 
 
         def run(self, context):
@@ -369,11 +382,15 @@ if DAZ_PROPS:
                         else:
                             setattr(rna.daz_importer, prop, value)
                         del rna[prop]
+                setModernProps(rna)
 
 
             registerDazProperties()
-            updateProps(context.scene)
-            if self.useAllProps:
+            if self.useScene:
+                updateProps(context.scene)
+            if not self.useObjects:
+                return
+            elif self.useAllProps:
                 objects = context.view_layer.objects
             else:
                 objects = getSelectedObjects(context)
@@ -398,6 +415,17 @@ if DAZ_PROPS:
                         setModernProps(pb)
 
 
+    class DAZ_OT_SelectLegacyPosebones(DazOperator, IsArmature):
+        bl_idname = "daz.select_legacy_posebones"
+        bl_label = "Select Legacy Posebones"
+        bl_options = {'UNDO'}
+
+        def run(self, context):
+            for rig in getSelectedArmatures(context):
+                for pb in rig.pose.bones:
+                    pb.bone.select = (pb.daz_importer.legacy or pb.bone.daz_importer.legacy)
+
+
     propsclasses = [
         DazImporterBone,
         DazImporterPoseBone,
@@ -406,7 +434,8 @@ if DAZ_PROPS:
         DazImporterMaterial,
         DazImporterMesh,
         DazImporterScene,
-        DAZ_OT_UpdateDazProperties
+        DAZ_OT_UpdateDazProperties,
+        DAZ_OT_SelectLegacyPosebones
         ]
 
 #-------------------------------------------------------------
@@ -463,7 +492,6 @@ def registerDazProperties():
         setattr(bpy.types.Object, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
         setattr(bpy.types.Armature, "DazIndex%s" % morphset, IntProperty(default=0))
 
-    '''
     bpy.types.Bone.DazHead = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.Bone.DazOrient = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.Bone.DazNormal = FloatVectorProperty(size=3, default=(0,0,0))
@@ -482,7 +510,7 @@ def registerDazProperties():
     bpy.types.PoseBone.DazScaleLocks = BoolVectorProperty(size=3, default=FFalse)
     bpy.types.PoseBone.DazShellMap = BoolProperty()
     bpy.types.PoseBone.DazSharedBone = BoolProperty()
-    '''
+
     bpy.types.Object.DazId = StringProperty()
     bpy.types.Object.DazUrl = StringProperty()
     bpy.types.Object.DazFigure = StringProperty()

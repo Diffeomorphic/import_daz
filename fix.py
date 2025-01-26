@@ -828,6 +828,7 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
         rig = context.object
         subrigs = {}
         for ob in getSelectedObjects(context):
+            print("KK", ob.name, ob.type, rig.name)
             if ob == rig:
                 continue
             if ob.type in ['MESH', 'CURVES']:

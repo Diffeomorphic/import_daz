@@ -388,6 +388,7 @@ class LegacyFigure(Figure):
 #-------------------------------------------------------------
 
 def copyBoneInfo(srcpb, trgpb):
+    modernizeBone(trgpb)
     for attr in ["rotation_mode", "lock_location", "lock_rotation", "lock_scale"]:
         setattr(trgpb, attr, getattr(srcpb, attr))
     for attr in ["bbone_x", "bbone_z", "use_relative_parent", "use_local_location", "use_inherit_rotation", "inherit_scale"]:
@@ -583,6 +584,7 @@ class ExtraBones(DriverUser):
 
 
         def copyPoseBone(db, pb, rig):
+            modernizeBone(pb)
             copyBoneLayers(db.bone, pb.bone, rig)
             enableBoneNumLayer(db.bone, rig, T_HIDDEN)
             pb.rotation_mode = db.rotation_mode
@@ -641,7 +643,6 @@ class ExtraBones(DriverUser):
         if not ES.easy:
             print("  Change constraints")
         setMode('OBJECT')
-        modernizeBones(rig)
         store = ConstraintStore()
         for bname in self.bnames:
             pb = rig.pose.bones[bname]

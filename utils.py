@@ -751,8 +751,8 @@ if DAZ_PROPS:
             modernizeBone(pb)
 
     def modernizeBone(pb):
-        pb.daz_importer.legacy = False
-        pb.bone.daz_importer.legacy = False
+        setModernProps(pb)
+        setModernProps(pb.bone)
 else:
     def dazRna(rna):
         return rna

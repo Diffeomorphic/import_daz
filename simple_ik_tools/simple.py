@@ -296,7 +296,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         setMode('EDIT')
         self.makeNewBones(rig, IK)
         setMode('OBJECT')
-        modernizeBones(rig)
         self.makeCustomShapes(context, rig, IK)
         self.addConstraints(rig, IK)
         if GS.ercMethod in ('ARMATURE', 'ALL') and self.useErcIk:
@@ -304,6 +303,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if self.useImproveIk:
             from ..rig_utils import improveIk
             improveIk(rig)
+        modernizeBones(rig)
         rig["DazSimpleIK"] = True
         from ..driver import setFloatProp
         setFloatProp(rig, "DazArmIK_L", 1.0, 0.0, 1.0, True)

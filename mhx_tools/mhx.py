@@ -37,7 +37,6 @@ def addFingerIk(rig, ikname, bnames, parname, layers, prop1, prop2):
     makeBone(ikname, rig, last.tail, 2*last.tail-last.head, last.roll, layers[0], parent)
     setMode('OBJECT')
     ikgoal = rig.pose.bones[ikname]
-    modernizeBone(ikgoal)
     first = rig.pose.bones[bnames[0]]
     influ = 1.0/(nbones+1)
     cns = dampedTrack(first, ikgoal, rig, prop2, "%.3f*x" % influ)
@@ -363,6 +362,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.addBoneGroups(rig)
         rig["MhxRig"] = True
         rig.data.MhaFeatures |= F_IDPROPS
+        modernizeBones(rig)
         enableRigNumLayers(rig, [L_MAIN, L_SPINE, L_LARMIK, L_LLEGIK, L_RARMIK, L_RLEGIK])
         dazRna(rig).DazRig = "mhx"
 
@@ -959,7 +959,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
         from ..figure import copyBoneInfo
         setMode('OBJECT')
-        modernizeBones(rig)
         rpbs = rig.pose.bones
         for bname in self.tweakBones:
             if bname and bname in rpbs.keys():
@@ -1225,7 +1224,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
         from ..figure import copyBoneInfo
         setMode('OBJECT')
-        modernizeBones(rig)
         rpbs = rig.pose.bones
         master = rpbs["master"]
         for suffix in ["L", "R"]:

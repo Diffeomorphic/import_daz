@@ -78,8 +78,9 @@ class DAZ_UL_MorphList(bpy.types.UIList):
             flt_flags = [self.bitflag_filter_item] * len(morphs)
 
         scn = context.scene
-        if dazRna(scn).DazUsedPropsOnly and isinstance(data, bpy.types.Object):
-            flt_flags = [flag * (data.get(morph.name, 0.0) != 0.0)
+        if dazRna(scn).DazUsedPropsOnly:    # and isinstance(data, bpy.types.Object):
+            rna = self.getRnaFromData(context, data)
+            flt_flags = [flag * (rna.get(morph.name, 0.0) != 0.0)
                          for flag,morph in zip(flt_flags, morphs)]
 
         flt_neworder = helper_funcs.sort_items_by_name(morphs, "text")
@@ -100,6 +101,9 @@ class DAZ_UL_StandardMorphs(DAZ_UL_MorphList):
     def getFilterType(self, data):
         return "Daz%s" % self.morphset
 
+    def getRnaFromData(self, context, data):
+        return getRigFromContext(context, useMesh=False, strict=False)
+
 
 class DAZ_UL_CustomMorphs(DAZ_UL_MorphList):
     def getMorphCat(self, cat):
@@ -107,6 +111,9 @@ class DAZ_UL_CustomMorphs(DAZ_UL_MorphList):
 
     def getFilterType(self, cat):
         return "Custom/%s" % cat.name
+
+    def getRnaFromData(self, context, data):
+        return getRigFromContext(context, useMesh=False, strict=False)
 
 
 class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
@@ -131,6 +138,9 @@ class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
 
     def getFilterType(self, cat):
         return "Mesh/%s" % cat.name
+
+    def getRnaFromData(self, context, data):
+        return context.object
 
     def getRigAmt(self, context):
         ob = context.object
@@ -177,7 +187,9 @@ def updateScrollbars(context):
 
     scn = context.scene
     for ob in scn.objects:
-        if ob.type == 'ARMATURE':
+        if DAZ_PROPS and hasLegacyProps(ob):
+            pass
+        elif ob.type == 'ARMATURE':
             updateRigScrollbars(scn, ob)
         elif ob.type == 'MESH':
             updateMeshScrollbars(scn, ob)
