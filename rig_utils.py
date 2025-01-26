@@ -6,7 +6,7 @@ import bpy
 from mathutils import *
 from .utils import *
 from .error import *
-from .driver import addDriver
+from .driver import addDriver, setBoolProp, setFloatProp
 
 #----------------------------------------------------------
 #  Make bone
@@ -74,7 +74,12 @@ def connectToParent(rig, connectAll=False, useSplitShin=False):
 #-------------------------------------------------------------
 
 def setMhx(rna, prop, value):
-    rna[prop] = value
+    if isinstance(value, bool):
+        setBoolProp(rna, prop, value, True)
+    elif isinstance(value, float):
+        setFloatProp(rna, prop, value, 0.0, 1.0, True)
+    else:
+        print("MHXPROP", prop, value)
 
 
 def mhxProp(prop):
