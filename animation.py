@@ -919,7 +919,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             setRigifyLayers(rig, False, self.boneLayers)
         elif rig.get("DazSimpleIK"):
             props = ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R"]
-            removeFcurves(act, props)
+            paths = [propRef(prop) for prop in props]
+            removeFcurves(act, paths)
             for prop in props:
                 rig[prop] = 1.0
             from .simple_ik_tools.simple import setSimpleLayers

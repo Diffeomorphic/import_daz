@@ -293,7 +293,8 @@ class BoneInstance(Instance):
     def buildBoneProps(self, rig, center):
         if self.name not in rig.data.bones.keys():
             return
-        bone = rig.data.bones[self.name]
+        pb = rig.pose.bones[self.name]
+        bone = pb.bone
         bone.inherit_scale = self.defaultInherit()
         dazRna(bone).DazOrient = self.attributes["orientation"]
 

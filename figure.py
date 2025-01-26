@@ -253,6 +253,7 @@ class Figure(Node):
     def build(self, context, inst):
         from .bone import BoneInstance
         from .asset import Asset
+        from .propgroups import modernizeBones
         scn = context.scene
         if GS.verbosity >= 4:
             print("Build figure %s" % self.name)
@@ -291,6 +292,7 @@ class Figure(Node):
         if self.pointing:
             self.pointBones(rig)
         setMode('OBJECT')
+        modernizeBones(rig)
         dazRna(rig).DazRig = self.rigtype = getRigType1(inst.bones.keys(), False)
         for child in inst.children.values():
             if isinstance(child, BoneInstance):
@@ -612,9 +614,7 @@ class ExtraBones(DriverUser):
         for bname in self.bnames:
             eb = rig.data.edit_bones[bname]
             eb.name = drvBone(bname)
-        setMode('OBJECT')
 
-        setMode('EDIT')
         for bname in self.bnames:
             db = rig.data.edit_bones[drvBone(bname)]
             eb = copyEditBone(db, rig, bname)
@@ -642,6 +642,8 @@ class ExtraBones(DriverUser):
         if not ES.easy:
             print("  Change constraints")
         setMode('OBJECT')
+        from .propgroups import modernizeBones
+        modernizeBones(rig)
         store = ConstraintStore()
         for bname in self.bnames:
             pb = rig.pose.bones[bname]

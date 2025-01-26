@@ -93,9 +93,9 @@ class SimpleIK:
 
 
     def setProp(self, rna, prop, value):
-        setattr(rna, prop, value)
+        rna[prop] = value
         if self.auto:
-            rna.keyframe_insert(prop, frame=self.frame)
+            rna.keyframe_insert(propRef(prop), frame=self.frame)
 
 
     def linearizeFcurve(self, rna, prop):
@@ -285,6 +285,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     }
 
     def run(self, context):
+        from ..propgroups import modernizeBones
         rig = context.object
         IK = SimpleIK(self)
         LS.__init__()
@@ -293,7 +294,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             raise DazError("Cannot create simple IK for the rig %s" % rig.name)
         enableAllRigLayers(rig, False)
         makeBoneCollections(rig, SimpleLayers)
+        setMode('EDIT')
         self.makeNewBones(rig, IK)
+        setMode('OBJECT')
+        modernizeBones(rig)
         self.makeCustomShapes(context, rig, IK)
         self.addConstraints(rig, IK)
         if GS.ercMethod in ('ARMATURE', 'ALL') and self.useErcIk:
@@ -302,9 +306,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             from ..rig_utils import improveIk
             improveIk(rig)
         rig["DazSimpleIK"] = True
-        rig.DazArmIK_L = rig.DazArmIK_R = 1.0
-        rig.DazLegIK_L = rig.DazLegIK_R = 1.0
-        rig.DazStretchArms = rig.DazStretchLegs = 1.0
+        from ..driver import setFloatProp
+        setFloatProp(rig, "DazArmIK_L", 1.0, 0.0, 1.0, True)
+        setFloatProp(rig, "DazArmIK_R", 1.0, 0.0, 1.0, True)
+        setFloatProp(rig, "DazLegIK_L", 1.0, 0.0, 1.0, True)
+        setFloatProp(rig, "DazLegIK_R", 1.0, 0.0, 1.0, True)
+        setFloatProp(rig, "DazStretchArms", 1.0, 0.0, 1.0, True)
+        setFloatProp(rig, "DazStretchLegs", 1.0, 0.0, 1.0, True)
         enableRigNumLayers(rig, [S_SPINE, S_FACE, S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK])
         assignOtherBones(rig, S_HIDDEN)
 
@@ -340,7 +348,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             stretch.hide_select = True
 
         from ..rig_utils import makeBone, deriveBone
-        setMode('EDIT')
         ebones = rig.data.edit_bones
         if self.useRootBone:
             roots = [eb for eb in ebones if eb.parent is None]
@@ -432,7 +439,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             self.customShapes[csname] = (ob, Vector(scale), Vector(offset), Vector(rotation)*D)
 
         from ..fileutils import DF
-        setMode('OBJECT')
         self.gizmos = DF.loadEntry("simple", "gizmos", True)
         self.customShapes = {}
         for gname,dtype in [
@@ -621,9 +627,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         def driveConstraint(pb, type, rig, prop):
             for cns in pb.constraints:
                 if cns.type == type:
-                    addDriver(cns, "influence", rig, (mhxProp(prop), mhxProp("DazRotLimits")), "(1-x1)*x2")
+                    addDriver(cns, "influence", rig, (propRef(prop), propRef("DazRotLimits")), "(1-x1)*x2")
 
-        from ..rig_utils import ikConstraint, addHint, copyLocation, copyRotation, stretchTo, copyTransform, dampedTrack, mhxProp
+        from ..rig_utils import ikConstraint, addHint, copyLocation, copyRotation, stretchTo, copyTransform, dampedTrack, propRef
         from ..driver import addDriver
         rpbs = rig.pose.bones
         if self.useRootBone:
@@ -639,7 +645,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 driveConstraint(hand, 'LIMIT_ROTATION', rig, armProp)
                 setStretchLine(elbow)
                 cns = copyLocation(hand, handIK, rig, space='POSE')
-                addDriver(cns, "influence", rig, (mhxProp("DazStretchArms"), mhxProp(armProp)), "x1*x2")
+                addDriver(cns, "influence", rig, (propRef("DazStretchArms"), propRef(armProp)), "x1*x2")
                 cns = copyRotation(hand, handIK, rig, prop=armProp, space='POSE')
                 setEulerOrder(cns, hand.rotation_mode)
                 self.addToLayer(handIK, S_ARMIK, rig, "IK")
@@ -653,7 +659,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     copyBoneProps(foot, footIK)
                     self.addToLayer(footIK, S_LEGIK, rig, "IK")
                     cns = copyLocation(foot, footIK, rig, space='POSE')
-                    addDriver(cns, "influence", rig, (mhxProp("DazStretchLegs"), mhxProp(legProp)), "x1*x2")
+                    addDriver(cns, "influence", rig, (propRef("DazStretchLegs"), propRef(legProp)), "x1*x2")
                     cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
                     setEulerOrder(cns, foot.rotation_mode)
                 else:
@@ -664,7 +670,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     toeIK.lock_rotation = tarsalIK.lock_rotation = (False, True, True)
                     driveConstraint(toe, 'LIMIT_ROTATION', rig, legProp)
                     cns = copyLocation(foot, footIK, rig, space='POSE')
-                    addDriver(cns, "influence", rig, (mhxProp("DazStretchLegs"), mhxProp(legProp)), "x1*x2")
+                    addDriver(cns, "influence", rig, (propRef("DazStretchLegs"), propRef(legProp)), "x1*x2")
                     cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
                     setEulerOrder(cns, foot.rotation_mode)
                     cns = copyRotation(toe, toeIK, rig, prop=legProp, space='POSE')
@@ -859,10 +865,10 @@ def setSimpleLayers(rig, layers, useIk):
 
 
 def setSimpleToFk(rig, layers, useInsertKeys, frame):
-    for attr in ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R", "DazStretchArms", "DazStretchLegs"]:
-        setattr(rig, attr, 0)
+    for prop in ["DazArmIK_L", "DazArmIK_R", "DazLegIK_L", "DazLegIK_R", "DazStretchArms", "DazStretchLegs"]:
+        rig[prop] = 0.0
         if useInsertKeys:
-            rig.keyframe_insert(attr, frame=frame)
+            rig.keyframe_insert(propRef(prop), frame=frame)
     return setSimpleLayers(rig, layers, False)
 
 #----------------------------------------------------------
@@ -875,7 +881,7 @@ class SimpleFKSnapper(SimpleIK):
         if bnames:
             prop = self.getIKProp(prefix, type)
             self.snapBones(rig, bnames, prop)
-            self.setProp(rig, prop, False)
+            self.setProp(rig, prop, 0.0)
             self.linearizeFcurve(rig, prop)
 
 
@@ -1025,7 +1031,7 @@ class DAZ_OT_SnapAnimationFK(FrameRange, SimpleFKSnapper):
         if self.useLayerChange:
             for frame in (self.startFrame, self.endFrame):
                 for prop in props:
-                    self.setProp(rig, prop, False)
+                    self.setProp(rig, prop, 0.0)
             for prop in props:
                 self.linearizeFcurve(rig, prop)
             if self.useLeftArm:
@@ -1222,7 +1228,8 @@ class DAZ_OT_ToggleFkIk(SimpleIKSnapper, DazOperator):
 
     def run(self, context):
         rig = context.object
-        setattr(rig, self.prop, self.value)
+        self.initAuto(context)
+        self.setProp(rig, self.prop, self.value)
         updateDrivers(rig)
 
 #----------------------------------------------------------
@@ -1464,12 +1471,12 @@ classes = [
 ]
 
 def register():
-    bpy.types.Object.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazLegIK_R = FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazStretchArms = FloatProperty(name="Stretchy Arms", default=0.0, precision=3, min=0.0, max=1.0)
-    bpy.types.Object.DazStretchLegs = FloatProperty(name="Stretchy Legs", default=0.0, precision=3, min=0.0, max=1.0)
+    #bpy.types.Object.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
+    #bpy.types.Object.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
+    #bpy.types.Object.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
+    #bpy.types.Object.DazLegIK_R = FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
+    #bpy.types.Object.DazStretchArms = FloatProperty(name="Stretchy Arms", default=0.0, precision=3, min=0.0, max=1.0)
+    #bpy.types.Object.DazStretchLegs = FloatProperty(name="Stretchy Legs", default=0.0, precision=3, min=0.0, max=1.0)
 
     for cls in classes:
         bpy.utils.register_class(cls)
