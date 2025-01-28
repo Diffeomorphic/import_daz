@@ -225,6 +225,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         rig = context.object
         self.rigname = rig.name
         rig["DazMhxLegacy"] = False
+        rig.data["MhaFeatures"] = 0
         self.makeRealParents(context, rig)
         self.meshes = getMeshChildren(rig)
         if self.keepRig:
@@ -361,7 +362,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         showProgress(24, 25, "  Add bone groups")
         self.addBoneGroups(rig)
         rig["MhxRig"] = True
-        rig.data.MhaFeatures |= F_IDPROPS
+        rig.data["MhaFeatures"] |= F_IDPROPS
         modernizeBones(rig)
         enableRigNumLayers(rig, [L_MAIN, L_SPINE, L_LARMIK, L_LLEGIK, L_RARMIK, L_RLEGIK])
         dazRna(rig).DazRig = "mhx"
@@ -862,7 +863,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         layers = [L_SPINE2, L_SPINE, L_HELP, L_HELP2, L_DEF]
         setMhx(rig, "MhaSpineControl", True)
         if self.useSpineIk:
-            rig.data.MhaFeatures |= F_SPINE
+            rig.data["MhaFeatures"] |= F_SPINE
             setMhx(rig, "MhaSpineIk", 0.0)
             addSuperWinder(rig, "back", backbones, layers, "MhaSpineControl", "MhaSpineIk", master="master")
         else:
@@ -998,7 +999,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     def addFingerWinders(self, rig):
         from ..winder import addWinder
         if self.useFingerIk:
-            rig.data.MhaFeatures |= F_FINGER
+            rig.data["MhaFeatures"] |= F_FINGER
         for suffix,handlayer,finglayer,fklayer,iklayer in [
             ("L", L_LHAND, L_LFINGER, L_LARMFK, L_LARMIK),
             ("R", L_RHAND, L_RFINGER, L_RARMFK, L_RARMIK)]:

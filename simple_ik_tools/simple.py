@@ -1470,16 +1470,8 @@ classes = [
 ]
 
 def register():
-    #bpy.types.Object.DazArmIK_L = FloatProperty(name="Left Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-    #bpy.types.Object.DazArmIK_R = FloatProperty(name="Right Arm IK", default=0.0, precision=3, min=0.0, max=1.0)
-    #bpy.types.Object.DazLegIK_L = FloatProperty(name="Left Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-    #bpy.types.Object.DazLegIK_R = FloatProperty(name="Right Leg IK", default=0.0, precision=3, min=0.0, max=1.0)
-    #bpy.types.Object.DazStretchArms = FloatProperty(name="Stretchy Arms", default=0.0, precision=3, min=0.0, max=1.0)
-    #bpy.types.Object.DazStretchLegs = FloatProperty(name="Stretchy Legs", default=0.0, precision=3, min=0.0, max=1.0)
-
     for cls in classes:
         bpy.utils.register_class(cls)
-
 
 def unregister():
     for cls in classes:

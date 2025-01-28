@@ -804,6 +804,7 @@ class Rigifier(RigifyCommon):
 
         scn = context.scene
         gen = context.object
+        gen.data["MhaFeatures"] = 0
         if not BLENDER3:
             # Add rig UI
             makeBoneCollections(gen, RigifyLayers)
@@ -1572,39 +1573,8 @@ classes = [
 ]
 
 def register():
-    # Duplicated definitions from MHX RTS.
-
-    bpy.types.Object.MhaGazeFollowsHead = bpy.props.FloatProperty(
-        name = "Gaze Follows Head",
-        min = 0, max = 1,
-        default = 0.0,
-        description = "The gaze bone follows the head bone rotations",
-        override={'LIBRARY_OVERRIDABLE'})
-
-    bpy.types.Object.MhaGaze_L = bpy.props.FloatProperty(
-        name = "Gaze Left",
-        min = 0, max = 1,
-        default = 0.0,
-        description = "eye tracking the left gaze bone amount",
-        override={'LIBRARY_OVERRIDABLE'})
-
-    bpy.types.Object.MhaGaze_R = bpy.props.FloatProperty(
-        name = "Gaze Right",
-        min = 0, max = 1,
-        default = 0.0,
-        description = "eye tracking the right gaze bone amount",
-        override={'LIBRARY_OVERRIDABLE'})
-
-    bpy.types.Object.MhaTongueIk = bpy.props.FloatProperty(
-        name = "Tongue IK",
-        min = 0, max = 1,
-        default = 0.0,
-        description = "Tongue bones controlled by IK",
-        override={'LIBRARY_OVERRIDABLE'})
-
     for cls in classes:
         bpy.utils.register_class(cls)
-
 
 def unregister():
     for cls in classes:

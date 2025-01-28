@@ -36,13 +36,12 @@ class DAZ_PT_DazRigifyProps(bpy.types.Panel):
 
     def draw(self, context):
         rig = context.object
-        self.layout.prop(rig, "MhaGazeFollowsHead", text="Gaze Follows Head")
+        self.layout.prop(rig, propRef("MhaGazeFollowsHead"), text="Gaze Follows Head")
         row = self.layout.row()
-        row.prop(rig, "MhaGaze_L", text="Left Gaze")
-        row.prop(rig, "MhaGaze_R", text="Right Gaze")
-        from ..fix import F_TONGUE
-        if rig.data.MhaFeatures & F_TONGUE:
-            self.layout.prop(rig, "MhaTongueIk", text="Tongue IK")
+        row.prop(rig, propRef("MhaGaze_L"), text="Left Gaze")
+        row.prop(rig, propRef("MhaGaze_R"), text="Right Gaze")
+        if "MhaTongueIk" in rig.keys():
+            self.layout.prop(rig, propRef("MhaTongueIk"), text="Tongue IK")
         self.layout.separator()
         row = self.layout.row()
         row.operator("daz.rigify_set_fk_all")

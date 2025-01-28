@@ -79,6 +79,7 @@ def setMhx(rna, prop, value):
     elif isinstance(value, float):
         setFloatProp(rna, prop, value, 0.0, 1.0, True)
     else:
+        rna[prop] = value
         print("MHXPROP", prop, value)
 
 

@@ -418,7 +418,7 @@ class Fixer(DriverUser):
         if self.useTongueIk:
             prop2 = "MhaTongueIk"
             setMhx(rig, prop2, 0.0)
-            rig.data.MhaFeatures |= F_TONGUE
+            rig.data["MhaFeatures"] |= F_TONGUE
             for bname in self.tongueBones:
                 pb = rig.pose.bones[bname]
                 pb.lock_location = TTrue
@@ -907,7 +907,6 @@ classes = [
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Armature.MhaFeatures = IntProperty(default = 0)
 
 
 def unregister():
