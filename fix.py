@@ -52,6 +52,11 @@ class Fixer(DriverUser):
         description = "Use this rotation mode for drivers.\nNon-native modes avoids some popping during animation at the cost of JCMs accuracy",
         default = 'AUTO')
 
+    addNondeformExtras : BoolProperty(
+        name = "Non-deform Extra Bones",
+        description = "Add extra bones to the Rigify armature,\neven if they don't correspond to any vertex group",
+        default = False)
+
     keepRig : BoolProperty(
         name = "Keep DAZ Rig",
         description = "Keep the original DAZ rig for deformation",
@@ -67,12 +72,6 @@ class Fixer(DriverUser):
         if self.keepRig:
             self.layout.prop(self, "useModifyDazRig")
         self.layout.prop(self, "useFingerIk")
-
-    def drawRigify(self):
-        self.layout.prop(self, "useTongueIk")
-        self.layout.prop(self, "useImproveIk")
-        self.layout.prop(self, "useLimitConstraints")
-        self.layout.prop(self, "driverRotationMode")
 
 
     def initFixer(self):

@@ -695,6 +695,14 @@ class MetaMaker(RigifyCommon):
 #-------------------------------------------------------------
 
 class Rigifier(RigifyCommon):
+    def drawRigify(self):
+        self.layout.prop(self, "useTongueIk")
+        self.layout.prop(self, "useImproveIk")
+        self.layout.prop(self, "useLimitConstraints")
+        self.layout.prop(self, "driverRotationMode")
+        self.layout.prop(self, "addNondeformExtras")
+
+
     def setupExtras(self, context, rig):
         def addRecursive(pb):
             if pb.name not in self.extras.keys():
@@ -712,11 +720,16 @@ class Rigifier(RigifyCommon):
                 if isinstance(dbone, list):
                     dbone = dbone[0]
             taken.append(dbone)
-        for ob in self.meshes:
-            for vgrp in ob.vertex_groups:
-                if (vgrp.name not in taken and
-                    vgrp.name in rig.data.bones.keys()):
-                    self.extras[vgrp.name] = rigifySafe(vgrp.name)
+        if self.addNondeformExtras:
+            for bname in rig.data.bones.keys():
+                if bname not in taken:
+                    self.extras[bname] = rigifySafe(bname)
+        else:
+            for ob in self.meshes:
+                for vgrp in ob.vertex_groups:
+                    if (vgrp.name not in taken and
+                        vgrp.name in rig.data.bones.keys()):
+                        self.extras[vgrp.name] = rigifySafe(vgrp.name)
         for bname in ["Face_Controls_XYZ"]:
             pb = rig.pose.bones.get(bname)
             if pb:
