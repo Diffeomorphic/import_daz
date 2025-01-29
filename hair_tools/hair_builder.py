@@ -14,13 +14,25 @@ from ..dforce import Cloth, Collision
 
 class HairBuilder(Pinner, Collision, Cloth):
 
-    hairPoseSim : EnumProperty(
-        items = [('NONE', "None", "Neither posing nor simulation"),
-                 ('POSING', "Posing", "Posing"),
-                 ('SIMULATION', "Simulation", "Simulation")],
-        name = "Hair Posing/Simulation",
-        description = "Add a hair proxy mesh for posing or simulation",
-        default = 'NONE')
+    useHeadParent : BoolProperty(
+        name = "Parent To Head",
+        description = "Bone parent the hair to the head bone",
+        default = True)
+
+    useHairProxy : BoolProperty(
+        name = "Hair Proxy",
+        description = "Add a hair proxy mesh",
+        default = False)
+
+    useSurfaceDeform : BoolProperty(
+        name = "Surface Deform",
+        description = "Add a surface deform modifier",
+        default = False)
+
+    useSimulation : BoolProperty(
+        name = "Hair Simulation",
+        description = "Add a cloth modifier for simulation",
+        default = False)
 
     useVertexGroups : BoolProperty(
         name = "Copy Vertex Groups",
@@ -54,12 +66,9 @@ class HairBuilder(Pinner, Collision, Cloth):
         default = True)
 
     def drawPoseSim(self, context, layout):
-        layout.prop(self, "hairPoseSim")
-        if self.hairPoseSim == 'POSING':
-            layout.prop(self, "proxyType")
-            layout.prop(self, "useVertexGroups")
-        elif self.hairPoseSim == 'SIMULATION':
-            layout.prop(self, "proxyType")
+        layout.prop(self, "useSurfaceDeform")
+        layout.prop(self, "useSimulation")
+        if self.useSimulation:
             layout.prop(self, "proxyWidth")
             layout.prop(self, "usePinGroup")
             if self.usePinGroup:
@@ -68,6 +77,9 @@ class HairBuilder(Pinner, Collision, Cloth):
             layout.prop(self, "useClothSimulation")
             if self.useClothSimulation:
                 self.drawCloth(context, layout)
+        else:
+            layout.prop(self, "proxyType")
+            layout.prop(self, "useVertexGroups")
 
 
     def buildMesh(self, context, hname, strands, hair, hum, mnames):
@@ -86,9 +98,7 @@ class HairBuilder(Pinner, Collision, Cloth):
             verts += strand
         nverts = len(verts)
         dr = self.proxyWidth * 0.1 * GS.scale
-        if self.hairPoseSim == 'NONE':
-            return
-        elif self.hairPoseSim == 'POSING' and self.proxyType == 'LINE':
+        if not self.useSimulation and self.proxyType == 'LINE':
             m = 0
             for strand in strands:
                 nsverts = len(strand)
@@ -175,13 +185,28 @@ class HairBuilder(Pinner, Collision, Cloth):
             mat.diffuse_color[0:3] = (1,0,0)
         proxy = self.buildMesh(context, hname, strands, hair, hum, [mat.name])
         proxy.hide_render = True
-        if self.hairPoseSim == 'SIMULATION' and self.usePinGroup:
+        return proxy
+
+
+    def addProxyModifiers(self, context, proxy, hum):
+        if self.useSurfaceDeform:
+            mod = proxy.modifiers.new("Surface Deform", 'SURFACE_DEFORM')
+            if hum is None:
+                return
+            elif hum.type == 'MESH':
+                mod.target = hum
+            else:
+                mod.target = getMeshChildren(hum)[0]
+            if activateObject(context, proxy):
+                bpy.ops.object.surfacedeform_bind(modifier=mod.name)
+        else:
+            self.parentToHead(proxy, hum)
+        if self.useSimulation and self.usePinGroup:
             self.addHairPinning(proxy)
             if self.useClothSimulation:
                 self.collision = 'NONE'
                 self.collection = None
                 self.addCloth(proxy)
-        return proxy
 
 
     def buildCurves(self, context, hname, strands, hair, hum, mnames):
@@ -225,9 +250,13 @@ class HairBuilder(Pinner, Collision, Cloth):
         return ob
 
 
-    def linkHair(self, ob, hum, coll):
-        coll.objects.link(ob)
-        rig = hum.parent
+    def parentToHead(self, ob, hum):
+        if not self.useHeadParent:
+            return
+        if hum.type == 'ARMATURE':
+            rig = hum
+        else:
+            rig = hum.parent
         if rig and rig.type == 'ARMATURE':
             head = rig.data.bones.get("head")
             wmat = ob.matrix_world.copy()
@@ -270,7 +299,6 @@ class DAZ_OT_MakeHairProxy(DazPropsOperator, HairBuilder, IsCurves):
 
     def invoke(self, context, event):
         self.invokePinner()
-        self.hairPoseSim = 'SIMULATION'
         return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
@@ -283,7 +311,8 @@ class DAZ_OT_MakeHairProxy(DazPropsOperator, HairBuilder, IsCurves):
             strands.append(strand)
         proxy = self.buildHairProxy(context, hname, strands, hair, hum)
         proxy.name = "Proxy %s" % baseName(hair.name)
-        self.linkHair(proxy, hum, context.collection)
+        context.collection.objects.link(proxy)
+        self.addProxyModifiers(context, proxy, hum)
         self.addFollowProxy(hair, proxy)
 
 # ---------------------------------------------------------------------

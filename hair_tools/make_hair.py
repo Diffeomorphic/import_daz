@@ -747,9 +747,12 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
         col = split.column()
         box = col.box()
-        box.label(text="Posing/Simulation")
+        box.label(text="Deform")
+        box.prop(self, "useHeadParent")
         if self.output ==  'HAIR_CURVES':
-            self.drawPoseSim(context, box)
+            box.prop(self, "useHairProxy")
+            if self.useHairProxy:
+                self.drawPoseSim(context, box)
 
 
     def invoke(self, context, event):
@@ -922,19 +925,23 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             ob = self.buildCurves(context, hname, strands, hair, hum, mnames)
         elif self.output == 'HAIR_CURVES':
             ob = self.buildHairCurves(context, hname, strands, hair, hum, mnames)
-            if self.hairPoseSim != 'NONE':
+            if self.useHairProxy:
                 proxy = self.buildHairProxy(context, hname, strands, hair, hum)
         elif self.output == 'PARTICLES':
             ob = self.buildHairCurves(context, hname, strands, hair, hum, mnames)
 
         ob.name = "Hair %s" % baseName(hair.name)
-        self.linkHair(ob, hum, coll)
-        if proxy:
+        coll.objects.link(ob)
+        if proxy is None:
+            self.parentToHead(ob, hum)
+        else:
             proxy.name = "Proxy %s" % baseName(hair.name)
-            self.linkHair(proxy, hum, coll)
+            coll.objects.link(proxy)
+            self.addProxyModifiers(context, proxy, hum)
             if duphair:
-                from ..transfer import transferVertexGroups
-                transferVertexGroups(context, duphair, [proxy], 1e-3)
+                if len(duphair.data.polygons) > 0 and len(proxy.data.polygons) > 0:
+                    from ..transfer import transferVertexGroups
+                    transferVertexGroups(context, duphair, [proxy], 1e-3)
                 mod = proxy.modifiers.new("Armature", 'ARMATURE')
                 mod.object = duphair.parent
                 proxy.parent = duphair.parent
