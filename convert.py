@@ -85,11 +85,15 @@ def optimizePose(context, useApplyRestPose):
 def getConverter(srctype, trg):
     if srctype == "genesis8":
         srctype = "genesis3"
+    elif srctype == "genesis":
+        srctype = "genesis1"
     trgtype = dazRna(trg).DazRig
     if trgtype[-7:] == ".suffix":
         trgtype = trgtype[:-7]
     if trgtype == "genesis8":
         trgtype = "genesis3"
+    elif trgtype == "genesis":
+        trgtype = "genesis1"
 
     if srctype == "" or trgtype == "":
         return {},[]

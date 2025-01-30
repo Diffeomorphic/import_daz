@@ -1,0 +1,23 @@
+{
+    "pelvis" : "",
+    "abdomen2" : "", 
+
+    "lPectoral" : "", 
+    "lCarpal1" : "", 
+    "lCarpal2" : "", 
+    "rPectoral" : "", 
+    "rCarpal1" : "", 
+    "rCarpal2" : "", 
+
+    "lBigToe" : "", 
+    "lSmallToe1" : "", 
+    "lSmallToe2" : "", 
+    "lSmallToe3" : "", 
+    "lSmallToe4" : "", 
+
+    "rBigToe" : "", 
+    "rSmallToe1" : "", 
+    "rSmallToe2" : "", 
+    "rSmallToe3" : "", 
+    "rSmallToe4" : ""
+}
