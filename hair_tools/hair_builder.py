@@ -19,10 +19,13 @@ class HairBuilder(Pinner, Collision, Cloth):
         description = "Bone parent the hair to the head bone",
         default = True)
 
-    useHairProxy : BoolProperty(
-        name = "Hair Proxy",
-        description = "Add a hair proxy mesh",
-        default = False)
+    deformType : EnumProperty(
+        items = [('NONE', "None", "No deform"),
+                 ('CURVES', "Curves", "Add deform curves modifier"),
+                 ('PROXY', "Proxy", "Add a hair proxy mesh")],
+        name = "Deform Type",
+        description = "How to deform the hair",
+        default = 'NONE')
 
     useSurfaceDeform : BoolProperty(
         name = "Surface Deform",
@@ -267,22 +270,32 @@ class HairBuilder(Pinner, Collision, Cloth):
             setWorldMatrix(ob, wmat)
 
 
-    def addFollowProxy(self, hair, proxy):
-        from ..geonodes import FollowProxyGroup
+    def addHairModifier(self, hair, group, groupname, modname):
         from ..tree import addNodeGroup
         from ..store import ModStore
         stores = []
         for mod in list(hair.modifiers):
             if not (mod.type == 'NODES' and
                     mod.node_group and
-                    mod.node_group.name == "DAZ Follow Proxy"):
+                    mod.node_group.name == groupname):
                 stores.append(ModStore(mod))
             hair.modifiers.remove(mod)
-        mod = hair.modifiers.new("Follow %s" % proxy.name, 'NODES')
-        mod.node_group = addNodeGroup(FollowProxyGroup, "DAZ Follow Proxy")
-        mod["Socket_1"] = proxy
+        mod = hair.modifiers.new(modname, 'NODES')
+        mod.node_group = addNodeGroup(group, groupname)
         for store in stores:
             store.restore(hair)
+        return mod
+
+
+    def addFollowProxy(self, hair, proxy):
+        from ..geonodes import FollowProxyGroup
+        mod = self.addHairModifier(hair, FollowProxyGroup, "DAZ Follow Proxy", "Follow %s" % proxy.name)
+        mod["Socket_1"] = proxy
+
+
+    def addDeformCurves(self, hair):
+        from ..geonodes import DeformCurvesGroup
+        mod = self.addHairModifier(hair, DeformCurvesGroup, "DAZ Deform Curves", "Deform Curves")
 
 #-------------------------------------------------------------
 #   Make Hair Proxy

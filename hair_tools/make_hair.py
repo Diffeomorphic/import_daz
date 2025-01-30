@@ -748,11 +748,16 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         col = split.column()
         box = col.box()
         box.label(text="Deform")
-        box.prop(self, "useHeadParent")
-        if self.output ==  'HAIR_CURVES':
-            box.prop(self, "useHairProxy")
-            if self.useHairProxy:
+        if self.output == 'HAIR_CURVES':
+            box.prop(self, "deformType")
+            if self.deformType == 'NONE':
+                box.prop(self, "useHeadParent")
+            elif self.deformType == 'CURVES':
+                pass
+            elif self.deformType == 'PROXY':
                 self.drawPoseSim(context, box)
+        else:
+            box.prop(self, "useHeadParent")
 
 
     def invoke(self, context, event):
@@ -925,16 +930,23 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             ob = self.buildCurves(context, hname, strands, hair, hum, mnames)
         elif self.output == 'HAIR_CURVES':
             ob = self.buildHairCurves(context, hname, strands, hair, hum, mnames)
-            if self.useHairProxy:
+            if self.deformType == 'PROXY':
                 proxy = self.buildHairProxy(context, hname, strands, hair, hum)
         elif self.output == 'PARTICLES':
             ob = self.buildHairCurves(context, hname, strands, hair, hum, mnames)
 
         ob.name = "Hair %s" % baseName(hair.name)
         coll.objects.link(ob)
-        if proxy is None:
+        if self.deformType == 'NONE' or self.output != 'HAIR_CURVES':
             self.parentToHead(ob, hum)
-        else:
+        elif self.deformType == 'CURVES':
+            if "rest_position" not in hum.data.attributes.keys():
+                hum.data.attributes.new("rest_position", 'FLOAT_VECTOR', 'POINT')
+            if activateObject(context, ob):
+                setMode('SCULPT_CURVES')
+                bpy.ops.curves.snap_curves_to_surface(attach_mode='NEAREST')
+                setMode('OBJECT')
+        elif self.deformType == 'PROXY':
             proxy.name = "Proxy %s" % baseName(hair.name)
             coll.objects.link(proxy)
             self.addProxyModifiers(context, proxy, hum)
@@ -980,8 +992,10 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
                     mod.node_group = group
                     return mod
 
-            if proxy:
+            if self.deformType == 'PROXY':
                 self.addFollowProxy(ob, proxy)
+            elif self.deformType == 'CURVES':
+                self.addDeformCurves(ob)
             mod = addMod(ob, "Set Hair Curve Profile")
             if mod:
                 mod["Input_3"] = self.hairRadius * 1e-3

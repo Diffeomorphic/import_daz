@@ -75,6 +75,22 @@ class FollowProxyGroup(GeoTree):
         self.links.new(setPosition.outputs["Geometry"], self.outputs.inputs["Geometry"])
 
 # ---------------------------------------------------------------------
+#   Deform curves group
+# ---------------------------------------------------------------------
+
+class DeformCurvesGroup(GeoTree):
+    def create(self, name):
+        NodeGroup.make(self, name, 2)
+        addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
+        addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
+
+
+    def addNodes(self):
+        node =  self.addNode("GeometryNodeDeformCurvesOnSurface", 1)
+        self.links.new(self.inputs.outputs["Geometry"], node.inputs["Curves"])
+        self.links.new(node.outputs["Curves"], self.outputs.inputs["Geometry"])
+
+# ---------------------------------------------------------------------
 #   Geograft group
 # ---------------------------------------------------------------------
 
