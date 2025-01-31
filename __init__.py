@@ -182,91 +182,91 @@ class DazPreferences(bpy.types.AddonPreferences):
     useSimpleIkTools : BoolProperty(
         name = "Simple IK Tools",
         description = "Tools for simple IK",
-        default = False,
+        default = True,
         update = toggleSimpleIkTools)
 
     useMhxTools : BoolProperty(
         name = "MHX Tools",
         description = "Tools for MHX rig",
-        default = False,
+        default = True,
         update = toggleMhxTools)
 
     useRigifyTools : BoolProperty(
         name = "Rigify Tools",
         description = "Tools for Rigify",
-        default = False,
+        default = True,
         update = toggleRigifyTools)
 
     useMaterialTools : BoolProperty(
         name = "Material Tools",
         description = "Tools for dealing with DAZ materials",
-        default = False,
+        default = True,
         update = toggleMaterialTools)
 
     useMeshTools : BoolProperty(
         name = "Mesh Tools",
         description = "Tools for dealing with DAZ meshes",
-        default = False,
+        default = True,
         update = toggleMeshTools)
 
     useMorphTools : BoolProperty(
         name = "Morph Tools",
         description = "Tools for dealing with DAZ morphs",
-        default = False,
+        default = True,
         update = toggleMorphTools)
 
     useHairTools : BoolProperty(
         name = "Hair Tools",
         description = "Tools for dealing with Hair morphs",
-        default = False,
+        default = True,
         update = toggleHairTools)
 
     useVisibilityTools : BoolProperty(
         name = "Visibility Tools",
         description = "Tools for dealing with Visibility morphs",
-        default = False,
+        default = True,
         update = toggleVisibilityTools)
 
     useHDTools : BoolProperty(
         name = "HD Tools",
         description = "Tools for dealing with HD morphs",
-        default = False,
+        default = True,
         update = toggleHDTools)
 
     useSimulationTools : BoolProperty(
         name = "Simulation Tools",
         description = "Simulation",
-        default = False,
+        default = True,
         update = toggleSimulationTools)
 
     useExportTools : BoolProperty(
         name = "Export Tools",
         description = "Tools for exporting presets and UV maps back to DAZ Studio",
-        default = False,
+        default = True,
         update = toggleExportTools)
 
     useRigTools : BoolProperty(
         name = "Rigging Tools",
         description = "Tools for rigging DAZ figures",
-        default = False,
+        default = True,
         update = toggleRigTools)
 
     usePoseTools : BoolProperty(
         name = "Pose Tools",
         description = "Tools for posing DAZ figures",
-        default = False,
+        default = True,
         update = togglePoseTools)
 
     useObjectTools : BoolProperty(
         name = "Object Tools",
         description = "Tools for objects",
-        default = False,
+        default = True,
         update = toggleObjectTools)
 
     useShellTools : BoolProperty(
         name = "Shell Tools",
         description = "Tools for editing shells and layered images",
-        default = False,
+        default = True,
         update = toggleShellTools)
 
     def draw(self, context):
