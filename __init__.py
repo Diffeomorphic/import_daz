@@ -73,7 +73,6 @@ else:
     print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
     for modname in Modules:
         exec("from . import %s" % modname)
-    from .runtime import morph_armature
     from . import simple_ik_tools
     from . import mhx_tools
     from . import rigify_tools
@@ -334,8 +333,6 @@ def register():
     for modname in Modules:
         if modname in Regnames:
             exec("%s.register()" % modname)
-    from .runtime import morph_armature
-    morph_armature.register()
 
     bpy.utils.register_class(DAZ_OT_EnableAllFeatures)
     bpy.utils.register_class(DAZ_OT_DisableAllFeatures)

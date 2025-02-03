@@ -125,11 +125,11 @@ def onFrameChangeDaz(scn):
 
 
 def register():
-    unregister()
-    bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
     bpy.types.PoseBone.DazHeadLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
+    unregister()
+    bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
 
 def unregister():
     oldFcns = [fcn for fcn in bpy.app.handlers.frame_change_post if fcn.__name__ == "onFrameChangeDaz"]
