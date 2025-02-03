@@ -250,11 +250,12 @@ class MetaMaker(RigifyCommon):
         from collections import OrderedDict
         from ..rig_utils import unhideAllObjects, connectToParent
         from ..figure import getRigType, finalizeArmature
-        from ..merge_rigs import mergeBones, mergeVertexGroups
+        from ..merge_rigs import mergeBones, mergeVertexGroups, applyTransformToObjects
         from ..apply import safeTransformApply
 
         print("Create metarig")
         rig = context.object
+        wmats = applyTransformToObjects([rig])
         self.setupDazSkeleton(rig)
         scale = GS.scale
         scn = context.scene

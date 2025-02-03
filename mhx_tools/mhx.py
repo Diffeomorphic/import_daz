@@ -202,10 +202,19 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
 
     def run(self, context):
+        from ..merge_rigs import applyTransformToObjects, restoreTransformsToObjects
         rig = context.object
         if False and not checkMhxEnabled(rig):
             msg = ("The MHX Runtime System is not enabled.   \nThe add-on is found under Rigging")
             raise DazError(msg)
+        wmats = applyTransformToObjects([rig])
+        try:
+            self.makeMhx(context, rig)
+        finally:
+            restoreTransformsToObjects(wmats)
+
+
+    def makeMhx(self, context, rig):
         startProgress("Convert %s to MHX" % rig.name)
         t1 = perf_counter()
         self.initFixer()
