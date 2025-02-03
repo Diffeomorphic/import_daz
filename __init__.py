@@ -156,6 +156,13 @@ def toggleModule(module, enable):
         exec("%s.unregister()" % module)
 
 
+theFeatures = ["useRigTools", "useSimpleIkTools", "useMhxTools",
+               "useRigifyTools", "usePoseTools", "useObjectTools",
+               "useMaterialTools", "useShellTools", "useMeshTools",
+               "useMorphTools", "useHairTools", "useVisibilityTools",
+               "useHDTools", "useSimulationTools", "useExportTools",
+              ]
+
 def updateSettings(self, context):
     GS.getSettingsDir(context)
     filepath = GS.getSettingsPath()
@@ -182,7 +189,7 @@ class DazPreferences(bpy.types.AddonPreferences):
     useSimpleIkTools : BoolProperty(
         name = "Simple IK Tools",
         description = "Tools for simple IK",
-        default = True,
+        default = False,
         update = toggleSimpleIkTools)
 
     useMhxTools : BoolProperty(
@@ -200,19 +207,19 @@ class DazPreferences(bpy.types.AddonPreferences):
     useMaterialTools : BoolProperty(
         name = "Material Tools",
         description = "Tools for dealing with DAZ materials",
-        default = True,
+        default = False,
         update = toggleMaterialTools)
 
     useMeshTools : BoolProperty(
         name = "Mesh Tools",
         description = "Tools for dealing with DAZ meshes",
-        default = True,
+        default = False,
         update = toggleMeshTools)
 
     useMorphTools : BoolProperty(
         name = "Morph Tools",
         description = "Tools for dealing with DAZ morphs",
-        default = True,
+        default = False,
         update = toggleMorphTools)
 
     useHairTools : BoolProperty(
@@ -230,13 +237,13 @@ class DazPreferences(bpy.types.AddonPreferences):
     useHDTools : BoolProperty(
         name = "HD Tools",
         description = "Tools for dealing with HD morphs",
-        default = True,
+        default = False,
         update = toggleHDTools)
 
     useSimulationTools : BoolProperty(
         name = "Simulation Tools",
         description = "Simulation",
-        default = True,
+        default = False,
         update = toggleSimulationTools)
 
     useExportTools : BoolProperty(
@@ -248,48 +255,63 @@ class DazPreferences(bpy.types.AddonPreferences):
     useRigTools : BoolProperty(
         name = "Rigging Tools",
         description = "Tools for rigging DAZ figures",
-        default = True,
+        default = False,
         update = toggleRigTools)
 
     usePoseTools : BoolProperty(
         name = "Pose Tools",
         description = "Tools for posing DAZ figures",
-        default = True,
+        default = False,
         update = togglePoseTools)
 
     useObjectTools : BoolProperty(
         name = "Object Tools",
         description = "Tools for objects",
-        default = True,
+        default = False,
         update = toggleObjectTools)
 
     useShellTools : BoolProperty(
         name = "Shell Tools",
         description = "Tools for editing shells and layered images",
-        default = True,
+        default = False,
         update = toggleShellTools)
 
     def draw(self, context):
+        global thePrefs
+        thePrefs = self
         self.layout.prop(self, "settingsDir")
         #self.layout.operator("daz.update_settings")
-        self.layout.operator("daz.load_settings_file")
-        self.layout.operator("daz.save_settings_file")
+        row = self.layout.row()
+        row.operator("daz.load_settings_file")
+        row.operator("daz.save_settings_file")
+        row = self.layout.row()
+        row.operator("daz.enable_all_features")
+        row.operator("daz.diaable_all_features")
         self.layout.label(text = "Features:")
-        self.layout.prop(self, "useRigTools")
-        self.layout.prop(self, "useSimpleIkTools")
-        self.layout.prop(self, "useMhxTools")
-        self.layout.prop(self, "useRigifyTools")
-        self.layout.prop(self, "usePoseTools")
-        self.layout.prop(self, "useObjectTools")
-        self.layout.prop(self, "useMaterialTools")
-        self.layout.prop(self, "useShellTools")
-        self.layout.prop(self, "useMeshTools")
-        self.layout.prop(self, "useMorphTools")
-        self.layout.prop(self, "useHairTools")
-        self.layout.prop(self, "useVisibilityTools")
-        self.layout.prop(self, "useHDTools")
-        self.layout.prop(self, "useSimulationTools")
-        self.layout.prop(self, "useExportTools")
+        for feature in theFeatures:
+            self.layout.prop(self, feature)
+
+
+class DAZ_OT_EnableAllFeatures(bpy.types.Operator):
+    bl_idname = "daz.enable_all_features"
+    bl_label = "Enable All Features"
+
+    def execute(self, context):
+        global thePrefs
+        for feature in theFeatures:
+            setattr(thePrefs, feature, True)
+        return {'PASS_THROUGH'}
+
+
+class DAZ_OT_DisableAllFeatures(bpy.types.Operator):
+    bl_idname = "daz.diaable_all_features"
+    bl_label = "Disable All Features"
+
+    def execute(self, context):
+        global thePrefs
+        for feature in theFeatures:
+            setattr(thePrefs, feature, False)
+        return {'PASS_THROUGH'}
 
 #----------------------------------------------------------
 #   Register
@@ -314,6 +336,9 @@ def register():
             exec("%s.register()" % modname)
     from .runtime import morph_armature
     morph_armature.register()
+
+    bpy.utils.register_class(DAZ_OT_EnableAllFeatures)
+    bpy.utils.register_class(DAZ_OT_DisableAllFeatures)
 
     bpy.utils.register_class(DazPreferences)
     addon = bpy.context.preferences.addons.get(__name__)
@@ -378,6 +403,9 @@ def unregister():
     for modname in reversed(Modules):
         if modname in Regnames:
             exec("%s.unregister()" % modname)
+
+    bpy.utils.unregister_class(DAZ_OT_EnableAllFeatures)
+    bpy.utils.unregister_class(DAZ_OT_DisableAllFeatures)
 
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
