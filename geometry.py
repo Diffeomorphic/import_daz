@@ -505,9 +505,9 @@ class GeoNode(Node, SimNode):
         hdob.parent_type = ob.parent_type
         hdob.parent_bone = ob.parent_bone
         setWorldMatrix(hdob, ob.matrix_world)
-        hddazRna(ob.data).DazFingerPrint = getFingerPrint(hdob)
-        if hddazRna(ob.data).DazFingerPrint == dazRna(ob.data).DazFingerPrint:
-            hddazRna(ob).DazMesh = dazRna(ob).DazMesh
+        dazRna(hdob.data).DazFingerPrint = getFingerPrint(hdob)
+        if dazRna(hdob.data).DazFingerPrint == dazRna(ob.data).DazFingerPrint:
+            dazRna(hdob).DazMesh = dazRna(ob).DazMesh
         setWorldMatrix(hdob, ob.matrix_world)
         if hdob.name in LS.collection.objects:
             LS.collection.objects.unlink(hdob)
@@ -538,7 +538,7 @@ class GeoNode(Node, SimNode):
                     return None
                 mname = words[1]
 
-        matnames = dict([(pg.name,pg.text) for pg in hddazRna(ob.data).DazHDMaterials])
+        matnames = dict([(pg.name,pg.text) for pg in dazRna(hdob.data).DazHDMaterials])
         for mn,mname in enumerate(self.highdef.matgroups):
             mat = None
             if mname in matnames.keys():
