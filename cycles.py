@@ -2196,6 +2196,14 @@ class CyclesTree(Tree):
 #   Utilities
 #-------------------------------------------------------------
 
+def averageColor(value):
+    if isVector(value):
+        x,y,z = value
+        return (x+y+z)/3
+    else:
+        return value
+
+
 def isGroupType(node, gtypes):
     return (node and
             node.type == 'GROUP' and

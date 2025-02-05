@@ -595,13 +595,6 @@ def addToStruct(struct, key, prop, value):
         struct[key] = {}
     struct[key][prop] = value
 
-def averageColor(value):
-    if isVector(value):
-        x,y,z = value
-        return (x+y+z)/3
-    else:
-        return value
-
 Zero = Vector((0,0,0))
 One = Vector((1,1,1))
 TTrue = (True, True, True)

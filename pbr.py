@@ -7,7 +7,7 @@ from mathutils import Vector, Color
 from .material import Material, WHITE, GREY, BLACK, isWhite, isBlack
 from .error import *
 from .utils import *
-from .cycles import CyclesTree
+from .cycles import CyclesTree, averageColor
 from .tree import addGroupInput, addGroupOutput, getGroupInput, colorOutput, MixRGB
 
 # ---------------------------------------------------------------------
@@ -319,39 +319,46 @@ class PbrTree(CyclesTree):
 
     def buildSpecular(self, useTex):
         # Specular
-        spec, spectex = 0, None
         color, coltex = WHITE, None
+        strength, strtex = 1.0, None
+        refl, refltex = 0.5, None
         if self.owner.shader == 'UBER_IRAY':
-            strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
+            strength,strtex,_ = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
+            color,coltex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
             if self.owner.basemix == 0:    # Metallic/Roughness
                 # principled specular = iray glossy reflectivity * iray glossy layered weight * iray glossy color / 0.8
-                refl,reftex,_ = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
-                color,coltex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
-                spectex = self.mixTexs('MULTIPLY', strtex, reftex)
+                refl,refltex,_ = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
                 if BLENDER3:
-                    spec = 1.25 * refl * strength
-                else:
-                    spec = refl * strength
+                    refltex = self.mixTexs('MULTIPLY', strtex, refltex)
+                    refl = 1.25 * refl * strength
             elif self.owner.basemix == 1:  # Specular/Glossiness
-                # principled specular = iray glossy specular * iray glossy layered weight * 16
-                color,coltex,_ = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, True, useTex)
-                spec = 16 * strength
+                spec,spectex,_ = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, True, useTex)
+                if BLENDER3:
+                    # principled specular = iray glossy specular * iray glossy layered weight * 16
+                    color,coltex,_ = self.getColorTex(["Glossy Specular"], "COLOR", WHITE, True, useTex)
+                    refl = 16 * strength
+                    refltex = spectex
+                else:
+                    refl = averageColor(spec) / 0.078
+                    refltex = spectex
         elif self.owner.shader == 'PBRSKIN':
             if self.isEnabled("Dual Lobe Specular"):
-                spec,spectex,texslot = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 1.0, False)
+                refl,refltex,_ = self.getColorTex(["Dual Lobe Specular Weight"], "NONE", 1.0, False)
         else:
-            spec,spectex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
+            refl,refltex,_ = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             color,coltex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE, True, useTex)
         if useTex is None:
-            spectex = None
+            refltex = None
 
         if BLENDER3:
-            spec = clamp(spec*averageColor(color))
-            spectex = self.mixTexs('MULTIPLY', spectex, coltex)
+            spec = clamp(refl*averageColor(color))
+            spectex = self.mixTexs('MULTIPLY', refltex, coltex)
             self.linkScalar(spectex, self.pbr, spec, "Specular")
         else:
             self.replaceSlot(self.pbr, "IOR", 1.5)
-            self.linkScalar(spectex, self.pbr, spec, "Specular IOR Level")
+            self.linkScalar(refltex, self.pbr, refl, "Specular IOR Level")
+            color = strength*Vector(color)
+            coltex = self.mixTexs('MULTIPLY', strtex, coltex)
             self.linkColor(coltex, self.pbr, color, "Specular Tint")
 
     #-------------------------------------------------------------
