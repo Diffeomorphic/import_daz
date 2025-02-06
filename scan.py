@@ -123,6 +123,7 @@ class Scanner:
     useDefins = False
 
     def setupScanner(self, name, url):
+        self.ids = {}
         self.formulas = {}
         self.defins = {}
         self.minmax = {}
@@ -131,6 +132,7 @@ class Scanner:
         struct = {
             "name" : name,
             "url" : url,
+            "ids" : self.ids,
             "directory" : self.directory,
             "modified" : str(modified),
             "version" : CURRENT_VERSION,
@@ -174,15 +176,18 @@ class Scanner:
             return
         asset = parseAssetFile(struct)
         ref = info = key = prop = None
-        if isinstance(asset, Morph):
+        if asset is None:
+            return
+        else:
             ref,key = asset.id.rsplit("#",1)
             key = normKey(key)
+            if key != asset.name:
+                self.ids[asset.name] = key
+        if isinstance(asset, Morph):
             exprs,rig2 = asset.evalFormulas(self.rig, self.mesh, False)
             info,prop = self.evalExprs(asset, exprs)
             prop = normKey(prop)
         elif isinstance(asset, Alias):
-            ref,key = asset.id.rsplit("#",1)
-            key = normKey(key)
             target = asset.target_channel.rsplit("#",1)[-1]
             if target[-6:] == "?value":
                 target = normKey(target[:-6])
@@ -191,8 +196,6 @@ class Scanner:
         elif isinstance(asset, Formula):
             exprs,rig2 = asset.evalFormulas(self.rig, self.mesh, False)
             info,_ = self.evalExprs(asset, exprs)
-            ref,key = asset.id.rsplit("#",1)
-            key = normKey(key)
         if key is None:
             return
         if (self.useMinmax and
@@ -202,9 +205,9 @@ class Scanner:
         if ref:
             filepath = bpy.path.resolve_ncase(unquote(ref))
             folder = os.path.dirname(filepath)
-            name = os.path.splitext(os.path.basename(filepath))[0]
+            fname = os.path.splitext(os.path.basename(filepath))[0]
             if (self.useDefins or
-                key != normKey(name) or
+                key != normKey(fname) or
                 folder != self.directory):
                 self.defins[key] = filepath
         if info and self.useFormulas:
@@ -337,7 +340,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector, Scanner):
     def run(self, context):
         active = self.getActive(context.object)
         if active and self.useActive:
-            self.rig, self.mesh, name, relpath = getCharData(context, True)
+            self.rig, self.mesh, name, relpath = getCharData(context, False)
             scanpath = getScanPath(name)
             self.scanCharacter(context, name, relpath, scanpath)
         else:
@@ -368,16 +371,16 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector, Scanner):
 def getCharData(context, error):
     from .finger import getFingeredCharacters
     rig,meshes,chars,modded = getFingeredCharacters(context.object, True, useGenesis=True)
-    if not (meshes and
-            dazRna(meshes[0]).DazUrl and
-            chars[0].startswith("Genesis")):
-        msg = "Cannot scan database because no Genesis mesh was found"
+    mesh = context.object
+    if meshes and dazRna(meshes[0]).DazUrl:
+        mesh = meshes[0]
+    elif mesh.type != 'MESH':
+        msg = "Cannot scan database because no mesh was found"
         if error:
             raise DazError(msg)
         else:
             print(msg)
             return rig, None, "Unknown", None
-    mesh = meshes[0]
     relfile = dazRna(mesh).DazUrl.rsplit("#",1)[0]
     relpath = os.path.dirname(relfile)
     name = os.path.basename(os.path.splitext(relfile)[0])

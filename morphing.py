@@ -1973,11 +1973,18 @@ class ScanFinder:
     useSearchAlias = False
 
     def setupScanned(self, ob):
-        from .fileutils import DF
-        name = dazRna(ob).DazUrl.rsplit("#", 1)[-1]
-        struct = DF.loadEntry(name, "scanned", False)
+        from .scan import getScanPath
+        from .load_json import JL
+        name = dazRna(ob).DazFigure.rsplit("#", 1)[-1]
+        scanpath = getScanPath(name)
+        struct = JL.load(scanpath)
+        if not struct:
+            from .fileutils import DF
+            name = dazRna(ob).DazUrl.rsplit("#", 1)[-1]
+            struct = DF.loadEntry(name, "scanned", False)
         self.directory = struct.get("directory")
         self.defs = struct.get("definitions", {})
+        self.ids = struct.get("ids", {})
         self.alias = struct.get("alias", {})
         self.formulas = struct.get("formulas", {})
         self.geograft = struct.get("geograft", {})
@@ -2021,9 +2028,12 @@ class ScanFinder:
             for prop,factor in exprs.items():
                 path = self.getDefinedPath(prop)
                 self.addNamePath(prop, path, self.namepaths)
-        if not self.found:
+        if self.found:
+            return True
+        else:
             morph = unquote(morph)
             path = findPathRecursiveFromObject(morph, ob, ["Morphs/", "Base/Morphs/"])
+            print("MO", morph, path)
             if path:
                 self.addNamePath(morph, path, self.namepaths)
                 return True
@@ -2035,6 +2045,11 @@ class ScanFinder:
         path = self.defs.get(morph)
         if path:
             return path
+        id = self.ids.get(morph)
+        if id:
+            path = self.defs.get(id)
+        if path:
+            return path
         elif self.directory:
             path = "%s/%s.dsf" % (self.directory, unquote(morph))
             return path
@@ -2042,7 +2057,7 @@ class ScanFinder:
 
 
     def addNamePath(self, morph, path, namepaths):
-        if path:
+        if path and morph not in namepaths.keys():
             path = GS.getAbsPath(path)
             if path:
                 morph = unquote(morph)
