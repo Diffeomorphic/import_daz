@@ -42,55 +42,6 @@ class GeoTree(Tree, NodeGroup):
             self.links.new(node.outputs[1], tosocket)
 
 # ---------------------------------------------------------------------
-#   Follow proxy group
-# ---------------------------------------------------------------------
-
-class FollowProxyGroup(GeoTree):
-    def create(self, name):
-        NodeGroup.make(self, name, 4)
-        addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
-        addGroupInput(self.group, "NodeSocketObject", "Object")
-        addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
-
-
-    def addNodes(self):
-        objinfo = self.addNode("GeometryNodeObjectInfo", 1)
-        objinfo.transform_space = 'RELATIVE'
-        self.links.new(self.inputs.outputs["Object"], objinfo.inputs[0])
-        position = self.addNode("GeometryNodeInputPosition", 1)
-        index = self.addNode("GeometryNodeInputIndex", 1)
-
-        sample = self.addNode("GeometryNodeSampleIndex", 2)
-        if hasattr(sample, "data_type"):
-            sample.data_type = 'FLOAT_VECTOR'
-        sample.domain = 'POINT'
-        self.links.new(objinfo.outputs["Geometry"], sample.inputs["Geometry"])
-        self.links.new(position.outputs["Position"], sample.inputs["Value"])
-        self.links.new(index.outputs["Index"], sample.inputs["Index"])
-
-        setPosition = self.addNode("GeometryNodeSetPosition", 3)
-        self.links.new(self.inputs.outputs["Geometry"], setPosition.inputs["Geometry"])
-        self.links.new(sample.outputs["Value"], setPosition.inputs["Position"])
-
-        self.links.new(setPosition.outputs["Geometry"], self.outputs.inputs["Geometry"])
-
-# ---------------------------------------------------------------------
-#   Deform curves group
-# ---------------------------------------------------------------------
-
-class DeformCurvesGroup(GeoTree):
-    def create(self, name):
-        NodeGroup.make(self, name, 2)
-        addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
-        addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
-
-
-    def addNodes(self):
-        node =  self.addNode("GeometryNodeDeformCurvesOnSurface", 1)
-        self.links.new(self.inputs.outputs["Geometry"], node.inputs["Curves"])
-        self.links.new(node.outputs["Curves"], self.outputs.inputs["Geometry"])
-
-# ---------------------------------------------------------------------
 #   Geograft group
 # ---------------------------------------------------------------------
 

@@ -182,12 +182,12 @@ class Tree:
         return node
 
 
-def addNodeGroup(classdef, name):
+def addNodeGroup(classdef, name, args=[]):
     if name in bpy.data.node_groups.keys():
         return bpy.data.node_groups[name]
     group = classdef()
     group.create(name)
-    group.addNodes()
+    group.addNodes(args)
     return group.group
 
 # ---------------------------------------------------------------------

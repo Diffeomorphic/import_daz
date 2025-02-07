@@ -975,37 +975,31 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
                 hsys.setHairSettings(psys, hum)
 
         elif self.output == 'HAIR_CURVES':
+            from .hair_nodes import addHairNodeGroup
+            activateObject(context, ob)
+            if self.deformType == 'PROXY':
+                self.addFollowProxy(ob, proxy)
+            elif self.deformType == 'CURVES':
+                self.addDeformCurves(ob, hum)
+
             def addMod(ob, name):
-                group = bpy.data.node_groups.get(name)
-                if group is None and activateObject(context, ob):
-                    aid = "geometry_nodes\\procedural_hair_node_assets.blend\\NodeTree\\%s" % name
-                    bpy.ops.object.modifier_add_node_group(
-                        asset_library_type = 'ESSENTIALS',
-                        asset_library_identifier = "",
-                        relative_asset_identifier = aid)
-                    mod = ob.modifiers[-1]
-                    group = mod.node_group
-                    ob.modifiers.remove(mod)
-                    print('Created node group "%s"' % group.name)
+                group = addHairNodeGroup(ob, name)
                 if group:
                     mod = ob.modifiers.new(name, 'NODES')
                     mod.node_group = group
                     return mod
 
-            if self.deformType == 'PROXY':
-                self.addFollowProxy(ob, proxy)
-            elif self.deformType == 'CURVES':
-                self.addDeformCurves(ob)
             mod = addMod(ob, "Set Hair Curve Profile")
             if mod:
-                mod["Input_3"] = self.hairRadius * 1e-3
-                mod["Input_2"] = self.hairShape
+                socket = ("Input" if "Input_2" in mod.keys() else "Socket")
+                mod["%s_3" % socket] = self.hairRadius * 1e-3
+                mod["%s_2" % socket] = self.hairShape
             mod = addMod(ob, "Duplicate Hair Curves")
             if mod:
-                mod["Input_2"] = self.nRenderChildren
-                mod["Input_4"] = self.viewFactor
-                mod["Input_5"] = self.childRadius * 1e-3
-
+                socket = ("Input" if "Input_2" in mod.keys() else "Socket")
+                mod["%s_2" % socket] = self.nRenderChildren
+                mod["%s_4" % socket] = self.viewFactor
+                mod["%s_5" % socket] = self.childRadius * 1e-3
 
     def findMeshRects(self, hair):
         from ..tables import getVertFaces, findNeighbors

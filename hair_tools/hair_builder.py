@@ -270,7 +270,7 @@ class HairBuilder(Pinner, Collision, Cloth):
             setWorldMatrix(ob, wmat)
 
 
-    def addHairModifier(self, hair, group, groupname, modname):
+    def addHairModifier(self, hair, group, groupname, modname, args=[]):
         from ..tree import addNodeGroup
         from ..store import ModStore
         stores = []
@@ -281,21 +281,32 @@ class HairBuilder(Pinner, Collision, Cloth):
                 stores.append(ModStore(mod))
             hair.modifiers.remove(mod)
         mod = hair.modifiers.new(modname, 'NODES')
-        mod.node_group = addNodeGroup(group, groupname)
+        mod.node_group = addNodeGroup(group, groupname, args)
         for store in stores:
             store.restore(hair)
         return mod
 
 
     def addFollowProxy(self, hair, proxy):
-        from ..geonodes import FollowProxyGroup
+        from .hair_nodes import FollowProxyGroup
         mod = self.addHairModifier(hair, FollowProxyGroup, "DAZ Follow Proxy", "Follow %s" % proxy.name)
         mod["Socket_1"] = proxy
 
 
-    def addDeformCurves(self, hair):
-        from ..geonodes import DeformCurvesGroup
-        mod = self.addHairModifier(hair, DeformCurvesGroup, "DAZ Deform Curves", "Deform Curves")
+    def addDeformCurves(self, hair, hum):
+        from ..tree import addNodeGroup
+        from .hair_nodes import DeleteInvalidGroup, DeformCurvesGroup
+        modname = "DAZ Delete Invalid Curves"
+        mod = hair.modifiers.new(modname, 'NODES')
+        mod.node_group = addNodeGroup(DeleteInvalidGroup, modname, [hum])
+        socket = ("Input" if "Input_2" in mod.keys() else "Socket")
+        mod["%s_1" % socket] = hum
+        uvlayer = hum.data.uv_layers.active
+        mod["%s_2" % socket] = uvlayer.name
+        #bpy.ops.object.modifier_apply(modifier=mod.name)
+        modname = "DAZ Deform Curves"
+        mod = hair.modifiers.new(modname, 'NODES')
+        mod.node_group = addNodeGroup(DeformCurvesGroup, modname)
 
 #-------------------------------------------------------------
 #   Make Hair Proxy

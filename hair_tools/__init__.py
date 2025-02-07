@@ -15,6 +15,7 @@ if not DEBUG:
 elif "HairToolsFeature" in locals():
     print("Reloading Hair Tools")
     import imp
+    imp.reload(hair_nodes)
     imp.reload(hair_builder)
     imp.reload(make_hair)
     imp.reload(hair_rig)
@@ -23,6 +24,7 @@ elif "HairToolsFeature" in locals():
         imp.reload(particles)
 else:
     print("Loading Hair Tools")
+    from . import hair_nodes
     from . import hair_builder
     from . import make_hair
     from . import hair_rig
