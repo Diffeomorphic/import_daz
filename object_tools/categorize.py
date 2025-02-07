@@ -27,6 +27,14 @@ class DAZ_OT_CategorizeObjects( DazPropsOperator, IsObject):
         name = "Empties",
         default = True)
 
+    useLights : BoolProperty(
+        name = "Lights",
+        default = False)
+
+    useCameras : BoolProperty(
+        name = "Cameras",
+        default = False)
+
     categoryHead : EnumProperty(
         items = [('UNPARENTED', "Unparented", "Selected unparented objects"),
                  ('CHILDREN', "Children", "Children of active object")],
@@ -39,6 +47,8 @@ class DAZ_OT_CategorizeObjects( DazPropsOperator, IsObject):
         self.layout.prop(self, "useMeshes")
         self.layout.prop(self, "useArmatures")
         self.layout.prop(self, "useEmpties")
+        self.layout.prop(self, "useLights")
+        self.layout.prop(self, "useCameras")
 
     def run(self, context):
         def linkObjects(ob, coll):
@@ -56,6 +66,10 @@ class DAZ_OT_CategorizeObjects( DazPropsOperator, IsObject):
             types.append('ARMATURE')
         if self.useEmpties:
             types.append('EMPTY')
+        if self.useLights:
+            types.append('LIGHT')
+        if self.useCameras:
+            types.append('CAMERA')
         parcoll = context.collection
         if self.categoryHead == 'UNPARENTED':
             roots = [ob for ob in getSelectedObjects(context) if ob.parent is None]
