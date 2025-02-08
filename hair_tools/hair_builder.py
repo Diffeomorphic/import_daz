@@ -27,6 +27,14 @@ class HairBuilder(Pinner, Collision, Cloth):
         description = "How to deform the hair",
         default = 'NONE')
 
+    onInvalid : EnumProperty(
+        items = [('KEEP', "Keep", "Keep invalid curves"),
+                 ('MODIFIER', "Modifier", "Add modifier that filters invalid curves"),
+                 ('REMOVE', "Remove", "Remove invalid curves")],
+        name = "Invalid curves",
+        description = "How to deal with invalid curves",
+        default = 'REMOVE')
+
     useSurfaceDeform : BoolProperty(
         name = "Surface Deform",
         description = "Add a surface deform modifier",
@@ -296,14 +304,16 @@ class HairBuilder(Pinner, Collision, Cloth):
     def addDeformCurves(self, hair, hum):
         from ..tree import addNodeGroup
         from .hair_nodes import DeleteInvalidGroup, DeformCurvesGroup
-        modname = "DAZ Delete Invalid Curves"
-        mod = hair.modifiers.new(modname, 'NODES')
-        mod.node_group = addNodeGroup(DeleteInvalidGroup, modname, [hum])
-        socket = ("Input" if "Input_2" in mod.keys() else "Socket")
-        mod["%s_1" % socket] = hum
-        uvlayer = hum.data.uv_layers.active
-        mod["%s_2" % socket] = uvlayer.name
-        #bpy.ops.object.modifier_apply(modifier=mod.name)
+        if self.onInvalid != 'KEEP':
+            modname = "DAZ Delete Invalid Curves"
+            mod = hair.modifiers.new(modname, 'NODES')
+            mod.node_group = addNodeGroup(DeleteInvalidGroup, modname, [hum])
+            socket = ("Input" if "Input_2" in mod.keys() else "Socket")
+            mod["%s_1" % socket] = hum
+            uvlayer = hum.data.uv_layers.active
+            mod["%s_2" % socket] = uvlayer.name
+            if self.onInvalid == 'REMOVE':
+                bpy.ops.object.modifier_apply(modifier=mod.name)
         modname = "DAZ Deform Curves"
         mod = hair.modifiers.new(modname, 'NODES')
         mod.node_group = addNodeGroup(DeformCurvesGroup, modname)
@@ -317,6 +327,8 @@ class DAZ_OT_MakeHairProxy(DazPropsOperator, HairBuilder, IsCurves):
     bl_label = "Make Hair Proxy"
     bl_description = "Make proxy for hair curves and add cloth simulation to it"
     bl_options = {'UNDO'}
+
+    useSurfaceDeform = False
 
     def draw(self, context):
         self.drawPoseSim(context, self.layout)

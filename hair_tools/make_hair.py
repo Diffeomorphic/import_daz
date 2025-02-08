@@ -753,7 +753,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             if self.deformType == 'NONE':
                 box.prop(self, "useHeadParent")
             elif self.deformType == 'CURVES':
-                pass
+                box.prop(self, "onInvalid")
             elif self.deformType == 'PROXY':
                 self.drawPoseSim(context, box)
         else:
