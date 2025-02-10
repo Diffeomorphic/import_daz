@@ -307,7 +307,7 @@ class HairBuilder(Pinner, Collision, Cloth):
         if self.onInvalid != 'KEEP':
             modname = "DAZ Delete Invalid Curves"
             mod = hair.modifiers.new(modname, 'NODES')
-            mod.node_group = addNodeGroup(DeleteInvalidGroup, modname, [hum])
+            mod.node_group = addNodeGroup(DeleteInvalidGroup, modname, [])
             socket = ("Input" if "Input_2" in mod.keys() else "Socket")
             mod["%s_1" % socket] = hum
             uvlayer = hum.data.uv_layers.active

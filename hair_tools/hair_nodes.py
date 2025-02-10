@@ -64,7 +64,7 @@ class DeformCurvesGroup(GeoTree):
 
 class DeleteInvalidGroup(GeoTree):
     def create(self, name):
-        NodeGroup.make(self, name, 4)
+        NodeGroup.make(self, name, 5)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
         addGroupInput(self.group, "NodeSocketObject", "Surface Geometry")
         addGroupInput(self.group, "NodeSocketString", "Surface UV Map")
@@ -76,22 +76,31 @@ class DeleteInvalidGroup(GeoTree):
         objinfo.transform_space = 'ORIGINAL'
         self.links.new(self.inputs.outputs["Surface Geometry"], objinfo.inputs[0])
 
-        attr = self.addNode("GeometryNodeInputNamedAttribute", 1)
-        attr.data_type = 'FLOAT_VECTOR'
-        self.links.new(self.inputs.outputs["Surface UV Map"], attr.inputs[0])
+        normal = self.addNode("GeometryNodeInputNormal", 1)
 
-        ob = args[0]
-        group = addHairNodeGroup(ob, "Hair Attachment Info")
-        attach = self.addNode("GeometryNodeGroup", 2)
-        attach.name = attach.label = group.name
-        attach.node_tree = group
-        self.links.new(objinfo.outputs["Geometry"], attach.inputs["Surface Geometry"])
-        self.links.new(attr.outputs["Attribute"], attach.inputs["Surface UV Map"])
+        capture = self.addNode("GeometryNodeCaptureAttribute", 2)
+        capture.domain = 'POINT'
+        self.links.new(objinfo.outputs["Geometry"], capture.inputs[0])
+        self.captureInput(capture, "Value", 'FLOAT_VECTOR', normal.outputs["Normal"])
 
-        sep = self.addNode("GeometryNodeSeparateGeometry", 3)
+        attr1 = self.addNode("GeometryNodeInputNamedAttribute", 2)
+        attr1.data_type = 'FLOAT_VECTOR'
+        self.links.new(self.inputs.outputs["Surface UV Map"], attr1.inputs[0])
+
+        attr2 = self.addNode("GeometryNodeInputNamedAttribute", 2)
+        attr2.data_type = 'FLOAT_VECTOR'
+        attr2.inputs[0].default_value = "surface_uv_coordinate"
+
+        sample = self.addNode("GeometryNodeSampleUVSurface", 3)
+        self.links.new(capture.outputs[0], sample.inputs["Mesh"])
+        self.links.new(capture.outputs[1], sample.inputs["Value"])
+        self.links.new(attr1.outputs["Attribute"], sample.inputs["UV Map"])
+        self.links.new(attr2.outputs["Attribute"], sample.inputs["Sample UV"])
+
+        sep = self.addNode("GeometryNodeSeparateGeometry", 4)
         sep.domain = 'CURVE'
         self.links.new(self.inputs.outputs["Geometry"], sep.inputs["Geometry"])
-        self.links.new(attach.outputs["Attachment is Valid"], sep.inputs["Selection"])
+        self.links.new(sample.outputs["Is Valid"], sep.inputs["Selection"])
 
         self.links.new(sep.outputs["Selection"], self.outputs.inputs["Geometry"])
 
