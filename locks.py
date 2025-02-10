@@ -113,6 +113,7 @@ class DAZ_OT_EnableLocksLimits(DazPropsOperator, LockEnabler, IsMeshArmature):
     bl_idname = "daz.enable_locks_limits"
     bl_label = "Enable Locks And Limits"
     bl_description = "Enable locks and limits"
+    bl_options = {'UNDO'}
 
     def run(self, context):
         rig = getRigFromContext(context)
@@ -131,6 +132,7 @@ class DAZ_OT_DisableLocksLimits(DazPropsOperator, LockEnabler, IsMeshArmature):
     bl_idname = "daz.disable_locks_limits"
     bl_label = "Disable Locks And Limits"
     bl_description = "Disable locks and limits"
+    bl_options = {'UNDO'}
 
     def run(self, context):
         rig = getRigFromContext(context)
@@ -152,6 +154,7 @@ class DAZ_OT_LockAllChannels(DazPropsOperator, IsObject):
     bl_idname = "daz.lock_all_channels"
     bl_label = "Lock/Unlock All Channels"
     bl_description = "Lock or unlock all channels of selected objects"
+    bl_options = {'UNDO'}
 
     useLock : BoolProperty(
         name = "Lock",

@@ -1814,7 +1814,7 @@ LRGizmos = {
     "toe.rev" :         ("GZM_ToeRev", 1),
     "foot.2" :          ("GZM_HandIK", 0.7),
     "toe.2" :           ("GZM_Toe", 1),
-    "knee.pt.ik" :      ("GZM_Cone", 0.25),
+    "knee.pt.ik" :      ("GZM_Ball", 0.25),
     "kneePoleA" :       ("GZM_Knuckle", 1),
     "knee.link" :       ("GZM_Line", 1),
     "toe.marker" :      ("GZM_Ball", 0.25),
@@ -1833,7 +1833,7 @@ LRGizmos = {
     "handTwk" :         ("GZM_Circle", 0.4),
     "armSocket" :       ("GZM_Cube", 0.25),
     "hand.ik" :         ("GZM_HandIK", 1),
-    "elbow.pt.ik" :     ("GZM_Cone", 0.25),
+    "elbow.pt.ik" :     ("GZM_Ball", 0.25),
     "elbowPoleA" :      ("GZM_Knuckle", 1),
     "elbow.link" :      ("GZM_Line", 1),
 
