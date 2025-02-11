@@ -4,6 +4,7 @@
 
 import bpy
 from .utils import *
+from .error import *
 from .buildnumber import BUILD
 from .uilist import DAZ_UL_StandardMorphs
 from .morphing import MS
@@ -259,42 +260,98 @@ class DAZ_PT_DazProperties(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "DAZ Importer Properties"
 
     def draw(self, context):
-        def showDazProps(text, rna, layout):
-            if hasLegacyProps(rna):
-                type = "LEGACY"
-                data = rna
-            else:
-                type = "MODERN"
-                data = dazRna(rna)
-            layout.label(text = "%s: %s (%s)" % (text, rna.name, type))
-            for prop in dir(data):
-                if prop.startswith("Daz"):
-                    split = layout.split(factor = 0.4)
-                    split.label(text = prop)
-                    split.prop(dazRna(rna), prop, text="")
-            layout.separator()
-
         if DAZ_PROPS:
             self.layout.operator("daz.update_daz_properties")
             self.layout.operator("daz.select_legacy_posebones")
-            self.layout.separator()
+
+
+class DazPropsPanel:
+    def showDazProps(self, text, rna, layout):
+        if hasLegacyProps(rna):
+            type = "LEGACY"
+            data = rna
+        else:
+            type = "MODERN"
+            data = dazRna(rna)
+        layout.label(text = "%s: %s (%s)" % (text, rna.name, type))
+        for prop in dir(data):
+            if prop.startswith("Daz"):
+                split = layout.split(factor = 0.4)
+                split.label(text = prop)
+                split.prop(dazRna(rna), prop, text="")
+        layout.separator()
+
+
+class DAZ_PT_ObjectProps(DAZ_PT_SetupTab, DazPropsPanel, bpy.types.Panel, IsObject):
+    bl_idname = "DAZ_PT_ObjectProps"
+    bl_parent_id = "DAZ_PT_DazProperties"
+    bl_label = "Object Properties"
+
+    def draw(self, context):
         ob = context.object
-        if ob:
-            showDazProps("OBJECT", ob, self.layout)
-            if ob.type == 'ARMATURE':
-                showDazProps("ARMATURE", ob.data, self.layout)
-            elif ob.type == 'MESH':
-                showDazProps("MESH", ob.data, self.layout)
-                mat = ob.active_material
-                if mat:
-                    showDazProps("MATERIAL", mat, self.layout)
+        self.showDazProps("OBJECT", ob, self.layout)
+
+
+class DAZ_PT_ArmatureProps(DAZ_PT_SetupTab, DazPropsPanel, bpy.types.Panel, IsArmature):
+    bl_idname = "DAZ_PT_ArmatureProps"
+    bl_parent_id = "DAZ_PT_DazProperties"
+    bl_label = "Armature Properties"
+
+    def draw(self, context):
+        ob = context.object
+        self.showDazProps("ARMATURE", ob.data, self.layout)
+
+
+class DAZ_PT_MeshProps(DAZ_PT_SetupTab, DazPropsPanel, bpy.types.Panel, IsMesh):
+    bl_idname = "DAZ_PT_MeshProps"
+    bl_parent_id = "DAZ_PT_DazProperties"
+    bl_label = "Mesh Properties"
+
+    def draw(self, context):
+        ob = context.object
+        self.showDazProps("MESH", ob.data, self.layout)
+
+
+class DAZ_PT_MaterialProps(DAZ_PT_SetupTab, DazPropsPanel, bpy.types.Panel, IsMesh):
+    bl_idname = "DAZ_PT_MaterialProps"
+    bl_parent_id = "DAZ_PT_DazProperties"
+    bl_label = "Material Properties"
+
+    def draw(self, context):
+        mat = context.object.active_material
+        if mat:
+            self.showDazProps("MATERIAL", mat, self.layout)
+
+
+class DAZ_PT_BoneProps(DAZ_PT_SetupTab, DazPropsPanel, bpy.types.Panel, IsArmature):
+    bl_idname = "DAZ_PT_BoneProps"
+    bl_parent_id = "DAZ_PT_DazProperties"
+    bl_label = "Bone Properties"
+
+    def draw(self, context):
         pb = context.active_pose_bone
-        if pb:
-            showDazProps("BONE", pb.bone, self.layout)
-            showDazProps("POSEBONE", pb, self.layout)
+        self.showDazProps("BONE", pb.bone, self.layout)
+
+
+class DAZ_PT_PoseBoneProps(DAZ_PT_SetupTab, DazPropsPanel, bpy.types.Panel, IsArmature):
+    bl_idname = "DAZ_PT_PoseBoneProps"
+    bl_parent_id = "DAZ_PT_DazProperties"
+    bl_label = "PoseBone Properties"
+
+    def draw(self, context):
+        pb = context.active_pose_bone
+        self.showDazProps("POSEBONE", pb, self.layout)
+
+
+class DAZ_PT_SceneProps(DAZ_PT_SetupTab, DazPropsPanel, bpy.types.Panel):
+    bl_idname = "DAZ_PT_SceneProps"
+    bl_parent_id = "DAZ_PT_DazProperties"
+    bl_label = "Scene Properties"
+
+    def draw(self, context):
         scn = context.scene
         if scn:
-            showDazProps("SCENE", scn, self.layout)
+            self.showDazProps("SCENE", scn, self.layout)
 
 
 class DAZ_PT_Debugging(DAZ_PT_SetupTab, bpy.types.Panel):
@@ -928,8 +985,16 @@ classes = [
     DAZ_PT_Utils,
     DAZ_PT_ActiveObject,
     DAZ_PT_ActivePoseBone,
-    DAZ_PT_DazProperties,
     DAZ_PT_Debugging,
+    DAZ_PT_DazProperties,
+    DAZ_PT_ObjectProps,
+    DAZ_PT_ArmatureProps,
+    DAZ_PT_MeshProps,
+    DAZ_PT_MaterialProps,
+    DAZ_PT_BoneProps,
+    DAZ_PT_PoseBoneProps,
+    DAZ_PT_SceneProps,
+
     DAZ_PT_Runtime,
     DAZ_PT_Posing,
     DAZ_PT_LocksLimits,
