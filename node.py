@@ -1060,19 +1060,6 @@ def clearParent(ob):
     setWorldMatrix(ob, wmat)
 
 
-def getDazMatrix(bone):
-    dmat = Euler(Vector(dazRna(bone).DazOrient)*D, 'XYZ').to_matrix().to_4x4()
-    dmat.col[3][0:3] = d2b00(dazRna(bone).DazHead)
-    return dmat
-
-
-def getBlenderMatrix(bone):
-    if GS.zup:
-        return Matrix.Rotation(-90*D, 4, 'X') @ bone.matrix_local
-    else:
-        return bone.matrix_local
-
-
 def getTransformMatrices(pb, rig, bonemap):
     def getParent(pb):
         for cns in pb.constraints:
@@ -1089,8 +1076,20 @@ def getTransformMatrices(pb, rig, bonemap):
                 return getParent(pb.parent)
         return pb.parent
 
+    def getBlenderMatrix(bone):
+        if GS.zup:
+            return Matrix.Rotation(-90*D, 4, 'X') @ bone.matrix_local
+        else:
+            return bone.matrix_local
+
+    def getDazMatrix(bone):
+        dmat = Euler(Vector(dazRna(bone).DazOrient)*D, 'XYZ').to_matrix().to_4x4()
+        dmat.col[3][0:3] = d2b00(dazRna(bone).DazHead)
+        return dmat
+
     dmat = getDazMatrix(pb.bone)
     bmat = getBlenderMatrix(pb.bone)
+    bmat = bmat.to_3x3().to_4x4()
     if bonemap:
         parent = getParent(pb)
     else:
@@ -1113,9 +1112,17 @@ def getBoneMatrix(tfm, pb, rig, bonemap={}):
     dmat,bmat,rmat,parent = getTransformMatrices(pb, rig, bonemap)
     rotmat = tfm.getRotMat(pb)
     wmat = dmat @ rotmat @ tfm.getScaleMat() @ dmat.inverted()
+    wmat = wmat.to_3x3().to_4x4()
     tmat = rmat.inverted() @ tfm.getTransMat() @ rmat
     mat = bmat.inverted() @ tmat @ wmat @ bmat
     roundMatrix(mat, 1e-4)
+    if pb.name in TestBones:
+        print("BMM", pb.name)
+        print(tfm.getTransMat())
+        print("WMAT", wmat)
+        print("TMAT", tmat)
+        print("BMAT", bmat)
+        print("MAT", mat)
     return mat
 
 
@@ -1134,7 +1141,8 @@ def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
         mat = mat.to_quaternion().to_matrix().to_4x4()
         mat.col[3] = trans
     if pb.name in TestBones:
-        print("SBT", pb.name, tfm.rot)
+        print("SBT", pb.name, tfm.hasNoScale())
+        print(tfm)
         print("ROT", getAngle(tfm.getRotMat(pb), dazRna(pb).DazRotMode))
         print("BBB", getAngle(mat, pb.rotation_mode))
         print(mat)
