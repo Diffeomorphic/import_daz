@@ -2148,7 +2148,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                     oldkeynames = list(skeys.key_blocks.keys())
                 else:
                     oldkeynames = ["Basic"]
-                if self.addFavoMorphs(ob, context, True):
+                if self.addFavoMorphs(ob, context, rig):
                     skeys = ob.data.shape_keys
                     if skeys:
                         keynames = [skey.name for skey in skeys.key_blocks
@@ -2175,39 +2175,52 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         for ob in meshes:
             if ob not in used and not isHDMesh(ob):
                 self.obj = self.mesh = ob
-                self.addFavoMorphs(ob, context, False)
+                self.addFavoMorphs(ob, context, None)
         updateScrollbars(context)
         if self.missing:
             msg = "Favorites not found:\n  %s" % self.missing
             self.raiseWarning(msg)
 
 
-    def addFavoMorphs(self, ob, context, hasRig):
-        from .scan import normKey
-        if len(dazRna(ob.data).DazFavorites) > 0:
-            oldshapes = []
-            if not hasRig and ob.data.shape_keys:
-                oldshapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
+    def addFavoMorphs(self, ob, context, rig):
+        def loadFavoMorphs(context, morphs, ob, catname):
             self.setupScanned(ob)
-            for favo in dazRna(ob.data).DazFavorites.keys():
-                favo = favo.split("/",1)[0]
-                morph = normKey(favo)
-                if not self.findMorphs(morph, ob):
-                    #self.missing.append(favo)
+            found = False
+            for morph in morphs:
+                if self.findMorphs(morph, ob):
+                    found = True
+                else:
                     self.addNamePath(morph, dazRna(ob).DazScene, self.namepaths)
-            catname = "Favorites %s" % noMeshName(ob.name)
+            if not found:
+                return
             self.setCategory(catname)
             self.adjuster = "Adjust Custom/%s" % catname
             self.loadOwnMorphs(context, ob)
             self.loadParentMorphs(context, ob)
-            if not hasRig and ob.data.shape_keys:
-                shapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
-                for shape in oldshapes:
-                    shapes.remove(shape)
-                if shapes:
-                    addToCategories(ob, shapes, None, self.category)
-                    dazRna(ob).DazMeshMorphs = True
-                    dazRna(ob).DazMeshDrivers = True
+
+        from .scan import normKey
+        if len(dazRna(ob.data).DazFavorites) > 0:
+            catname = "Favorites %s" % noMeshName(ob.name)
+            morphs = []
+            for favo in dazRna(ob.data).DazFavorites.keys():
+                favo = favo.split("/",1)[0]
+                morphs.append(normKey(favo))
+            if rig:
+                for child in getMeshChildren(rig):
+                    loadFavoMorphs(context, morphs, child, catname)
+            else:
+                oldshapes = []
+                if ob.data.shape_keys:
+                    oldshapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
+                loadFavoMorphs(context, morphs, ob, catname)
+                if oldshapes:
+                    shapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
+                    for shape in oldshapes:
+                        shapes.remove(shape)
+                    if shapes:
+                        addToCategories(ob, shapes, None, self.category)
+                        dazRna(ob).DazMeshMorphs = True
+                        dazRna(ob).DazMeshDrivers = True
             return True
         return False
 
