@@ -1,5 +1,5 @@
 #  DAZ Importer - Importer for native DAZ files (.duf, .dsf)
-#  Copyright (c) 2016-2024, Thomas Larsson
+#  Copyright (c) 2016-2025, Thomas Larsson
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 bl_info = {
     "name": "DAZ Importer",
     "author": "Thomas Larsson",
-    "version": (4,3,0),
-    "blender": (4,3,0),
+    "version": (4,4,0),
+    "blender": (4,4,0),
     "location": "UI > DAZ Setup, DAZ Runtime",
     "description": "Importer for native DAZ files (.duf, .dsf)",
     "warning": "",

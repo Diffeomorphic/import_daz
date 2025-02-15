@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2016-2024, Thomas Larsson
+# SPDX-FileCopyrightText: 2016-2025, Thomas Larsson
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
@@ -48,7 +48,7 @@ def invokeErrorMessage(value, warning=False, useDialog=False):
         LS.error = False
         LS.message = ""
     elif not warning:
-        LS.message = "ERROR (4.3.0.%04d):\n%s" % (BUILD, LS.message)
+        LS.message = "ERROR (4.4.0.%04d):\n%s" % (BUILD, LS.message)
         bpy.ops.daz.error('INVOKE_DEFAULT')
     elif useDialog:
         bpy.ops.daz.error('INVOKE_DEFAULT')

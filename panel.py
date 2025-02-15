@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2016-2024, Thomas Larsson
+# SPDX-FileCopyrightText: 2016-2025, Thomas Larsson
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
@@ -31,7 +31,7 @@ class DAZ_PT_RuntimeTab:
 #----------------------------------------------------------
 
 class DAZ_PT_Setup(DAZ_PT_SetupTab, bpy.types.Panel):
-    bl_label = "DAZ Setup (version 4.3.0.%04d)" % BUILD
+    bl_label = "DAZ Setup (version 4.4.0.%04d)" % BUILD
     bl_options = set()
 
     def draw(self, context):
@@ -372,7 +372,7 @@ class DAZ_PT_Debugging(DAZ_PT_SetupTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 class DAZ_PT_Runtime(DAZ_PT_RuntimeTab, bpy.types.Panel):
-    bl_label = "DAZ Runtime (version 4.3.0.%04d)" % BUILD
+    bl_label = "DAZ Runtime (version 4.4.0.%04d)" % BUILD
     bl_options = set()
 
     def draw(self, context):
