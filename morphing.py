@@ -1975,13 +1975,13 @@ class ScanFinder:
     def setupScanned(self, ob):
         from .scan import getScanPath
         from .load_json import JL
-        name = dazRna(ob).DazFigure.rsplit("#", 1)[-1]
-        scanpath = getScanPath(name)
-        struct = JL.load(scanpath)
+        from .fileutils import DF
+        name = dazRna(ob).DazUrl.rsplit("#", 1)[-1]
+        struct = DF.loadEntry(name, "scanned", False)
         if not struct:
-            from .fileutils import DF
-            name = dazRna(ob).DazUrl.rsplit("#", 1)[-1]
-            struct = DF.loadEntry(name, "scanned", False)
+            name = dazRna(ob).DazFigure.rsplit("#", 1)[-1]
+            scanpath = getScanPath(name)
+            struct = JL.load(scanpath)
         self.directory = struct.get("directory")
         self.defs = struct.get("definitions", {})
         self.ids = struct.get("ids", {})
@@ -2033,7 +2033,7 @@ class ScanFinder:
         else:
             morph = unquote(morph)
             path = findPathRecursiveFromObject(morph, ob, ["Morphs/", "Base/Morphs/"])
-            print("MO", morph, path)
+            print("MO", morph, ob.name, path)
             if path:
                 self.addNamePath(morph, path, self.namepaths)
                 return True
@@ -2138,91 +2138,101 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         if rig:
             self.obj = self.rig = rig
             self.onDrivers = 'RIG'
-            loaded = []
-            for ob in getMeshChildren(rig):
-                if isHDMesh(ob):
-                    continue
-                used.append(ob)
-                skeys = ob.data.shape_keys
-                if skeys:
-                    oldkeynames = list(skeys.key_blocks.keys())
-                else:
-                    oldkeynames = ["Basic"]
-                if self.addFavoMorphs(ob, context, rig):
-                    skeys = ob.data.shape_keys
-                    if skeys:
-                        keynames = [skey.name for skey in skeys.key_blocks
-                                    if skey.name not in oldkeynames]
-                        loaded.append((ob, keynames))
-            if self.useTransferOthers and len(loaded) == 1:
-                src,keynames = loaded[0]
-                if activateObject(context, src):
-                    for ob in getMeshChildren(rig):
-                        ob.select_set(True)
-                    filepaths = LS.filepaths
-                    LS.filepaths = keynames
-                    try:
-                        bpy.ops.daz.transfer_shapekeys(
-                            useNonConforming = self.useNonConforming,
-                            ignoreRigidity = self.ignoreRigidity)
-                    finally:
-                        LS.filepaths = filepaths
-            self.makePosable(context, rig)
+            children = [ob for ob in getMeshChildren(rig) if not isHDMesh(ob)]
+            morphs = []
+            for ob in children:
+                self.findFavoMorphs(ob, morphs)
+            if morphs:
+                catname = "Favorites %s" % noMeshName(ob.name)
+                self.setCategory(catname)
+                self.adjuster = "Adjust Custom/%s" % catname
+                loaded = []
+                for ob in children:
+                    used.append(ob)
+                    oldshapes = self.getOldShapes(ob)
+                    if self.loadFavoMorphs(context, morphs, ob):
+                        newshapes = self.getNewShapes(ob, oldshapes)
+                        loaded.append((ob, newshapes))
+                if self.useTransferOthers and len(loaded) == 1:
+                    src,keynames = loaded[0]
+                    if activateObject(context, src):
+                        for ob in getMeshChildren(rig):
+                            ob.select_set(True)
+                        filepaths = LS.filepaths
+                        LS.filepaths = keynames
+                        try:
+                            bpy.ops.daz.transfer_shapekeys(
+                                useNonConforming = self.useNonConforming,
+                                ignoreRigidity = self.ignoreRigidity)
+                        finally:
+                            LS.filepaths = filepaths
+                self.makePosable(context, rig)
 
         # Import prop favorites
         self.rig = None
         self.onDrivers = 'MESH'
         for ob in meshes:
             if ob not in used and not isHDMesh(ob):
-                self.obj = self.mesh = ob
-                self.addFavoMorphs(ob, context, None)
+                morphs = []
+                self.findFavoMorphs(ob, morphs)
+                if morphs:
+                    catname = "Favorites %s" % noMeshName(ob.name)
+                    self.setCategory(catname)
+                    self.adjuster = "Adjust Custom/%s" % catname
+                    oldshapes = self.getOldShapes(ob)
+                    self.obj = self.mesh = ob
+                    self.loadFavoMorphs(context, morphs, ob)
+                    newshapes = self.getNewShapes(ob, oldshapes)
+                    if newshapes:
+                        addToCategories(ob, newshapes, None, self.category)
+                        dazRna(ob).DazMeshMorphs = True
+                        dazRna(ob).DazMeshDrivers = True
+
         updateScrollbars(context)
         if self.missing:
             msg = "Favorites not found:\n  %s" % self.missing
             self.raiseWarning(msg)
 
 
-    def addFavoMorphs(self, ob, context, rig):
-        def loadFavoMorphs(context, morphs, ob, catname):
-            self.setupScanned(ob)
-            found = False
-            for morph in morphs:
-                if self.findMorphs(morph, ob):
-                    found = True
-                else:
-                    self.addNamePath(morph, dazRna(ob).DazScene, self.namepaths)
-            if not found:
-                return
-            self.setCategory(catname)
-            self.adjuster = "Adjust Custom/%s" % catname
-            self.loadOwnMorphs(context, ob)
-            self.loadParentMorphs(context, ob)
-
+    def findFavoMorphs(self, ob, morphs):
         from .scan import normKey
         if len(dazRna(ob.data).DazFavorites) > 0:
-            catname = "Favorites %s" % noMeshName(ob.name)
-            morphs = []
             for favo in dazRna(ob.data).DazFavorites.keys():
                 favo = favo.split("/",1)[0]
                 morphs.append(normKey(favo))
-            if rig:
-                for child in getMeshChildren(rig):
-                    loadFavoMorphs(context, morphs, child, catname)
+
+
+    def loadFavoMorphs(self, context, morphs, ob):
+        self.setupScanned(ob)
+        found = False
+        for morph in morphs:
+            if self.findMorphs(morph, ob):
+                found = True
             else:
-                oldshapes = []
-                if ob.data.shape_keys:
-                    oldshapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
-                loadFavoMorphs(context, morphs, ob, catname)
-                if oldshapes:
-                    shapes = [skey.name for skey in ob.data.shape_keys.key_blocks[1:]]
-                    for shape in oldshapes:
-                        shapes.remove(shape)
-                    if shapes:
-                        addToCategories(ob, shapes, None, self.category)
-                        dazRna(ob).DazMeshMorphs = True
-                        dazRna(ob).DazMeshDrivers = True
+                self.addNamePath(morph, dazRna(ob).DazScene, self.namepaths)
+        if found:
+            self.loadOwnMorphs(context, ob)
+            self.loadParentMorphs(context, ob)
             return True
-        return False
+        else:
+            return False
+
+
+    def getOldShapes(self, ob):
+        skeys = ob.data.shape_keys
+        if skeys:
+            return list(skeys.key_blocks.keys())
+        else:
+            return ["Basic"]
+
+
+    def getNewShapes(self, ob, oldshapes):
+        skeys = ob.data.shape_keys
+        if skeys:
+            return [skey.name for skey in skeys.key_blocks
+                    if skey.name not in oldshapes]
+        else:
+            return []
 
 #-------------------------------------------------------------
 #   Register

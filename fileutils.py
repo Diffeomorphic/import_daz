@@ -237,7 +237,7 @@ def findPathRecursive(pattern, relpath, subpath, library="modifier_library", use
         for file in os.listdir(folder):
             path = "%s/%s" % (folder, file)
             words = os.path.splitext(file.lower())
-            if lpattern.endswith(words[0]) and words[-1] in extensions:
+            if lpattern == words[0] and words[-1] in extensions:
                 paths.append(path)
             elif os.path.isdir(path):
                 findFilesRecursive(path)
