@@ -1,150 +1,169 @@
 ﻿{
     "name" : "new_gens_V8",
     "url" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/new_gens_V8_1840.dsf#new_gens_V8",
-    "directory" : "/data/3feetwolf/New Genitalia For Victoria 8/Base Layer/Morphs/3feetwolf/Base",
-    "modified" : "1700017255.1515977",
+    "ids" : {},
+    "directory" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base",
+    "modified" : "1739593896.1596096",
     "version" : 6,
     "definitions" : {
-        "0104 - anusopen" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0104 - anusopen.dsf",
-        "0504 - pulllabiamajoralowerleft(along with legs pose)" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0504 - pulllabiamajoralowerleft(along with legs pose).dsf",
-        "0505 - pulllabiamajoralowerright(along with legs pose)" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0505 - pulllabiamajoralowerright(along with legs pose).dsf",
-        "0610 - genitaliaopen02(along with legs pose)" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0610 - genitaliaopen02(along with legs pose).dsf",
-        "0611 - genitaliaopen03(along with legs pose)" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0611 - genitaliaopen03(along with legs pose).dsf",
-        "0612 - legstogether" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0612 - legstogether.dsf"
+        "0104 - AnusOpen" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0104 - anusopen.dsf",
+        "0504 - PullLabiaMajoraLowerLeft(Along with legs pose)" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0504 - pulllabiamajoralowerleft(along with legs pose).dsf",
+        "0505 - PullLabiaMajoraLowerRight(Along with legs pose)" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0505 - pulllabiamajoralowerright(along with legs pose).dsf",
+        "0610 - GenitaliaOpen02(Along with legs pose)" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0610 - genitaliaopen02(along with legs pose).dsf",
+        "0611 - GenitaliaOpen03(Along with legs pose)" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0611 - genitaliaopen03(along with legs pose).dsf",
+        "0612 - LegsTogether" : "/data/3feetwolf/new genitalia for victoria 8/base layer/morphs/3feetwolf/base/alias_new_gens_v8_1840_0612 - legstogether.dsf"
     },
     "alias" : {
-        "0104 - anusopen" : "pbmg8fanusopen",
-        "0504 - pulllabiamajoralowerleft(along with legs pose)" : "pbmg8fpulllabiall",
-        "0505 - pulllabiamajoralowerright(along with legs pose)" : "pbmg8fpulllabialr",
-        "0610 - genitaliaopen02(along with legs pose)" : "pbmg8fgensopen01",
-        "0611 - genitaliaopen03(along with legs pose)" : "pbmg8fgensopen02",
-        "0612 - legstogether" : "pbmg8flegstogether"
+        "0104 - AnusOpen" : "PBMG8FAnusOpen",
+        "0504 - PullLabiaMajoraLowerLeft(Along with legs pose)" : "PBMG8FPullLabiaLL",
+        "0505 - PullLabiaMajoraLowerRight(Along with legs pose)" : "PBMG8FPullLabiaLR",
+        "0610 - GenitaliaOpen02(Along with legs pose)" : "PBMG8FGensOpen01",
+        "0611 - GenitaliaOpen03(Along with legs pose)" : "PBMG8FGensOpen02",
+        "0612 - LegsTogether" : "PBMG8FLegsTogether"
     },
     "formulas" : {
-        "pbmg8fanusopen" : {
-            "pbmanusopen" : 1
+        "CTRLInitialGensShape01" : {
+            "PBMVaginaStyle01" : 1.2,
+            "PBMVaginalOrificeStyle03" : 1,
+            "PBMLabiaMinoraStyle01" : 1,
+            "PBMLabiaMinoraOffset01" : -0.15,
+            "PBMLabiaMinoraEversion" : 0.15,
+            "PBMLabiaMajoraStyle02" : 0.5,
+            "PBMGensClose01" : 0.25,
+            "PBMClitoralHoodRiseDown" : -0.5,
+            "PBMAroundUrethra01" : 1,
+            "PBMAnusStyle03" : 1.2
         },
-        "pbmg3fanusopen" : {
-            "pbmanusopen01" : 1
+        "PBMG8FAnusOpen" : {
+            "PBMAnusOpen" : 1
         },
-        "jcmg3fcorrectiveltb" : {
-            "pbmg3fgenscorrectiveltb" : 1
+        "PBMG3FAnusOpen" : {
+            "PBMAnusOpen01" : 1
         },
-        "jcmg3fcorrectiveltbs" : {
-            "pbmg3fgenscorrectiveltbs" : 1
+        "JCMG3FCorrectiveLTB" : {
+            "PBMG3FGensCorrectiveLTB" : 1
         },
-        "jcmg3fcorrectivelts" : {
-            "pbmg3fgenscorrectivelts" : 1
+        "JCMG3FCorrectiveLTBS" : {
+            "PBMG3FGensCorrectiveLTBS" : 1
         },
-        "jcmg3fcorrectivertb" : {
-            "pbmg3fgenscorrectivertb" : 1
+        "JCMG3FCorrectiveLTS" : {
+            "PBMG3FGensCorrectiveLTS" : 1
         },
-        "jcmg3fcorrectivertbs" : {
-            "pbmg3fgenscorrectivertbs" : 1
+        "JCMG3FCorrectiveRTB" : {
+            "PBMG3FGensCorrectiveRTB" : 1
         },
-        "jcmg3fcorrectiverts" : {
-            "pbmg3fgenscorrectiverts" : 1
+        "JCMG3FCorrectiveRTBS" : {
+            "PBMG3FGensCorrectiveRTBS" : 1
         },
-        "jcmg8fcorrectiveltb" : {
-            "pbmg8fgenscorrectiveltb" : 1
+        "JCMG3FCorrectiveRTS" : {
+            "PBMG3FGensCorrectiveRTS" : 1
         },
-        "jcmg8fcorrectiveltbs" : {
-            "pbmg8fgenscorrectiveltbs" : 1
+        "JCMG8FCorrectiveLTB" : {
+            "PBMG8FGensCorrectiveLTB" : 1
         },
-        "jcmg8fcorrectivelts" : {
-            "pbmg8fgenscorrectivelts" : 1
+        "JCMG8FCorrectiveLTBS" : {
+            "PBMG8FGensCorrectiveLTBS" : 1
         },
-        "jcmg8fcorrectivertb" : {
-            "pbmg8fgenscorrectivertb" : 1
+        "JCMG8FCorrectiveLTS" : {
+            "PBMG8FGensCorrectiveLTS" : 1
         },
-        "jcmg8fcorrectivertbs" : {
-            "pbmg8fgenscorrectivertbs" : 1
+        "JCMG8FCorrectiveRTB" : {
+            "PBMG8FGensCorrectiveRTB" : 1
         },
-        "jcmg8fcorrectiverts" : {
-            "pbmg8fgenscorrectiverts" : 1
+        "JCMG8FCorrectiveRTBS" : {
+            "PBMG8FGensCorrectiveRTBS" : 1
         },
-        "pbmg8fgensopen01" : {
-            "pbmgensopen01" : 1
+        "JCMG8FCorrectiveRTS" : {
+            "PBMG8FGensCorrectiveRTS" : 1
         },
-        "pbmg8fgensopen02" : {
-            "pbmgensopen02" : 1
+        "PBMG8FGensOpen01" : {
+            "PBMGensOpen01" : 1
         },
-        "pbmgensopen02" : {
-            "pbmgenspulloute" : 1
+        "PBMG8FGensOpen02" : {
+            "PBMGensOpen02" : 1
         },
-        "ctrlglansclitorisupdown" : {
-            "pbmglansclitorisup" : 1
+        "PBMGensOpen02" : {
+            "PBMGensPullOutE" : 1
         },
-        "ctrlglansclitorisleftright" : {
-            "pbmglansclitorisright" : -1
+        "CTRLGlansClitorisUpDown" : {
+            "PBMGlansClitorisUp" : 1
         },
-        "pbmglansclitorissize" : {
-            "pbmglansclitorissizee" : 1
+        "CTRLGlansClitorisLeftRight" : {
+            "PBMGlansClitorisRight" : -1
         },
-        "ctrllabiaminoraoffset02" : {
-            "pbmlabiaminoraoffset03" : -1
+        "PBMGlansClitorisSize" : {
+            "PBMGlansClitorisSizeE" : 1
         },
-        "pbmlabiaminoraeversion" : {
-            "pbmlabiaminorastyle03eversion" : 1
+        "CTRLLabiaMinoraOffset02" : {
+            "PBMLabiaMinoraOffset03" : -1
         },
-        "pbmg8flegstogether" : {
-            "pbmlegstogether" : 1
+        "PBMLabiaMinoraEversion" : {
+            "PBMLabiaMinoraStyle03Eversion" : 1
         },
-        "pbmg8fpulllabiall" : {
-            "pbmpulllabiamajoralowerleft" : 1
+        "PBMG8FLegsTogether" : {
+            "PBMLegsTogether" : 1
         },
-        "pbmg8fpulllabialr" : {
-            "pbmpulllabiamajoralowerright" : 1
+        "PBMG8FPullLabiaLL" : {
+            "PBMPullLabiaMajoraLowerLeft" : 1
+        },
+        "PBMG8FPullLabiaLR" : {
+            "PBMPullLabiaMajoraLowerRight" : 1
         }
     },
     "minmax" : {},
     "geograft" : {
         "vertex_count" : 16556,
         "url" : "/data/DAZ 3D/Genesis 8/Female/Genesis8Female.dsf#geometry",
+        "ids" : {},
+        "directory" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8",
         "definitions" : {
-            "jcmg8fcorrectiveltb" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectiveltb.dsf",
-            "jcmg8fcorrectiveltbs" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectiveltbs.dsf",
-            "jcmg8fcorrectiveltbse" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectiveltbse.dsf",
-            "jcmg8fcorrectivelts" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectivelts.dsf",
-            "jcmg8fcorrectivertb" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectivertb.dsf",
-            "jcmg8fcorrectivertbs" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectivertbs.dsf",
-            "jcmg8fcorrectivertbse" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectivertbse.dsf",
-            "jcmg8fcorrectiverts" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectiverts.dsf",
-            "pbmg8fanusopen" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopen.dsf",
-            "pbmg8fanusopencorrectiveltb" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectiveltb.dsf",
-            "pbmg8fanusopencorrectiveltbs" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectiveltbs.dsf",
-            "pbmg8fanusopencorrectivelts" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectivelts.dsf",
-            "pbmg8fanusopencorrectivertb" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectivertb.dsf",
-            "pbmg8fanusopencorrectivertbs" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectivertbs.dsf",
-            "pbmg8fanusopencorrectiverts" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectiverts.dsf",
-            "pbmg8fgensopen01" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fgensopen01.dsf",
-            "pbmg8fgensopen02" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fgensopen02.dsf",
-            "pbmg8fgensopen02e" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fgensopen02e.dsf",
-            "pbmg8flegstogether" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8flegstogether.dsf",
-            "pbmg8fpulllabiall" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fpulllabiall.dsf",
-            "pbmg8fpulllabialr" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fpulllabialr.dsf"
+            "CTRLGensC-NGV8" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/ctrlgensc-ngv8.dsf",
+            "JCMG8FCorrectiveLTB" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectiveltb.dsf",
+            "JCMG8FCorrectiveLTBS" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectiveltbs.dsf",
+            "JCMG8FCorrectiveLTBSE" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectiveltbse.dsf",
+            "JCMG8FCorrectiveLTS" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectivelts.dsf",
+            "JCMG8FCorrectiveRTB" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectivertb.dsf",
+            "JCMG8FCorrectiveRTBS" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectivertbs.dsf",
+            "JCMG8FCorrectiveRTBSE" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectivertbse.dsf",
+            "JCMG8FCorrectiveRTS" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/jcmg8fcorrectiverts.dsf",
+            "PBMG8FAnusOpen" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopen.dsf",
+            "PBMG8FAnusOpenCorrectiveLTB" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectiveltb.dsf",
+            "PBMG8FAnusOpenCorrectiveLTBS" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectiveltbs.dsf",
+            "PBMG8FAnusOpenCorrectiveLTS" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectivelts.dsf",
+            "PBMG8FAnusOpenCorrectiveRTB" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectivertb.dsf",
+            "PBMG8FAnusOpenCorrectiveRTBS" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectivertbs.dsf",
+            "PBMG8FAnusOpenCorrectiveRTS" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fanusopencorrectiverts.dsf",
+            "PBMG8FGensOpen01" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fgensopen01.dsf",
+            "PBMG8FGensOpen02" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fgensopen02.dsf",
+            "PBMG8FGensOpen02E" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fgensopen02e.dsf",
+            "PBMG8FLegsTogether" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8flegstogether.dsf",
+            "PBMG8FPullLabiaLL" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fpulllabiall.dsf",
+            "PBMG8FPullLabiaLR" : "/data/daz 3d/genesis 8/female/morphs/3feetwolf/ngv8/pbmg8fpulllabialr.dsf"
         },
         "formulas" : {
-            "jcmg8fcorrectiveltb" : {
-                "pbmg8fanusopencorrectiveltb" : 1
+            "CTRLGensC-NGV8" : {
+                "JCMG8FCorrectiveRTS" : 0.0
             },
-            "jcmg8fcorrectiveltbs" : {
-                "pbmg8fanusopencorrectiveltbs" : 1
+            "JCMG8FCorrectiveLTB" : {
+                "PBMG8FAnusOpenCorrectiveLTB" : 1
             },
-            "jcmg8fcorrectivelts" : {
-                "pbmg8fanusopencorrectivelts" : 1
+            "JCMG8FCorrectiveRTB" : {
+                "PBMG8FAnusOpenCorrectiveRTB" : 1
             },
-            "jcmg8fcorrectivertb" : {
-                "pbmg8fanusopencorrectivertb" : 1
+            "JCMG8FCorrectiveLTBS" : {
+                "PBMG8FAnusOpenCorrectiveLTBS" : 1
             },
-            "jcmg8fcorrectivertbs" : {
-                "pbmg8fanusopencorrectivertbs" : 1
+            "JCMG8FCorrectiveLTS" : {
+                "PBMG8FAnusOpenCorrectiveLTS" : 1
             },
-            "jcmg8fcorrectiverts" : {
-                "pbmg8fanusopencorrectiverts" : 1
+            "JCMG8FCorrectiveRTBS" : {
+                "PBMG8FAnusOpenCorrectiveRTBS" : 1
             },
-            "pbmg8fgensopen02" : {
-                "pbmg8fgensopen02e" : 1
+            "JCMG8FCorrectiveRTS" : {
+                "PBMG8FAnusOpenCorrectiveRTS" : 1
+            },
+            "PBMG8FGensOpen02" : {
+                "PBMG8FGensOpen02E" : 1
             }
         }
     }

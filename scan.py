@@ -207,7 +207,7 @@ class Scanner:
             folder = os.path.dirname(filepath)
             fname = os.path.splitext(os.path.basename(filepath))[0]
             if (self.useDefins or
-                key != normKey(fname) or
+                key.lower() != normKey(fname) or
                 folder != self.directory):
                 self.defins[key] = filepath
         if info and self.useFormulas:
