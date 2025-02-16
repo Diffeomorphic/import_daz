@@ -2153,15 +2153,24 @@ class DAZ_OT_StripMaterialNames(DazPropsOperator, IsMesh):
         description = "Combine materials with the same stripped name",
         default = False)
 
+    useStripDazEndings : BoolProperty(
+        name = "Strip DAZ Endings",
+        description = "Strip -n endings, otherwise only strip .001 endings",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useCombineMaterials")
+        self.layout.prop(self, "useStripDazEndings")
 
     def run(self, context):
         mats = {}
         for ob in getSelectedMeshes(context):
             for n,mat in enumerate(ob.data.materials):
                 if mat:
-                    mname = baseName(stripName(mat.name))
+                    if self.useStripDazEndings:
+                        mname = baseName(stripName(mat.name))
+                    else:
+                        mname = baseName(mat.name)
                     if self.useCombineMaterials and mname in mats.keys():
                         ob.data.materials[n] = mats[mname]
                     else:

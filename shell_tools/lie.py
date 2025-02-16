@@ -868,8 +868,6 @@ def updateInfluDrivers(rna, rig):
                         if prop not in rig.keys():
                             setFloatProp(rig, prop, 1.0, 0.0, 10.0, True, False)
                         trg.id = rig
-                        print("TT", trg.id, prop)
-
 
 #----------------------------------------------------------
 #   Disable Normal Groups
