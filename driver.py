@@ -286,7 +286,7 @@ class Driver:
         drv = fcu.driver
         self.data_path = fcu.data_path
         channel = fcu.data_path.rsplit(".",1)[-1]
-        if channel in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
+        if channel in ["location", "rotation_euler", "rotation_quaternion", "scale", "HdOffset", "TlOffset"]:
             self.array_index = fcu.array_index
         else:
             self.array_index = -1
