@@ -829,7 +829,7 @@ class DAZ_OT_UpdateShellDrivers(DazOperator, IsMesh):
 
 
 def updateShellDrivers(context):
-    from .driver import forceDriverUpdate
+    from ..driver import forceDriverUpdate
     ob = context.object
     rig = ob.parent
     if rig:
@@ -837,6 +837,39 @@ def updateShellDrivers(context):
     for mat in ob.data.materials:
         if mat:
             forceDriverUpdate(mat.node_tree)
+
+#----------------------------------------------------------
+#   Retarget shell drivers
+#----------------------------------------------------------
+
+class DAZ_OT_RetargetShellDrivers(DazOperator, IsArmature):
+    bl_idname = "daz.retarget_shell_drivers"
+    bl_label = "Retarget Shell Drivers"
+    bl_description = "Retarget shell drivers of selected meshes to active armature"
+
+    def run(self, context):
+        from ..driver import forceDriverUpdate
+        rig = context.object
+        for ob in getSelectedMeshes(context):
+            for mat in ob.data.materials:
+                if mat and mat.node_tree:
+                    updateInfluDrivers(mat.node_tree, rig)
+                    forceDriverUpdate(mat.node_tree)
+
+
+def updateInfluDrivers(rna, rig):
+    from ..driver import setFloatProp
+    if rna and rna.animation_data:
+        for fcu in rna.animation_data.drivers:
+            for var in fcu.driver.variables:
+                if var.type == 'SINGLE_PROP':
+                    for trg in var.targets:
+                        prop = getProp(trg.data_path)
+                        if prop not in rig.keys():
+                            setFloatProp(rig, prop, 1.0, 0.0, 10.0, True, False)
+                        trg.id = rig
+                        print("TT", trg.id, prop)
+
 
 #----------------------------------------------------------
 #   Disable Normal Groups
@@ -950,6 +983,7 @@ classes = [
     DAZ_OT_DisableShellDrivers,
     DAZ_OT_EnableShellDrivers,
     DAZ_OT_UpdateShellDrivers,
+    DAZ_OT_RetargetShellDrivers,
     DAZ_OT_FixNormalGroups,
     DAZ_OT_RemoveAllInflus,
     DAZ_OT_SetHSV,

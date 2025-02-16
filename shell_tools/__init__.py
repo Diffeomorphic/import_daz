@@ -66,6 +66,7 @@ class DAZ_PT_ShellDrivers(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.disable_shell_drivers")
         self.layout.operator("daz.enable_shell_drivers")
         self.layout.operator("daz.remove_all_influs")
+        self.layout.operator("daz.retarget_shell_drivers")
         self.layout.operator("daz.update_shell_drivers")
 
 #----------------------------------------------------------
