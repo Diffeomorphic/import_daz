@@ -525,10 +525,15 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
 #------------------------------------------------------------------
 
 class RemoveAll(MorphRemover):
+    useDeleteDrvBones : BoolProperty(
+        name = "Delete Driven Bones",
+        description = "Delete (drv) bones",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useDeleteProps")
         self.layout.prop(self, "useDeleteShapekeys")
-
+        self.layout.prop(self, "useDeleteDrvBones")
 
     def run(self, context):
         self.initTmp()
@@ -542,6 +547,8 @@ class RemoveAll(MorphRemover):
         self.runAll(context, rigs, meshes)
         if self.useDeleteProps:
             self.deleteProps(context, rigs)
+        if self.useDeleteDrvBones:
+            self.deleteDrvBones(rig)
 
 
     def removeDrivers(self, rna):
@@ -590,6 +597,25 @@ class RemoveAll(MorphRemover):
         updateScrollbars(context)
 
 
+    def deleteDrvBones(self, rig):
+        drvbones = []
+        for pb in rig.pose.bones:
+            if isDrvBone(pb.name):
+                drvbones.append(pb.name)
+            for cns in list(pb.constraints):
+                if (cns.type == 'COPY_TRANSFORMS' and
+                    cns.target == rig and
+                    isDrvBone(cns.subtarget)):
+                    pb.constraints.remove(cns)
+        setMode('EDIT')
+        for bname in set(drvbones):
+            eb = rig.data.edit_bones.get(bname)
+            rig.data.edit_bones.remove(eb)
+        setMode('OBJECT')
+
+#------------------------------------------------------------------
+#   Remove all  drivers
+#------------------------------------------------------------------
 
 class DAZ_OT_RemoveAllDrivers(DazPropsOperator, RemoveAll, DriverUser, IsMeshArmature):
     bl_idname = "daz.remove_all_drivers"

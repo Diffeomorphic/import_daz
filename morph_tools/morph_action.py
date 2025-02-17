@@ -19,29 +19,31 @@ class DAZ_OT_ConvertMorphsToAction(DazOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        morphnames = []
+        morphlist = []
         for morphset in MS.Standards:
             pg = getattr(dazRna(rig), "Daz%s" % morphset)
-            morphnames += list(pg.keys())
+            morphlist += list(pg.values())
         for cat in dazRna(rig).DazMorphCats:
-            morphnames += list(cat.morphs.keys())
-        props = [prop for prop in rig.keys() if prop in morphnames]
-        for prop in props:
-            clearProp(rig, prop)
-        for prop in props:
-            print("*", prop)
-            act = bpy.data.actions.get(prop)
+            morphlist += list(cat.morphs.values())
+        morphs = [morph for morph in morphlist if morph.name in rig.keys()]
+        for morph in morphs:
+            clearProp(rig, morph.name)
+        for morph in morphs:
+            prop,label = morph.name, morph.text
+            act = bpy.data.actions.get(label)
             if act:
                 act.fcurves.clear()
             else:
-                act = bpy.data.actions.new(prop)
+                act = bpy.data.actions.new(label)
             act.use_fake_user = True
+            act["DazName"] = prop
             setProp(rig, prop)
             #updateRigDrivers(context, rig)
             setMode('EDIT')
             setMode('OBJECT')
             self.morphToAction(rig, prop, act)
             clearProp(rig, prop)
+            print("*", act.name, act["DazName"])
         setMode('EDIT')
         setMode('OBJECT')
 
