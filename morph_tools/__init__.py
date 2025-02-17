@@ -15,11 +15,13 @@ elif "MorphFeature" in locals():
     import imp
     imp.reload(category)
     imp.reload(shapekeys)
+    imp.reload(morph_action)
     imp.reload(morph_panel)
 else:
     print("Loading Morph Tools")
     from . import category
     from . import shapekeys
+    from . import morph_action
     from . import morph_panel
     MorphFeature = True
 
@@ -29,13 +31,15 @@ else:
 
 def register():
     print("Register Morph Tools")
-    from . import category, shapekeys, morph_panel
+    from . import category, shapekeys, morph_action, morph_panel
     category.register()
     shapekeys.register()
+    morph_action.register()
     morph_panel.register()
 
 def unregister():
-    from . import category, shapekeys, morph_panel
+    from . import category, shapekeys, morph_action, morph_panel
     morph_panel.unregister()
+    morph_action.unregister()
     shapekeys.unregister()
     category.unregister()

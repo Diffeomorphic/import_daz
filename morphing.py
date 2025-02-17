@@ -75,7 +75,7 @@ def getMorphs0(ob, morphset, sets, category):
                 pgs = [cat.morphs for cat in dazRna(ob).DazMorphCats]
             return pgs
         else:
-            pg = getattr(ob, "Daz"+morphset)
+            pg = getattr(dazRna(ob), "Daz%s" % morphset)
             prunePropGroup(ob, pg, morphset)
             return [pg]
     else:
@@ -85,7 +85,8 @@ def getMorphs0(ob, morphset, sets, category):
 def prunePropGroup(ob, pg, morphset):
     if morphset in MS.JCMs:
         return
-    idxs = [n for n,item in enumerate(pg.values()) if item.name not in ob.keys()]
+    idxs = [n for n,item in enumerate(pg.values())
+            if item.name not in ob.keys()]
     if idxs:
         print("Prune", idxs, [item.name for item in pg.values()])
         idxs.reverse()
