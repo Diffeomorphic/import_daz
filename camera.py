@@ -74,6 +74,9 @@ class CameraInstance(Instance):
     def buildChannels(self, context):
         camera = self.rna.data
         camera.sensor_fit = 'VERTICAL'
+        persp = None
+        length = None
+        dist = None
         for key,channel in self.channels.items():
             value = self.getChannelValue(channel, None)
             if value is None:
@@ -83,10 +86,12 @@ class CameraInstance(Instance):
             elif key == "Lens Shift Y" :
                 camera.shift_y = value * GS.scale
             elif key == "Focal Length":
-                camera.lens = value         # in mm
+                length = value
+                camera.lens = value
             elif key == "DOF":
                 camera.dof.use_dof = value
             elif key == "Depth of Field":
+                dist = value
                 camera.dof.focus_distance = value * GS.scale
             elif key == "Frame Width":
                 camera.sensor_height = value
@@ -96,8 +101,10 @@ class CameraInstance(Instance):
                 camera.dof.aperture_blades = value
             elif key == "Aperture Blade Rotation":
                 camera.dof.aperture_rotation = value*D
+            elif key == "Perspective":
+                persp = value
 
-            elif key in ["Point At", "Renderable", "Visible", "Selectable", "Perspective",
+            elif key in ["Point At", "Renderable", "Visible", "Selectable",
                         "Render Priority", "Cast Shadows", "Pixel Size",
                         "Lens Stereo Offset", "Lens Radial Bias", "Lens Stereo Offset",
                         "Lens Distortion Type", "Lens Distortion K1", "Lens Distortion K2", "Lens Distortion K3", "Lens Distortion Scale",
@@ -114,3 +121,8 @@ class CameraInstance(Instance):
                 pass
             elif GS.verbosity >= 3:
                 print("Unknown camera channel '%s' %s" % (key, value))
+
+        if not persp:
+            camera.type = 'ORTHO'
+            if dist and length:
+                camera.ortho_scale = dist/length * 0.34
