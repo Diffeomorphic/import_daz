@@ -157,7 +157,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 setWorldMatrix(ob, wmat)
         excluded = findExcludedObjects(context, self.useHiddenRigs)
         if self.useMergeNonConforming in ['CHILDREN', 'ALL_RIGS']:
-            rootmats = applyTransformToObjects(roots, excluded)
+            rootmats = applyTransformToObjects(context, roots, excluded)
         else:
             rootmats = []
         deletes = []
@@ -447,12 +447,13 @@ def findExcludedObjects(context, useHidden):
     return excluded
 
 
-def applyTransformToObjects(objects, excluded=[]):
+def applyTransformToObjects(context, objects, excluded=[]):
     bpy.ops.object.select_all(action='DESELECT')
     parents = []
     for ob in objects:
         for child in ob.children:
-            if child in excluded:
+            if (child in excluded or
+                child.name not in context.view_layer.objects.keys()):
                 continue
             parents.append((child, ob, child.matrix_world.copy(), child.hide_viewport, child.hide_get(), child.hide_select))
             child.hide_viewport = False

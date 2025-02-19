@@ -255,7 +255,7 @@ class MetaMaker(RigifyCommon):
 
         print("Create metarig")
         rig = context.object
-        wmats = applyTransformToObjects([rig])
+        wmats = applyTransformToObjects(context, [rig])
         self.setupDazSkeleton(rig)
         scale = GS.scale
         scn = context.scene

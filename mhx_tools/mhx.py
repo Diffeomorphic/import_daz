@@ -207,7 +207,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         if False and not checkMhxEnabled(rig):
             msg = ("The MHX Runtime System is not enabled.   \nThe add-on is found under Rigging")
             raise DazError(msg)
-        wmats = applyTransformToObjects([rig])
+        wmats = applyTransformToObjects(context, [rig])
         try:
             self.makeMhx(context, rig)
         finally:

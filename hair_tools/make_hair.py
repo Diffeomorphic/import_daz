@@ -780,8 +780,8 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
     def run(self, context):
         from ..merge_rigs import applyTransformToObjects, restoreTransformsToObjects
         hair,hum = getHairAndHuman(context, True)
-        applyTransformToObjects([hair])
-        wmats = applyTransformToObjects([hum])
+        applyTransformToObjects(context, [hair])
+        wmats = applyTransformToObjects(context, [hum])
         try:
             self.makeHair(context, hair, hum)
         finally:
