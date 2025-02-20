@@ -1272,6 +1272,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             from .light import getBlenderData
         else:
             print("Data animation not supported for %s" % ob.type)
+            return
         bdata = getBlenderData(ob.data, dazdata)
         for attrs,value in bdata.items():
             rna = ob.data
