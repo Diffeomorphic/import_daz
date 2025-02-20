@@ -164,6 +164,27 @@ class LightInstance(Instance):
             light.falloff_type = dtypes[value]
 
 #-------------------------------------------------------------
+#   For animation
+#-------------------------------------------------------------
+
+def getBlenderData(light, dazdata):
+    from .material import srgbToLinearCorrect
+    bdata = {}
+    for key,value in dazdata.items():
+        if key == "Color":
+            bdata["color"] = srgbToLinearCorrect(value)
+        elif key == "Intensity":
+            bdata["energy"] = value
+        elif key == "Shadow Color":
+            bdata["shadow_color"] = value
+        elif key == "Shadow Softness":
+            bdata["shadow_buffer_soft"] = value
+        elif key == "Decay":
+            dtypes = ['CONSTANT', 'INVERSE_LINEAR', 'INVERSE_SQUARE']
+            bdata["falloff_type"] = dtypes[value]
+    return bdata
+
+#-------------------------------------------------------------
 #   Cycles Light Material
 #-------------------------------------------------------------
 

@@ -49,32 +49,6 @@ def extendFcurves(rig, frame0, frame1):
             for frame in range(frame0, frame1):
                 fcu.keyframe_points.insert(frame, value, options={'FAST'})
 
-
-def getChannel(url):
-    words = url.split(":")
-    if len(words) == 2:
-        key = words[0]
-    elif len(words) == 3:
-        words = words[1].rsplit("/",1)
-        if len(words) == 2:
-            key = words[1].rsplit("#")[-1]
-        else:
-            return None,None,None
-    else:
-        return None,None,None
-
-    key = unquote(key)
-    words = url.rsplit("?", 2)
-    if len(words) != 2:
-        return None,None,None
-    words = words[1].split("/")
-    if len(words) in [2,3]:
-        channel = words[0]
-        comp = words[1]
-        return key,channel,comp
-    else:
-        return None,None,None
-
 #-------------------------------------------------------------
 #   Frame converter class
 #-------------------------------------------------------------
@@ -125,21 +99,21 @@ class FrameConverter:
            bonemap,locks = self.setupBoneMap(anims, rig)
         nanims = []
         for anim,oanim in zip(anims, oanims):
-            banim,vanim = anim
+            banim,vanim,xanim = anim
             if again:
-                nbanim,_ = oanim
+                nbanim,_,_ = oanim
             elif self.affectBones:
                 nbanim = {}
                 for bname,frames in banim.items():
                     nname = bonemap.get(bname)
                     if nname:
                         nbanim[nname] = frames
-                    elif self.isObject(bname):
+                    elif self.isObject(bname, rig):
                         nbanim[bname] = frames
             else:
                 nbanim = banim
             nvanim = self.convertMorphAnim(vanim, rig, again)
-            nanims.append((nbanim,nvanim))
+            nanims.append((nbanim,nvanim,xanim))
         if self.affectBones and not again:
             if self.useConvert:
                 self.convertAllFrames(nanims, rig, bonemap)
@@ -159,7 +133,7 @@ class FrameConverter:
         bonemap = OrderedDict()
         locks = self.getRigifyLocks(rig, conv)
         missing = []
-        for banim,vanim in anims:
+        for banim,vanim,xanim in anims:
             for bname in banim.keys():
                 if bname in conv.keys():
                     bonemap[bname] = self.getConvBone(conv[bname], rig)
@@ -204,7 +178,7 @@ class FrameConverter:
                 rname = bname.lower()
                 if rname in rig.data.bones.keys():
                     bonemap[bname] = rname
-                elif not self.isObject(bname):
+                elif not self.isObject(bname, rig):
                     missing.append(bname)
         if missing:
             print("Missing bones:")
@@ -273,7 +247,7 @@ class FrameConverter:
                 nvecs[t] = Vector(nmat.to_euler(nxyz))/D
             return vectorsToFrames(nvecs)
 
-        for banim,vanim in anims:
+        for banim,vanim,xanim in anims:
             nbanim = {}
             for bname,nname in bonemap.items():
                 if not core.get(bname):
@@ -941,19 +915,48 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         anims = []
         banims = OrderedDict()
         vanims = {}
-        self.parseAnimations(struct, banims, vanims, rig)
+        xanims = {}
+        self.parseAnimations(struct, banims, vanims, xanims, rig)
         self.completeAnimations(banims)
         blist = list(banims.items())
         blist.reverse()
         banims = OrderedDict(blist)
-        anims.append((banims, vanims))
+        anims.append((banims, vanims, xanims))
         return anims
 
     #-------------------------------------------------------------
     #
     #-------------------------------------------------------------
 
-    def parseAnimations(self, struct, banims, vanims, rig):
+    def parseAnimations(self, struct, banims, vanims, xanims, rig):
+        def getChannel(url):
+            words = url.split(":")
+            if len(words) == 2:
+                key = words[0]
+            elif len(words) == 3:
+                words = words[1].rsplit("/",1)
+                if len(words) == 2:
+                    key = words[1].rsplit("#")[-1]
+                else:
+                    return None,None,None
+            else:
+                return None,None,None
+            key = unquote(key)
+            words = url.rsplit("?", 2)
+            if len(words) != 2:
+                return None,None,None
+            words = words[1].split("/")
+            if len(words) in [2,3]:
+                channel = words[0]
+                comp = words[1]
+                return key,channel,comp
+            elif words[0] == "extra":
+                channel = unquote(words[-2])
+                comp = words[-1]
+                return key,channel,comp
+            else:
+                return None,None,None
+
         if "animations" in struct.keys():
             for anim in struct["animations"]:
                 if "url" in anim.keys():
@@ -976,6 +979,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                             banims[key][channel][idx] = getAnimKeys(anim)
                         else:
                             banims[key]["general_scale"][0] = getAnimKeys(anim)
+                    elif channel in ["Depth of Field", "Focal Length"]:
+                        xanims[channel] = getAnimKeys(anim)
                     else:
                         print("Unknown channel:", channel)
         elif "extra" in struct.keys():
@@ -1110,7 +1115,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 clearAllMorphs(rig, frame, self.useInsertKeys)
 
 
-    def isObject(self, bname):
+    def isObject(self, bname, rig):
         KnownRigs = [
             "@selection",
             "Genesis",
@@ -1127,8 +1132,10 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             "Genesis8Male",
             "Genesis9",
         ]
-        return (bname in KnownRigs)
-
+        if bname in KnownRigs:
+            return True
+        elif rig:
+            return (stripName(rig.name) == stripName(bname))
 
     #-------------------------------------------------------------
     #   Animate bones
@@ -1137,7 +1144,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def animateBones(self, context, anims, offset, prop, filepath):
         rig = context.object
         errors = {}
-        for banim,vanim in anims:
+        for banim,vanim,xanim in anims:
             frames = {}
             n = -1
             for bname, channels in banim.items():
@@ -1151,6 +1158,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
             for vname, channels in vanim.items():
                 self.addFrames(vname, {0: channels}, 1, "value", frames)
+            for xname, channels in xanim.items():
+                self.addFrames("_XTRA_", {0: channels}, 1, xname, frames)
 
             if not frames:
                 continue
@@ -1169,17 +1178,19 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                         elif key == "rotation":
                             tfm.setRot(bframe["rotation"], prop)
                         elif key == "scale":
-                            if self.affectScale or self.isObject(bname):
+                            if self.affectScale or self.isObject(bname, rig):
                                 tfm.setScale(bframe["scale"], False, prop)
                         elif key == "general_scale":
-                            if self.affectScale or self.isObject(bname):
+                            if self.affectScale or self.isObject(bname, rig):
                                 tfm.setGeneral(bframe["general_scale"], False, prop)
                         elif key == "value" and self.affectMorphs:
                             value = bframe["value"][0]
                             self.makeValueFrame(bname, rig, bframe, value, n, offset)
+                        elif bname == "_XTRA_":
+                            self.makeDataFrame(rig, bframe, n, offset)
                         else:
                             print("Unknown key:", bname, key)
-                    if self.isObject(bname):
+                    if self.isObject(bname, rig):
                         self.makeObjectFrame(bname, rig, bframe, tfm, n, offset)
                     elif rig.type == 'ARMATURE':
                         self.makeBoneFrame(bname, rig, bframe, tfm, n, offset, twists)
@@ -1252,6 +1263,27 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             else:
                 for ob in rig.children:
                     setShapeValue(ob, prop, value, n, offset)
+
+
+    def makeDataFrame(self, ob, dazdata, n, offset):
+        if ob.type == 'CAMERA':
+            from .camera import getBlenderData
+        elif ob.type == 'LIGHT':
+            from .light import getBlenderData
+        else:
+            print("Data animation not supported for %s" % ob.type)
+        bdata = getBlenderData(ob.data, dazdata)
+        for attrs,value in bdata.items():
+            rna = ob.data
+            words = attrs.split(".")
+            for attr in words[:-1]:
+                if hasattr(rna, attr):
+                    rna = getattr(rna, attr)
+            attr = words[-1]
+            if hasattr(rna, attr):
+                setattr(rna, attr, value)
+                if self.useInsertKeys:
+                    rna.keyframe_insert(attr, frame=n+offset)
 
 
     def addToAsset(self, rig, filepath):
@@ -1577,7 +1609,7 @@ class NodePose:
         return dazRna(ob).DazUrl.rsplit("#",1)[-1]
 
 
-    def parseAnimations(self, struct, banims, vanims, rig):
+    def parseAnimations(self, struct, banims, vanims, xanims, rig):
         rigid = self.getId(rig)
         active = False
         if "nodes" in struct.keys() and self.affectBones and rig and rig.pose:

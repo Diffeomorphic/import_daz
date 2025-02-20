@@ -126,3 +126,32 @@ class CameraInstance(Instance):
             camera.type = 'ORTHO'
             if dist and length:
                 camera.ortho_scale = dist/length * 0.34
+
+#-------------------------------------------------------------
+#   For animation
+#-------------------------------------------------------------
+
+def getBlenderData(camera, dazdata):
+    bdata = {}
+    if camera.type == 'ORTHO':
+        length = dazdata.get("Focal Length")
+        dist = dazdata.get("Depth of Field")
+        bdata["ortho_scale"] = dist/length * 0.34
+    for key,value in dazdata.items():
+        if key == "Lens Shift X" :
+            bdata["shift_x"] = value * GS.scale
+        elif key == "Lens Shift Y" :
+            bdata["shift_y"] = value * GS.scale
+        elif key == "Focal Length":
+            bdata["lens"] = value
+        elif key == "DOF":
+            bdata["dof.use_dof"] = value
+        elif key == "Depth of Field":
+            bdata["dof.focus_distance"] = value * GS.scale
+        elif key == "Frame Width":
+            bdata["sensor_height"] = value
+        elif key == "Aperture Blades":
+            bdata["dof.aperture_blades"] = value
+        elif key == "Aperture Blade Rotation":
+            bdata["dof.aperture_rotation"] = value*D
+    return bdata
