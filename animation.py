@@ -953,7 +953,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             elif words[0] == "extra":
                 channel = unquote(words[-2])
                 comp = words[-1]
-                return key,channel,comp
+                return "extra",channel,comp
             else:
                 return None,None,None
 
@@ -979,7 +979,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                             banims[key][channel][idx] = getAnimKeys(anim)
                         else:
                             banims[key]["general_scale"][0] = getAnimKeys(anim)
-                    elif channel in ["Depth of Field", "Focal Length"]:
+                    elif key == "extra":
                         xanims[channel] = getAnimKeys(anim)
                     else:
                         print("Unknown channel:", channel)
