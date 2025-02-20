@@ -774,7 +774,14 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             struct = JL.load(filepath, False)
         else:
             raise DazError("Wrong type of file: %s" % filepath)
-        if "scene" not in struct.keys():
+        self.assetType = struct.get("asset_info", {}).get("type", "preset_pose")
+        if self.assetType == "preset_camera" and rig.type != 'CAMERA':
+            print("Not a camera: %s" % rig.name)
+            return offset,None
+        elif self.assetType == "preset_light" and rig.type != 'LIGHT':
+            print("Not a light: %s" % rig.name)
+            return offset,None
+        elif "scene" not in struct.keys():
             return offset,None
         self.trgCharacter = getCharacterFromRig(rig)
         anims = self.parseScene(struct["scene"], rig)
@@ -1115,7 +1122,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 clearAllMorphs(rig, frame, self.useInsertKeys)
 
 
-    def isObject(self, bname, rig):
+    def isObject(self, bname, ob):
         KnownRigs = [
             "@selection",
             "Genesis",
@@ -1134,8 +1141,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         ]
         if bname in KnownRigs:
             return True
-        elif rig:
-            return (stripName(rig.name) == stripName(bname))
+        else:
+            return (bname != "_XTRA_" and
+                    self.assetType in ["preset_camera", "preset_light"])
 
     #-------------------------------------------------------------
     #   Animate bones
@@ -1186,12 +1194,12 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                         elif key == "value" and self.affectMorphs:
                             value = bframe["value"][0]
                             self.makeValueFrame(bname, rig, bframe, value, n, offset)
-                        elif bname == "_XTRA_":
-                            self.makeDataFrame(rig, bframe, n, offset)
-                        else:
+                        elif bname != "_XTRA_":
                             print("Unknown key:", bname, key)
                     if self.isObject(bname, rig):
                         self.makeObjectFrame(bname, rig, bframe, tfm, n, offset)
+                    elif bname == "_XTRA_":
+                        self.makeDataFrame(rig, bframe, n, offset)
                     elif rig.type == 'ARMATURE':
                         self.makeBoneFrame(bname, rig, bframe, tfm, n, offset, twists)
                 self.correctTwists(twists, rig, n, offset)
@@ -1266,12 +1274,11 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def makeDataFrame(self, ob, dazdata, n, offset):
-        if ob.type == 'CAMERA':
+        if self.assetType == "preset_camera":
             from .camera import getBlenderData
-        elif ob.type == 'LIGHT':
+        elif self.assetType == "preset_light":
             from .light import getBlenderData
         else:
-            print("Data animation not supported for %s" % ob.type)
             return
         bdata = getBlenderData(ob.data, dazdata)
         for attrs,value in bdata.items():
