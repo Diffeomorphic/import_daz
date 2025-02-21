@@ -476,9 +476,6 @@ class MorphLoader(LoadMorph, PosableMaker):
         description = "Automatically transfer shapekeys to face meshes\nlike eyelashes, tears, brows and beards",
         default = True)
 
-    def initMorphLoader(self):
-        LoadMorph.__init__(self)
-
     def draw(self, context):
         LoadMorph.draw(self, context)
         PosableMaker.draw(self, context)
@@ -747,7 +744,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
 
 
     def run(self, context):
-        self.initMorphLoader()
+        self.initTmp()
         if self.rig is None and not self.meshes:
             self.setupCharacter(context)
         MP.setupMorphPaths(False)
@@ -1317,7 +1314,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
-        self.initMorphLoader()
+        self.initTmp()
         ob = context.object
         if not self.setupCharacter(context):
             return
@@ -1585,7 +1582,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
 
 
     def run(self, context):
-        self.initMorphLoader()
+        self.initTmp()
         self.findIked()
         self.errors = {}
         self.faceshapes = {}
@@ -1738,7 +1735,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         return SingleFile.invoke(self, context, event)
 
     def run(self, context):
-        self.initMorphLoader()
+        self.initTmp()
         filepath = ensureExt(self.filepath, ".json")
         struct = JL.load(filepath)
         if ("filetype" not in struct.keys() or
@@ -1919,7 +1916,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
                     return True
             return False
 
-        self.initMorphLoader()
+        self.initTmp()
         self.getFingeredRigMeshes(context)
         used = []
         facepaths = {}
@@ -2128,7 +2125,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         PosableMaker.draw(self, context)
 
     def run(self, context):
-        self.initMorphLoader()
+        self.initTmp()
         rig = getRigFromContext(context)
         meshes = getSelectedMeshes(context)
         self.setupDuplicates()

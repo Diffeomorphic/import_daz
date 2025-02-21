@@ -39,30 +39,31 @@ class LoadMorph(DriverUser):
     useMulti = False
     disableErc = False
     useMakePosable = False
+    # Previously defined in __init__ function
+    rig = None
+    obj = None
+    amt = None
+    rig2 = None
+    amt2 = None
+    mesh = None
+    meshes = []
+    nverts = -1
+    char = None
+    chars = []
+    modded = False
+    assoc = {}
+    inFigure = {}
+    duplicates = []
+    baked = []
+    mult = []
+    mults = {}
+    adjustable = {}
+    currentAsset = None
+    origMorphset = ""
+
 
     def __init__(self):
         self.initTmp()
-        self.rig = None
-        self.obj = None
-        self.amt = None
-        self.rig2 = None
-        self.amt2 = None
-        self.mesh = None
-        self.meshes = []
-        self.nverts = -1
-        self.char = None
-        self.chars = []
-        self.modded = False
-        self.assoc = {}
-        self.inFigure = {}
-        self.duplicates = []
-        self.baked = []
-        self.mult = []
-        self.mults = {}
-        self.adjustable = {}
-        self.currentAsset = None
-        self.origMorphset = ""
-
 
     def getAdjustProp(self):
         return None
