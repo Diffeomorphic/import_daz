@@ -155,3 +155,16 @@ def getBlenderData(camera, dazdata):
         elif key == "Aperture Blade Rotation":
             bdata["dof.aperture_rotation"] = value*D
     return bdata
+
+def getDazKeys():
+    return {
+        "ortho_scale" : "Focal Length",
+        "shift_x" : "Lens Shift X",
+        "shift_y" : "Lens Shift Y",
+        "lens" : "Focal Length",
+        "dof.use_dof" : "DOF",
+        "dof.focus_distance" : "Depth of Field",
+        "sensor_height" : "Frame Width",
+        "dof.aperture_blades" : "Aperture Blades",
+        "dof.aperture_rotation" : "Aperture Blade Rotation",
+    }

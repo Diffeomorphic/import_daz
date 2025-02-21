@@ -98,7 +98,7 @@ class FrameConverter:
         bonemap = OrderedDict()
         locks = self.getRigifyLocks(rig, conv)
         missing = []
-        for banim,vanim,xanim in anims:
+        for banim,vanim,xanim,interps in anims:
             for bname in banim.keys():
                 if bname in conv.keys():
                     bonemap[bname] = self.getConvBone(conv[bname], rig)
@@ -227,7 +227,7 @@ class FrameConverter:
                 nvecs[t] = Vector(nmat.to_euler(nxyz))/D
             return vectorsToFrames(nvecs)
 
-        for banim,vanim,xanim in anims:
+        for banim,vanim,xanim,interps in anims:
             nbanim = {}
             for bname,nname in bonemap.items():
                 if not core.get(bname):
@@ -905,7 +905,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         xanims = {}
         interps = {}
         self.parseAnimations(struct, banims, vanims, xanims, interps, rig)
-        print("II", interps)
         self.completeAnimations(banims)
         blist = list(banims.items())
         blist.reverse()
@@ -1152,20 +1151,17 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             n = -1
             for bname, channels in banim.items():
                 for key,channel in channels.items():
-                    interp = interps.get("%s:%s" % (bname,key), 'BEZIER')
                     if key in ["rotation", "translation"]:
-                        self.addFrames(bname, channel, 3, key, frames, interp, default=(0,0,0))
+                        self.addFrames(bname, channel, 3, key, frames, default=(0,0,0))
                     elif key == "scale":
-                        self.addFrames(bname, channel, 3, key, frames, interp, default=(1,1,1))
+                        self.addFrames(bname, channel, 3, key, frames, default=(1,1,1))
                     elif key == "general_scale":
-                        self.addFrames(bname, channel, 1, key, frames, interp)
+                        self.addFrames(bname, channel, 1, key, frames)
 
             for vname, channels in vanim.items():
-                interp = interps[vname]
-                self.addFrames(vname, {0: channels}, 1, "value", frames, interp)
+                self.addFrames(vname, {0: channels}, 1, "value", frames)
             for xname, channels in xanim.items():
-                interp = interps[xname]
-                self.addFrames("_XTRA_", {0: channels}, 1, xname, frames, interp)
+                self.addFrames("_XTRA_", {0: channels}, 1, xname, frames)
 
             if not frames:
                 continue
@@ -1206,6 +1202,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                     self.snapIk(context, rig, n+offset)
 
             self.fixScales(rig)
+            self.fixInterpolation(rig, anims)
             self.addToAsset(rig, filepath)
             offset += n + 1
         if self.useSnapIk:
@@ -1292,6 +1289,30 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                     rna.keyframe_insert(attr, frame=n+offset)
 
 
+    def fixInterpolation(self, ob, anims):
+        def fixFcurves(rna, anim, interps):
+            if (rna.animation_data is None or
+                rna.animation_data.action is None):
+                return
+            for fcu in rna.animation_data.action.fcurves:
+                dazkey = dazkeys.get(fcu.data_path)
+                interp = interps.get(dazkey)
+                if interp:
+                    for kp in fcu.keyframe_points:
+                        kp.interpolation = interp
+
+        if self.assetType == "preset_camera":
+            from .camera import getDazKeys
+        elif self.assetType == "preset_light":
+            from .light import getDazKeys
+        else:
+            return
+
+        dazkeys = getDazKeys()
+        for banim,vanim,xanim,interps in anims:
+            fixFcurves(ob.data, xanim, interps)
+
+
     def addToAsset(self, rig, filepath):
         pass
 
@@ -1299,8 +1320,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     #   Add frames
     #-------------------------------------------------------------
 
-    def addFrames(self, bname, channel, nmax, cname, frames, interp, default=None):
-        print("AFF", bname, cname, interp)
+    def addFrames(self, bname, channel, nmax, cname, frames, default=None):
         for comp in range(nmax):
             if comp not in channel.keys():
                 continue

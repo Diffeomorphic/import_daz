@@ -184,6 +184,16 @@ def getBlenderData(light, dazdata):
             bdata["falloff_type"] = dtypes[value]
     return bdata
 
+
+def getDazKeys():
+    return {
+        "color" : "Color",
+        "energy" : "Intensity",
+        "shadow_color" : "Shadow Color",
+        "shadow_buffer_soft" : "Shadow Softness",
+        "falloff_type" : "Decay",
+    }
+
 #-------------------------------------------------------------
 #   Cycles Light Material
 #-------------------------------------------------------------
