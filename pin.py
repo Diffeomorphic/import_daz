@@ -12,11 +12,9 @@ from .utils import *
 
 class Pinner:
     fixedPin = True
-
-    def __init__(self):
-        self.nodeGroup = None
-        self.curveMapping = None
-        self.pinGroup = "HairPinning"
+    nodeGroup = None
+    curveMapping = None
+    pinGroup = "HairPinning"
 
     def getCurveMapping(self):
         if self.nodeGroup is None:
