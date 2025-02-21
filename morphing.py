@@ -2082,7 +2082,7 @@ class ScanFinder:
 
 
     def loadParentMorphs(self, context, ob):
-        if self.parpaths:
+        if self.parpaths and "url" in self.geograft.keys():
             parent = self.getParent(ob, self.geograft["url"])
             if parent:
                 self.mesh = parent
