@@ -924,7 +924,7 @@ class SimpleFKSnapper(SimpleIK):
         self.keyPose(pb)
 
 
-class DAZ_OT_SnapSimpleFK(DazOperator, SimpleFKSnapper):
+class DAZ_OT_SnapSimpleFK(DazOperator):
     bl_idname = "daz.snap_simple_fk"
     bl_label = "Snap FK"
     bl_description = "Snap FK bones to IK bones"
@@ -941,12 +941,13 @@ class DAZ_OT_SnapSimpleFK(DazOperator, SimpleFKSnapper):
 
     def run(self, context):
         rig = context.object
-        self.initAuto(context)
-        self.snapSimpleFK(rig, self.prefix, self.type)
-        self.changeLayers(rig, self.on, self.off)
+        IK = SimpleFKSnapper()
+        IK.initAuto(context)
+        IK.snapSimpleFK(rig, self.prefix, self.type)
+        IK.changeLayers(rig, self.on, self.off)
 
 
-class DAZ_OT_SnapAllSimpleFK(DazOperator, SimpleFKSnapper):
+class DAZ_OT_SnapAllSimpleFK(DazOperator):
     bl_idname = "daz.snap_all_simple_fk"
     bl_label = "Snap FK All"
     bl_description = "Snap all FK bones to IK bones"
@@ -954,17 +955,18 @@ class DAZ_OT_SnapAllSimpleFK(DazOperator, SimpleFKSnapper):
 
     def run(self, context):
         rig = context.object
-        self.initAuto(context)
+        IK = SimpleFKSnapper()
+        IK.initAuto(context)
         for prefix,type,on,off in [
             ("l", "Arm", S_LARMFK, S_LARMIK),
             ("r", "Arm", S_RARMFK, S_RARMIK),
             ("l", "Leg", S_LLEGFK, S_LLEGIK),
             ("r", "Leg", S_RLEGFK, S_RLEGIK)]:
-            self.snapSimpleFK(rig, prefix, type)
-            self.changeLayers(rig, on, off)
+            IK.snapSimpleFK(rig, prefix, type)
+            IK.changeLayers(rig, on, off)
 
 
-class DAZ_OT_SnapAnimationFK(FrameRange, SimpleFKSnapper):
+class DAZ_OT_SnapAnimationFK(FrameRange):
     bl_idname = "daz.snap_simple_fk_animation"
     bl_label = "Snap FK Animation"
     bl_description = "Snap FK animation for selected frames"
@@ -1005,42 +1007,43 @@ class DAZ_OT_SnapAnimationFK(FrameRange, SimpleFKSnapper):
     def run(self, context):
         rig = context.object
         scn = context.scene
-        self.auto = True
+        IK = SimpleFKSnapper()
+        IK.auto = True
         bnamess = []
         props = []
         if self.useLeftArm:
-            bnamess.append(self.getLimbBoneNames(rig, "l", "Arm"))
-            props.append(self.getIKProp("l", "Arm"))
+            bnamess.append(IK.getLimbBoneNames(rig, "l", "Arm"))
+            props.append(IK.getIKProp("l", "Arm"))
         if self.useRightArm:
-            bnamess.append(self.getLimbBoneNames(rig, "r", "Arm"))
-            props.append(self.getIKProp("r", "Arm"))
+            bnamess.append(IK.getLimbBoneNames(rig, "r", "Arm"))
+            props.append(IK.getIKProp("r", "Arm"))
         if self.useLeftLeg:
-            bnamess.append(self.getLimbBoneNames(rig, "l", "Leg"))
-            props.append(self.getIKProp("l", "Leg"))
+            bnamess.append(IK.getLimbBoneNames(rig, "l", "Leg"))
+            props.append(IK.getIKProp("l", "Leg"))
         if self.useRightLeg:
-            bnamess.append(self.getLimbBoneNames(rig, "r", "Leg"))
-            props.append(self.getIKProp("r", "Leg"))
+            bnamess.append(IK.getLimbBoneNames(rig, "r", "Leg"))
+            props.append(IK.getIKProp("r", "Leg"))
         for frame in range(self.startFrame, self.endFrame+1):
-            scn.frame_current = self.frame = frame
+            scn.frame_current = IK.frame = frame
             updateScene(context)
             for bnames in bnamess:
-                pbones,gmats = self.getSnapBones(rig, bnames)
+                pbones,gmats = IK.getSnapBones(rig, bnames)
                 for pb in pbones:
-                    self.snapFkBone(pb, gmats)
+                    IK.snapFkBone(pb, gmats)
         if self.useLayerChange:
             for frame in (self.startFrame, self.endFrame):
                 for prop in props:
-                    self.setProp(rig, prop, 0.0)
+                    IK.setProp(rig, prop, 0.0)
             for prop in props:
-                self.linearizeFcurve(rig, prop)
+                IK.linearizeFcurve(rig, prop)
             if self.useLeftArm:
-                self.changeLayers(rig, S_LARMFK, S_LARMIK)
+                IK.changeLayers(rig, S_LARMFK, S_LARMIK)
             if self.useRightArm:
-                self.changeLayers(rig, S_RARMFK, S_RARMIK)
+                IK.changeLayers(rig, S_RARMFK, S_RARMIK)
             if self.useLeftLeg:
-                self.changeLayers(rig, S_LLEGFK, S_LLEGIK)
+                IK.changeLayers(rig, S_LLEGFK, S_LLEGIK)
             if self.useRightLeg:
-                self.changeLayers(rig, S_RLEGFK, S_RLEGIK)
+                IK.changeLayers(rig, S_RLEGFK, S_RLEGIK)
 
 #----------------------------------------------------------
 #   IK Snap
@@ -1170,7 +1173,7 @@ class SimpleIKSnapper(SimpleIK):
         return Matrix.Translation(p)
 
 
-class DAZ_OT_SnapSimpleIK(SimpleIKSnapper, DazOperator):
+class DAZ_OT_SnapSimpleIK(DazOperator):
     bl_idname = "daz.snap_simple_ik"
     bl_label = "Snap IK"
     bl_description = "Snap IK bones to FK bones.\nSnapping is only approximate"
@@ -1188,12 +1191,13 @@ class DAZ_OT_SnapSimpleIK(SimpleIKSnapper, DazOperator):
 
     def run(self, context):
         rig = context.object
-        self.initAuto(context)
-        self.snapSimpleIK(rig, self.prefix, self.type, self.pole)
-        self.changeLayers(rig, self.on, self.off)
+        IK = SimpleIKSnapper()
+        IK.initAuto(context)
+        IK.snapSimpleIK(rig, self.prefix, self.type, self.pole)
+        IK.changeLayers(rig, self.on, self.off)
 
 
-class DAZ_OT_SnapAllSimpleIK(SimpleIKSnapper, DazOperator):
+class DAZ_OT_SnapAllSimpleIK(DazOperator):
     bl_idname = "daz.snap_all_simple_ik"
     bl_label = "Snap IK All"
     bl_description = "Snap all IK bones to FK bones.\nSnapping is only approximate"
@@ -1203,20 +1207,21 @@ class DAZ_OT_SnapAllSimpleIK(SimpleIKSnapper, DazOperator):
 
     def run(self, context):
         rig = context.object
-        self.initAuto(context)
+        IK = SimpleIKSnapper()
+        IK.initAuto(context)
         for prefix,type,pole,on,off in [
             ("l", "Arm", "lElbow", S_LARMIK, S_LARMFK),
             ("r", "Arm", "rElbow", S_RARMIK, S_RARMFK),
             ("l", "Leg", "lKnee", S_LLEGIK, S_LLEGFK),
             ("r", "Leg", "rKnee", S_RLEGIK, S_RLEGFK)]:
-            self.snapSimpleIK(rig, prefix, type, pole)
-            self.changeLayers(rig, on, off)
+            IK.snapSimpleIK(rig, prefix, type, pole)
+            IK.changeLayers(rig, on, off)
 
 #----------------------------------------------------------
 #   Toggle FK/IK
 #----------------------------------------------------------
 
-class DAZ_OT_ToggleFkIk(SimpleIKSnapper, DazOperator):
+class DAZ_OT_ToggleFkIk(DazOperator):
     bl_idname = "daz.toggle_fk_ik"
     bl_label = "Toggle FK IK"
     bl_description = "Toggle FK/IK"
@@ -1227,15 +1232,16 @@ class DAZ_OT_ToggleFkIk(SimpleIKSnapper, DazOperator):
 
     def run(self, context):
         rig = context.object
-        self.initAuto(context)
-        self.setProp(rig, self.prop, self.value)
+        IK = SimpleIKSnapper()
+        IK.initAuto(context)
+        IK.setProp(rig, self.prop, self.value)
         updateDrivers(rig)
 
 #----------------------------------------------------------
 #   Connect bone chains
 #----------------------------------------------------------
 
-class DAZ_OT_ConnectBoneChains(DazPropsOperator, SimpleIK, IsArmature):
+class DAZ_OT_ConnectBoneChains(DazPropsOperator, IsArmature):
     bl_idname = "daz.connect_bone_chains"
     bl_label = "Connect Bone Chains"
     bl_description = "Connect all bones in chains to their parents"
@@ -1310,13 +1316,14 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, SimpleIK, IsArmature):
 
     def run(self, context):
         rig = context.object
-        self.getBoneNames(rig)
+        IK = SimpleIK()
+        IK.getBoneNames(rig)
         wmats = []
         for ob in rig.children:
             if ob.parent_type == 'BONE':
                 wmats.append((ob, ob.matrix_world.copy()))
         setMode('EDIT')
-        for chain in self.chains:
+        for chain in IK.chains:
             parb = rig.data.edit_bones[chain[0]]
             for child in chain[1:]:
                 eb = rig.data.edit_bones[child]
@@ -1328,8 +1335,8 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, SimpleIK, IsArmature):
                     self.relocate(parb, eb)
                     eb.use_connect = True
                 parb = eb
-        if self.unlock:
-            for chain in self.chains:
+        if IK.unlock:
+            for chain in IK.chains:
                 pb = rig.pose.bones[chain[-1]]
                 pb.lock_location = FFalse
         setMode('OBJECT')
