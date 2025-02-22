@@ -510,12 +510,12 @@ class HairSystem:
 #-------------------------------------------------------------
 
 class Tesselator:
-    def unTesselateFaces(self, context, hair, btn):
+    def unTesselateFaces(self, context, hair):
         self.squashFaces(hair)
-        self.removeDoubles(context, hair, btn)
+        self.removeDoubles(context, hair)
         deletes = self.checkTesselation(hair)
         if deletes:
-            self.mergeRemainingFaces(hair, btn)
+            self.mergeRemainingFaces(hair)
 
 
     def squashFaces(self, hair):
@@ -532,9 +532,9 @@ class Tesselator:
                     v4.co = v1.co
 
 
-    def removeDoubles(self, context, hair, btn):
+    def removeDoubles(self, context, hair):
         activateObject(context, hair)
-        threshold = 0.001*btn.scale
+        threshold = 0.001*GS.scale
         setMode('EDIT')
         bpy.ops.mesh.select_all(action='SELECT')
         bpy.ops.mesh.remove_doubles(threshold=threshold)
@@ -558,14 +558,14 @@ class Tesselator:
         return deletes
 
 
-    def mergeRemainingFaces(self, hair, btn):
+    def mergeRemainingFaces(self, hair):
         for f in hair.data.polygons:
             fverts = [hair.data.vertices[vn] for vn in f.vertices]
             r0 = fverts[0].co
             for v in fverts:
                 v.co = r0
                 v.select = True
-        threshold = 0.001*btn.scale
+        threshold = 0.001*GS.scale
         setMode('EDIT')
         bpy.ops.mesh.remove_doubles(threshold=threshold)
         setMode('OBJECT')
@@ -850,7 +850,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             if self.strandType == 'LINE':
                 pass
             elif self.strandType == 'TUBE':
-                tess.unTesselateFaces(context, hair, self)
+                tess.unTesselateFaces(context, hair)
             strands = tess.findStrands(hair, self.strandType)
             if self.sparsity > 1:
                 strands = [strand for n,strand in enumerate(strands) if n % self.sparsity == 0]
