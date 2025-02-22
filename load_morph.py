@@ -172,8 +172,10 @@ class LoadMorph(DriverUser):
                 gdata = me.attributes["DazGraft"].data
                 if gdata:
                     pgs = dazRna(me).DazGraftData
-                    self.nverts = [pg.a for pg in pgs]
-                    self.graftdirs = [normalizeRef(pg.name) for pg in pgs]
+                    self.nverts = [pg.i for pg in pgs]
+                    self.graftnames = [pg.name for pg in pgs]
+                    self.graftnames[0] = ""
+                    self.graftdirs = [pg.s for pg in pgs]
                     self.vassocs = []
                     for gn in range(len(pgs)):
                         vassoc = dict([(vattr.value, vn)
@@ -187,10 +189,12 @@ class LoadMorph(DriverUser):
                     self.vassocs = [vassoc]
                     url = dazRna(me).DazUrl.rsplit("/",1)[0]
                     self.graftdirs = [normalizeRef(url)]
+                    self.graftnames = [""]
             else:
                 self.nverts = [len(me.vertices)]
                 url = dazRna(me).DazUrl.rsplit("/",1)[0]
                 self.graftdirs = [normalizeRef(url)]
+                self.graftnames = [""]
 
         self.adjustable = {}
         self.origMorphset = self.morphset
@@ -296,7 +300,6 @@ class LoadMorph(DriverUser):
         skey,ok = self.buildShape(asset)
         if not ok:
             return " #"
-        prop = asset.name
         if self.usePropDrivers():
             self.ercBones = {}
             self.makeFormulas(asset, skey)
@@ -388,20 +391,21 @@ class LoadMorph(DriverUser):
         useBuild = True
 
         def getRightVAssoc(asset):
-            for graftdir,vassoc in zip(self.graftdirs, self.vassocs):
+            for gn,graftdir in enumerate(self.graftdirs):
                 if asset.id.startswith(graftdir):
-                    return vassoc
-            for nverts,vassoc in zip(self.nverts, self.vassocs):
+                    return self.vassocs[gn], self.graftnames[gn]
+            for gn,nverts in enumerate(self.nverts):
                 if nverts == asset.vertex_count:
-                    return vassoc
-            return {}
+                    return self.vassocs[gn], self.graftnames[gn]
+            return {}, ""
 
         parent = self.getGraftParent(asset)
         vassoc = {}
+        prefix = ""
         if asset.vertex_count < 0:
             pass
         elif asset.vertex_count in self.nverts:
-            vassoc = getRightVAssoc(asset)
+            vassoc,prefix = getRightVAssoc(asset)
         elif parent:
             pass
         else:
@@ -428,7 +432,9 @@ class LoadMorph(DriverUser):
                 asset.buildMorph(parent, vassoc=vassoc, useBuild=useBuild)
             else:
                 asset.buildMorph(self.mesh, vassoc=vassoc, useBuild=useBuild)
-        skey,_,sname = asset.rna
+        skey = asset.rna[0]
+        if prefix:
+            skey.name = "%s:%s" % (prefix, skey.name)
         if skey:
             prop = rawProp(self.getUniqueName(unquote(skey.name)))
             self.alias[prop] = skey.name
@@ -473,9 +479,12 @@ class LoadMorph(DriverUser):
         from .modifier import Alias
         if asset.type in ["file"]:
             return False
-        prop = rawProp(self.getUniqueName(asset.getName()))
-        if prop != asset.name:
-            self.setAlias(asset.name, prop)
+        if skey:
+            prop = skey.name
+        else:
+            prop = rawProp(self.getUniqueName(asset.getName()))
+            if prop != asset.name:
+                self.setAlias(asset.name, prop)
         self.addNewProp(prop, asset, skey)
         self.adjustable[prop] = True
         if isinstance(asset, Formula):

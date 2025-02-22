@@ -238,7 +238,7 @@ if DAZ_PROPS:
         DazMaskGroup : CollectionProperty(type = DazIntGroup)
         DazPolylineMaterials : CollectionProperty(type = DazIntGroup)
         DazVertexCount : IntProperty(default=0)
-        DazGraftData : CollectionProperty(type = DazIntGroup)
+        DazGraftData : CollectionProperty(type = DazStringIntGroup)
         DazMaterialSets : CollectionProperty(type = DazStringStringGroup)
         DazHDMaterials : CollectionProperty(type = DazTextGroup)
         DazMergedGeografts : CollectionProperty(type = bpy.types.PropertyGroup)
@@ -450,6 +450,7 @@ classes = [
     DazFloatGroup,
     DazStringGroup,
     DazStringBoolGroup,
+    DazStringIntGroup,
     DazPairGroup,
     DazRigidityGroup,
     DazAffectedBone,
@@ -577,7 +578,7 @@ def registerDazProperties():
     bpy.types.Mesh.DazMaskGroup = CollectionProperty(type = DazIntGroup)
     bpy.types.Mesh.DazPolylineMaterials = CollectionProperty(type = DazIntGroup)
     bpy.types.Mesh.DazVertexCount = IntProperty(default=0)
-    bpy.types.Mesh.DazGraftData = CollectionProperty(type = DazIntGroup)
+    bpy.types.Mesh.DazGraftData = CollectionProperty(type = DazStringIntGroup)
     bpy.types.Mesh.DazMaterialSets = CollectionProperty(type = DazStringStringGroup)
     bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)
     bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = bpy.types.PropertyGroup)

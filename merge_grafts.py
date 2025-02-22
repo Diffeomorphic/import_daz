@@ -363,7 +363,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         gpg = dazRna(graft.data).DazGraftData[0]
         pg = pgs.add()
         pg.name = gpg.name
-        pg.a = gpg.a
+        pg.s = gpg.s
+        pg.i = gpg.i
 
 
     def removeOutlineMat(self, ob):
