@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import os
-import time
 import bpy
 from bpy.props import *
 from .error import *
@@ -123,6 +122,7 @@ class Scanner:
     useDefins = False
 
     def setupScanner(self, name, url):
+        from time import time
         self.ids = {}
         self.formulas = {}
         self.defins = {}
@@ -354,7 +354,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector, Scanner):
     def scanCharacter(self, context, name, relpath, scanpath):
         global theScannedFiles
         from .load_json import saveJson
-        t1 = time.perf_counter()
+        t1 = perf_counter()
         struct = self.setupScanner(name, relpath)
         self.wm = context.window_manager
         self.wm.progress_begin(0, self.maxcount)
@@ -364,7 +364,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector, Scanner):
         self.wm.progress_end()
         saveJson(struct, scanpath)
         theScannedFiles[name] = struct
-        t2 = time.perf_counter()
+        t2 = perf_counter()
         print("Database for %s scanned in %.3f seconds and saved in\n%s" % (name, t2-t1, scanpath))
 
 

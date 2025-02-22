@@ -136,7 +136,8 @@ def getBlenderData(camera, dazdata):
     if camera.type == 'ORTHO':
         length = dazdata.get("Focal Length")
         dist = dazdata.get("Depth of Field")
-        bdata["ortho_scale"] = dist/length * 0.34
+        if dist and length:
+            bdata["ortho_scale"] = dist/length * 0.34
     for key,value in dazdata.items():
         if key == "Lens Shift X" :
             bdata["shift_x"] = value * GS.scale

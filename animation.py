@@ -955,6 +955,12 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                     'CONSTANT' if 'CONSTANT' in key[2] else
                     'BEZIER')
 
+        blendkeys = {
+            "translation" : "location",
+            "rotation" : "rotation_euler",
+            "scale" : "scale",
+        }
+
         if "animations" in struct.keys():
             for anim in struct["animations"]:
                 if "url" in anim.keys():
@@ -978,7 +984,13 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                             banims[key][channel][idx] = getAnimKeys(anim)
                         else:
                             banims[key]["general_scale"][0] = getAnimKeys(anim)
-                        interps["%s:%s" % (key, channel)] = getInterpolation(anim)
+                        bchannel = blendkeys.get(channel)
+                        if bchannel is None:
+                            print("Unknown channel", channel)
+                        elif self.isObject(key, rig):
+                            interps[bchannel] = getInterpolation(anim)
+                        else:
+                            interps['pose.bones["%s"].%s' % (key, bchannel)] = getInterpolation(anim)
                     elif key == "extra":
                         xanims[channel] = getAnimKeys(anim)
                         interps[channel] = getInterpolation(anim)
@@ -1295,11 +1307,16 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 rna.animation_data.action is None):
                 return
             for fcu in rna.animation_data.action.fcurves:
-                dazkey = dazkeys.get(fcu.data_path)
-                interp = interps.get(dazkey)
+                path = dazkeys.get(fcu.data_path, fcu.data_path)
+                interp = interps.get(path)
                 if interp:
                     for kp in fcu.keyframe_points:
                         kp.interpolation = interp
+
+        dazkeys = {}
+        for banim,vanim,xanim,interps in anims:
+            fixFcurves(ob, banim, interps)
+            fixFcurves(ob, vanim, interps)
 
         if self.assetType == "preset_camera":
             from .camera import getDazKeys
@@ -1307,7 +1324,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             from .light import getDazKeys
         else:
             return
-
         dazkeys = getDazKeys()
         for banim,vanim,xanim,interps in anims:
             fixFcurves(ob.data, xanim, interps)
