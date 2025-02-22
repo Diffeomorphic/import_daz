@@ -907,7 +907,7 @@ class Morph(FormulaAsset):
 
 
     def __repr__(self):
-        return ("<Morph %s %f %s>" % (self.name, self.value, self.url))
+        return ("<Morph %s %f %s>" % (self.name, self.value, self.id))
 
 
     def parse(self, struct):
@@ -991,14 +991,13 @@ class Morph(FormulaAsset):
             me.vertices[vn].co += scale * d2bu(delta[1:])
 
 
-    def buildMorph(self, ob, assoc={}, useBuild=True):
-
+    def buildMorph(self, ob, vassoc={}, useBuild=True):
         def buildShapeKey(ob, skey):
             for v in ob.data.vertices:
                 skey.data[v.index].co = v.co
-            if GS.zup and assoc:
+            if GS.zup and vassoc:
                 for delta in self.deltas:
-                    vn = assoc.get(delta[0], -1)
+                    vn = vassoc.get(delta[0], -1)
                     if vn >= 0:
                         skey.data[vn].co += d2b90(delta[1:])
             elif GS.zup:

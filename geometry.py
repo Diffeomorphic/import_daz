@@ -1279,9 +1279,15 @@ class Geometry(Asset, Channels):
                     attr.data[fn].value = gn
 
             if me.vertices:
-                attr = ob.data.attributes.new("DazVertex", 'INT', 'POINT')
+                pgs = dazRna(ob.data).DazGraftData
+                pg = pgs.add()
+                pg.name = self.url.rsplit("/",1)[0]
+                pg.a = len(ob.data.vertices)
+                vattr = ob.data.attributes.new("DazVertex", 'INT', 'POINT')
+                gattr = ob.data.attributes.new("DazGraft", 'INT', 'POINT')
                 for vn in range(len(me.vertices)):
-                    attr.data[vn].value = vn
+                    vattr.data[vn].value = vn
+                    gattr.data[vn].value = 0
             if me.polygons:
                 addFaceMap(ob, "DazPolygonGroup", self.polygon_groups, self.polygon_indices)
                 addFaceMap(ob, "DazMaterialGroup", self.polygon_material_groups, self.material_indices)
@@ -1796,6 +1802,8 @@ def clearMeshProps(ob, keepVertex=False):
         clearAttribute("DazPolygonGroup")
         if not keepVertex:
             clearAttribute("DazVertex")
+            clearAttribute("DazGraft")
+            dazRna(me).DazGraftData.clear()
         for key in me.attributes.keys():
             if key.startswith("paired_body_vert_"):
                 clearAttribute(key)

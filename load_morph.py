@@ -164,16 +164,33 @@ class LoadMorph(DriverUser):
             self.baked = [self.bakedName(key) for key in dazRna(self.rig).DazBaked.keys()]
 
         if self.mesh:
+            from .asset import normalizeRef
             me = self.mesh.data
+            nverts = len(me.vertices)
             if USE_ATTRIBUTES and dazRna(me).DazFingerPrint and "DazVertex" in me.attributes:
-                data = me.attributes["DazVertex"].data
-                self.nverts = int(dazRna(me).DazFingerPrint.split("-",1)[0])
-                assoc = dict([(vn,-1) for vn in range(self.nverts)])
-                for vn,attr in data.items():
-                    assoc[attr.value] = vn
-                self.assoc = assoc
+                vdata = me.attributes["DazVertex"].data
+                gdata = me.attributes["DazGraft"].data
+                if gdata:
+                    pgs = dazRna(me).DazGraftData
+                    self.nverts = [pg.a for pg in pgs]
+                    self.graftdirs = [normalizeRef(pg.name) for pg in pgs]
+                    self.vassocs = []
+                    for gn in range(len(pgs)):
+                        vassoc = dict([(vattr.value, vn)
+                                        for vn,vattr in enumerate(vdata)
+                                        if gdata[vn].value == gn])
+                        self.vassocs.append(vassoc)
+                else:
+                    self.nverts = [int(dazRna(me).DazFingerPrint.split("-",1)[0])]
+                    vassoc = dict([(vattr.value, vn)
+                                    for vn,vattr in enumerate(vdata)])
+                    self.vassocs = [vassoc]
+                    url = dazRna(me).DazUrl.rsplit("/",1)[0]
+                    self.graftdirs = [normalizeRef(url)]
             else:
-                self.nverts = len(me.vertices)
+                self.nverts = [len(me.vertices)]
+                url = dazRna(me).DazUrl.rsplit("/",1)[0]
+                self.graftdirs = [normalizeRef(url)]
 
         self.adjustable = {}
         self.origMorphset = self.morphset
@@ -370,14 +387,26 @@ class LoadMorph(DriverUser):
         from .hd_data import addSkeyToUrls
         useBuild = True
 
+        def getRightVAssoc(asset):
+            for graftdir,vassoc in zip(self.graftdirs, self.vassocs):
+                if asset.id.startswith(graftdir):
+                    return vassoc
+            for nverts,vassoc in zip(self.nverts, self.vassocs):
+                if nverts == asset.vertex_count:
+                    return vassoc
+            return {}
+
         parent = self.getGraftParent(asset)
-        if (asset.vertex_count < 0 or
-            asset.vertex_count == self.nverts or
-            parent):
+        vassoc = {}
+        if asset.vertex_count < 0:
+            pass
+        elif asset.vertex_count in self.nverts:
+            vassoc = getRightVAssoc(asset)
+        elif parent:
             pass
         else:
             from .finger import VertexCounts
-            msg = ("Vertex count mismatch: %d != %d" % (asset.vertex_count, self.nverts))
+            msg = ("Vertex count mismatch: %d not in %s" % (asset.vertex_count, self.nverts))
             if GS.verbosity > 2:
                 print(msg)
             if asset.hd_url:
@@ -396,9 +425,9 @@ class LoadMorph(DriverUser):
 
         if not asset.rna:
             if parent:
-                asset.buildMorph(parent, assoc=self.assoc, useBuild=useBuild)
+                asset.buildMorph(parent, vassoc=vassoc, useBuild=useBuild)
             else:
-                asset.buildMorph(self.mesh, assoc=self.assoc, useBuild=useBuild)
+                asset.buildMorph(self.mesh, vassoc=vassoc, useBuild=useBuild)
         skey,_,sname = asset.rna
         if skey:
             prop = rawProp(self.getUniqueName(unquote(skey.name)))

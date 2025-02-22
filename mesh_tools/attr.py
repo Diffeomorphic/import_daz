@@ -40,6 +40,7 @@ class DAZ_OT_CopyAttributes(DazPropsOperator, IsMesh):
         attrs = []
         if self.useVertex:
             attrs.append(("DazVertex", 'INT', 'POINT'))
+            attrs.append(("DazGraft", 'INT', 'POINT'))
         if self.useMaterial:
             attrs.append(("DazMaterialGroup", 'INT', 'FACE'))
         if self.usePolygon:
@@ -56,7 +57,7 @@ class DAZ_OT_CopyAttributes(DazPropsOperator, IsMesh):
         srcattr = src.data.attributes.get(aname)
         if srcattr is None:
             raise DazError("%s has no %s attribute" % (src.name, aname))
-        if aname == "DazVertex":
+        if aname in ["DazVertex", "DazGraft"]:
             ndata = len(src.data.vertices)
         else:
             ndata = len(src.data.polygons)

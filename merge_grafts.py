@@ -153,7 +153,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         hum.show_only_shape_key = True
         self.outlineMat = None
         self.removeOutlineMat(hum)
-        for graft in grafts:
+        for gn,graft in enumerate(grafts):
             graft.active_shape_key_index = 0
             graft.show_only_shape_key = True
             self.renameUvLayers(graft)
@@ -162,7 +162,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             if self.useFixTiles:
                 self.udimsFromGraft(graft, hum)
             self.copyBodyPart(graft, hum)
-            self.fixFaceGroups(graft, hum)
+            self.fixFaceGroups(gn+1, graft, hum)
             for prop, value in graft.items():
                 if prop[0:6] == "INFLU " and prop not in influs.keys():
                     influs[prop] = value
@@ -339,7 +339,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         setMode('OBJECT')
 
 
-    def fixFaceGroups(self, graft, hum):
+    def fixFaceGroups(self, gn, graft, hum):
         if BLENDER3 or "DazVertex" not in graft.data.attributes.keys():
             return
 
@@ -356,9 +356,14 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         fixFaceGroup("DazPolygonGroup", graft, hum)
         fixFaceGroup("DazMaterialGroup", graft, hum)
-        attr = graft.data.attributes["DazVertex"]
-        for data in attr.data.values():
-            data.value = -1
+        gattr = graft.data.attributes["DazGraft"]
+        for gdata in gattr.data.values():
+            gdata.value = gn
+        pgs = dazRna(hum.data).DazGraftData
+        gpg = dazRna(graft.data).DazGraftData[0]
+        pg = pgs.add()
+        pg.name = gpg.name
+        pg.a = gpg.a
 
 
     def removeOutlineMat(self, ob):
