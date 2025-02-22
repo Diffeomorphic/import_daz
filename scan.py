@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import os
+import time
 import bpy
 from bpy.props import *
 from .error import *
@@ -122,7 +123,6 @@ class Scanner:
     useDefins = False
 
     def setupScanner(self, name, url):
-        from time import time
         self.ids = {}
         self.formulas = {}
         self.defins = {}
