@@ -168,12 +168,20 @@ class LoadMorph(DriverUser):
             me = self.mesh.data
             nverts = len(me.vertices)
             if USE_ATTRIBUTES and dazRna(me).DazFingerPrint and "DazVertex" in me.attributes:
+                def findDuplicates(a):
+                    taken = set()
+                    return [x for x in a if x in taken or taken.add(x)]
+
                 vdata = me.attributes["DazVertex"].data
                 gdata = me.attributes["DazGraft"].data
                 if gdata:
                     pgs = dazRna(me).DazGraftData
                     self.nverts = [pg.i for pg in pgs]
-                    self.graftnames = [pg.name for pg in pgs]
+                    dups = findDuplicates(self.nverts)
+                    self.graftnames = [":%s" % pg.name for pg in pgs]
+                    for n,nv in enumerate(self.nverts):
+                        if nv not in dups:
+                            self.graftnames[n] = ""
                     self.graftnames[0] = ""
                     self.graftdirs = [pg.s for pg in pgs]
                     self.vassocs = []
@@ -405,7 +413,7 @@ class LoadMorph(DriverUser):
         if asset.vertex_count < 0:
             pass
         elif asset.vertex_count in self.nverts:
-            vassoc,prefix = getRightVAssoc(asset)
+            vassoc,suffix = getRightVAssoc(asset)
         elif parent:
             pass
         else:
@@ -433,9 +441,8 @@ class LoadMorph(DriverUser):
             else:
                 asset.buildMorph(self.mesh, vassoc=vassoc, useBuild=useBuild)
         skey = asset.rna[0]
-        if prefix:
-            skey.name = "%s:%s" % (prefix, skey.name)
         if skey:
+            skey.name = "%s%s" % (skey.name, suffix)
             prop = rawProp(self.getUniqueName(unquote(skey.name)))
             self.alias[prop] = skey.name
             skey.name = prop
@@ -479,12 +486,10 @@ class LoadMorph(DriverUser):
         from .modifier import Alias
         if asset.type in ["file"]:
             return False
-        if skey:
-            prop = skey.name
-        else:
-            prop = rawProp(self.getUniqueName(asset.getName()))
-            if prop != asset.name:
-                self.setAlias(asset.name, prop)
+        aname = (skey.name if skey else asset.getName())
+        prop = rawProp(self.getUniqueName(aname))
+        if prop != aname:
+            self.setAlias(aname, prop)
         self.addNewProp(prop, asset, skey)
         self.adjustable[prop] = True
         if isinstance(asset, Formula):
