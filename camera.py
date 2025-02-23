@@ -131,11 +131,15 @@ class CameraInstance(Instance):
 #   For animation
 #-------------------------------------------------------------
 
-def getBlenderData(camera, dazdata):
+def getBlenderData(camera, dazdata, olddata):
     bdata = {}
     if camera.type == 'ORTHO':
         length = dazdata.get("Focal Length")
+        if length is None:
+            length = olddata.get("Focal Length")
         dist = dazdata.get("Depth of Field")
+        if dist is None:
+            dist = olddata.get("Depth of Field")
         if dist and length:
             bdata["ortho_scale"] = dist/length * 0.34
     for key,value in dazdata.items():
@@ -155,6 +159,7 @@ def getBlenderData(camera, dazdata):
             bdata["dof.aperture_blades"] = value
         elif key == "Aperture Blade Rotation":
             bdata["dof.aperture_rotation"] = value*D
+        olddata[key] = value
     return bdata
 
 def getDazKeys():

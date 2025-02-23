@@ -1180,6 +1180,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             lframes = list(frames.items())
             lframes.sort()
             self.clearScales(rig, lframes[0][0]+offset)
+            self.olddata = {}
             for n,frame in lframes:
                 twists = {}
                 self.addTwists(frame)
@@ -1287,7 +1288,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             from .light import getBlenderData
         else:
             return
-        bdata = getBlenderData(ob.data, dazdata)
+        bdata = getBlenderData(ob.data, dazdata, self.olddata)
         for attrs,value in bdata.items():
             rna = ob.data
             words = attrs.split(".")

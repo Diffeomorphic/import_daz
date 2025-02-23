@@ -167,7 +167,7 @@ class LightInstance(Instance):
 #   For animation
 #-------------------------------------------------------------
 
-def getBlenderData(light, dazdata):
+def getBlenderData(light, dazdata, olddata):
     from .material import srgbToLinearCorrect
     bdata = {}
     for key,value in dazdata.items():
@@ -182,6 +182,7 @@ def getBlenderData(light, dazdata):
         elif key == "Decay":
             dtypes = ['CONSTANT', 'INVERSE_LINEAR', 'INVERSE_SQUARE']
             bdata["falloff_type"] = dtypes[value]
+        olddata[key] = value
     return bdata
 
 
