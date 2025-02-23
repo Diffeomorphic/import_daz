@@ -382,6 +382,22 @@ class MetaMaker(RigifyCommon):
         self.reparentBones(ebones)
         setMode('OBJECT')
 
+        print("  Add custom chains")
+        chains = {}
+        for pb in rig.pose.bones:
+            if pb.rigify_type and pb.name not in meta.pose.bones.keys():
+                chains[pb.name] = pb.rigify_type
+        if chains:
+            meta.select_set(True)
+            rig.select_set(True)
+            setMode('EDIT')
+            for bname in chains.keys():
+                self.addChain(bname, rig, meta)
+            setMode('OBJECT')
+            for bname,rtype in chains.items():
+                pb = meta.pose.bones[bname]
+                pb.rigify_type = rtype
+
         print("  Add props to rigify")
         connect,disconnect = self.addRigifyProps(meta)
         if BLENDER3 and meta["DazCustomLayers"]:
@@ -463,6 +479,41 @@ class MetaMaker(RigifyCommon):
         for eb in eb0.children:
             eb.parent = par
         setMode('OBJECT')
+
+
+    def addChain(self, bname, rig, meta):
+        def getParents(eb, meta):
+            par = eb.parent
+            if par and par.name not in self.daz.rigifybones.keys():
+                parents = getParents(par, meta)
+                parents.append((eb.name, par.name))
+                return parents
+            elif par:
+                return[(eb.name, self.daz.rigifybones[par.name])]
+            else:
+                return [(eb.name, None)]
+
+        def getChildren(eb, meta):
+            if len(eb.children) == 1:
+                child = eb.children[0]
+                return [(child.name, eb.name)] + getChildren(child, meta)
+            else:
+                return []
+
+        def addBones(rig, meta, bnames):
+            for bname,pname in bnames:
+                eb = meta.data.edit_bones.new(bname)
+                db = rig.data.edit_bones[bname]
+                eb.head = db.head
+                eb.tail = db.tail
+                eb.roll = db.roll
+                eb.parent = meta.data.edit_bones[pname]
+
+        root = rig.data.edit_bones[bname]
+        parents = getParents(root, meta)
+        children = getChildren(root, meta)
+        addBones(rig, meta, parents)
+        addBones(rig, meta, children)
 
 
     def addRigifyProps(self, meta):
