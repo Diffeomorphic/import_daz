@@ -1278,11 +1278,11 @@ class Geometry(Asset, Channels):
                 for fn,gn in enumerate(indices):
                     attr.data[fn].value = gn
 
-            if me.vertices:
+            geonodes = list(self.nodes.values())
+            if me.vertices and geonodes and self.id:
                 pgs = dazRna(ob.data).DazGraftData
                 pg = pgs.add()
-                geonode = list(self.nodes.values())[0]
-                pg.name = geonode.getName()
+                pg.name = geonodes[0].getName()
                 pg.s = self.id.rsplit("/",1)[0]
                 pg.i = len(ob.data.vertices)
                 vattr = ob.data.attributes.new("DazVertex", 'INT', 'POINT')
