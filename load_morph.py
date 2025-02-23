@@ -561,6 +561,8 @@ class LoadMorph(DriverUser):
         from .selector import setActivated
         from .modifier import Alias, FormulaAsset
         final = finalProp(raw)
+        if raw.startswith("CTRLMD"):
+            return final
         if raw not in self.propDrivers.keys():
             self.propDrivers[raw] = []
             self.visible[raw] = False

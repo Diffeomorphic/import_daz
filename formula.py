@@ -223,8 +223,8 @@ class Formula:
         fileref,prop = url.split("#")
         bname = unquote(bname)
         prop = unquote(prop)
-        #if type == "value" and rig and bname in rig.data.bones.keys():
-        #    prop = "%s:%s" % (bname, prop)
+        if prop.startswith("CTRLMD"):
+            prop = "%s:%s" % (bname, prop)
         return prop,type,unquote(fileref),url
 
 
