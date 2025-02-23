@@ -390,13 +390,17 @@ class MetaMaker(RigifyCommon):
         if chains:
             meta.select_set(True)
             rig.select_set(True)
+            cbones = []
             setMode('EDIT')
             for bname in chains.keys():
-                self.addChain(bname, rig, meta)
+                cbones += self.addChain(bname, rig, meta)
             setMode('OBJECT')
             for bname,rtype in chains.items():
                 pb = meta.pose.bones[bname]
                 pb.rigify_type = rtype
+            for bname,pname in cbones:
+                bone = meta.data.bones[bname]
+                setBoneNumLayer(bone, meta, R_CUSTOM)
 
         print("  Add props to rigify")
         connect,disconnect = self.addRigifyProps(meta)
@@ -514,6 +518,7 @@ class MetaMaker(RigifyCommon):
         children = getChildren(root, meta)
         addBones(rig, meta, parents)
         addBones(rig, meta, children)
+        return parents + children
 
 
     def addRigifyProps(self, meta):
@@ -755,7 +760,7 @@ class Rigifier(RigifyCommon):
         self.layout.prop(self, "addNondeformExtras")
 
 
-    def setupExtras(self, context, rig):
+    def setupExtras(self, context, rig, meta):
         def addRecursive(pb):
             if pb.name not in self.extras.keys():
                 self.extras[pb.name] = rigifySafe(pb.name)
@@ -763,15 +768,21 @@ class Rigifier(RigifyCommon):
                 addRecursive(child)
 
         self.extras = OrderedDict()
-        taken = []
+        taken = set()
+        self.origBones = set()
+
         for dbone,_,_ in self.daz.spine:
-            taken.append(dbone)
+            taken.add(dbone)
         for dbone in self.daz.dazbones.values():
             if isinstance(dbone, list):
                 dbone = dbone[0]
                 if isinstance(dbone, list):
                     dbone = dbone[0]
-            taken.append(dbone)
+            taken.add(dbone)
+        for dbone in meta.data.bones.keys():
+            if dbone not in taken:
+                taken.add(dbone)
+                self.origBones.add(dbone)
         if self.addNondeformExtras:
             for bname in rig.data.bones.keys():
                 if bname not in taken:
@@ -905,7 +916,7 @@ class Rigifier(RigifyCommon):
                         bcoll2.assign(bone)
 
         print("  Setup extras")
-        self.setupExtras(context, rig)
+        self.setupExtras(context, rig, meta)
         print("  Get driven bones")
         driven = getDrivenBoneFcurves(rig)
 
@@ -929,6 +940,22 @@ class Rigifier(RigifyCommon):
                 enableBoneNumLayer(eb, gen, R_HELP)
             if dname in driven.keys():
                 enableBoneNumLayer(eb, gen, R_HELP)
+
+        # Orig DEF bones
+        newDefBones = []
+        for bname in self.origBones:
+            defname = "DEF-%s" % bname
+            if defname not in gen.data.edit_bones.keys():
+                orgname = "ORG-%s" % bname
+                orgbone = gen.data.edit_bones.get(orgname)
+                if orgbone:
+                    eb = gen.data.edit_bones.new(defname)
+                    eb.head = orgbone.head
+                    eb.tail = orgbone.tail
+                    eb.roll = orgbone.roll
+                    eb.parent = orgbone.parent
+                    enableBoneNumLayer(eb, gen, R_DEF)
+                    newDefBones.append((defname, orgname))
 
         # Group bones
         if BLENDER3 and meta["DazCustomLayers"]:
@@ -972,6 +999,13 @@ class Rigifier(RigifyCommon):
             self.addTongueIkBones(gen, R_FACE, R_DEF)
 
         setMode('OBJECT')
+        # Add constraints to new bones
+        print("  Add contraints to custom bones")
+        from ..rig_utils import copyTransform
+        for defname,orgname in newDefBones:
+            defbone = gen.pose.bones[defname]
+            orgbone = gen.pose.bones[orgname]
+            cns = copyTransform(defbone, orgbone, gen)
 
         # Lock extras
         print("  Lock extras")
@@ -1270,25 +1304,25 @@ class Rigifier(RigifyCommon):
         if ob.parent == gen and ob.parent_type == 'BONE':
             return
         ob.parent = gen
-        for dname,rname,pname in self.daz.spine:
+
+        def replaceVGroup(dname, nname):
             if dname in ob.vertex_groups.keys():
                 vgrp = ob.vertex_groups[dname]
-                vgrp.name = "DEF-%s" % rname
+                vgrp.name = nname
 
+        for dname,rname,pname in self.daz.spine:
+            replaceVGroup(dname, "DEF-%s" % rname)
         for rname,dname in self.daz.dazbones.items():
             if str(dname[1:]) in self.daz.limbs.keys():
                 self.rigifySplitGroup(rname, dname, ob, rig, True, meta, gen)
             elif isinstance(dname, str):
-                if dname in ob.vertex_groups.keys():
-                    vgrp = ob.vertex_groups[dname]
-                    vgrp.name = "DEF-%s" % rname
+                replaceVGroup(dname, "DEF-%s" % rname)
             else:
                 self.mergeVertexGroups(rname, dname[1], ob)
-
         for dname,rname in self.extras.items():
-            if dname in ob.vertex_groups.keys():
-                vgrp = ob.vertex_groups[dname]
-                vgrp.name = rname
+            replaceVGroup(dname, rname)
+        for dname in self.origBones:
+            replaceVGroup(dname, "DEF-%s" % dname)
 
 
     def changeAllTargets(self, ob, rig, newrig):
