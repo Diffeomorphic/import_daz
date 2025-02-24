@@ -744,7 +744,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
 
 
     def run(self, context):
-        self.initTmp()
+        self.initLoadMorph()
         if self.rig is None and not self.meshes:
             self.setupCharacter(context)
         MP.setupMorphPaths(False)
@@ -1314,7 +1314,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         return DazPropsOperator.invoke(self, context, event)
 
     def run(self, context):
-        self.initTmp()
+        self.initLoadMorph()
         ob = context.object
         if not self.setupCharacter(context):
             return
@@ -1582,7 +1582,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
 
 
     def run(self, context):
-        self.initTmp()
+        self.initLoadMorph()
         self.findIked()
         self.errors = {}
         self.faceshapes = {}
@@ -1735,7 +1735,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         return SingleFile.invoke(self, context, event)
 
     def run(self, context):
-        self.initTmp()
+        self.initLoadMorph()
         filepath = ensureExt(self.filepath, ".json")
         struct = JL.load(filepath)
         if ("filetype" not in struct.keys() or
@@ -1916,7 +1916,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
                     return True
             return False
 
-        self.initTmp()
+        self.initLoadMorph()
         self.getFingeredRigMeshes(context)
         used = []
         facepaths = {}
@@ -2125,7 +2125,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         PosableMaker.draw(self, context)
 
     def run(self, context):
-        self.initTmp()
+        self.initLoadMorph()
         rig = getRigFromContext(context)
         meshes = getSelectedMeshes(context)
         self.setupDuplicates()

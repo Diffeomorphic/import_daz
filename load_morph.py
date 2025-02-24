@@ -40,30 +40,32 @@ class LoadMorph(DriverUser):
     disableErc = False
     useMakePosable = False
     # Previously defined in __init__ function
-    rig = None
-    obj = None
-    amt = None
-    rig2 = None
-    amt2 = None
-    mesh = None
-    meshes = []
-    nverts = -1
-    char = None
-    chars = []
-    modded = False
-    assoc = {}
-    inFigure = {}
-    duplicates = []
-    baked = []
-    mult = []
-    mults = {}
-    adjustable = {}
-    currentAsset = None
-    origMorphset = ""
 
+    def initLoadMorph(self):
+        self.rig = None
+        self.obj = None
+        self.amt = None
+        self.rig2 = None
+        self.amt2 = None
+        self.mesh = None
+        self.meshes = []
+        self.nverts = -1
+        self.char = None
+        self.chars = []
+        self.modded = False
+        self.assoc = {}
+        self.inFigure = {}
+        self.duplicates = []
+        self.baked = []
+        self.mult = []
+        self.mults = {}
+        self.adjustable = {}
+        self.currentAsset = None
+        self.origMorphset = ""
+        self.initTmp()
 
     def __init__(self):
-        self.initTmp()
+        self.initLoadMorph()
 
     def getAdjustProp(self):
         return None
@@ -412,7 +414,7 @@ class LoadMorph(DriverUser):
 
         parent = self.getGraftParent(asset)
         vassoc = {}
-        prefix = ""
+        suffix = ""
         if asset.vertex_count < 0:
             pass
         elif asset.vertex_count in self.nverts:
@@ -982,7 +984,7 @@ class LoadMorph(DriverUser):
 
     def buildDrivers(self):
         if GS.verbosity >= 3:
-            print("Building drivers")
+            print("Building drivers. PROP = %d, BONE = %d" % (len(self.propDrivers), len(self.boneDrivers)))
         for output,drivers in self.propDrivers.items():
             if drivers:
                 self.buildPropDriver(rawProp(output), drivers)
