@@ -356,15 +356,16 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         fixFaceGroup("DazPolygonGroup", graft, hum)
         fixFaceGroup("DazMaterialGroup", graft, hum)
-        gattr = graft.data.attributes["DazGraft"]
-        for gdata in gattr.data.values():
-            gdata.value = gn
-        pgs = dazRna(hum.data).DazGraftData
-        gpg = dazRna(graft.data).DazGraftData[0]
-        pg = pgs.add()
-        pg.name = gpg.name
-        pg.s = gpg.s
-        pg.i = gpg.i
+        if "DazGraft" in graft.data.attributes.keys():
+            gattr = graft.data.attributes.get("DazGraft")
+            for gdata in gattr.data.values():
+                gdata.value = gn
+            pgs = dazRna(hum.data).DazGraftData
+            gpg = dazRna(graft.data).DazGraftData[0]
+            pg = pgs.add()
+            pg.name = gpg.name
+            pg.s = gpg.s
+            pg.i = gpg.i
 
 
     def removeOutlineMat(self, ob):

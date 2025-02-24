@@ -173,7 +173,10 @@ class LoadMorph(DriverUser):
                     return [x for x in a if x in taken or taken.add(x)]
 
                 vdata = me.attributes["DazVertex"].data
-                gdata = me.attributes["DazGraft"].data
+                if "DazGraft" in me.attributes.keys():
+                    gdata = me.attributes["DazGraft"].data
+                else:
+                    gdata = None
                 if gdata:
                     pgs = dazRna(me).DazGraftData
                     self.nverts = [pg.i for pg in pgs]
@@ -195,12 +198,12 @@ class LoadMorph(DriverUser):
                     vassoc = dict([(vattr.value, vn)
                                     for vn,vattr in enumerate(vdata)])
                     self.vassocs = [vassoc]
-                    url = dazRna(me).DazUrl.rsplit("/",1)[0]
+                    url = dazRna(self.mesh).DazUrl.rsplit("/",1)[0]
                     self.graftdirs = [normalizeRef(url)]
                     self.graftnames = [""]
             else:
                 self.nverts = [len(me.vertices)]
-                url = dazRna(me).DazUrl.rsplit("/",1)[0]
+                url = dazRna(self.mesh).DazUrl.rsplit("/",1)[0]
                 self.graftdirs = [normalizeRef(url)]
                 self.graftnames = [""]
 
