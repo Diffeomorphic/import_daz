@@ -130,6 +130,7 @@ def addToons(context):
     toons = set(LS.toons)
     print("Toons: %s" % [ob.name for ob in toons])
     lname = "DAZ Toon Light"
+    light = None
     if LS.distantLight:
         light = LS.distantLight.rna
     if light is None:

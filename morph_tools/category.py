@@ -1101,21 +1101,23 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
     def convertFcurves(self, skeys, act, items):
         if act is None or skeys is None:
             return
-        fcurves = {}
-        for fcu in getActionSlot(act, 'KEY').fcurves:
+        fcurves = getActionSlot(act, 'KEY').fcurves
+        nstruct = {}
+        for fcu in fcurves:
             prop = getProp(fcu.data_path)
             if prop and prop in items.keys():
-                fcurves[items[prop]] = fcu
+                nstruct[items[prop]] = fcu
         if skeys.animation_data is None:
             skeys.animation_data_create()
         nact = bpy.data.actions.new(act.name)
         skeys.animation_data.action = nact
-        for key,fcu in fcurves.items():
-            nfcu = getActionSlot(act, 'KEY').fcurves.new('key_blocks["%s"].value' % key)
+        nfcurves = getActionSlot(nact, 'KEY').fcurves
+        for key,fcu in nstruct.items():
+            nfcu = nfcurves.new('key_blocks["%s"].value' % key)
             for kp in fcu.keyframe_points:
                 nfcu.keyframe_points.insert(kp.co[0], kp.co[1], options={'FAST'})
-        for prop,fcu in fcurves.items():
-            getActionSlot(act, 'KEY').fcurves.remove(fcu)
+        for prop,fcu in nstruct.items():
+            fcurves.remove(fcu)
 
 
     def clearShape(self, skey):

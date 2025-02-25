@@ -54,8 +54,8 @@ class GazeTransferer:
     def getFrames(self, rig, scn, bnames):
         fstruct = {}
         if rig.animation_data and rig.animation_data.action:
-            act = rig.animation_data.action
-            for fcu in getActionSlot(act).fcurves:
+            fcurves = getActionSlot(rig.animation_data.action).fcurves
+            for fcu in fcurves:
                 bname,channel,cnsname = getBoneChannel(fcu)
                 if bname and bname in bnames:
                     for kp in fcu.keyframe_points:

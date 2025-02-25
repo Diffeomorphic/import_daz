@@ -32,7 +32,7 @@ class DAZ_OT_ConvertMorphsToAction(DazOperator, IsArmature):
             prop,label = morph.name, morph.text
             act = bpy.data.actions.get(label)
             if act:
-                act.fcurves.clear()
+                getActionSlot(act).fcurves.clear()
             else:
                 act = bpy.data.actions.new(label)
             act.use_fake_user = True
@@ -54,17 +54,18 @@ class DAZ_OT_ConvertMorphsToAction(DazOperator, IsArmature):
                 if abs(elt) > threshold:
                     self.used = True
                     path = 'pose.bones["%s"].%s' % (bname, channel)
-                    fcu = act.fcurves.new(data_path=path, index=idx)
+                    fcu = slot.fcurves.new(data_path=path, index=idx)
                     fcu.group = group
                     fcu.keyframe_points.insert(1, elt, options={'FAST'})
                     kp = fcu.keyframe_points[0]
                     kp.interpolation = 'LINEAR'
 
+        actslot = getActionSlot(act)
         for pb in rig.pose.bones:
             bname = baseBone(pb.name)
-            group = act.groups.get(bname)
+            group = actslot.groups.get(bname)
             if group is None:
-                group = act.groups.new(bname)
+                group = actslot.groups.new(bname)
             self.used = False
             addFrame(pb.location, "location", bname, group, 0.01*GS.scale)
             if pb.rotation_mode == 'QUATERNION':
@@ -73,7 +74,7 @@ class DAZ_OT_ConvertMorphsToAction(DazOperator, IsArmature):
                 addFrame(pb.rotation_euler, "rotation_euler", bname, group, 1e-4)
             #addFrame(pb.scale, "scale", bname, group)
             if not self.used:
-                act.groups.remove(group)
+                actslot.groups.remove(group)
 
 #----------------------------------------------------------
 #   Initialize

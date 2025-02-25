@@ -216,7 +216,8 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                     if self.isLocUnlocked(pb, bname):
                         self.locs[bname] = 3*[None]
 
-        for fcu in getActionSlot(act).fcurves:
+        fcurves = getActionSlot(act).fcurves
+        for fcu in fcurves:
             channel = fcu.data_path.rsplit(".",1)[-1]
             words = fcu.data_path.split('"')
             if words[0] == "pose.bones[" and self.useBones:
@@ -249,7 +250,8 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
 
     def getShapeFcurves(self, act, skeys):
-        for fcu in getActionSlot(act, 'KEY').fcurves:
+        fcurves = getActionSlot(act, 'KEY').fcurves
+        for fcu in fcurves:
             sname,channel = getShapeChannel(fcu)
             if sname and sname != "Basic":
                 self.morphs[sname] = fcu
