@@ -701,7 +701,8 @@ class ExtraBones(DriverUser):
                     updateDrivers(ob)
 
         if rig.animation_data and rig.animation_data.action:
-            for fcu in rig.animation_data.action.fcurves:
+            fcurves = getActionSlot(rig.animation_data.action).fcurves
+            for fcu in fcurves:
                 if fcu.group and "(drv)" in fcu.group.name:
                     fcu.group.name = fcu.group.name.replace("(drv)", "")
                 if (fcu.data_path.startswith("pose.bones[") and

@@ -99,14 +99,14 @@ class DAZ_OT_MakeEulers(DazOperator, IsArmature):
 
 
     def convertAction(self, act, rig, bnames):
-        for fcu in list(getFCurves(act, rig)):
+        for fcu in list(getActionSlot(act).fcurves):
             bname,channel,cnsname = getBoneChannel(fcu)
             if bname in bnames and channel == "rotation_euler":
-                getFCurves(act, rig).remove(fcu)
+                getActionSlot(act).fcurves.remove(fcu)
 
         qlist = {}
         deletes = []
-        for fcu in getFCurves(act, rig):
+        for fcu in getActionSlot(act).fcurves:
             bname,channel,cnsname = getBoneChannel(fcu)
             if bname in bnames and channel == "rotation_quaternion":
                 deletes.append(fcu)
@@ -122,14 +122,14 @@ class DAZ_OT_MakeEulers(DazOperator, IsArmature):
 
         for bname,quats in qlist.items():
             path = 'pose.bones["%s"].rotation_euler' % bname
-            fcus = [getFCurves(act, rig).new(path, index=idx, action_group=bname) for idx in range(3)]
+            fcus = [getActionSlot(act).fcurves.new(path, index=idx, action_group=bname) for idx in range(3)]
             for t,quat in quats.items():
                 euler = quat.to_euler()
                 for idx,fcu in enumerate(fcus):
                     fcu.keyframe_points.insert(t, euler[idx], options={'FAST'})
 
         for fcu in deletes:
-            getFCurves(act, rig).remove(fcu)
+            getActionSlot(act).fcurves.remove(fcu)
 
 #----------------------------------------------------------
 #   Initialize

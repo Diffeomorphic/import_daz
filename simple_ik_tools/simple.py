@@ -100,7 +100,8 @@ class SimpleIK:
 
     def linearizeFcurve(self, rna, prop):
         if rna.animation_data and rna.animation_data.action:
-            for fcu in rna.animation_data.action.fcurves:
+            fcurves = getActionSlot(rna.animation_data.action, rna).fcurves
+            for fcu in fcurves:
                 if fcu.data_path == prop:
                     for pt in fcu.keyframe_points:
                         pt.interpolation = 'LINEAR'

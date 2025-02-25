@@ -20,11 +20,24 @@ DAZ_PROPS = True
 #-------------------------------------------------------------
 
 if bpy.app.version < (4,4,0):
-    def getFCurves(act, rna):
-        return act.fcurves
+    def getActionSlot(act, idtype='OBJECT'):
+        return act
 else:
-    def getFCurves(act, rna):
-        return act.fcurves
+    def getActionSlot(act, idtype='OBJECT'):
+        if not isinstance(idtype, str):
+            idtype = idtype.type
+        #print("AA", idtype)
+        fail = True
+        for slot in act.slots:
+            #print("SS", idtype, slot.target_id_type)
+            if slot.target_id_type == idtype:
+                fail = False
+                break
+        if fail:
+            slot = act.slots[0]
+        strip = act.layers[0].strips[0]
+        #print("SLOT", slot)
+        return strip.channelbag(slot)
 
 #-------------------------------------------------------------
 #   Bone layers
