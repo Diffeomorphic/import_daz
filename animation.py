@@ -1181,6 +1181,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             lframes.sort()
             self.clearScales(rig, lframes[0][0]+offset)
             self.olddata = {}
+            self.dataRnas = set()
             for n,frame in lframes:
                 twists = {}
                 self.addTwists(frame)
@@ -1288,13 +1289,16 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             from .light import getBlenderData
         else:
             return
-        bdata = getBlenderData(ob.data, dazdata, self.olddata)
+        bdata = getBlenderData(ob.data, dazdata, self, n+offset)
         for attrs,value in bdata.items():
             rna = ob.data
+            self.dataRnas.add(rna)
             words = attrs.split(".")
             for attr in words[:-1]:
                 if hasattr(rna, attr):
                     rna = getattr(rna, attr)
+                    if hasattr(rna, "animation_data"):
+                        self.dataRnas.add(rna)
             attr = words[-1]
             if hasattr(rna, attr):
                 setattr(rna, attr, value)
@@ -1303,7 +1307,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def fixInterpolation(self, ob, anims):
-        def fixFcurves(rna, anim, interps):
+        def fixFcurves(rna, interps):
             if (rna.animation_data is None or
                 rna.animation_data.action is None):
                 return
@@ -1314,20 +1318,18 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                     for kp in fcu.keyframe_points:
                         kp.interpolation = interp
 
-        dazkeys = {}
-        for banim,vanim,xanim,interps in anims:
-            fixFcurves(ob, banim, interps)
-            fixFcurves(ob, vanim, interps)
-
         if self.assetType == "preset_camera":
             from .camera import getDazKeys
+            dazkeys = getDazKeys()
         elif self.assetType == "preset_light":
             from .light import getDazKeys
+            dazkeys = getDazKeys()
         else:
-            return
-        dazkeys = getDazKeys()
+            dazkeys = {}
         for banim,vanim,xanim,interps in anims:
-            fixFcurves(ob.data, xanim, interps)
+            fixFcurves(ob, interps)
+            for rna in self.dataRnas:
+                fixFcurves(rna, interps)
 
 
     def addToAsset(self, rig, filepath):

@@ -167,7 +167,20 @@ class LightInstance(Instance):
 #   For animation
 #-------------------------------------------------------------
 
-def getBlenderData(light, dazdata, olddata):
+def getBlenderData(light, dazdata, btn, frame):
+    def getNode(ntype):
+        if light.use_nodes:
+            btn.dataRnas.add(light.node_tree)
+            for node in light.node_tree.nodes:
+                if node.type == ntype:
+                    return node
+        return None
+
+    def setNode(node, channel, value):
+        node.inputs[channel].default_value = value
+        if btn.useInsertKeys:
+            node.inputs[channel].keyframe_insert("default_value", frame=frame)
+
     from .material import srgbToLinearCorrect
     bdata = {}
     for key,value in dazdata.items():
@@ -182,7 +195,17 @@ def getBlenderData(light, dazdata, olddata):
         elif key == "Decay":
             dtypes = ['CONSTANT', 'INVERSE_LINEAR', 'INVERSE_SQUARE']
             bdata["falloff_type"] = dtypes[value]
-        olddata[key] = value
+        elif key == "Temperature":
+            node = getNode('BLACKBODY')
+            if node:
+                setNode(node, "Temperature", value)
+        elif key == "Flux":
+            node = getNode('EMISSION')
+            if node:
+                fluxFactor = (3 if light.type == 'POINT' else 1)
+                factor = fluxFactor / 15000
+                setNode(node, "Strength", factor*value)
+        btn.olddata[key] = value
     return bdata
 
 
@@ -193,6 +216,7 @@ def getDazKeys():
         "shadow_color" : "Shadow Color",
         "shadow_buffer_soft" : "Shadow Softness",
         "falloff_type" : "Decay",
+        'nodes["Emission"].inputs[1].default_value' : "Intensity",
     }
 
 #-------------------------------------------------------------
