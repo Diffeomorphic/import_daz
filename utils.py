@@ -16,6 +16,17 @@ USE_ATTRIBUTES = (bpy.app.version >= (3,0,0))
 DAZ_PROPS = True
 
 #-------------------------------------------------------------
+#   Action slots
+#-------------------------------------------------------------
+
+if bpy.app.version < (4,4,0):
+    def getFCurves(act, rna):
+        return act.fcurves
+else:
+    def getFCurves(act, rna):
+        return act.fcurves
+
+#-------------------------------------------------------------
 #   Bone layers
 #-------------------------------------------------------------
 

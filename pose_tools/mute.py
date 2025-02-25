@@ -141,12 +141,12 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
         act = getCurrentAction(rig)
         shared = dict([(pb.name, pb) for pb in rig.pose.bones
                         if dazRna(pb).DazSharedBone])
-        for fcu in list(act.fcurves):
+        for fcu in list(getFCurves(act, rna)):
             bname,channel,cnsname = getBoneChannel(fcu)
             if (bname in shared.keys() or
                 channel is None or
                 channel.startswith("Daz")):
-                act.fcurves.remove(fcu)
+                getFCurves(act, rna).remove(fcu)
         for pb in shared.values():
             pb.matrix_basis = Matrix()
 
@@ -176,7 +176,7 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
         fcurves = {}
         act = getCurrentAction(gen)
         if act:
-            for fcu in act.fcurves:
+            for fcu in getFCurves(act, gen):
                 prop = getProp(fcu.data_path)
                 if prop in props:
                     fcurves[prop] = fcu
@@ -185,16 +185,11 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
     def setFcurve(self, rna, path, fcu):
         rna.keyframe_insert(path)
         act = rna.animation_data.action
-        fcu2 = act.fcurves.find(path)
+        fcu2 = getFCurves(act, rna).find(path)
         fcu2.keyframe_points.clear()
         for frame in range(self.frame_start, self.frame_end+1):
             value = fcu.evaluate(frame)
             fcu2.keyframe_points.insert(frame, value, options={'FAST'})
-
-    def removePropFcurves(self, act):
-        for fcu in list(act.fcurves):
-            if isPropRef(fcu.data_path):
-                act.fcurves.remove(fcu)
 
 #-------------------------------------------------------------
 #   Unmute control rig

@@ -864,9 +864,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         def removeFcurves(act, paths):
             if act is None:
                 return
-            for fcu in list(act.fcurves):
+            for fcu in list(getFCurves(act, rig)):
                 if fcu.data_path in paths:
-                    act.fcurves.remove(fcu)
+                    getFCurves(act, rig).remove(fcu)
 
         if rig.get("MhxRig") or dazRna(rig).DazRig == "mhx":
             props = ["MhaArmIk_L", "MhaArmIk_R", "MhaLegIk_L", "MhaLegIk_R"]
@@ -1830,11 +1830,11 @@ class DAZ_OT_ImportAsset(HideOperator, ActionOptions, AnimatorBase, StandardAnim
         keep = ["location", "rotation_euler", "rotation_quaternion"]
         if self.affectScale:
             keep.append("scale")
-        for fcu in list(act.fcurves):
+        for fcu in list(getFCurves(act, rig)):
             if not isPropRef(fcu.data_path):
                 words = fcu.data_path.rsplit(".", 1)
                 if words[-1] not in keep:
-                    act.fcurves.remove(fcu)
+                    getFCurves(act, rig).remove(fcu)
         if self.usePreviewImages:
             previewFile = self.getPreviewFile(filepath, name)
         else:
@@ -2062,7 +2062,7 @@ def imposeLocks(pb):
 #   Prune action
 #----------------------------------------------------------
 
-def pruneAction(act, cm):
+def pruneAction(act, ob, cm):
     def matchAll(kpts, default, eps):
         for kp in kpts:
             if abs(kp.co[1] - default) > eps:
@@ -2070,7 +2070,7 @@ def pruneAction(act, cm):
         return True
 
     deletes = []
-    for fcu in act.fcurves:
+    for fcu in getFCurves(act, ob):
         kpts = fcu.keyframe_points
         channel = fcu.data_path.rsplit(".", 1)[-1]
         if len(kpts) == 0:
@@ -2095,8 +2095,7 @@ def pruneAction(act, cm):
                 deletes.append(fcu)
 
     for fcu in deletes:
-        act.fcurves.remove(fcu)
-
+        getFCurves(act, ob).remove(fcu)
 
 class DAZ_OT_PruneAction(DazOperator):
     bl_idname = "daz.prune_action"
@@ -2111,7 +2110,7 @@ class DAZ_OT_PruneAction(DazOperator):
 
     def run(self, context):
         ob = context.object
-        pruneAction(ob.animation_data.action, GS.scale)
+        pruneAction(ob.animation_data.action, ob, GS.scale)
 
 #----------------------------------------------------------
 #   FrameRange
@@ -2189,7 +2188,7 @@ class FrameRange(DazPropsOperator):
         act = self.rig.animation_data.action
         if not act:
             return
-        for fcu in act.fcurves:
+        for fcu in getFCurves(act, self.rig):
             for pt in fcu.keyframe_points:
                 pt.interpolation = 'LINEAR'
             fcu.extrapolation = 'CONSTANT'
@@ -2220,7 +2219,7 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
         if rig.animation_data and rig.animation_data.action:
             act = rig.animation_data.action
             deletes = []
-            for fcu in act.fcurves:
+            for fcu in getFCurves(act, rig):
                 bname,channel,cnsname = getBoneChannel(fcu)
                 if bname:
                     if (channel in self.locks.keys() and
@@ -2234,7 +2233,7 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
                         limit = self.limits[channel][bname]
                         self.limitFcurve(fcu, limit[fcu.array_index])
             for fcu in deletes:
-                act.fcurves.remove(fcu)
+                getFCurves(act, rig).remove(fcu)
 
         defaults = {
             "location" : (0,0,0),
