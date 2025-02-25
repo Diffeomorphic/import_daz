@@ -305,9 +305,18 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 if prop[0:3] != "Daz":
                     copyProp(prop, src, trg, ovr)
 
+        def retargetMeshDrivers(submeshes, subrig, rig):
+            for submesh in submeshes:
+                skeys = submesh.data.shape_keys
+                if skeys:
+                    retargetDrivers(skeys, subrig, rig)
+                for mat in submesh.data.materials:
+                    if mat:
+                        retargetDrivers(mat.node_tree, subrig, rig)
+
         # Copy rig, armature and posebone properties and drivers
         for info,dups in zip(infos, dupss):
-            rig,bones,_meshes = info[0]
+            rig,bones,meshes = info[0]
             for subrig,subbones,submeshes in info[1:]:
                 for key,pg0 in dazRna(subrig.data).DazBoneMap.items():
                     if key not in dazRna(rig.data).DazBoneMap.keys():
@@ -321,13 +330,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 assoc = dict([(bname, getDupName(subrig, bname)) for bname in dups.keys()])
                 self.copyAssocDrivers(subrig.data, rig.data, subrig, rig, assoc)
                 self.copyAssocDrivers(subrig, rig, subrig, rig, assoc)
-                for submesh in submeshes:
-                    skeys = submesh.data.shape_keys
-                    if skeys:
-                        retargetDrivers(skeys, subrig, rig)
-                    for mat in submesh.data.materials:
-                        if mat:
-                            retargetDrivers(mat.node_tree, subrig, rig)
+                retargetMeshDrivers(meshes, subrig, rig)
+                retargetMeshDrivers(submeshes, subrig, rig)
 
                 for bname,binfo in subbones.items():
                     if bname in bones.keys():
