@@ -1231,7 +1231,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             if rig.type in ['LIGHT', 'CAMERA'] and GS.zup:
                 rig.rotation_euler[0] += pi/2
             if self.useInsertKeys:
-                insertKeys(rig, False, n+offset, self)
+                insertKeys(rig, False, n+offset, self, tfm)
 
 
     def makeBoneFrame(self, bname, rig, bframe, tfm, n, offset, twists):
@@ -1424,7 +1424,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 setBoneTransform(tfm, pb, rig, bonemap=self.bonemap, oldStyle=oldStyle)
             imposeLocks(pb)
             if self.useInsertKeys:
-                insertKeys(pb, True, n+offset, self)
+                insertKeys(pb, True, n+offset, self, tfm)
 
 
     def setBoneTwist(self, tfm, pb, rig):
@@ -2009,20 +2009,23 @@ def clearPose(rig, frame, auto):
         setChildofInverses(rig)
 
 
-def insertKeys(pb, isbone, frame, btn=None):
+def insertKeys(pb, isbone, frame, btn=None, tfm=None):
     driven = []
     if btn:
         driven = btn.driven.get(pb.name, [])
-    if ((not isbone or not isLocationLocked(pb))
-        and "location" not in driven):
+    if ((tfm is None or tfm.trans) and
+        (not isbone or not isLocationLocked(pb)) and
+        "location" not in driven):
         pb.keyframe_insert("location", group=pb.name, frame=frame)
-    if isbone and pb.rotation_mode == 'QUATERNION':
-        if "rotation_quaternion" not in driven:
-            pb.keyframe_insert("rotation_quaternion", group=pb.name, frame=frame)
-    else:
-        if "rotation_euler" not in driven:
-            pb.keyframe_insert("rotation_euler", group=pb.name, frame=frame)
-    if "scale" not in driven:
+    if tfm is None or tfm.rot:
+        if pb.rotation_mode != 'QUATERNION':
+            if "rotation_euler" not in driven:
+                pb.keyframe_insert("rotation_euler", group=pb.name, frame=frame)
+        else:
+            if "rotation_quaternion" not in driven:
+                pb.keyframe_insert("rotation_quaternion", group=pb.name, frame=frame)
+    if ((tfm is None or tfm.scale) and
+        "scale" not in driven):
         pb.keyframe_insert("scale", group=pb.name, frame=frame)
 
 
