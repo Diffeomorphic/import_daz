@@ -205,7 +205,7 @@ if DAZ_PROPS:
         DazLocalTextures : BoolProperty()
         DazVisibilityDrivers : BoolProperty()
         DazVisibilityCollections : BoolProperty()
-        DazTiedRig : BoolProperty()
+        DazTiedRig : StringProperty()
 
 
     class DazImporterMaterial(DazImporterGroup):
@@ -552,7 +552,7 @@ def registerDazProperties():
     bpy.types.Object.DazLocalTextures = BoolProperty()
     bpy.types.Object.DazVisibilityDrivers = BoolProperty()
     bpy.types.Object.DazVisibilityCollections = BoolProperty()
-    bpy.types.Object.DazTiedRig = BoolProperty()
+    bpy.types.Object.DazTiedRig = StringProperty()
 
     bpy.types.Material.DazScale = FloatProperty(default=0.01)
     bpy.types.Material.DazShader = StringProperty(default='NONE')

@@ -857,7 +857,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def enableIk(self, rig):
         if self.snapError:
             return
-        if rig.animation_data:
+        if rig.animation_data and rig.animation_data.action:
             fcurves = getActionSlot(rig.animation_data.action).fcurves
         else:
             fcurves = []
