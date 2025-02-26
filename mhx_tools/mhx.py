@@ -717,7 +717,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
 
     def constrainBendTwists(self, rig, bendTwistBones, useStretch):
-        from ..rig_utils import dampedTrack, copyRotation, copyTransform, stretchTo
+        from ..rig_utils import dampedTrack, copyTransform, stretchTo
         setMode('OBJECT')
         for bname,tname,stretch in bendTwistBones:
             bendname,twistname = self.getSubBoneNames(bname)
@@ -728,8 +728,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             twist = rig.pose.bones[twistname]
             bend.rotation_mode = twist.rotation_mode = pb.rotation_mode
             trg = rig.pose.bones[tname]
-            cns = copyRotation(bend, pb, rig, space='LOCAL')
-            cns.use_y = False
             cns = dampedTrack(bend, pb, rig)
             cns.head_tail = 1.0
             copyTransform(twist, pb, rig)
@@ -1594,7 +1592,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     #-------------------------------------------------------------
 
     def copyToeRotation(self, rig, mute, suffix, toenames):
-        from ..rig_utils import copyRotation
         toe = rig.pose.bones.get("toe.%s" % suffix)
         if toe:
             for toename in toenames:
