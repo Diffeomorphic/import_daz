@@ -25,7 +25,7 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
         if not (rig and rig.animation_data and rig.animation_data.action):
             raise DazError("No action found")
         actrig = rig.animation_data.action
-        rigfcurves = getActionSlot(rigact).fcurves
+        fcurves_rig = getActionSlot(actrig).fcurves
         meshes = getShapeChildren(rig)
         if not meshes:
             raise DazError("No meshes with shapekeys selected")
@@ -41,9 +41,9 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
 
         for ob in meshes:
             skeys = ob.data.shape_keys
-            act = None
-            fcurves = {}
-            for fcurig in rigfcurves:
+            actslot = None
+            fstruct = {}
+            for fcurig in fcurves_rig:
                 prop = getProp(fcurig.data_path)
                 if prop:
                     skey = self.getShape(prop, skeys)
@@ -52,14 +52,15 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
                         if skeys.animation_data is None:
                             skeys.animation_data_create()
                         skey.keyframe_insert("value")
-                        if act is None:
+                        if actslot is None:
                             act = skeys.animation_data.action
                             act.name = "%s:%s" % (ob.name, actrig.name)
-                        fcu = act.fcurves.find(channel)
+                            actslot = getActionSlot(act, 'KEY')
+                        fcu = actslot.fcurves.find(channel)
                         self.copyFcurve(fcurig, fcu)
-                        fcurves[fcurig.data_path] = fcurig
-            for fcu in fcurves.values():
-                rigfcurves.remove(fcu)
+                        fstruct[fcurig.data_path] = fcurig
+            for fcu in fstruct.values():
+                fcurves_rig.remove(fcu)
 
 
     def getShape(self, prop, skeys):

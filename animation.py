@@ -1308,9 +1308,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def fixInterpolation(self, ob, anims):
-        def fixFcurves(rna, idtype, interps):
+        def fixFcurves(rna, id_type, interps):
             if rna.animation_data and rna.animation_data.action:
-                fcurves = getActionSlot(rna.animation_data.action, idtype).fcurves
+                fcurves = getActionSlot(rna.animation_data.action, id_type).fcurves
                 for fcu in fcurves:
                     path = dazkeys.get(fcu.data_path, fcu.data_path)
                     interp = interps.get(path)
@@ -1328,8 +1328,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             dazkeys = {}
         for banim,vanim,xanim,interps in anims:
             fixFcurves(ob, 'OBJECT', interps)
-            for rna,idtype in self.dataRnas:
-                fixFcurves(rna, idtype, interps)
+            for rna,id_type in self.dataRnas:
+                fixFcurves(rna, id_type, interps)
 
 
     def addToAsset(self, rig, filepath):

@@ -876,21 +876,18 @@ class LoadMorph(DriverUser):
                 path = channel
             else:
                 path = '%s.bones["%s"].%s' % (pose, pb.name, channel)
-            fcurves = {}
+            fstruct = {}
             if self.rig.animation_data:
                 for fcu in self.rig.animation_data.drivers:
                     if path == fcu.data_path:
-                        fcurves[fcu.array_index] = fcu
-            return fcurves
+                        fstruct[fcu.array_index] = fcu
+            return fstruct
 
         if useDrv and drvBone(pb.name) in self.rig.pose.bones.keys():
             pb = self.rig.pose.bones[drvBone(pb.name)]
-        fcurves = getBoneFcurves(pb, channel)
+        fstruct = getBoneFcurves(pb, channel)
         for idx,factor in self.getFactors(vec):
-            if idx in fcurves.keys():
-                fcu = fcurves[idx]
-            else:
-                fcu = None
+            fcu = fstruct.get(idx)
             bname,drivers = self.findSumDriver(pb, channel, idx, (pb, fcu, {}))
             if prop in drivers.keys():
                 drivers[prop] += factor
@@ -1869,8 +1866,8 @@ class LoadMorph(DriverUser):
             fcu2.data_path = path
             self.clearTmpDriver(1)
         for n,data in enumerate(pathids.items()):
-            path,idtype = data
-            if idtype == 'OBJECT':
+            path,id_type = data
+            if id_type == 'OBJECT':
                 rna = self.obj
             else:
                 rna = self.amt

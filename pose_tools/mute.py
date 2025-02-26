@@ -186,7 +186,7 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
 
     def setFcurve(self, rna, path, fcu):
         rna.keyframe_insert(path)
-        fcurves = getActionSlot(rna.animation_data.action, rna).fcurves
+        fcurves = getActionSlot(rna.animation_data.action, rna.id_type).fcurves
         fcu2 = fcurves.find(path)
         fcu2.keyframe_points.clear()
         for frame in range(self.frame_start, self.frame_end+1):

@@ -20,23 +20,15 @@ DAZ_PROPS = True
 #-------------------------------------------------------------
 
 if bpy.app.version < (4,4,0):
-    def getActionSlot(act, idtype='OBJECT'):
+    def getActionSlot(act, id_type='OBJECT'):
         return act
 else:
-    def getActionSlot(act, idtype='OBJECT'):
-        if not isinstance(idtype, str):
-            idtype = idtype.type
-        #print("AA", idtype)
-        fail = True
-        for slot in act.slots:
-            #print("SS", idtype, slot.target_id_type)
-            if slot.target_id_type == idtype:
-                fail = False
-                break
-        if fail:
-            slot = act.slots[0]
+    def getActionSlot(act, id_type='OBJECT'):
         strip = act.layers[0].strips[0]
-        #print("SLOT", slot)
+        for slot in act.slots:
+            if slot.target_id_type == id_type:
+                return strip.channelbag(slot)
+        slot = act.slots[0]
         return strip.channelbag(slot)
 
 #-------------------------------------------------------------
