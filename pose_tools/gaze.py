@@ -52,7 +52,7 @@ class GazeTransferer:
 
 
     def getFrames(self, rig, scn, bnames):
-        fstruct = {}
+        fcustruct = {}
         if rig.animation_data and rig.animation_data.action:
             fcurves = getActionSlot(rig.animation_data.action).fcurves
             for fcu in fcurves:
@@ -60,16 +60,16 @@ class GazeTransferer:
                 if bname and bname in bnames:
                     for kp in fcu.keyframe_points:
                         t = kp.co[0]
-                        fstruct[t] = True
-        if len(fstruct) > 0:
+                        fcustruct[t] = True
+        if len(fcustruct) > 0:
             try:
-                scn.frame_current = fstruct.keys()[0]
+                scn.frame_current = fcustruct.keys()[0]
                 useInts = False
             except TypeError:
                 useInts = True
             if useInts:
-                fstruct = dict([(int(frame),True) for frame in fstruct.keys()])
-            frames = list(fstruct.keys())
+                fcustruct = dict([(int(frame),True) for frame in fcustruct.keys()])
+            frames = list(fcustruct.keys())
             frames.sort()
             return frames
         else:

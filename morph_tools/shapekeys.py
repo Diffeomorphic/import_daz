@@ -42,7 +42,7 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
         for ob in meshes:
             skeys = ob.data.shape_keys
             actslot = None
-            fstruct = {}
+            fcustruct = {}
             for fcurig in fcurves_rig:
                 prop = getProp(fcurig.data_path)
                 if prop:
@@ -58,8 +58,8 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
                             actslot = getActionSlot(act, 'KEY')
                         fcu = actslot.fcurves.find(channel)
                         self.copyFcurve(fcurig, fcu)
-                        fstruct[fcurig.data_path] = fcurig
-            for fcu in fstruct.values():
+                        fcustruct[fcurig.data_path] = fcurig
+            for fcu in fcustruct.values():
                 fcurves_rig.remove(fcu)
 
 

@@ -452,12 +452,14 @@ def findExcludedObjects(context, useHidden):
 
 
 def applyTransformToObjects(context, objects, excluded=[]):
+    objects = [ob for ob in objects if (ob.data is None or ob.data.users == 1)]
     bpy.ops.object.select_all(action='DESELECT')
     parents = []
     for ob in objects:
         for child in ob.children:
             if (child in excluded or
-                child.name not in context.view_layer.objects.keys()):
+                child.name not in context.view_layer.objects.keys() or
+                (child.data and child.data.users > 1)):
                 continue
             parents.append((child, ob, child.matrix_world.copy(), child.hide_viewport, child.hide_get(), child.hide_select))
             child.hide_viewport = False

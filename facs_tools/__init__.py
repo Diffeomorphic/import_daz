@@ -49,7 +49,7 @@ class DAZ_PT_FACS(DAZ_PT_RuntimeTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 def register():
-    print("Register Export Tools")
+    print("Register FACS Tools")
     bpy.utils.register_class(DAZ_PT_FACS)
     from . import facsbase, facecap, livelink, fbxfacs, vmdfacs
     facsbase.register()
