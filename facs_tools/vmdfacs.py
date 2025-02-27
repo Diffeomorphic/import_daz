@@ -3,14 +3,16 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-from ..error import DazPropOperator
+from ..utils import *
+from ..error import *
+from ..fileutils import SingleFile
 from .facsbase import HeadUser, FACSImporter
 
 #------------------------------------------------------------------
 #   VMD
 #------------------------------------------------------------------
 
-class DAZ_OT_ImportVmdFacs(FACSImporter, DazPropOperator):
+class DAZ_OT_ImportVmdFacs(FACSImporter, SingleFile, DazOperator):
     bl_idname = "daz.import_vmd_facs"
     bl_label = "Import FACS From VMD File"
     bl_description = "Import a vmd file with FACS animation.\nMMD Tools must be installed"
@@ -28,7 +30,7 @@ class DAZ_OT_ImportVmdFacs(FACSImporter, DazPropOperator):
         except ModuleNotFoundError:
             found = False
         if not found:
-            raise MocapError("MMD Tools not found")
+            raise DazError("MMD Tools not found")
         vmdTable = BD.facsTables["VMD"]["facs"]
         vmdFile = vmd.File()
         vmdFile.load(filepath = self.filepath)

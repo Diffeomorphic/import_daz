@@ -58,6 +58,7 @@ elif "bpy" in locals():
     imp.reload(rigify_tools)
     imp.reload(rig_tools)
     imp.reload(pose_tools)
+    imp.reload(facs_tools)
     imp.reload(object_tools)
     imp.reload(material_tools)
     imp.reload(mesh_tools)
@@ -78,6 +79,7 @@ else:
     from . import rigify_tools
     from . import rig_tools
     from . import pose_tools
+    from . import facs_tools
     from . import object_tools
     from . import material_tools
     from . import mesh_tools
@@ -116,6 +118,9 @@ def toggleRigTools(self, context):
 
 def togglePoseTools(self, context):
     toggleModule("pose_tools", self.usePoseTools)
+
+def toggleFacsTools(self, context):
+    toggleModule("facs_tools", self.useFacsTools)
 
 def toggleObjectTools(self, context):
     toggleModule("object_tools", self.useObjectTools)
@@ -156,7 +161,7 @@ def toggleModule(module, enable):
 
 
 theFeatures = ["useRigTools", "useSimpleIkTools", "useMhxTools",
-               "useRigifyTools", "usePoseTools", "useObjectTools",
+               "useRigifyTools", "usePoseTools", "useFacsTools", "useObjectTools",
                "useMaterialTools", "useShellTools", "useMeshTools",
                "useMorphTools", "useHairTools", "useVisibilityTools",
                "useHDTools", "useSimulationTools", "useExportTools",
@@ -263,6 +268,12 @@ class DazPreferences(bpy.types.AddonPreferences):
         default = False,
         update = togglePoseTools)
 
+    useFacsTools : BoolProperty(
+        name = "FACS Tools",
+        description = "Tools for importing FACS animations",
+        default = False,
+        update = toggleFacsTools)
+
     useObjectTools : BoolProperty(
         name = "Object Tools",
         description = "Tools for objects",
@@ -356,6 +367,9 @@ def register():
         if prefs.usePoseTools:
             from . import pose_tools
             pose_tools.register()
+        if prefs.useFacsTools:
+            from . import facs_tools
+            facs_tools.register()
         if prefs.useObjectTools:
             from . import object_tools
             object_tools.register()
@@ -422,6 +436,9 @@ def unregister():
         if prefs.usePoseTools:
             from . import pose_tools
             pose_tools.unregister()
+        if prefs.useFacsTools:
+            from . import facs_tools
+            facs_tools.unregister()
         if prefs.useObjectTools:
             from . import object_tools
             object_tools.unregister()

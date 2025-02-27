@@ -3,14 +3,16 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-from ..error import DazPropOperator
+from ..utils import *
+from ..error import *
+from ..fileutils import SingleFile
 from .facsbase import HeadUser, FACSImporter
 
 #------------------------------------------------------------------
 #   FaceCap
 #------------------------------------------------------------------
 
-class DAZ_OT_ImportFaceCap(HeadUser, FACSImporter, DazPropOperator):
+class DAZ_OT_ImportFaceCap(HeadUser, FACSImporter, SingleFile, DazOperator):
     bl_idname = "daz.import_facecap"
     bl_label = "Import FaceCap File"
     bl_description = "Import a text file with facecap data"
@@ -49,7 +51,7 @@ class DAZ_OT_ImportFaceCap(HeadUser, FACSImporter, DazPropOperator):
                 elif line[0:5] == "info,":
                     pass
                 else:
-                    raise MocapError("Illegal syntax:\%s     " % line)
+                    raise DazError("Illegal syntax:\%s     " % line)
 
 #----------------------------------------------------------
 #   Initialize

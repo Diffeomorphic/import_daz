@@ -67,4 +67,3 @@ def unregister():
     livelink.unregister()
     fbxfacs.unregister()
     vmdfacs.unregister()
-    preset.unregister()

@@ -3,14 +3,16 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-from ..error import DazPropOperator
+from ..utils import *
+from ..error import *
+from ..fileutils import SingleFile
 from .facsbase import HeadUser, FACSImporter
 
 #------------------------------------------------------------------
 #   Unreal Live Link
 #------------------------------------------------------------------
 
-class DAZ_OT_ImportLiveLink(HeadUser, FACSImporter, DazPropOperator):
+class DAZ_OT_ImportLiveLink(HeadUser, FACSImporter, SingleFile, DazOperator):
     bl_idname = "daz.import_livelink"
     bl_label = "Import Live Link File"
     bl_description = "Import a csv file with Unreal's Live Link data"
@@ -31,7 +33,7 @@ class DAZ_OT_ImportLiveLink(HeadUser, FACSImporter, DazPropOperator):
         with open(self.filepath, newline='', encoding="utf-8-sig") as fp:
             lines = list(reader(fp))
         if len(lines) < 2:
-            raise MocapError("Found no keyframes")
+            raise DazError("Found no keyframes")
 
         self.bshapes = [bshape.lower() for bshape in lines[0][2:-9]]
         for t,line in enumerate(lines[1:]):

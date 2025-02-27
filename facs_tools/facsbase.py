@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-from ..utils import propRef
+from ..utils import *
+from ..error import *
 
 #------------------------------------------------------------------
 #   Utility class BoneHandler

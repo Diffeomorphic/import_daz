@@ -3,14 +3,16 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-from ..error import DazPropOperator
+from ..utils import *
+from ..error import *
+from ..fileutils import SingleFile
 from .facsbase import FACSImporter, FACSCopier
 
 #------------------------------------------------------------------
 #   FBX
 #------------------------------------------------------------------
 
-class DAZ_OT_ImportFbxFacs(FACSImporter, DazPropOperator, FACSCopier):
+class DAZ_OT_ImportFbxFacs(FACSImporter, FACSCopier, SingleFile, DazOperator):
     bl_idname = "daz.import_fbx_facs"
     bl_label = "Import FACS From FBX File"
     bl_description = "Import a fbx file with FACS animation"
@@ -29,7 +31,7 @@ class DAZ_OT_ImportFbxFacs(FACSImporter, DazPropOperator, FACSCopier):
                 automatic_bone_orientation=True,
                 ignore_leaf_bones=True)
         except AttributeError:
-            raise MocapError("Blender's built-in FBX importer must be enabled")
+            raise DazError("Blender's built-in FBX importer must be enabled")
         imported_objects = set(context.scene.objects) - existing_objects
         print("Temporary FBX objects imported: %s" % imported_objects)
         actions = []
