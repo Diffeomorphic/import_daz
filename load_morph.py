@@ -169,6 +169,11 @@ class LoadMorph(DriverUser):
             from .asset import normalizeRef
             me = self.mesh.data
             nverts = len(me.vertices)
+            self.nverts = [len(me.vertices)]
+            url = dazRna(self.mesh).DazUrl.rsplit("/",1)[0]
+            self.graftdirs = [normalizeRef(url)]
+            self.vassocs = [{}]
+            self.graftnames = [""]
             if USE_ATTRIBUTES and dazRna(me).DazFingerPrint and "DazVertex" in me.attributes:
                 def findDuplicates(a):
                     taken = set()
@@ -200,14 +205,6 @@ class LoadMorph(DriverUser):
                     vassoc = dict([(vattr.value, vn)
                                     for vn,vattr in enumerate(vdata)])
                     self.vassocs = [vassoc]
-                    url = dazRna(self.mesh).DazUrl.rsplit("/",1)[0]
-                    self.graftdirs = [normalizeRef(url)]
-                    self.graftnames = [""]
-            else:
-                self.nverts = [len(me.vertices)]
-                url = dazRna(self.mesh).DazUrl.rsplit("/",1)[0]
-                self.graftdirs = [normalizeRef(url)]
-                self.graftnames = [""]
 
         self.adjustable = {}
         self.origMorphset = self.morphset
