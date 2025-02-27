@@ -22,7 +22,6 @@ class DAZ_OT_ImportFbxFacs(FACSImporter, FACSCopier, SingleFile, DazOperator):
     filter_glob : StringProperty(default="*.fbx", options={'HIDDEN'})
 
     def parse(self, context):
-        from .load import deleteObjects
         print("Importing FBX file")
         existing_objects = set(context.scene.objects)
         try:
@@ -53,6 +52,36 @@ class DAZ_OT_ImportFbxFacs(FACSImporter, FACSCopier, SingleFile, DazOperator):
         for act in actions:
             bpy.data.actions.remove(act)
         deleteObjects(context, imported_objects)
+
+#-------------------------------------------------------------
+#   Delete objects
+#-------------------------------------------------------------
+
+def deleteObjects(context, objects):
+    try:
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+    except RuntimeError:
+        return
+    for ob in objects:
+        if ob:
+            dtype = ob.type
+            if ob.data:
+                data = ob.data
+                users = ob.data.users
+            else:
+                users = 0
+            for coll in bpy.data.collections:
+                if ob in coll.objects.values():
+                    coll.objects.unlink(ob)
+            bpy.data.objects.remove(ob)
+            if users == 1:
+                if dtype == 'MESH':
+                    bpy.data.meshes.remove(data)
+                elif dtype == 'ARMATURE':
+                    bpy.data.armatures.remove(data)
+                elif dtype == 'CURVES':
+                    bpy.data.curves.remove(data)
 
 #----------------------------------------------------------
 #   Initialize

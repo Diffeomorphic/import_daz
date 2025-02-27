@@ -95,12 +95,19 @@ def loadJson(filepath, mustOpen=False, silent=False):
         bytes = None
 
     if bytes:
-        string = bytes.decode("utf-8-sig")
+        try:
+            string = bytes.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            string = bytes.decode("utf-16")
         filetype = "zipped"
     else:
         try:
-            with open(filepath, 'r', encoding="utf-8-sig") as fp:
-                string = fp.read()
+            try:
+                with open(filepath, 'r', encoding="utf-8-sig") as fp:
+                    string = fp.read()
+            except UnicodeDecodeError:
+                with open(filepath, 'r', encoding="utf-16") as fp:
+                    string = fp.read()
             filetype = "ascii"
         except IOError:
             string = None

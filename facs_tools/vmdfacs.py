@@ -6,7 +6,7 @@ import bpy
 from ..utils import *
 from ..error import *
 from ..fileutils import SingleFile
-from .facsbase import HeadUser, FACSImporter
+from .facsbase import HeadUser, FACSImporter, BD
 
 #------------------------------------------------------------------
 #   VMD

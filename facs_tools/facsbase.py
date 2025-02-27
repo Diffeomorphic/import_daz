@@ -35,7 +35,7 @@ class BoneHandler:
                 datapath = 'pose.bones["%s"].rotation_euler' % bname
                 for fcu in rig.animation_data.drivers:
                     if fcu.data_path == datapath:
-                        raise MocapError(msg)
+                        raise DazError(msg)
             return pb
 
         for bname in bnames:
@@ -189,7 +189,7 @@ class FACSImporter(BoneHandler, IsMeshArmature):
             ob = rig
             skeys = ob.data.shape_keys
             if skeys is None:
-                raise MocapError("Active object has no shapekeys")
+                raise DazError("Active object has no shapekeys")
             meshes = [ob]
             rnas = [skeys.key_blocks]
             rig = None
@@ -211,7 +211,7 @@ class FACSImporter(BoneHandler, IsMeshArmature):
             first = list(self.bskeys.values())[0]
             print("Keys: %d" % len(first))
         else:
-            raise MocapError("No FACS animation found")
+            raise DazError("No FACS animation found")
         if self.makeNewAction:
             def addAction(rna):
                 if self.actionName:
@@ -383,7 +383,7 @@ class FACSCopier:
                 for t in range(tmin, tmax+1):
                     self.bskeys[t].append(fcu.evaluate(t))
         if tmin > tmax:
-            raise MocapError("No source F-curves found")
+            raise DazError("No source F-curves found")
 
     def getFrame(self, t):
         return t+1
@@ -406,10 +406,36 @@ class DAZ_OT_CopyFacsAnimation(DazPropsOperator, FACSImporter, FACSCopier):
                 if skeys and skeys.animation_data and skeys.animation_data.action:
                     self.action = skeys.animation_data.action
                     return
-        raise MocapError("No source mesh found")
+        raise DazError("No source mesh found")
 
     def parse(self, context):
         self.getFcurves(self.action)
+
+#----------------------------------------------------------
+#   Do this better
+#----------------------------------------------------------
+
+import os
+
+class BvhData:
+    def __init__(self):
+        self.facsTables = {}
+
+    def ensureFacsInited(self):
+        if BD.facsTables:
+            return
+        from ..load_json import loadJson
+        folder = os.path.join(os.path.dirname(__file__), "..", "data", "facs")
+        print("FF", folder)
+        for fname in os.listdir(folder):
+            filepath = os.path.join(folder, fname)
+            if os.path.splitext(fname)[-1] == ".json":
+                struct = loadJson(filepath)
+                self.facsTables[struct["fingerprint"]] = struct
+                print("FACS %s %s" % (struct["name"], struct["fingerprint"]))
+
+
+BD = BvhData()
 
 #----------------------------------------------------------
 #   Initialize
