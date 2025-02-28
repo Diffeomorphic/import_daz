@@ -943,6 +943,35 @@ class DAZ_OT_RemoveShapekeys(DazOperator, AddRemoveDriver, CustomSelector, IsSha
         return ""
 
 #-------------------------------------------------------------
+#   Remove zero shapekeys
+#-------------------------------------------------------------
+
+class DAZ_OT_RemoveZeroShapekeys(DazOperator, IsShape):
+    bl_idname = "daz.remove_zero_shapekeys"
+    bl_label = "Remove Zero Shapekeys"
+    bl_description = "Remove zero shapekeys and their drivers from active mesh"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        ob = context.object
+        skeys = ob.data.shape_keys
+        deletes = dict([(skey.name, skey) for skey in skeys.key_blocks[1:] if skey.value == 0.0])
+        print("DD", deletes)
+        if skeys.animation_data and skeys.animation_data.action:
+            fcurves = getActionSlot(skeys.animation_data.action, 'KEY').fcurves
+            for fcu in list(fcurves):
+                words = fcu.data_path.split('"')
+                if words[0] == "key_blocks[" and words[1] in deletes.keys():
+                    fcurves.remove(fcu)
+        for skey in deletes.values():
+            ob.shape_key_remove(skey)
+        rig = ob.parent
+        if (rig and rig.type == 'ARMATURE'):
+            updateRigDrivers(context, rig)
+        updateDrivers(ob.data.shape_keys)
+        updateScrollbars(context)
+
+#-------------------------------------------------------------
 #   Remove shapekey drivers
 #-------------------------------------------------------------
 
@@ -1172,6 +1201,7 @@ classes = [
     DAZ_OT_AddShapekeyDrivers,
     DAZ_OT_RemoveShapekeyDrivers,
     DAZ_OT_RemoveShapekeys,
+    DAZ_OT_RemoveZeroShapekeys,
 
     DAZ_OT_ConvertMorphsToShapes,
 ]

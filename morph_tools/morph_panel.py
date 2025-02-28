@@ -34,6 +34,7 @@ class DAZ_PT_Shapekeys(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.transfer_mesh_to_shape")
         self.layout.separator()
         self.layout.operator("daz.remove_shapekeys")
+        self.layout.operator("daz.remove_zero_shapekeys")
         self.layout.operator("daz.apply_all_shapekeys")
         self.layout.operator("daz.mix_shapekeys")
         self.layout.operator("daz.visualize_shapekey")
