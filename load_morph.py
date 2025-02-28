@@ -1376,6 +1376,7 @@ class LoadMorph(DriverUser):
             xi,yi = points[0]
             string = ""
             first = True
+            umax = 1
             for j,pt in enumerate(points[1:]):
                 xj,yj = pt
                 if yi == 0 and yj == 0:
