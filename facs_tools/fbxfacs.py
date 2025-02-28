@@ -31,6 +31,8 @@ class DAZ_OT_ImportFbxFacs(FACSImporter, FACSCopier, SingleFile, DazOperator):
                 ignore_leaf_bones=True)
         except AttributeError:
             raise DazError("Blender's built-in FBX importer must be enabled")
+        except RuntimeError as err:
+            raise DazError("Error when importing FBX file:\n%s       " % err)
         imported_objects = set(context.scene.objects) - existing_objects
         print("Temporary FBX objects imported: %s" % imported_objects)
         actions = []

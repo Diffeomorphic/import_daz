@@ -6,7 +6,7 @@ import bpy
 from ..utils import *
 from ..error import *
 from ..fileutils import SingleFile
-from .facsbase import HeadUser, FACSImporter, BD
+from .facsbase import HeadUser, FACSImporter, FD
 
 #------------------------------------------------------------------
 #   VMD
@@ -31,7 +31,8 @@ class DAZ_OT_ImportVmdFacs(FACSImporter, SingleFile, DazOperator):
             found = False
         if not found:
             raise DazError("MMD Tools not found")
-        vmdTable = BD.facsTables["VMD"]["facs"]
+
+        vmdTable = FD.facsTables["VMD"]["facs"]
         vmdFile = vmd.File()
         vmdFile.load(filepath = self.filepath)
         first = True

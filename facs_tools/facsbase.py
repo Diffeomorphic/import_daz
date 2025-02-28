@@ -247,10 +247,10 @@ class FACSImporter(BoneHandler, IsMeshArmature):
                     miss.append(prop)
             print("Missing FACS morphs: %s" % miss)
 
-        BD.ensureFacsInited()
+        FD.ensureFacsInited()
         self.facstable = {}
         for rna in rnas:
-            for prop,struct in BD.facsTables.items():
+            for prop,struct in FD.facsTables.items():
                 if prop in rna.keys():
                     copyTable(rna, struct["name"])
                     return
@@ -412,21 +412,20 @@ class DAZ_OT_CopyFacsAnimation(DazPropsOperator, FACSImporter, FACSCopier):
         self.getFcurves(self.action)
 
 #----------------------------------------------------------
-#   Do this better
+#   Global FacsData FD
 #----------------------------------------------------------
 
 import os
 
-class BvhData:
+class FacsData:
     def __init__(self):
         self.facsTables = {}
 
     def ensureFacsInited(self):
-        if BD.facsTables:
+        if self.facsTables:
             return
         from ..load_json import loadJson
         folder = os.path.join(os.path.dirname(__file__), "..", "data", "facs")
-        print("FF", folder)
         for fname in os.listdir(folder):
             filepath = os.path.join(folder, fname)
             if os.path.splitext(fname)[-1] == ".json":
@@ -435,7 +434,7 @@ class BvhData:
                 print("FACS %s %s" % (struct["name"], struct["fingerprint"]))
 
 
-BD = BvhData()
+FD = FacsData()
 
 #----------------------------------------------------------
 #   Initialize
