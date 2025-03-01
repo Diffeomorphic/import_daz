@@ -31,6 +31,7 @@ class DataFolders:
         self.gizmos = {}
         self.easy = {}
         self.rigify = {}
+        self.facs = {}
         self.moho = {}
 
         self.SourceRigs = {
@@ -121,6 +122,21 @@ class DataFolders:
                 data = json.load(fp, object_pairs_hook=OrderedDict)
         table[char] = data
         return table[char]
+
+
+    def findEntry(self, fingers, folder):
+        directory = os.path.join(os.path.dirname(__file__), "data", folder)
+        for file in os.listdir(directory):
+            fname,ext = os.path.splitext(file)
+            if ext == ".json":
+                entry = self.loadEntry(fname, folder)
+                finger = entry.get("fingerprint")
+                negative = entry.get("negative")
+                if finger in fingers and negative not in fingers:
+                    return entry
+        print("No entry found")
+        print("FF", fingers)
+        return {}
 
 
     def getOrientation(self, char, bname):

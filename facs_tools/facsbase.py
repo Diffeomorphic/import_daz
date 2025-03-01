@@ -5,6 +5,7 @@
 import bpy
 from ..utils import *
 from ..error import *
+from ..fileutils import DF
 
 #------------------------------------------------------------------
 #   Utility class BoneHandler
@@ -125,7 +126,7 @@ class FACSImporter(BoneHandler, IsMeshArmature):
     useShapekeys : BoolProperty(
         name = "Load To Shapekeys",
         description = "Load morphs to mesh shapekeys instead of rig properties",
-        default = False)
+        default = True)
 
     useEyes : BoolProperty(
         name = "Eyes",
@@ -176,26 +177,32 @@ class FACSImporter(BoneHandler, IsMeshArmature):
 
     def run(self, context):
         rig = context.object
+        entry = None
         if rig.type == 'ARMATURE':
             if self.useShapekeys:
                 meshes = getShapeChildren(rig)
-                rnas = [ob.data.shape_keys.key_blocks for ob in meshes]
+                rna = [ob.data.shape_keys.key_blocks for ob in meshes][0]
                 rig = None
             else:
                 meshes = []
-                rnas = [rig]
+                rna = rig
                 rig["MhaGaze_L"] = 0.0
                 rig["MhaGaze_R"] = 0.0
+                entry = DF.findEntry(rig.keys(), "facs")
         else:
             ob = rig
             skeys = ob.data.shape_keys
             if skeys is None:
                 raise DazError("Active object has no shapekeys")
             meshes = [ob]
-            rnas = [skeys.key_blocks]
+            rna = skeys.key_blocks
             rig = None
+            entry = DF.findEntry(skeys.key_blocks.keys(), "facs")
+        if entry is None:
+            print("No entry")
+            return
         self.getSource(context)
-        self.setupFacsTable(rnas)
+        self.setupFacsTable(entry, rna)
         self.bshapes = []
         self.bskeys = {}
         self.hlockeys = {}
@@ -236,25 +243,18 @@ class FACSImporter(BoneHandler, IsMeshArmature):
         pass
 
 
-    def setupFacsTable(self, rnas):
-        def copyTable(rna, char):
-            print("Setting up FACS table for %s" % char)
-            miss = []
-            for key,data in struct["facs"].items():
-                if isinstance(data[0], str):
-                    data = [data]
-                self.facstable[key.lower()] = dict(data)
+    def setupFacsTable(self, entry, rna):
+        self.facstable = {}
+        print("Setting up FACS table for %s" % entry["name"])
+        miss = []
+        for key,data in entry["facs"].items():
+            if isinstance(data[0], str):
+                data = [data]
+            self.facstable[key.lower()] = dict(data)
+            for prop,factor in data:
                 if prop not in rna.keys():
                     miss.append(prop)
-            print("Missing FACS morphs: %s" % miss)
-
-        FD.ensureFacsInited()
-        self.facstable = {}
-        for rna in rnas:
-            for prop,struct in FD.facsTables.items():
-                if prop in rna.keys():
-                    copyTable(rna, struct["name"])
-                    return
+        print("Missing FACS morphs: %s" % miss)
 
 
     def build(self, context, rig, meshes):
@@ -268,7 +268,6 @@ class FACSImporter(BoneHandler, IsMeshArmature):
         for bshape in self.bshapes:
             if bshape not in self.facstable.keys():
                 missing.append(bshape)
-
         if rig:
             self.setupBones(rig)
         self.skipped = {}
@@ -412,31 +411,6 @@ class DAZ_OT_CopyFacsAnimation(DazPropsOperator, FACSImporter, FACSCopier):
 
     def parse(self, context):
         self.getFcurves(self.action)
-
-#----------------------------------------------------------
-#   Global FacsData FD
-#----------------------------------------------------------
-
-import os
-
-class FacsData:
-    def __init__(self):
-        self.facsTables = {}
-
-    def ensureFacsInited(self):
-        if self.facsTables:
-            return
-        from ..load_json import loadJson
-        folder = os.path.join(os.path.dirname(__file__), "..", "data", "facs")
-        for fname in os.listdir(folder):
-            filepath = os.path.join(folder, fname)
-            if os.path.splitext(fname)[-1] == ".json":
-                struct = loadJson(filepath)
-                self.facsTables[struct["fingerprint"]] = struct
-                print("FACS %s %s" % (struct["name"], struct["fingerprint"]))
-
-
-FD = FacsData()
 
 #----------------------------------------------------------
 #   Initialize

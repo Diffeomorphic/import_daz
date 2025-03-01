@@ -54,6 +54,11 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
         description = "Relax the Moho animation to make it more natural",
         default = True)
 
+    useShapekeys : BoolProperty(
+        name = "Load To Shapekeys",
+        description = "Load morphs to mesh shapekeys instead of rig properties",
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "morphType")
         self.layout.prop(self, "phonemeSet")
@@ -61,6 +66,7 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
         if self.useRelax:
             self.layout.prop(self, "emphasis")
             self.layout.prop(self, "useUpdateLimits")
+        self.layout.prop(self, "useShapekeys")
         self.layout.separator()
         self.layout.prop(self, "makeNewAction")
         if self.makeNewAction:
@@ -84,27 +90,48 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
     silentVowels = ["FV", "MBP", "WQ"]
 
     def run(self, context):
-        from ..selector import MorphGroup, setMorphs, pinProp
+        from ..selector import MorphGroup
         scn = context.scene
-        rig = getRigFromContext(context)
-        if rig is None:
-            raise DazError("No armature found")
-        entry = DF.loadEntry(self.morphType.lower(), "moho")
-        self.phonemes = entry[self.phonemeSet]
-        mgrp = MorphGroup()
-        if self.morphType == 'VISEMES':
-            mgrp.init("Visemes", "", "", "DazVisemes")
-            pgs = dazRna(rig).DazVisemes
+        if self.useShapekeys:
+            ob = context.object
+            skeys = None
+            if ob.type == 'MESH':
+                skeys = ob.data.shape_keys
+            if skeys is None:
+                raise DazError("%s has no shapekeys" % ob.name)
+            entry = DF.findEntry(skeys.key_blocks.keys(), "moho")
+            self.clearAnimation(skeys)
         else:
-            mgrp.init("Facs", "", "", "DazFacs")
-            pgs = dazRna(rig).DazFacs
-        if len(pgs) == 0:
-            msg = ("%s has no morphs of type %s.\n" % (rig.name, self.morphType) +
-                   "Import morphs first or choose another morph type." )
-            raise DazError(msg)
-        self.visemes = dict([(pg.text, pg.name) for pg in pgs.values() if pg.name in rig.keys()])
+            rig = getRigFromContext(context)
+            if rig is None:
+                raise DazError("No armature found")
+            entry = DF.loadEntry(self.morphType.lower(), "moho")
+            self.clearAnimation(rig)
 
-        self.clearAnimation(rig)
+        self.phonemes = entry[self.phonemeSet]
+        print("PHO", self.phonemes)
+
+        mgrp = MorphGroup()
+        if self.useShapekeys:
+            self.shapes = dict(
+                [(skey.name, skey) for skey in skeys.key_blocks.values()
+                 if skey.name in self.phonemes.values()])
+            self.visemes = dict([(sname, sname) for sname in self.shapes.keys()])
+        else:
+            if self.morphType == 'VISEMES':
+                mgrp.init("Visemes", "", "", "DazVisemes")
+                pgs = dazRna(rig).DazVisemes
+            else:
+                mgrp.init("Facs", "", "", "DazFacs")
+                pgs = dazRna(rig).DazFacs
+            if len(pgs) == 0:
+                msg = ("%s has no morphs of type %s.\n" % (rig.name, self.morphType) +
+                       "Import morphs first or choose another morph type." )
+                raise DazError(msg)
+            self.visemes = dict([(pg.text, pg.name) for pg in pgs.values() if pg.name in rig.keys()])
+        print("VIS", self.visemes)
+        print("SHA", self.shapes)
+
         if self.atFrameOne and self.makeNewAction:
             frame0 = 0
         else:
@@ -113,18 +140,19 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
         if self.useRelax:
             frames = self.improveMoho(frames)
             if self.useUpdateLimits:
-                self.updateLimits(rig)
-        for frame,moho,value in frames:
-            if moho == "rest":
-                setMorphs(0.0, rig, mgrp, scn, frame, True)
-            else:
-                prop = self.getMohoKey(moho)
-                pinProp(rig, scn, prop, mgrp, frame+frame0, value=value)
-        self.nameAnimation(rig, [self.filepath])
+                if self.useShapekeys:
+                    self.updateShapeLimits(skeys)
+                else:
+                    self.updateRigLimits(rig)
+        if self.useShapekeys:
+            self.setShapes(frames, frame0)
+        else:
+            self.setProps(frames, scn, prop, frame0)
+            self.nameAnimation(rig, [self.filepath])
         print("Moho file %s loaded" % self.filepath)
 
 
-    def updateLimits(self, rig):
+    def updateRigLimits(self, rig):
         from ..driver import getPropMinMax, setPropMinMax
         for moho in self.openVowels:
             prop = self.getMohoKey(moho)
@@ -136,6 +164,14 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
                 min,max,default,ovr = getPropMinMax(rig.data, final, False)
                 if max < self.emphasis:
                     setPropMinMax(rig.data, final, default, min, self.emphasis, False)
+
+
+    def updateShapeLimits(self, skeys):
+        for moho in self.openVowels:
+            prop = self.getMohoKey(moho)
+            skey = self.shapes[prop]
+            if skey.slider_max < self.emphasis:
+                skey.slider_max = self.emphasis
 
 
     def readMoho(self):
@@ -210,6 +246,28 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
         if prop:
             return prop
         raise DazError("Missing viseme: %s (%s)\n" % (daz, moho))
+
+
+    def setProps(self, frames, mgrp, scn, prop, frame0):
+        from ..selector import setMorphs, pinProp
+        for frame,moho,value in frames:
+            if moho == "rest":
+                setMorphs(0.0, rig, mgrp, scn, frame+frame0, True)
+            else:
+                prop = self.getMohoKey(moho)
+                pinProp(rig, scn, prop, mgrp, frame+frame0, value=value)
+
+
+    def setShapes(self, frames, frame0):
+        for frame,moho,value in frames:
+            for skey in self.shapes.values():
+                skey.value = 0.0
+                skey.keyframe_insert("value", frame=frame+frame0)
+            if moho != "rest":
+                prop = self.getMohoKey(moho)
+                skey = self.shapes[prop]
+                skey.value = value
+                skey.keyframe_insert("value", frame=frame+frame0)
 
 #-------------------------------------------------------------
 #   Initialize
