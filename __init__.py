@@ -41,7 +41,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "merge_uvs", "merge_grafts", "merge_rigs", "apply", "empties",
            "matsel", "tables", "proxy", "transfer",
            "dforce", "pin", "main", "geonodes", "winder",
-           "hd_data", "framer", "moho", "scan", "api",
+           "hd_data", "framer", "scan", "api",
     ]
 
 from .debug import DEBUG
@@ -334,7 +334,7 @@ Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "guess", "main", "finger", "locks",
             "matsel", "proxy",
             "merge_grafts", "merge_rigs", "apply", "empties",
-            "pin", "transfer", "moho", "scan",
+            "pin", "transfer", "scan",
             ]
 
 def register():

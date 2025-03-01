@@ -319,11 +319,6 @@ class FbxFile:
     filter_glob : StringProperty(default="*.fbx", options={'HIDDEN'})
 
 
-class DatFile:
-    filename_ext = ".dat"
-    filter_glob : StringProperty(default="*.dat", options={'HIDDEN'})
-
-
 class TextFile:
     filename_ext = ".txt"
     filter_glob : StringProperty(default="*.txt", options={'HIDDEN'})

@@ -18,6 +18,7 @@ elif "FacsFeature" in locals():
     imp.reload(livelink)
     imp.reload(fbxfacs)
     imp.reload(vmdfacs)
+    imp.reload(moho)
 else:
     print("Loading FACS Tools")
     from . import facsbase
@@ -25,6 +26,7 @@ else:
     from . import livelink
     from . import fbxfacs
     from . import vmdfacs
+    from . import moho
     FacsFeature = True
 
 #----------------------------------------------------------
@@ -42,6 +44,9 @@ class DAZ_PT_FACS(DAZ_PT_RuntimeTab, bpy.types.Panel):
         self.layout.operator("daz.import_livelink")
         self.layout.operator("daz.import_fbx_facs")
         self.layout.operator("daz.import_vmd_facs")
+        self.layout.separator()
+        self.layout.operator("daz.import_moho")
+        self.layout.separator()
         self.layout.operator("daz.copy_facs_animation")
 
 #----------------------------------------------------------
@@ -51,19 +56,21 @@ class DAZ_PT_FACS(DAZ_PT_RuntimeTab, bpy.types.Panel):
 def register():
     print("Register FACS Tools")
     bpy.utils.register_class(DAZ_PT_FACS)
-    from . import facsbase, facecap, livelink, fbxfacs, vmdfacs
+    from . import facsbase, facecap, livelink, fbxfacs, vmdfacs, moho
     facsbase.register()
     facecap.register()
     livelink.register()
     fbxfacs.register()
     vmdfacs.register()
+    moho.register()
 
 
 def unregister():
     bpy.utils.unregister_class(DAZ_PT_FACS)
-    from . import facsbase, facecap, livelink, fbxfacs, vmdfacs
+    from . import facsbase, facecap, livelink, fbxfacs, vmdfacs, moho
     facsbase.unregister()
     facecap.unregister()
     livelink.unregister()
     fbxfacs.unregister()
     vmdfacs.unregister()
+    moho.unregister()

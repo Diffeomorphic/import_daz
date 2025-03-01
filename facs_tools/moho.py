@@ -4,20 +4,23 @@
 
 import bpy
 
-from .error import *
-from .utils import *
-from .fileutils import SingleFile, DatFile
-from .animation import ActionOptions
+from ..error import *
+from ..utils import *
+from ..fileutils import SingleFile
+from ..animation import ActionOptions
 
 # ---------------------------------------------------------------------
 #   Load Moho
 # ---------------------------------------------------------------------
 
-class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArmature):
-    bl_idname = "daz.load_moho"
-    bl_label = "Load Moho"
-    bl_description = "Load Moho (.dat) file"
+class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
+    bl_idname = "daz.import_moho"
+    bl_label = "Import Moho"
+    bl_description = "Import Moho (.dat) file"
     bl_options = {'UNDO'}
+
+    filename_ext = ".dat"
+    filter_glob : StringProperty(default="*.dat", options={'HIDDEN'})
 
     phonemeSet : EnumProperty(
         items = [("Preston-Blair", "Preston-Blair", "Preston-Blair"),
@@ -71,89 +74,6 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
 
     openVowels = ["AI", "E", "O"]
     silentVowels = ["FV", "MBP", "WQ"]
-
-    phonemeConverters = {
-        "Preston-Blair" : {
-            "AI": "AA",
-            "E": "EH",
-            "etc": "K",
-            "FV": "F",
-            "L": "L",
-            "MBP": "M",
-            "O": "OW",
-            "rest": "Rest",
-            "U": "UW",
-            "WQ": "W"
-        },
-        "Fleming-Dobbs" : {
-            "AA": "AA",
-            "EHSZ": "W",
-            "FV": "F",
-            "GK": "W",
-            "IY": "OW",
-            "MBP": "K",
-            "NLTDR": "EH",
-            "O": "Rest",
-            "rest": "L",
-            "SH": "F",
-            "TH": "EH"
-        },
-        "Rhubarb" : {
-            "A": "K",
-            "B": "OW",
-            "C": "W",
-            "D": "AA",
-            "E": "W",
-            "F": "Rest",
-            "G": "F",
-            "H": "EH",
-            "rest": "L"
-        },
-        "CMU_39" : {
-            "AA": "AA",
-            "AE": "AA",
-            "AH": "EH",
-            "AO": "OW",
-            "AW": "M",
-            "AY": "AA",
-            "B": "K",
-            "CH": "F",
-            "D": "W",
-            "DH": "EH",
-            "EH": "W",
-            "ER": "M",
-            "EY": "W",
-            "F": "F",
-            "G": "W",
-            "H": "W",
-            "HH": "W",
-            "IH": "W",
-            "IY": "W",
-            "JH": "M",
-            "K": "W",
-            "L": "EH",
-            "M": "K",
-            "N": "K",
-            "NG": "W",
-            "OW": "Rest",
-            "OY": "Rest",
-            "P": "K",
-            "R": "EH",
-            "rest": "L",
-            "S": "F",
-            "SH": "W",
-            "T": "AA",
-            "TH": "W",
-            "UH": "UW",
-            "UW": "UW",
-            "V": "F",
-            "W": "M",
-            "Y": "W",
-            "Z": "OW",
-            "ZH": "OW"
-        },
-    }
-
 
     def run(self, context):
         from .selector import MorphGroup, setMorphs, pinProp
@@ -279,7 +199,7 @@ class DAZ_OT_LoadMoho(DazOperator, DatFile, ActionOptions, SingleFile, IsMeshArm
 #-------------------------------------------------------------
 
 classes = [
-    DAZ_OT_LoadMoho,
+    DAZ_OT_ImportMoho,
 ]
 
 def register():

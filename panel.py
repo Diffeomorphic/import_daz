@@ -633,10 +633,6 @@ class DAZ_PT_Visemes(DAZ_PT_Morphs, bpy.types.Panel):
     ftype = "DazVisemes"
     uilist = "DAZ_UL_Visemes"
 
-    def draw(self, context):
-        self.layout.operator("daz.load_moho")
-        DAZ_PT_Morphs.draw(self, context)
-
 
 class DAZ_UL_Facs(DAZ_UL_StandardMorphs):
     morphset = "Facs"
