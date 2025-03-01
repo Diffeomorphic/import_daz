@@ -9,7 +9,7 @@
 	},
 	"facs" : {
 		"prefix" : "facs_",
-		"include" : ["facs_ctrl_", "facs_bs_"],
+		"include" : ["facs_ctrl_", "facs_bs_", "facs_cbs_"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 9/Base/Morphs/Daz 3D/FACS/"
 	},
