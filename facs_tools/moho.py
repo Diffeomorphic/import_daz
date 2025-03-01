@@ -6,7 +6,7 @@ import bpy
 
 from ..error import *
 from ..utils import *
-from ..fileutils import SingleFile
+from ..fileutils import SingleFile, DF
 from ..animation import ActionOptions
 
 # ---------------------------------------------------------------------
@@ -21,6 +21,13 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
 
     filename_ext = ".dat"
     filter_glob : StringProperty(default="*.dat", options={'HIDDEN'})
+
+    morphType : EnumProperty(
+        items = [('VISEMES', "Visemes", "Visemes"),
+                 ('FACS', "FACS", "FACS")],
+        name = "Morph Type",
+        description = "Import MOHO animation to these morphs",
+        default = 'FACS')
 
     phonemeSet : EnumProperty(
         items = [("Preston-Blair", "Preston-Blair", "Preston-Blair"),
@@ -48,6 +55,7 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
         default = True)
 
     def draw(self, context):
+        self.layout.prop(self, "morphType")
         self.layout.prop(self, "phonemeSet")
         self.layout.prop(self, "useRelax")
         if self.useRelax:
@@ -76,12 +84,26 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
     silentVowels = ["FV", "MBP", "WQ"]
 
     def run(self, context):
-        from .selector import MorphGroup, setMorphs, pinProp
+        from ..selector import MorphGroup, setMorphs, pinProp
         scn = context.scene
         rig = getRigFromContext(context)
         if rig is None:
             raise DazError("No armature found")
-        self.phonemes = self.phonemeConverters[self.phonemeSet]
+        entry = DF.loadEntry(self.morphType.lower(), "moho")
+        self.phonemes = entry[self.phonemeSet]
+        mgrp = MorphGroup()
+        if self.morphType == 'VISEMES':
+            mgrp.init("Visemes", "", "", "DazVisemes")
+            pgs = dazRna(rig).DazVisemes
+        else:
+            mgrp.init("Facs", "", "", "DazFacs")
+            pgs = dazRna(rig).DazFacs
+        if len(pgs) == 0:
+            msg = ("%s has no morphs of type %s.\n" % (rig.name, self.morphType) +
+                   "Import morphs first or choose another morph type." )
+            raise DazError(msg)
+        self.visemes = dict([(pg.text, pg.name) for pg in pgs.values() if pg.name in rig.keys()])
+
         self.clearAnimation(rig)
         if self.atFrameOne and self.makeNewAction:
             frame0 = 0
@@ -92,22 +114,20 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
             frames = self.improveMoho(frames)
             if self.useUpdateLimits:
                 self.updateLimits(rig)
-        mgrp = MorphGroup()
-        mgrp.init("Visemes", "", "", "DazVisemes")
         for frame,moho,value in frames:
             if moho == "rest":
                 setMorphs(0.0, rig, mgrp, scn, frame, True)
             else:
-                prop = self.getMohoKey(moho, rig)
+                prop = self.getMohoKey(moho)
                 pinProp(rig, scn, prop, mgrp, frame+frame0, value=value)
         self.nameAnimation(rig, [self.filepath])
         print("Moho file %s loaded" % self.filepath)
 
 
     def updateLimits(self, rig):
-        from .driver import getPropMinMax, setPropMinMax
+        from ..driver import getPropMinMax, setPropMinMax
         for moho in self.openVowels:
-            prop = self.getMohoKey(moho, rig)
+            prop = self.getMohoKey(moho)
             min,max,default,ovr = getPropMinMax(rig, prop, True)
             if max < self.emphasis:
                 setPropMinMax(rig, prop, default, min, self.emphasis, True)
@@ -119,7 +139,7 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
 
 
     def readMoho(self):
-        from .fileutils import safeOpen
+        from ..fileutils import safeOpen
         frames = []
         with safeOpen(self.filepath, "r") as fp:
             for n,line in enumerate(fp):
@@ -180,33 +200,23 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
         return []
 
 
-    def getMohoKey(self, moho, rig):
-        if moho in self.phonemes.keys():
-            daz = self.phonemes[moho]
-            for item in dazRna(rig).DazVisemes:
-                if item.text == daz:
-                    prop = item.name
-                    if prop in rig.keys():
-                        return prop
-            msg = "Missing viseme: %s (%s)\n" % (daz, moho)
-        else:
+    def getMohoKey(self, moho):
+        daz = self.phonemes.get(moho)
+        if daz is None:
             msg = ("Missing viseme: %s\n" % moho +
                    "Choose different phoneme set")
-        raise DazError(msg)
+            raise DazError(msg)
+        prop = self.visemes.get(daz)
+        if prop:
+            return prop
+        raise DazError("Missing viseme: %s (%s)\n" % (daz, moho))
 
 #-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
 
-classes = [
-    DAZ_OT_ImportMoho,
-]
-
 def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
-
+    bpy.utils.register_class(DAZ_OT_ImportMoho)
 
 def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
+    bpy.utils.unregister_class(DAZ_OT_ImportMoho)

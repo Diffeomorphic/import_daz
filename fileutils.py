@@ -31,6 +31,7 @@ class DataFolders:
         self.gizmos = {}
         self.easy = {}
         self.rigify = {}
+        self.moho = {}
 
         self.SourceRigs = {
             "genesis" : "genesis1",
