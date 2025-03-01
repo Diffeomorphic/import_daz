@@ -85,6 +85,8 @@ class HeadUser:
         default = 0.05)
 
     def draw(self, context):
+        if self.useShapekeys:
+            return
         self.layout.prop(self, "useHeadLoc")
         self.layout.prop(self, "useHeadRot")
         if self.useHeadRot:
@@ -148,12 +150,12 @@ class FACSImporter(BoneHandler, IsMeshArmature):
 
     actionName : StringProperty(
         name = "Action Name",
-        description = "Name of loaded action.\nUse file name if blank",
-        default = "Action")
+        description = "Name of loaded action.\nUse name of imported file if blank",
+        default = "")
 
     fps : FloatProperty(
         name = "Frame Rate",
-        description = "Animation FPS in FaceCap/LiveLink file.\nFPS = 0 means one frame per step",
+        description = "Animation FPS in animation file.\nFPS = 0 means one frame per step",
         min = 0,
         default = 0)
 
@@ -174,7 +176,6 @@ class FACSImporter(BoneHandler, IsMeshArmature):
 
     def run(self, context):
         rig = context.object
-        self.scale = rig.DazScale
         if rig.type == 'ARMATURE':
             if self.useShapekeys:
                 meshes = getShapeChildren(rig)
@@ -281,7 +282,8 @@ class FACSImporter(BoneHandler, IsMeshArmature):
                 frame = n+1
             else:
                 frame = self.getFrame(t)
-            self.setBoneFrame(t, frame, context)
+            if rig:
+                self.setBoneFrame(t, frame, context)
             for bshape,value in zip(self.bshapes, self.bskeys[t]):
                 formulas = self.facstable.get(bshape)
                 if formulas is None:
@@ -335,7 +337,7 @@ class FACSImporter(BoneHandler, IsMeshArmature):
 
     def setBoneFrame(self, t, frame, context):
         if self.useHeadLoc:
-            self.hip.location = self.scale*self.hlockeys[t]
+            self.hip.location = GS.scale*self.hlockeys[t]
             self.hip.keyframe_insert("location", frame=frame, group="hip")
         if self.useHeadRot:
             self.setRotation(self.head, self.hrotkeys[t], frame, self.headDist)

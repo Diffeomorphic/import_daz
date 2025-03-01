@@ -15,7 +15,7 @@ from .facsbase import FACSImporter, FACSCopier
 class DAZ_OT_ImportFbxFacs(FACSImporter, FACSCopier, SingleFile, DazOperator):
     bl_idname = "daz.import_fbx_facs"
     bl_label = "Import FACS From FBX File"
-    bl_description = "Import a fbx file with FACS animation"
+    bl_description = "Import a fbx file with FACS animation.\nThe FBX format add-on must be enabled."
     bl_options = {'UNDO'}
 
     filename_ext = ".fbx"
