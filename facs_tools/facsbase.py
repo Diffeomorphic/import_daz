@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
+import os
 from ..utils import *
 from ..error import *
 from ..fileutils import DF
@@ -126,7 +127,7 @@ class FACSImporter(BoneHandler, IsMeshArmature):
     useShapekeys : BoolProperty(
         name = "Load To Shapekeys",
         description = "Load morphs to mesh shapekeys instead of rig properties",
-        default = True)
+        default = False)
 
     useEyes : BoolProperty(
         name = "Eyes",
@@ -176,33 +177,37 @@ class FACSImporter(BoneHandler, IsMeshArmature):
 
 
     def run(self, context):
-        rig = context.object
         entry = None
-        if rig.type == 'ARMATURE':
-            if self.useShapekeys:
+        if self.useShapekeys:
+            rig = context.object
+            if rig.type == 'ARMATURE':
                 meshes = getShapeChildren(rig)
-                rna = [ob.data.shape_keys.key_blocks for ob in meshes][0]
+                skeys = meshes[0].data.shape_keys
+                klist = [list(ob.data.shape_keys.key_blocks.keys()) for ob in meshes]
+                keys = set(flatten(klist))
                 rig = None
             else:
+                ob = rig
+                skeys = ob.data.shape_keys
+                if skeys is None:
+                    raise DazError("Active mesh has no shapekeys")
+                meshes = [ob]
+                keys = skeys.key_blocks.keys()
+                rig = None
+            entry = DF.findEntry(skeys.key_blocks.keys(), "facs")
+        else:
+            rig = getRigFromContext(context)
+            if rig:
                 meshes = []
-                rna = rig
+                keys = rig.keys()
                 rig["MhaGaze_L"] = 0.0
                 rig["MhaGaze_R"] = 0.0
                 entry = DF.findEntry(rig.keys(), "facs")
-        else:
-            ob = rig
-            skeys = ob.data.shape_keys
-            if skeys is None:
-                raise DazError("Active object has no shapekeys")
-            meshes = [ob]
-            rna = skeys.key_blocks
-            rig = None
-            entry = DF.findEntry(skeys.key_blocks.keys(), "facs")
         if entry is None:
             print("No entry")
             return
         self.getSource(context)
-        self.setupFacsTable(entry, rna)
+        self.setupFacsTable(entry, keys)
         self.bshapes = []
         self.bskeys = {}
         self.hlockeys = {}
@@ -243,7 +248,7 @@ class FACSImporter(BoneHandler, IsMeshArmature):
         pass
 
 
-    def setupFacsTable(self, entry, rna):
+    def setupFacsTable(self, entry, keys):
         self.facstable = {}
         print("Setting up FACS table for %s" % entry["name"])
         miss = []
@@ -252,9 +257,9 @@ class FACSImporter(BoneHandler, IsMeshArmature):
                 data = [data]
             self.facstable[key.lower()] = dict(data)
             for prop,factor in data:
-                if prop not in rna.keys():
+                if prop not in keys:
                     miss.append(prop)
-        print("Missing FACS morphs: %s" % miss)
+        print("Missing FACS morphs (%d): %s" % (len(miss), miss))
 
 
     def build(self, context, rig, meshes):

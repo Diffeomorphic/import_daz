@@ -94,9 +94,13 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
         scn = context.scene
         if self.useShapekeys:
             ob = context.object
-            skeys = None
-            if ob.type == 'MESH':
-                skeys = ob.data.shape_keys
+            if ob.type == 'ARMATURE':
+                meshes = getShapeChildren(ob)
+                if meshes:
+                    ob = meshes[0]
+                else:
+                    raise DazError("No mesh found")
+            skeys = ob.data.shape_keys
             if skeys is None:
                 raise DazError("%s has no shapekeys" % ob.name)
             entry = DF.findEntry(skeys.key_blocks.keys(), "moho")
@@ -109,15 +113,14 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
             self.clearAnimation(rig)
 
         self.phonemes = entry[self.phonemeSet]
-        print("PHO", self.phonemes)
 
-        mgrp = MorphGroup()
         if self.useShapekeys:
             self.shapes = dict(
                 [(skey.name, skey) for skey in skeys.key_blocks.values()
                  if skey.name in self.phonemes.values()])
             self.visemes = dict([(sname, sname) for sname in self.shapes.keys()])
         else:
+            mgrp = MorphGroup()
             if self.morphType == 'VISEMES':
                 mgrp.init("Visemes", "", "", "DazVisemes")
                 pgs = dazRna(rig).DazVisemes
@@ -129,8 +132,6 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
                        "Import morphs first or choose another morph type." )
                 raise DazError(msg)
             self.visemes = dict([(pg.text, pg.name) for pg in pgs.values() if pg.name in rig.keys()])
-        print("VIS", self.visemes)
-        print("SHA", self.shapes)
 
         if self.atFrameOne and self.makeNewAction:
             frame0 = 0
@@ -147,7 +148,7 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
         if self.useShapekeys:
             self.setShapes(frames, frame0)
         else:
-            self.setProps(frames, scn, prop, frame0)
+            self.setProps(frames, rig, mgrp, scn, frame0)
             self.nameAnimation(rig, [self.filepath])
         print("Moho file %s loaded" % self.filepath)
 
@@ -248,14 +249,18 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
         raise DazError("Missing viseme: %s (%s)\n" % (daz, moho))
 
 
-    def setProps(self, frames, mgrp, scn, prop, frame0):
-        from ..selector import setMorphs, pinProp
+    def setProps(self, frames, rig, mgrp, scn, frame0):
+        from ..selector import keyProp
         for frame,moho,value in frames:
-            if moho == "rest":
-                setMorphs(0.0, rig, mgrp, scn, frame+frame0, True)
-            else:
+            for pho in self.phonemes.keys():
+                if pho != "rest":
+                    prop = self.getMohoKey(pho)
+                    rig[prop] = 0.0
+                    keyProp(rig, prop, frame)
+            if moho != "rest":
                 prop = self.getMohoKey(moho)
-                pinProp(rig, scn, prop, mgrp, frame+frame0, value=value)
+                rig[prop] = value
+                keyProp(rig, prop, frame)
 
 
     def setShapes(self, frames, frame0):

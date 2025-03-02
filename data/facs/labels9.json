@@ -47,7 +47,7 @@
         "eyeWideLeft" : ["Eye Wide Left", 1],
         "eyeWideRight" : ["Eye Wide Right", 1],
 
-        "cheekPuff" : ["Cheek Puff ", 1],
+        "cheekPuff" : ["Cheek Puff", 1],
         "cheekPuff_L" : ["Cheek Puff Left", 1],
         "cheekPuff_R" : ["Cheek Puff Right", 1],
         "cheekPuffLeft" : ["Cheek Puff Left", 1],
@@ -74,7 +74,7 @@
         "jawLeft" : ["Jaw Left-Right", 1],
         "jawRight" : ["Jaw Left-Right", -1],
 
-        "mouthFunnel" : ["Mouth Funnel ", 1],
+        "mouthFunnel" : ["Mouth Funnel", 1],
         "mouthFunnelUpper" : [["Mouth Funnel Upper Left", 1], ["Mouth Funnel Upper Right", 1]],
         "mouthFunnelLower" : [["Mouth Funnel Lower Left", 1], ["Mouth Funnel Lower Right", 1]],
         "mouthPucker" : ["Mouth Pucker", 1],
@@ -97,10 +97,10 @@
         "mouthDimple_R" : ["Mouth Dimple Right", 1],
         "mouthDimpleLeft" : ["Mouth Dimple Left", 1],
         "mouthDimpleRight" : ["Mouth Dimple Right", 1],
-        "mouthUpperUp_L" : ["Mouth Upper UpLeft", 1],
-        "mouthUpperUp_R" : ["Mouth Upper UpRight", 1],
-        "mouthUpperUpLeft" : ["Mouth Upper UpLeft", 1],
-        "mouthUpperUpRight" : ["Mouth Upper UpRight", 1],
+        "mouthUpperUp_L" : ["Mouth Upper Up Left", 1],
+        "mouthUpperUp_R" : ["Mouth Upper Up Right", 1],
+        "mouthUpperUpLeft" : ["Mouth Upper Up Left", 1],
+        "mouthUpperUpRight" : ["Mouth Upper Up Right", 1],
         "mouthLowerDown_L" : ["Mouth Lower Down Left", 1],
         "mouthLowerDown_R" : ["Mouth Lower Down Right", 1],
         "mouthLowerDownLeft" : ["Mouth Lower Down Left", 1],
@@ -114,7 +114,7 @@
         "mouthStretchLeft" : ["Mouth Stretch Left", 1],
         "mouthStretchRight" : ["Mouth Stretch Right", 1],
 
-        "swallow" : ["Neck Swallow", 1],
+        "swallow" : ["Neck Under Chin Flex", 1],
         "tongueOut" : ["Tongue Out", 1]
     }
 }

@@ -1041,6 +1041,8 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
     bl_description = "Convert selected morphs to shapekeys.\nAll morphs are converted when called from script"
     bl_options = {'UNDO'}
 
+    ignoreZeroShapes = False
+
     useLabels : BoolProperty(
         name = "Labels As Names",
         description = "Use the morph labels instead of morph names as shapekey names",
@@ -1161,10 +1163,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
     def applyArmature(self, ob, rig, mod, key, mname):
         from ..driver import getPropMinMax
         mod.name = mname
-        if bpy.app.version < (2,90,0):
-            bpy.ops.object.modifier_apply(apply_as='SHAPE', modifier=mname)
-        else:
-            bpy.ops.object.modifier_apply_as_shapekey(modifier=mname)
+        bpy.ops.object.modifier_apply_as_shapekey(modifier=mname)
         skeys = ob.data.shape_keys
         skey = skeys.key_blocks[mname]
         skey.value = 0.0
@@ -1173,7 +1172,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         omax = max(offsets)
         omin = min(offsets)
         eps = 1e-2 * GS.scale    # eps = 0.1 mm
-        if abs(omax) < eps and abs(omin) < eps:
+        if self.ignoreZeroShapes and abs(omax) < eps and abs(omin) < eps:
             ob.shape_key_remove(skey)
         nmod = ob.modifiers.new(rig.name, "ARMATURE")
         nmod.object = rig

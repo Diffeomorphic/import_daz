@@ -116,11 +116,11 @@ class DataFolders:
                 print(msg)
                 raise DazError(msg)
             else:
-                data = {}
+                struct = {}
         else:
-            with safeOpen(filepath, "r") as fp:
-                data = json.load(fp, object_pairs_hook=OrderedDict)
-        table[char] = data
+            from .load_json import JL
+            struct = JL.load(filepath, silent=True)
+        table[char] = struct
         return table[char]
 
 
@@ -131,7 +131,7 @@ class DataFolders:
             if ext == ".json":
                 entry = self.loadEntry(fname, folder)
                 finger = entry.get("fingerprint")
-                negative = entry.get("negative")
+                negative = entry.get("negative", "NONE")
                 if finger in fingers and negative not in fingers:
                     return entry
         print("No entry found")
