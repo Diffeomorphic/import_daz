@@ -1050,6 +1050,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
 
     onDelete : EnumProperty(
         items = [("NONE", "None", "Don't delete any shapekeys"),
+                 ("USED", "Used", "Delete shapekeys used by converted morphs"),
                  ("BY_NAME", "By Name", "Delete some shapekeys based on names.\nJCMs are not deleted"),
                  ("ALL", "All", "Delete all existing shapekeys")],
         name = "Delete Existing Shapekeys",
@@ -1088,6 +1089,8 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         skeys = ob.data.shape_keys
         if skeys is None:
             existing = {}
+        elif self.onDelete == 'USED':
+            existing = {}
         elif self.onDelete == "ALL":
             existing = dict([(skey.name, skey)
                 for skey in skeys.key_blocks[1:]])
@@ -1111,8 +1114,13 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
             if mname:
                 setProp(rig, key)
                 updateRigDrivers(context, rig)
+                if self.onDelete == 'USED':
+                    for skey in skeys.key_blocks[1:]:
+                        if skey.value != 0.0 and mname != skey.name:
+                            existing[skey.name] = skey
                 mod = self.applyArmature(ob, rig, mod, key, mname)
                 clearProp(rig, key)
+        print("EX", existing.keys())
         t2 = perf_counter()
         print("Converted %d morphs in %g seconds" % (n, t2-t1))
         updateRigDrivers(context, rig)
