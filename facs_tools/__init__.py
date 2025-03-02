@@ -37,7 +37,7 @@ import bpy
 from ..panel import DAZ_PT_RuntimeTab
 
 class DAZ_PT_FACS(DAZ_PT_RuntimeTab, bpy.types.Panel):
-    bl_label = "FACS"
+    bl_label = "Facial Animation"
 
     def draw(self, context):
         self.layout.operator("daz.import_facecap")
