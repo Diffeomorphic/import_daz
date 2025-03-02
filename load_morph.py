@@ -134,6 +134,7 @@ class LoadMorph(DriverUser):
         self.erc = False
         self.propDrivers = {}
         self.boneDrivers = {}
+        self.hideDrivers = {}
         self.shapekeys = {}
         self.faceshapes = {}
         self.mults = {}
@@ -519,7 +520,7 @@ class LoadMorph(DriverUser):
                     continue
                 for idx,expr in data1.items():
                     if key == "value":
-                        self.makeValueFormula(output, expr)
+                        self.makeValueFormula(output, expr, self.propDrivers)
                     elif self.onlyProperties:
                         continue
                     elif key == "rotation":
@@ -538,6 +539,10 @@ class LoadMorph(DriverUser):
                             self.makeErcFormula(output, idx, expr)
                         elif GS.ercMethod == 'ARMATURE':
                             self.makeOffsetFormula("HdOffset", output, idx, expr)
+                    elif key == "extra/studio_node_channels/channels/Visible":
+                        self.hideDrivers[output] = []
+                        self.makeValueFormula(output, expr, self.hideDrivers)
+
         return True
 
 
@@ -642,14 +647,14 @@ class LoadMorph(DriverUser):
             skey.slider_max = GS.sliderMultiplier * asset.max
 
 
-    def makeValueFormula(self, output, expr):
+    def makeValueFormula(self, output, expr, drivers):
         output = self.getUniqueName(output)
         if expr.props:
             self.addNewProp(output)
             for target in expr.props:
                 prop = self.getUniqueName(target.key)
                 factor = target.getFactor(True)
-                self.propDrivers[output].append((prop, target))
+                drivers[output].append((prop, target))
             target = expr.props[0]
             for mult in target.mults:
                 if isinstance(mult, str):
@@ -978,7 +983,7 @@ class LoadMorph(DriverUser):
 
     def buildDrivers(self):
         if GS.verbosity >= 3:
-            print("Building drivers. PROP = %d, BONE = %d" % (len(self.propDrivers), len(self.boneDrivers)))
+            print("Building drivers. PROP = %d, BONE = %d, HIDE = %d" % (len(self.propDrivers), len(self.boneDrivers), len(self.hideDrivers)))
         for output,drivers in self.propDrivers.items():
             if drivers:
                 self.buildPropDriver(rawProp(output), drivers)
@@ -992,6 +997,11 @@ class LoadMorph(DriverUser):
             if drivers:
                 for bname,expr in drivers.items():
                     self.buildBoneDriver(output, bname, expr, False)
+        for output,drivers in self.hideDrivers.items():
+            if drivers and self.mesh:
+                vgrp = self.mesh.vertex_groups.get(output)
+                if vgrp:
+                    self.buildHideDriver(vgrp, drivers)
 
 
     def isDriverType(self, dtype, drivers):
@@ -1058,7 +1068,7 @@ class LoadMorph(DriverUser):
                 self.obj[raw] = 0.0
             string += varname
 
-        string,rdrivers = self.addDriverVars(fcu, string, varname, raw, drivers)
+        string,rdrivers = self.addDriverVars(fcu, string, varname, drivers)
         if not string:
             if vvars:
                 fcu.driver.expression = string0
@@ -1120,7 +1130,29 @@ class LoadMorph(DriverUser):
                 return "%+.3g*%s" % (factor, varname)
 
 
-    def addDriverVars(self, fcu, string, varname, raw, drivers):
+    def buildHideDriver(self, vgrp, drivers):
+        mod = self.mesh.modifiers.new("Mask %s" % vgrp.name, 'MASK')
+        mod.vertex_group = vgrp.name
+        mod.invert_vertex_group = True
+        self.buildGenericDriver(mod, "show_viewport", drivers)
+        self.buildGenericDriver(mod, "show_render", drivers)
+
+
+    def buildGenericDriver(self, rna, channel, drivers):
+        from .driver import removeModifiers
+        rna.driver_remove(channel)
+        fcu = rna.driver_add(channel)
+        fcu.driver.type = 'SCRIPTED'
+        removeModifiers(fcu)
+        string = ""
+        string,rdrivers = self.addDriverVars(fcu, string, "a", drivers)
+        if string[0] == "-":
+            string = string[1:]
+        fcu.driver.expression = string
+        self.removeUnusedVars(fcu)
+
+
+    def addDriverVars(self, fcu, string, varname, drivers):
         channels = [var.targets[0].data_path for var in fcu.driver.variables]
         for subraw,target in drivers[0:MAX_TERMS2]:
             factor,points = self.getFactorPoints(target, subraw)
