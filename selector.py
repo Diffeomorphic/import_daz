@@ -708,8 +708,10 @@ def autoKeyShape(skeys, key, scn, frame):
 def pinProp(rig, scn, key, mgrp, frame, value=1.0):
     if rig:
         setMorphs(0.0, rig, mgrp, scn, frame, False)
-        rig[key] = value
-        autoKeyProp(rig, key, scn, frame, False)
+        value0 = rig.get(key)
+        if value0 is None or isinstance(value0, float):
+            rig[key] = value
+            autoKeyProp(rig, key, scn, frame, False)
 
 
 def pinShape(ob, scn, key, mgrp, frame):
