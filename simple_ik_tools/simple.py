@@ -1318,13 +1318,13 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, IsArmature):
     def run(self, context):
         rig = context.object
         IK = SimpleIK()
-        IK.getBoneNames(rig)
+        chains = self.getBoneNames(rig, IK)
         wmats = []
         for ob in rig.children:
             if ob.parent_type == 'BONE':
                 wmats.append((ob, ob.matrix_world.copy()))
         setMode('EDIT')
-        for chain in IK.chains:
+        for chain in chains:
             parb = rig.data.edit_bones[chain[0]]
             for child in chain[1:]:
                 eb = rig.data.edit_bones[child]
@@ -1336,8 +1336,8 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, IsArmature):
                     self.relocate(parb, eb)
                     eb.use_connect = True
                 parb = eb
-        if IK.unlock:
-            for chain in IK.chains:
+        if self.unlock:
+            for chain in chains:
                 pb = rig.pose.bones[chain[-1]]
                 pb.lock_location = FFalse
         setMode('OBJECT')
@@ -1355,8 +1355,8 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, IsArmature):
             parb.tail = eb.head = center
 
 
-    def getBoneNames(self, rig):
-        self.chains = []
+    def getBoneNames(self, rig, IK):
+        chains = []
         if self.useSelected:
             roots = []
             for bone in rig.data.bones:
@@ -1364,43 +1364,43 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, IsArmature):
                     roots.append(bone)
             for root in roots:
                 self.getChildNames(rig, root)
-            return self.chains
+            return chains
         if self.useArms:
             for prefix in ["l", "r"]:
-                chain = self.getLimbBoneNames(rig, prefix, "Arm")
-                self.chains.append(chain)
+                chain = IK.getLimbBoneNames(rig, prefix, "Arm")
+                chains.append(chain)
         if self.useLegs:
             for prefix in ["l", "r"]:
-                chain = self.getLimbBoneNames(rig, prefix, "Leg")
-                self.chains.append(chain)
+                chain = IK.getLimbBoneNames(rig, prefix, "Leg")
+                chains.append(chain)
         if self.useFingers:
             for prefix in ["l", "r"]:
                 for finger in ["Thumb", "Index", "Mid", "Ring", "Pinky"]:
-                    chain = self.getLimbBoneNames(rig, prefix, finger)
-                    self.chains.append(chain)
+                    chain = IK.getLimbBoneNames(rig, prefix, finger)
+                    chains.append(chain)
         if self.useToes:
             for prefix in ["l", "r"]:
                 for toe in ["BigToe", "SmallToe1", "SmallToe2", "SmallToe3", "SmallToe4"]:
-                    chain = self.getLimbBoneNames(rig, prefix, toe)
+                    chain = IK.getLimbBoneNames(rig, prefix, toe)
                     if chain:
-                        self.chains.append(chain)
+                        chains.append(chain)
         if self.useTongue:
-            chain = self.getLimbBoneNames(rig, "", "Tongue")
-            self.chains.append(chain)
+            chain = IK.getLimbBoneNames(rig, "", "Tongue")
+            chains.append(chain)
         if self.useSpine:
-            chain = self.getLimbBoneNames(rig, "", "Spine")
-            self.chains.append(chain)
+            chain = IK.getLimbBoneNames(rig, "", "Spine")
+            chains.append(chain)
         if self.useNeck:
-            chain = self.getLimbBoneNames(rig, "", "Neck")
-            self.chains.append(chain)
-        return self.chains
+            chain = IK.getLimbBoneNames(rig, "", "Neck")
+            chains.append(chain)
+        return chains
 
 
     def getChildNames(self, rig, bone):
         if bone.select:
             self.chain = []
             self.getChainNames(rig, bone)
-            self.chains.append(self.chain)
+            chains.append(self.chain)
         else:
             for child in bone.children:
                 self.getChildNames(rig, child)
