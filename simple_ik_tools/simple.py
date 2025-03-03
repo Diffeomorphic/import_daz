@@ -220,7 +220,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
     usePoleTargets : BoolProperty(
         name = "Pole Targets",
-        description = "Add pole targets to the IK self.chains.\nPoses will not be loaded correctly.",
+        description = "Add pole targets to the IK chains.\nPoses will not be loaded correctly.",
         default = False)
 
     useImproveIk : BoolProperty(
@@ -1239,13 +1239,13 @@ class DAZ_OT_ToggleFkIk(DazOperator):
         updateDrivers(rig)
 
 #----------------------------------------------------------
-#   Connect bone self.chains
+#   Connect bone chains
 #----------------------------------------------------------
 
 class DAZ_OT_ConnectBoneChains(DazPropsOperator, IsArmature):
     bl_idname = "daz.connect_bone_chains"
     bl_label = "Connect Bone Chains"
-    bl_description = "Connect all bones in self.chains to their parents"
+    bl_description = "Connect all bones in chains to their parents"
     bl_options = {'UNDO'}
 
     useArms : BoolProperty(

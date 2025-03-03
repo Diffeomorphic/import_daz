@@ -30,51 +30,75 @@ class DAZ_OT_ConvertMorphsToAction(DazOperator, IsArmature):
             clearProp(rig, morph.name)
         for morph in morphs:
             prop,label = morph.name, morph.text
+            print("MO", prop, label)
             act = bpy.data.actions.get(label)
             if act:
-                getActionSlot(act).fcurves.clear()
-            else:
-                act = bpy.data.actions.new(label)
-            act.use_fake_user = True
-            act["DazName"] = prop
+                bpy.data.actions.remove(act)
             setProp(rig, prop)
             #updateRigDrivers(context, rig)
             setMode('EDIT')
             setMode('OBJECT')
-            self.morphToAction(rig, prop, act)
+            self.morphToAction(rig, prop)
             clearProp(rig, prop)
-            print("*", act.name, act["DazName"])
+            setMode('EDIT')
+            setMode('OBJECT')
+            self.fixAction(rig, prop, label)
+            for ob in getMeshChildren(rig):
+                self.fixAction(ob, prop, label)
         setMode('EDIT')
         setMode('OBJECT')
 
 
-    def morphToAction(self, rig, prop, act):
-        def addFrame(vec, channel, bname, group, threshold):
-            for idx,elt in enumerate(vec):
-                if abs(elt) > threshold:
-                    self.used = True
-                    path = 'pose.bones["%s"].%s' % (bname, channel)
-                    fcu = slot.fcurves.new(data_path=path, index=idx)
-                    fcu.group = group
-                    fcu.keyframe_points.insert(1, elt, options={'FAST'})
-                    kp = fcu.keyframe_points[0]
-                    kp.interpolation = 'LINEAR'
+    def morphToAction(self, rig, prop):
+        print("MAC", prop)
 
-        actslot = getActionSlot(act)
+        def clearAction(rna):
+            if rna and rna.animation_data:
+                rna.animation_data.action = None
+
+        clearAction(rig)
+        for ob in getShapeChildren(rig):
+            clearAction(ob.data.shape_keys)
+
+        eps =  0.01*GS.scale
         for pb in rig.pose.bones:
-            bname = baseBone(pb.name)
-            group = actslot.groups.get(bname)
-            if group is None:
-                group = actslot.groups.new(bname)
-            self.used = False
-            addFrame(pb.location, "location", bname, group, 0.01*GS.scale)
+            group = pb.name
+            if isDrvBone(pb.name):
+                continue
+            if pb.location.length > eps:
+                pb.keyframe_insert("location", group=group)
             if pb.rotation_mode == 'QUATERNION':
-                addFrame(pb.rotation_quaternion, "rotation_quaternion", bname, group, 1e-4)
+                if Vector(pb.rotation_quaternion[1:]).length > 1e-4:
+                    pb.keyframe_insert("rotation_quaternion", group=group)
             else:
-                addFrame(pb.rotation_euler, "rotation_euler", bname, group, 1e-4)
-            #addFrame(pb.scale, "scale", bname, group)
-            if not self.used:
-                actslot.groups.remove(group)
+                if Vector(pb.rotation_euler).length > 1e-4:
+                    pb.keyframe_insert("rotation_euler", group=group)
+            if (pb.scale - One).length > 1e-4:
+                pb.keyframe_insert("scale", group=group)
+
+        for ob in getShapeChildren(rig):
+            for skey in ob.data.shape_keys.key_blocks:
+                if abs(skey.value) > 1e-3:
+                    print("VAL", ob.name, skey.name, skey.value)
+                    skey.keyframe_insert("value")
+
+
+    def fixAction(self, rna, prop, label):
+        act = None
+        if rna and rna.animation_data:
+            act = rna.animation_data.action
+        if act is None:
+            return
+        print("ACT", rna, act)
+        act.use_fake_user = True
+        act.name = label
+        act["DazName"] = prop
+        print("*", act.name, act["DazName"])
+        return
+        fcurves = getActionSlot(act).fcurves
+        for fcu in fcurves:
+            for kp in fcu.keyframe_points:
+                kp.interpolation = 'LINEAR'
 
 #----------------------------------------------------------
 #   Initialize
