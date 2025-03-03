@@ -220,7 +220,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
     usePoleTargets : BoolProperty(
         name = "Pole Targets",
-        description = "Add pole targets to the IK chains.\nPoses will not be loaded correctly.",
+        description = "Add pole targets to the IK self.chains.\nPoses will not be loaded correctly.",
         default = False)
 
     useImproveIk : BoolProperty(
@@ -1239,13 +1239,13 @@ class DAZ_OT_ToggleFkIk(DazOperator):
         updateDrivers(rig)
 
 #----------------------------------------------------------
-#   Connect bone chains
+#   Connect bone self.chains
 #----------------------------------------------------------
 
 class DAZ_OT_ConnectBoneChains(DazPropsOperator, IsArmature):
     bl_idname = "daz.connect_bone_chains"
     bl_label = "Connect Bone Chains"
-    bl_description = "Connect all bones in chains to their parents"
+    bl_description = "Connect all bones in self.chains to their parents"
     bl_options = {'UNDO'}
 
     useArms : BoolProperty(
@@ -1318,13 +1318,14 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, IsArmature):
     def run(self, context):
         rig = context.object
         IK = SimpleIK()
-        chains = self.getBoneNames(rig, IK)
+        self.chains = []
+        self.getBoneNames(rig, IK)
         wmats = []
         for ob in rig.children:
             if ob.parent_type == 'BONE':
                 wmats.append((ob, ob.matrix_world.copy()))
         setMode('EDIT')
-        for chain in chains:
+        for chain in self.chains:
             parb = rig.data.edit_bones[chain[0]]
             for child in chain[1:]:
                 eb = rig.data.edit_bones[child]
@@ -1337,7 +1338,7 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, IsArmature):
                     eb.use_connect = True
                 parb = eb
         if self.unlock:
-            for chain in chains:
+            for chain in self.chains:
                 pb = rig.pose.bones[chain[-1]]
                 pb.lock_location = FFalse
         setMode('OBJECT')
@@ -1356,7 +1357,6 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, IsArmature):
 
 
     def getBoneNames(self, rig, IK):
-        chains = []
         if self.useSelected:
             roots = []
             for bone in rig.data.bones:
@@ -1364,53 +1364,53 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, IsArmature):
                     roots.append(bone)
             for root in roots:
                 self.getChildNames(rig, root)
-            return chains
+            return
         if self.useArms:
             for prefix in ["l", "r"]:
                 chain = IK.getLimbBoneNames(rig, prefix, "Arm")
-                chains.append(chain)
+                self.chains.append(chain)
         if self.useLegs:
             for prefix in ["l", "r"]:
                 chain = IK.getLimbBoneNames(rig, prefix, "Leg")
-                chains.append(chain)
+                self.chains.append(chain)
         if self.useFingers:
             for prefix in ["l", "r"]:
                 for finger in ["Thumb", "Index", "Mid", "Ring", "Pinky"]:
                     chain = IK.getLimbBoneNames(rig, prefix, finger)
-                    chains.append(chain)
+                    self.chains.append(chain)
         if self.useToes:
             for prefix in ["l", "r"]:
                 for toe in ["BigToe", "SmallToe1", "SmallToe2", "SmallToe3", "SmallToe4"]:
                     chain = IK.getLimbBoneNames(rig, prefix, toe)
                     if chain:
-                        chains.append(chain)
+                        self.chains.append(chain)
         if self.useTongue:
             chain = IK.getLimbBoneNames(rig, "", "Tongue")
-            chains.append(chain)
+            self.chains.append(chain)
         if self.useSpine:
             chain = IK.getLimbBoneNames(rig, "", "Spine")
-            chains.append(chain)
+            self.chains.append(chain)
         if self.useNeck:
             chain = IK.getLimbBoneNames(rig, "", "Neck")
-            chains.append(chain)
-        return chains
+            self.chains.append(chain)
+        return
 
 
     def getChildNames(self, rig, bone):
         if bone.select:
-            self.chain = []
-            self.getChainNames(rig, bone)
-            chains.append(self.chain)
+            chain = []
+            self.getChainNames(rig, bone, chain)
+            self.chains.append(chain)
         else:
             for child in bone.children:
                 self.getChildNames(rig, child)
 
 
-    def getChainNames(self, rig, bone):
+    def getChainNames(self, rig, bone, chain):
         if bone.select:
-            self.chain.append(bone.name)
+            chain.append(bone.name)
             for child in bone.children:
-                self.getChainNames(rig, child)
+                self.getChainNames(rig, child, chain)
 
 #----------------------------------------------------------
 #   Named Layers
