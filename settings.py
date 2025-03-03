@@ -97,6 +97,7 @@ class GlobalSettings:
         self.useDefaultDrivers = True
         self.useOptimizeJcms = False
         self.useRigidityAttributes = True
+        self.useFaceGroupMasks = False
 
         self.useArmature = True
         self.useLockLoc = True

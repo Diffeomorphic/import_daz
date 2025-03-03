@@ -334,3 +334,66 @@ def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
         mod["Socket_1"] = ob
         mod["Socket_2"] = offset
 
+# ---------------------------------------------------------------------
+#   Mask Faces group
+# ---------------------------------------------------------------------
+
+class MaskFacesGroup(GeoTree):
+    def create(self, name):
+        NodeGroup.make(self, name, 5)
+        addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
+        addGroupInput(self.group, "NodeSocketString", "Attribute")
+        addGroupInput(self.group, "NodeSocketInt", "Group")
+        addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
+
+
+    def addNodes(self, args):
+        attr = self.addNode("GeometryNodeInputNamedAttribute", 1)
+        attr.data_type = 'INT'
+        self.links.new(self.inputs.outputs["Attribute"], attr.inputs["Name"])
+
+        capture = self.addNode("GeometryNodeCaptureAttribute", 2)
+        capture.domain = 'FACE'
+        self.links.new(self.inputs.outputs["Geometry"], capture.inputs["Geometry"])
+        self.captureInput(capture, "Value", 'INT', attr.outputs["Attribute"])
+
+        equal = self.addNode("FunctionNodeCompare", 3)
+        equal.data_type = 'INT'
+        equal.operation = 'EQUAL'
+        self.links.new(self.inputs.outputs["Group"], equal.inputs["A"])
+        self.captureOutput(capture, "Attribute", equal.inputs["B"])
+
+        delgeo = self.addNode("GeometryNodeDeleteGeometry", 4)
+        delgeo.domain = 'FACE'
+        delgeo.mode = 'ALL'
+        self.links.new(capture.outputs["Geometry"], delgeo.inputs["Geometry"])
+        self.links.new(equal.outputs["Result"], delgeo.inputs["Selection"])
+
+        self.links.new(delgeo.outputs["Geometry"], self.outputs.inputs["Geometry"])
+
+# ---------------------------------------------------------------------
+#   Mask Face modifier
+# ---------------------------------------------------------------------
+
+def addMaskFaceModifier(ob, grpname, fgname, useFaceGroupMasks=False):
+    from .tree import addNodeGroup
+    if useFaceGroupMasks:
+        pgs = getattr(dazRna(ob.data), grpname)
+        attr = ob.data.attributes.get(grpname)
+        if pgs and attr:
+            pg = pgs.get(fgname)
+            if pg:
+                mod = ob.modifiers.new("Mask FG %s" % fgname, 'NODES')
+                mod.node_group = addNodeGroup(MaskFacesGroup, "DAZ Mask Faces", [])
+                mod["Socket_1"] = grpname
+                mod["Socket_2"] = pgs[fgname].a
+                return mod
+        print("%s attribute %s not found" % (grpname, fgname))
+    else:
+        vgrp = ob.vertex_groups.get(fgname)
+        if vgrp:
+            mod = ob.modifiers.new("Mask %s" % fgname, 'MASK')
+            mod.vertex_group = fgname
+            mod.invert_vertex_group = True
+            return mod
+        print("Vertex group %s not found" % fgname)

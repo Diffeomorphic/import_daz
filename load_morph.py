@@ -999,9 +999,11 @@ class LoadMorph(DriverUser):
                     self.buildBoneDriver(output, bname, expr, False)
         for output,drivers in self.hideDrivers.items():
             if drivers and self.mesh:
-                vgrp = self.mesh.vertex_groups.get(output)
-                if vgrp:
-                    self.buildHideDriver(vgrp, drivers)
+                from .geonodes import addMaskFaceModifier
+                mod = addMaskFaceModifier(self.mesh, "DazPolygonGroup", output, GS.useFaceGroupMasks)
+                if mod:
+                    self.buildGenericDriver(mod, "show_viewport", drivers)
+                    self.buildGenericDriver(mod, "show_render", drivers)
 
 
     def isDriverType(self, dtype, drivers):
@@ -1128,14 +1130,6 @@ class LoadMorph(DriverUser):
                 return "-%s" % varname
             else:
                 return "%+.3g*%s" % (factor, varname)
-
-
-    def buildHideDriver(self, vgrp, drivers):
-        mod = self.mesh.modifiers.new("Mask %s" % vgrp.name, 'MASK')
-        mod.vertex_group = vgrp.name
-        mod.invert_vertex_group = True
-        self.buildGenericDriver(mod, "show_viewport", drivers)
-        self.buildGenericDriver(mod, "show_render", drivers)
 
 
     def buildGenericDriver(self, rna, channel, drivers):

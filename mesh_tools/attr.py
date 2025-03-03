@@ -75,6 +75,19 @@ class DAZ_OT_CopyAttributes(DazPropsOperator, IsMesh):
             trgattr.data[idx].value = srcattr.data[idx].value
 
 # ---------------------------------------------------------------------
+#   Getters
+# ---------------------------------------------------------------------
+
+def getMaterialGroups(scn, context):
+    ob = context.object
+    return [(gname, gname, gname) for gname in dazRna(ob.data).DazMaterialGroup.keys()]
+
+
+def getPolygonGroups(scn, context):
+    ob = context.object
+    return [(gname, gname, gname) for gname in dazRna(ob.data).DazPolygonGroup.keys()]
+
+# ---------------------------------------------------------------------
 #   Display face group
 # ---------------------------------------------------------------------
 
@@ -93,22 +106,15 @@ class DisplayFaceGroup(DazPropsOperator):
         setMode('OBJECT')
         ob = context.object
         pgs = getattr(dazRna(ob.data), self.attr)
-        if self.group:
-            gn = int(self.group)
-        else:
+        pg = pgs.get(self.group)
+        if pg is None:
             raise DazError("No face group data")
-        gname = pgs[gn].name
-        print("Face group %d %s" % (gn, gname))
+        print("Face group %d %s" % (pg.a, pg.name))
         attr = ob.data.attributes.get(self.attr)
         if attr is None:
             raise DazError("Object %s missing attribute %s" % (ob.name, self.attr))
         for f in ob.data.polygons:
-            f.select = (attr.data[f.index].value == gn)
-
-
-def getMaterialGroups(scn, context):
-    ob = context.object
-    return [(str(gn), gname, gname) for gn,gname in enumerate(dazRna(ob.data).DazMaterialGroup.keys())]
+            f.select = (attr.data[f.index].value == pg.a)
 
 
 class DAZ_OT_DisplayMaterialGroup(DisplayFaceGroup, IsMesh):
@@ -122,13 +128,49 @@ class DAZ_OT_DisplayMaterialGroup(DisplayFaceGroup, IsMesh):
         name = "Group")
 
 
-def getPolygonGroups(scn, context):
-    ob = context.object
-    return [(str(gn), gname, gname) for gn,gname in enumerate(dazRna(ob.data).DazPolygonGroup.keys())]
-
 class DAZ_OT_DisplayPolygonGroup(DisplayFaceGroup, IsMesh):
     bl_idname = "daz.display_polygon_group"
     bl_label = "Display Polygon Group"
+
+    attr = "DazPolygonGroup"
+
+    group : EnumProperty(
+        items = getPolygonGroups,
+        name = "Group")
+
+# ---------------------------------------------------------------------
+#   Mask face group
+# ---------------------------------------------------------------------
+
+class MaskFaceGroup(DazPropsOperator):
+    def draw(self, context):
+        self.layout.prop(self, "group")
+
+    def run(self, context):
+        from ..geonodes import addMaskFaceModifier
+        ob = context.object
+        pgs = getattr(dazRna(ob.data), self.attr)
+        pg = pgs.get(self.group)
+        if pg is None:
+            raise DazError("No face group data")
+        print("Face group %d %s" % (pg.a, pg.name))
+        addMaskFaceModifier(ob, self.attr, pg.name)
+
+
+class DAZ_OT_MaskMaterialGroup(MaskFaceGroup, IsMesh):
+    bl_idname = "daz.mask_material_group"
+    bl_label = "Mask Material Group"
+
+    attr = "DazMaterialGroup"
+
+    group : EnumProperty(
+        items = getMaterialGroups,
+        name = "Group")
+
+
+class DAZ_OT_MaskPolygonGroup(MaskFaceGroup, IsMesh):
+    bl_idname = "daz.mask_polygon_group"
+    bl_label = "Mask Polygon Group"
 
     attr = "DazPolygonGroup"
 
@@ -144,6 +186,8 @@ classes = [
     DAZ_OT_CopyAttributes,
     DAZ_OT_DisplayMaterialGroup,
     DAZ_OT_DisplayPolygonGroup,
+    DAZ_OT_MaskMaterialGroup,
+    DAZ_OT_MaskPolygonGroup,
 ]
 
 def register():

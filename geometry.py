@@ -1274,6 +1274,7 @@ class Geometry(Asset, Channels):
                 for group in groups:
                     pg = pgs.add()
                     pg.name = group
+                    pg.a = len(pgs) - 1
                 attr = ob.data.attributes.new(aname, 'INT', 'FACE')
                 for fn,gn in enumerate(indices):
                     attr.data[fn].value = gn
