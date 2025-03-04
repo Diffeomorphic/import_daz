@@ -17,7 +17,6 @@ class DAZ_PT_SetupSimple(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Simple IK"
 
     def draw(self, context):
-        self.layout.operator("daz.connect_bone_chains")
         self.layout.operator("daz.add_simple_ik")
 
 
