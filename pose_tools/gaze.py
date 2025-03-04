@@ -54,7 +54,7 @@ class GazeTransferer:
     def getFrames(self, rig, scn, bnames):
         fcustruct = {}
         if rig.animation_data and rig.animation_data.action:
-            fcurves = getActionSlot(rig.animation_data.action).fcurves
+            fcurves = getActionBag(rig.animation_data.action).fcurves
             for fcu in fcurves:
                 bname,channel,cnsname = getBoneChannel(fcu)
                 if bname and bname in bnames:

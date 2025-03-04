@@ -216,7 +216,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                     if self.isLocUnlocked(pb, bname):
                         self.locs[bname] = 3*[None]
 
-        fcurves = getActionSlot(act).fcurves
+        fcurves = getActionBag(act).fcurves
         for fcu in fcurves:
             channel = fcu.data_path.rsplit(".",1)[-1]
             words = fcu.data_path.split('"')
@@ -250,7 +250,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
 
     def getShapeFcurves(self, act, skeys):
-        fcurves = getActionSlot(act, 'KEY').fcurves
+        fcurves = getActionBag(act, 'KEY').fcurves
         for fcu in fcurves:
             sname,channel = getShapeChannel(fcu)
             if sname and sname != "Basic":

@@ -50,9 +50,12 @@ class DAZ_PT_Drivers(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Drivers"
 
     def draw(self, context):
-        self.layout.operator("daz.convert_morphs_to_action")
-        self.layout.operator("daz.remove_all_drivers")
-        self.layout.separator()
+        if bpy.app.version < (4,4,0):
+            self.layout.operator("daz.remove_all_drivers")
+        else:
+            self.layout.operator("daz.convert_morphs_to_action")
+            self.layout.operator("daz.remove_all_drivers")
+            self.layout.separator()
         self.layout.operator("daz.add_shapekey_drivers")
         self.layout.operator("daz.remove_shapekey_drivers")
         self.layout.operator("daz.copy_drivers")

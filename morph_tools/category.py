@@ -136,7 +136,7 @@ class MorphRemover(CategoryBasic):
     useDeleteShapekeys : BoolProperty(
         name = "Delete Shapekeys",
         description = "Delete both drivers and shapekeys",
-        default = True)
+        default = False)
 
     useDeleteProps : BoolProperty(
         name = "Delete Properties",
@@ -548,7 +548,8 @@ class RemoveAll(MorphRemover):
         if self.useDeleteProps:
             self.deleteProps(context, rigs)
         if self.useDeleteDrvBones:
-            self.deleteDrvBones(rig)
+            for rig in rigs:
+                self.deleteDrvBones(rig)
 
 
     def removeDrivers(self, rna):
@@ -958,7 +959,7 @@ class DAZ_OT_RemoveZeroShapekeys(DazOperator, IsShape):
         deletes = dict([(skey.name, skey) for skey in skeys.key_blocks[1:] if skey.value == 0.0])
         print("DD", deletes)
         if skeys.animation_data and skeys.animation_data.action:
-            fcurves = getActionSlot(skeys.animation_data.action, 'KEY').fcurves
+            fcurves = getActionBag(skeys.animation_data.action, 'KEY').fcurves
             for fcu in list(fcurves):
                 words = fcu.data_path.split('"')
                 if words[0] == "key_blocks[" and words[1] in deletes.keys():
@@ -1140,7 +1141,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
     def convertFcurves(self, skeys, act, items):
         if act is None or skeys is None:
             return
-        fcurves = getActionSlot(act, 'KEY').fcurves
+        fcurves = getActionBag(act, 'KEY').fcurves
         nstruct = {}
         for fcu in fcurves:
             prop = getProp(fcu.data_path)
@@ -1150,7 +1151,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
             skeys.animation_data_create()
         nact = bpy.data.actions.new(act.name)
         skeys.animation_data.action = nact
-        nfcurves = getActionSlot(nact, 'KEY').fcurves
+        nfcurves = getActionBag(nact, 'KEY').fcurves
         for key,fcu in nstruct.items():
             nfcu = nfcurves.new('key_blocks["%s"].value' % key)
             for kp in fcu.keyframe_points:

@@ -29,7 +29,7 @@ class Framer(DazPropsOperator):
         adata = rig.animation_data
         if adata and adata.action:
             tmin = tmax = 1
-            fcurves = getActionSlot(adata.action).fcurves
+            fcurves = getActionBag(adata.action).fcurves
             for fcu in fcurves:
                 times = [kp.co[0] for kp in fcu.keyframe_points]
                 tmin = min(int(min(times)), tmin)

@@ -858,7 +858,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if self.snapError:
             return
         if rig.animation_data and rig.animation_data.action:
-            fcurves = getActionSlot(rig.animation_data.action).fcurves
+            fcurves = getActionBag(rig.animation_data.action).fcurves
         else:
             fcurves = []
 
@@ -1310,7 +1310,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def fixInterpolation(self, ob, anims):
         def fixFcurves(rna, id_type, interps):
             if rna.animation_data and rna.animation_data.action:
-                fcurves = getActionSlot(rna.animation_data.action, id_type).fcurves
+                fcurves = getActionBag(rna.animation_data.action, id_type).fcurves
                 for fcu in fcurves:
                     path = dazkeys.get(fcu.data_path, fcu.data_path)
                     interp = interps.get(path)
@@ -1830,7 +1830,7 @@ class DAZ_OT_ImportAsset(HideOperator, ActionOptions, AnimatorBase, StandardAnim
         keep = ["location", "rotation_euler", "rotation_quaternion"]
         if self.affectScale:
             keep.append("scale")
-        fcurves = getActionSlot(act).fcurves
+        fcurves = getActionBag(act).fcurves
         for fcu in list(fcurves):
             if not isPropRef(fcu.data_path):
                 words = fcu.data_path.rsplit(".", 1)
@@ -2071,7 +2071,7 @@ def pruneAction(act, ob, cm):
         return True
 
     deletes = []
-    fcurves = getActionSlot(act).fcurves
+    fcurves = getActionBag(act).fcurves
     for fcu in fcurves:
         kpts = fcu.keyframe_points
         channel = fcu.data_path.rsplit(".", 1)[-1]
@@ -2142,7 +2142,7 @@ class FrameRange(DazPropsOperator):
             active = {}
             if rig.animation_data is None or rig.animation_data.action is None:
                 return active
-            fcurves = getActionSlot(rig.animation_data.action).fcurves
+            fcurves = getActionBag(rig.animation_data.action).fcurves
             for fcu in fcurves:
                 for kp in fcu.keyframe_points:
                     active[kp.co[0]] = True
@@ -2166,7 +2166,7 @@ class FrameRange(DazPropsOperator):
         rig = context.object
         scn = context.scene
         if rig.animation_data and rig.animation_data.action:
-            fcurves = getActionSlot(rig.animation_data.action).fcurves
+            fcurves = getActionBag(rig.animation_data.action).fcurves
             self.auto = True
             tmin = tmax = 1
             for fcu in fcurves:
@@ -2184,7 +2184,7 @@ class FrameRange(DazPropsOperator):
 
     def setInterpolation(self):
         if self.rig.animation_data and self.rig.animation_data.action:
-            fcurves = getActionSlot(self.rig.animation_data.action).fcurves
+            fcurves = getActionBag(self.rig.animation_data.action).fcurves
             for fcu in fcurves:
                 for pt in fcu.keyframe_points:
                     pt.interpolation = 'LINEAR'
@@ -2214,7 +2214,7 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
             self.getLimits(self.limits["scale"], pb, 'LIMIT_SCALE', -1e10, 1e10)
 
         if rig.animation_data and rig.animation_data.action:
-            fcurves = getActionSlot(self.rig.animation_data.action).fcurves
+            fcurves = getActionBag(self.rig.animation_data.action).fcurves
             deletes = []
             for fcu in fcurves:
                 bname,channel,cnsname = getBoneChannel(fcu)

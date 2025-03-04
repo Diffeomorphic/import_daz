@@ -689,7 +689,7 @@ def unkeyShape(skeys, key, frame):
 def getPropFCurves(rig, key):
     if rig.animation_data and rig.animation_data.action:
         path = propRef(key)
-        fcurves = getActionSlot(rig.animation_data.action).fcurves
+        fcurves = getActionBag(rig.animation_data.action).fcurves
         return [fcu for fcu in fcurves if path == fcu.data_path]
     return []
 
