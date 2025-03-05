@@ -63,7 +63,6 @@ class GlobalSettings:
         self.toonMethod = 'FREESTYLE'
         self.skinMethod = 'IRAY'
         self.viewportColors = 'GUESS'
-        self.useQuaternions = False
         self.shellMethod = 'MATERIAL'
         self.usePruneNodes = True
 
@@ -81,6 +80,7 @@ class GlobalSettings:
         self.imageInterpolation = 'Cubic'
         self.useGhostLights = False
         self.useUnusedTextures = False
+        self.useHairMaterials = False
         self.useShellDrivers = True
         self.useLayeredInflu = False
         self.useLayeredShells = True
@@ -100,6 +100,7 @@ class GlobalSettings:
         self.useFaceGroupMasks = False
 
         self.useArmature = True
+        self.useQuaternions = False
         self.useLockLoc = True
         self.useLimitLoc = True
         self.useLockRot = True

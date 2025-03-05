@@ -274,7 +274,8 @@ class Material(Asset, Channels):
 
 
     def isHair(self):
-        return ("Root Transmission Color" in self.channels.keys())
+        return ("Root Transmission Color" in self.channels.keys() and
+                GS.useHairMaterials)
 
 
     def isVoluSkinMaterial(self):

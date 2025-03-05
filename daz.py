@@ -646,6 +646,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Build Unused Textures",
         description = "Build texture found in unused channels")
 
+    useHairMaterials : BoolProperty(
+        name = "Hair Materials",
+        description = "Build hair materials for blended dual lobe hair")
+
     useShellDrivers : BoolProperty(
         name = "Shell Drivers",
         description = "Add drivers to shell influence")
@@ -791,6 +795,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
             box.prop(self, "useFakeCaustics")
         self.enum(box, "imageInterpolation")
         box.prop(self, "useUnusedTextures")
+        box.prop(self, "useHairMaterials")
         box.prop(self, "useShellDrivers")
         box.prop(self, "useLayeredInflu")
         box.prop(self, "useLayeredShells")
