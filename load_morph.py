@@ -1122,7 +1122,7 @@ class LoadMorph(DriverUser):
             umin = min(vals)
             if abs(umin) > abs(umax):
                 umax = umin
-            return "+(%s)" % self.makeSplineString(points, varname, umax)
+            return "+(%s)" % self.makeSplineString(points, varname, 1.0, 1/umax)
         else:
             if factor == 1:
                 return "+%s" % varname
@@ -1361,7 +1361,7 @@ class LoadMorph(DriverUser):
         self.makeBoneDriver(string, vars, channel, rna, path, idx, keep)
 
 
-    def makeSplineString(self, points, var, umax):
+    def makeSplineString(self, points, var, umax, ufactor):
         def truncMinus(zstring):
             if zstring[0:2] == "+-":
                 return zstring[1:]
@@ -1372,7 +1372,15 @@ class LoadMorph(DriverUser):
             else:
                 return zstring
 
-        def linearSpline(var, umax, lt):
+        def factorString(factor):
+            if factor == 1:
+                return "+"
+            elif factor == -1:
+                return "-"
+            else:
+                return "+%s*" % factor
+
+        def linearSpline(var, lt):
             n = len(points)
             xi,yi = points[0]
             string = ""
@@ -1398,11 +1406,20 @@ class LoadMorph(DriverUser):
                 string += prev
             return "(%s else %s)" % (string, default)
 
-        def splineSpline(var, umax, lt):
+        def addFactorString(factor, zstring):
+            if factor == 1:
+                return "+%s" % zstring
+            elif factor == -1:
+                return "-%s" % zstring
+            elif factor == 0:
+                return "+0"
+            else:
+                return "+%s*%s" % (getPrint(factor), zstring)
+
+        def splineSpline(var, lt):
             xi,yi = points[0]
             string = ""
             first = True
-            #umax = 1
             for j,pt in enumerate(points[1:]):
                 xj,yj = pt
                 if yi == 0 and yj == 0:
@@ -1411,19 +1428,20 @@ class LoadMorph(DriverUser):
                 ypj = getPrint(yj)
                 xpi = getPrint(xi/umax)
                 xpj = getPrint(xj/umax)
-                factor = getPrint(yj-yi)
+                factor = (yj-yi)*ufactor
                 if first and yi != 0:
                     string += "+%s" % getPrint(yi)
-                string += "+%s*smoothstep(%s,%s,%s)" % (factor, xpi, xpj, var)
+                zstring = "smoothstep(%s,%s,%s)" % (xpi, xpj, var)
+                string += addFactorString(factor, zstring)
                 xi = xj
                 yi = yj
                 first = False
             return string[1:]
 
         lt = ("<" if umax > 0 else ">")
-        string = splineSpline(var, umax, lt)
+        string = splineSpline(var, lt)
         if len(string) > 254:
-            string = linearSpline(var, umax, lt)
+            string = linearSpline(var, lt)
         if len(string) > 254:
             msg = "String driver too long:\n"
             for n in range(5):
@@ -1435,7 +1453,7 @@ class LoadMorph(DriverUser):
 
     def makeSplineBoneDriver(self, channel, uvec, points, rna, path, idx, bname, keep):
         var,vars,umax = self.getVarData(uvec, bname, "A")
-        string = self.makeSplineString(points, var, umax)
+        string = self.makeSplineString(points, var, umax, 1.0)
         self.makeBoneDriver(string, vars, channel, rna, path, idx, keep)
 
 
