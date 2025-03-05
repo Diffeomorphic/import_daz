@@ -1372,14 +1372,6 @@ class LoadMorph(DriverUser):
             else:
                 return zstring
 
-        def factorString(factor):
-            if factor == 1:
-                return "+"
-            elif factor == -1:
-                return "-"
-            else:
-                return "+%s*" % factor
-
         def linearSpline(var, lt):
             n = len(points)
             xi,yi = points[0]
