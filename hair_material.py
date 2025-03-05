@@ -6,6 +6,7 @@ import bpy
 from .utils import *
 from .material import WHITE, GREY, BLACK, isWhite, isBlack
 from .cycles import CyclesMaterial, CyclesTree
+from .pbr import PbrTree
 
 #------------------------------------------------------------------------
 #   Materials
@@ -55,9 +56,8 @@ def getHairTree(dmat, color=BLACK, img=None):
 #   Hair tree base
 #-------------------------------------------------------------
 
-class HairTree(CyclesTree):
+class HairBaseTree:
     def __init__(self, hmat, color, img):
-        CyclesTree.__init__(self, hmat)
         self.type = 'HAIR'
         self.color = color
         self.image = img
@@ -191,6 +191,13 @@ class HairTree(CyclesTree):
         self.links.new(node2.outputs[0], add.inputs[1])
         return add
 
+
+
+class HairTree(HairBaseTree, CyclesTree):
+    def __init__(self, hmat, color, img):
+        CyclesTree.__init__(self, hmat)
+        HairBaseTree.__init__(self, hmat, color, img)
+
 #-------------------------------------------------------------
 #   Hair tree BSDF
 #-------------------------------------------------------------
@@ -270,31 +277,43 @@ class HairBSDFTree(HairTree):
 #   Hair tree Principled
 #-------------------------------------------------------------
 
-class HairPBRTree(HairTree):
+class HairPBRTree(HairBaseTree, PbrTree):
+    def __init__(self, hmat, color, img):
+        PbrTree.__init__(self, hmat)
+        HairBaseTree.__init__(self, hmat, color, img)
 
     def buildLayer(self, uvname):
         self.initLayer()
         self.readColor(0.216)
-        pbr = self.active = self.addNode("ShaderNodeBsdfHairPrincipled")
+        pbr = self.addNode("ShaderNodeBsdfHairPrincipled")
+        self.active = self.pbr = pbr
         ramp,socket = self.addRamp(pbr, "Color", self.root, self.tip)
         self.linkRamp(ramp, socket, [self.roottex, self.tiptex], pbr, "Color")
         pbr.inputs["Roughness"].default_value = 0.2
         pbr.inputs["Radial Roughness"].default_value = 0.8
         pbr.inputs["IOR"].default_value = 1.1
+        self.postPBR = False
         self.buildOutput()
 
 #-------------------------------------------------------------
 #   Hair tree Eevee
 #-------------------------------------------------------------
 
-class HairEeveeTree(HairTree):
+class HairEeveeTree(HairBaseTree, PbrTree):
+    def __init__(self, hmat, color, img):
+        PbrTree.__init__(self, hmat)
+        HairBaseTree.__init__(self, hmat, color, img)
 
     def buildLayer(self, uvname):
         self.initLayer()
         self.readColor(0.216)
-        pbr = self.active = self.addNode("ShaderNodeBsdfPrincipled")
+        pbr = self.addNode("ShaderNodeBsdfPrincipled")
+        self.active = self.pbr = pbr
         ramp,socket = self.addRamp(pbr, "Color", self.root, self.tip, slot="Base Color")
         self.linkRamp(ramp, socket, [self.roottex, self.tiptex], pbr, "Base Color")
+        self.links.new(ramp.outputs["Alpha"], pbr.inputs["Alpha"])
         pbr.inputs["Metallic"].default_value = 0.9
         pbr.inputs["Roughness"].default_value = 0.2
+        self.postPBR = False
+        self.buildCutout()
         self.buildOutput()
