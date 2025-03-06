@@ -39,6 +39,7 @@ class BoneInfo:
         self.parent = parname
         self.use_deform = bone.use_deform
         self.pb = pb
+        self.index = 0
         self.matrix = pb.matrix.copy()
         self.matrix_world = wmat
 
@@ -66,6 +67,7 @@ class BoneInfo:
         from .store import copyConstraints
         copyBoneInfo(self.pb, pb)
         copyConstraints(self.pb, pb, rig)
+        dazRna(pb.bone).DazRigIndex = self.index
         if self.matrix_world:
             #pb.matrix = self.matrix_world @ self.matrix
             pb.matrix_basis = Matrix()
@@ -243,7 +245,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         for root in roots:
             getObjects(root, root.parent, objects, infos, widgets, [])
 
-        def addMergedProp(rig, subrig, idx):
+        def addMergedRig(rig, subrig, idx):
             pg = dazRna(rig.data).DazMergedRigs.add()
             pg.name = str(idx)
             pg.s = dazRna(subrig).DazUrl
@@ -259,8 +261,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             dups = {}
             dupss.append(dups)
             idx = 0
-            addMergedProp(rig, rig, idx)
+            addMergedRig(rig, rig, idx)
             for subrig,subbones,meshes in info[1:]:
+                idx += 1
                 deletes.append(subrig)
                 for bname,binfo in subbones.items():
                     if bname in bones.keys():
@@ -273,8 +276,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                             dups[bname] = True
                         else:
                             heads[bname] = binfo.head
-                idx += 1
-                addMergedProp(rig, subrig, idx)
+                    binfo.index = idx
+                addMergedRig(rig, subrig, idx)
 
         # Create the new editbones
         hasNew = False

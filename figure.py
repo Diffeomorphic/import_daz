@@ -395,7 +395,7 @@ def copyBoneInfo(srcpb, trgpb):
         setattr(trgpb.bone, attr, getattr(srcpb.bone, attr))
     for attr in ["DazRotMode"]:
         setattr(dazRna(trgpb), attr, getattr(dazRna(srcpb), attr))
-    for attr in ["DazAngle", "DazRigIndex", "DazTrueName"]:
+    for attr in ["DazAngle", "DazTrueName"]:
         setattr(dazRna(trgpb.bone), attr, getattr(dazRna(srcpb.bone), attr))
     for attr in ["DazOrient", "DazHead", "DazNormal"]:
         setattr(dazRna(trgpb.bone), attr, tuple(getattr(dazRna(srcpb.bone), attr)))
