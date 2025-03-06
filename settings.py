@@ -80,7 +80,7 @@ class GlobalSettings:
         self.imageInterpolation = 'Cubic'
         self.useGhostLights = False
         self.useUnusedTextures = False
-        self.useHairMaterials = False
+        self.useHairMaterials = True
         self.useShellDrivers = True
         self.useLayeredInflu = False
         self.useLayeredShells = True

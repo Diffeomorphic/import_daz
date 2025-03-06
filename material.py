@@ -274,8 +274,12 @@ class Material(Asset, Channels):
 
 
     def isHair(self):
-        return ("Root Transmission Color" in self.channels.keys() and
-                GS.useHairMaterials)
+        if ("Root Transmission Color" not in self.channels.keys() or
+            not GS.useHairMaterials):
+            return False
+        if self.geometry and self.geometry.data:
+            return (len(self.geometry.data.faces) == 0)
+        return True
 
 
     def isVoluSkinMaterial(self):
