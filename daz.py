@@ -646,9 +646,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Build Unused Textures",
         description = "Build texture found in unused channels")
 
-    useHairMaterials : BoolProperty(
+    onHairMaterial : EnumProperty(
+        items = [('HAIR', "Hair", "Make a hair material"),
+                 ('NORMAL', "Normal", "Make a normal material"),
+                 ('SMART', "Smart", "Make hair material for strand-based hair, normal material otherwise")],
         name = "Hair Materials",
-        description = "Build hair materials for blended dual lobe hair")
+        description = "Build hair or normal material for blended dual lobe hair")
 
     useShellDrivers : BoolProperty(
         name = "Shell Drivers",
@@ -712,7 +715,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
         box = col.box()
         box.label(text = "Meshes")
-        self.enum(box, "shellMethod")
+        drawEnum(self, box, "shellMethod")
         box.prop(self, "useTriaxImprove")
         box.prop(self, "useBulgeWeights")
         box.prop(self, "useHighDef")
@@ -724,7 +727,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "maxSubdivs")
         box.prop(self, "useInstancing")
         box.prop(self, "useRigidityAttributes")
-        self.enum(box, "onScaleEyeMoisture")
+        drawEnum(self, box, "onScaleEyeMoisture")
         box.prop(self, "useSimulation")
 
         col = split.column()
@@ -732,7 +735,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Rigging")
         box.prop(self, "useArmature")
         box.prop(self, "useQuaternions")
-        self.enum(box, "driverRotationMode")
+        drawEnum(self, box, "driverRotationMode")
         box.prop(self, "useLockLoc")
         box.prop(self, "useLimitLoc")
         box.prop(self, "useLockRot")
@@ -759,7 +762,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         col = split.column()
         box = col.box()
         box.label(text = "Morphs")
-        self.enum(box, "onStrengthAdjusters")
+        drawEnum(self, box, "onStrengthAdjusters")
         box.prop(self, "useMakeHiddenSliders")
         box.prop(self, "useBakedMorphs")
         box.prop(self, "useDazLimits")
@@ -767,7 +770,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "showFinalProps")
         box.prop(self, "showInTerminal")
         box.prop(self, "useMuteDrivers")
-        self.enum(box, "ercMethod")
+        drawEnum(self, box, "ercMethod")
         box.prop(self, "useStripCategory")
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useOptimizeJcms")
@@ -782,37 +785,31 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         col = split.column()
         box = col.box()
         box.label(text = "Materials")
-        self.enum(box, "materialMethod")
-        self.enum(box, "sssMethod")
-        self.enum(box, "displacementMethod")
-        self.enum(box, "toonMethod")
-        self.enum(box, "skinMethod")
-        self.enum(box, "viewportColors")
-        self.enum(box, "worldMethod")
+        drawEnum(self, box, "materialMethod")
+        drawEnum(self, box, "sssMethod")
+        drawEnum(self, box, "displacementMethod")
+        drawEnum(self, box, "toonMethod")
+        drawEnum(self, box, "skinMethod")
+        drawEnum(self, box, "onHairMaterial")
+        drawEnum(self, box, "viewportColors")
+        drawEnum(self, box, "worldMethod")
         box.prop(self, "useMaterialsByIndex")
         box.prop(self, "useMaterialsByName")
         if bpy.app.version < (3,4,0):
             box.prop(self, "useFakeCaustics")
-        self.enum(box, "imageInterpolation")
+        drawEnum(self, box, "imageInterpolation")
         box.prop(self, "useUnusedTextures")
-        box.prop(self, "useHairMaterials")
         box.prop(self, "useShellDrivers")
         box.prop(self, "useLayeredInflu")
         box.prop(self, "useLayeredShells")
-        self.enum(box, "onRenderSettings")
-        self.enum(box, "onLightSettings")
+        drawEnum(self, box, "onRenderSettings")
+        drawEnum(self, box, "onLightSettings")
         box.separator()
         box.prop(self, "useDisplacement")
         box.prop(self, "useEmission")
         box.prop(self, "useVolume")
         box.prop(self, "useGhostLights")
         box.prop(self, "bumpMultiplier")
-
-    def enum(self, box, prop):
-        split = box.split()
-        propdef = self.__annotations__[prop]
-        split.label(text = propdef.keywords["name"])
-        split.prop(self, prop, text="")
 
     def run(self, context):
         GS.fromDialog(self)
@@ -827,6 +824,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         wm.invoke_props_dialog(self, width=1280)
         return {'RUNNING_MODAL'}
 
+
+def drawEnum(self, box,  prop):
+    split = box.split()
+    propdef = self.__annotations__[prop]
+    split.label(text = propdef.keywords["name"])
+    split.prop(self, prop, text="")
 
 #-------------------------------------------------------------
 #   Initialize
