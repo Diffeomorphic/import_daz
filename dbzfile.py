@@ -73,6 +73,7 @@ class DBZInfo:
         from .bone import BoneInstance
         if dbzrig is None:
             print("Cannot fit %s" % inst)
+            return
         inst.restdata = dbzrig.restdata["NODE"]
         for child in inst.children.values():
             if isinstance(child, FigureInstance):
