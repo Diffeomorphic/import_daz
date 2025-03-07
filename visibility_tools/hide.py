@@ -21,28 +21,6 @@ def getMannequinName(string):
     return "MhhMannequin"
 
 #------------------------------------------------------------------------
-#   Mesh selection
-#------------------------------------------------------------------------
-
-class MeshSelector(Selector):
-    columnWidth = 300
-    ncols = 4
-
-    def invoke(self, context, event):
-        self.selection.clear()
-        for ob in getVisibleMeshes(context):
-            if ob != context.object:
-                item = self.selection.add()
-                item.name = ob.name
-                item.text = ob.name
-                item.select = False
-        return self.invokeDialog(context)
-
-
-    def getMeshSelection(self):
-        return [bpy.data.objects[item.name] for item in self.getSelectedItems()]
-
-#------------------------------------------------------------------------
 #    Setup: Add and remove hide drivers
 #------------------------------------------------------------------------
 
@@ -58,10 +36,10 @@ class SingleGroup:
         default = "All")
 
 
-class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
+class DAZ_OT_AddVisibility(DazPropsOperator, SingleGroup, IsArmature):
     bl_idname = "daz.add_visibility_drivers"
     bl_label = "Add Visibility Drivers"
-    bl_description = "Control visibility with rig property. For file linking."
+    bl_description = "Control visibility of selected meshes with rig property"
     bl_options = {'UNDO'}
 
     useCollections : BoolProperty(
@@ -74,20 +52,19 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
         if self.singleGroup:
             self.layout.prop(self, "groupName")
         self.layout.prop(self, "useCollections")
-        MeshSelector.draw(self, context)
 
 
     def run(self, context):
         rig = context.object
         print("Create visibility drivers for %s:" % rig.name)
-        selected = self.getMeshSelection()
+        meshes = getSelectedMeshes(context)
         if self.singleGroup:
             obnames = [self.groupName]
-            for ob in selected:
+            for ob in meshes:
                 self.createObjectVisibility(rig, ob, self.groupName)
         else:
             obnames = []
-            for ob in selected:
+            for ob in meshes:
                 self.createObjectVisibility(rig, ob, ob.name)
                 obnames.append(ob.name)
         for ob in getMeshChildren(rig):
@@ -97,7 +74,7 @@ class DAZ_OT_AddVisibility(DazOperator, MeshSelector, SingleGroup, IsArmature):
         updateDrivers(rig)
 
         if self.useCollections:
-            self.addCollections(context, rig, selected)
+            self.addCollections(context, rig, meshes)
 
         print("Visibility drivers created")
 
@@ -203,7 +180,7 @@ class DAZ_OT_RemoveVisibility(DazPropsOperator):
 #   Mask modifiers
 #------------------------------------------------------------------------
 
-class DAZ_OT_CreateMasks(DazOperator, MeshSelector, SingleGroup, IsMesh):
+class DAZ_OT_CreateMasks(DazPropsOperator, SingleGroup, IsMesh):
     bl_idname = "daz.create_masks"
     bl_label = "Create Masks"
     bl_description = "Create vertex groups and mask modifiers in active mesh for selected meshes"
@@ -213,35 +190,35 @@ class DAZ_OT_CreateMasks(DazOperator, MeshSelector, SingleGroup, IsMesh):
         self.layout.prop(self, "singleGroup")
         if self.singleGroup:
             self.layout.prop(self, "groupName")
-        else:
-            MeshSelector.draw(self, context)
 
 
     def run(self, context):
-        print("Create masks for %s:" % context.object.name)
+        hum = context.object
+        print("Create masks for %s:" % hum.name)
         if self.singleGroup:
             modname = getMaskName(self.groupName)
             print("  ", modname)
-            self.createMask(context.object, modname)
+            self.createMask(hum, modname)
         else:
-            for ob in self.getMeshSelection():
+            meshes = [ob for ob in getSelectedMeshes(context) if ob != hum]
+            for ob in meshes:
                 modname = getMaskName(ob.name)
                 print("  ", ob.name, modname)
-                self.createMask(context.object, modname)
+                self.createMask(hum, modname)
         print("Masks created")
 
 
-    def createMask(self, ob, modname):
+    def createMask(self, hum, modname):
         mod = None
-        for mod1 in ob.modifiers:
+        for mod1 in hum.modifiers:
             if mod1.type == 'MASK' and mod1.name == modname:
                 mod = mod1
-        if modname in ob.vertex_groups.keys():
-            vgrp = ob.vertex_groups[modname]
+        if modname in hum.vertex_groups.keys():
+            vgrp = hum.vertex_groups[modname]
         else:
-            vgrp = ob.vertex_groups.new(name=modname)
+            vgrp = hum.vertex_groups.new(name=modname)
         if mod is None:
-            mod = ob.modifiers.new(modname, 'MASK')
+            mod = hum.modifiers.new(modname, 'MASK')
         mod.vertex_group = modname
         mod.invert_vertex_group = True
 
@@ -305,10 +282,10 @@ class DAZ_OT_CopyMasks(DazOperator, Selector, IsMesh):
 #   Shrinkwrap
 #------------------------------------------------------------------------
 
-class DAZ_OT_AddShrinkwrap(DazOperator, MeshSelector, IsMesh):
+class DAZ_OT_AddShrinkwrap(DazPropsOperator, IsMesh):
     bl_idname = "daz.add_shrinkwrap"
     bl_label = "Add Shrinkwrap"
-    bl_description = "Add shrinkwrap modifiers covering the active mesh.\nOptionally add solidify modifiers"
+    bl_description = "Add shrinkwrap modifiers to selected meshes covering the active mesh.\nOptionally add solidify modifiers"
     bl_options = {'UNDO'}
 
     offset : FloatProperty(
@@ -344,12 +321,13 @@ class DAZ_OT_AddShrinkwrap(DazOperator, MeshSelector, IsMesh):
         self.layout.prop(self, "useAddVertexGroup")
         if not self.useAddVertexGroup:
             self.layout.prop(self, "useApply")
-        MeshSelector.draw(self, context)
+        self.layout.label(text = "This tool now adds shrinkwrap to selected meshes")
 
 
     def run(self, context):
         hum = context.object
-        for ob in self.getMeshSelection():
+        meshes = [ob for ob in getSelectedMeshes(context) if ob != hum]
+        for ob in meshes:
             activateObject(context, ob)
             self.makeShrinkwrap(ob, hum)
             if self.useSolidify:
