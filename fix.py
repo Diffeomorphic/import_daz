@@ -838,9 +838,10 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                     mod.object = rig
                     if self.useRetarget and ob.data.shape_keys:
                         retargetDrivers(ob.data.shape_keys, subrig, rig, False)
-            if ob.parent and ob.parent_type == 'BONE':
+            parent = dazRna(ob).DazParentBone
+            if parent or (ob.parent and ob.parent_type == 'BONE'):
                 wmat = ob.matrix_world.copy()
-                bname = ob.parent_bone
+                bname = (parent if parent else ob.parent_bone)
                 ob.parent = rig
                 ob.parent_type = 'BONE'
                 ob.parent_bone = bname

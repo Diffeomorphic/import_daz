@@ -102,15 +102,20 @@ class Instance(Accessor, Channels, SimNode):
         self.rotation_order = node.rotation_order
         self.inherits_scale = node.inherits_scale
         node.inherits_scale = True
-        if "parent" in struct.keys() and node.parent is not None:
-            self.parent = node.parent.getInstance(struct["parent"], node.caller)
-            if self.parent == self:
-                print("Self-parent", self)
-                self.parent = None
-            if self.parent:
-                self.parent.children[self.id] = self
-        else:
-            self.parent = None
+        self.parent = None
+        self.selectionParent = None
+        parent = struct.get("parent")
+        if parent:
+            if node.parent is not None:
+                self.parent = node.parent.getInstance(parent, node.caller)
+                if self.parent == self:
+                    print("Self-parent", self)
+                    self.parent = None
+                if self.parent:
+                    self.parent.children[self.id] = self
+            elif parent.startswith("name://@selection/"):
+                n = len("name://@selection/")
+                self.selectionParent = parent[n:-1]
         node.parent = None
         self.children = {}
         self.target = None
@@ -474,6 +479,8 @@ class Instance(Accessor, Channels, SimNode):
         for geonode in self.geometries:
             geonode.finalize(context, self)
         self.buildChannels(ob)
+        if self.selectionParent:
+            dazRna(ob).DazParentBone = self.selectionParent
 
         target = None
         if self.followTarget:
