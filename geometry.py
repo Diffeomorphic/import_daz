@@ -578,11 +578,13 @@ class GeoNode(Node, SimNode):
             if fgroup not in pgs.keys():
                 fgroup = self.data.mappings.get(fgroup)
             addMaskFaceModifier(ob, "DazPolygonGroup", fgroup, True)
-        if self.hdobject and self.hdobject != ob:
+        hdob = self.hdobject
+        if hdob and hdob != ob:
+            pgs = dazRna(hdob.data).DazPolygonGroup
             for fgroup in hidden:
                 if fgroup not in pgs.keys():
                     fgroup = self.data.mappings.get(fgroup)
-                addMaskFaceModifier(self.hdobject, "DazPolygonGroup", fgroup, True)
+                addMaskFaceModifier(hdob, "DazPolygonGroup", fgroup, True)
 
 
 def isEmpty(vgrp, ob):
@@ -646,7 +648,6 @@ def addMultires(context, ob, hdob, strict, subdivlevel, geo):
                 if geo:
                     geo.addFaceMap(hdob, "DazPolygonGroup", geo.polygon_groups, geo.polygon_indices)
                     geo.addFaceMap(hdob, "DazMaterialGroup", geo.polygon_material_groups, geo.material_indices)
-                print("HDPO", hdob.name, hdob.data.DazPolygonGroup.keys())
             else:
                 LS.hdMismatch.append(hdob.name)
             return 'MULTIRES'
