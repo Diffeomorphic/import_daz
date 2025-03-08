@@ -189,7 +189,7 @@ class GeoNode(Node, SimNode):
             self.addHDUvs(ob, hdob)
             self.hdType = 'HIGHDEF'
             if GS.useMultires and hdob.data.polygons:
-                self.hdType = addMultires(context, ob, hdob, False, self.data.SubDIALevel)
+                self.hdType = addMultires(context, ob, hdob, False, self.data.SubDIALevel, self.data)
             if self.hdType in ['MULTIRES', 'HIGHDEF']:
                 if len(ob.data.uv_layers) > len(hdob.data.uv_layers):
                     print("COPY UVS", ob.name, hdob.name)
@@ -568,13 +568,21 @@ class GeoNode(Node, SimNode):
                 pair.b = pvn
 
 
-    def hideVertexGroups(self, hidden):
+    def hideFaceGroups(self, hidden):
+        from .geonodes import addMaskFaceModifier
         if self.data is None:
             return
-        fnums = self.data.getPolyGroup(hidden)
-        self.data.hidePolyGroup(self.rna, fnums)
-        if self.hdobject and self.hdobject != self.rna:
-            self.data.hidePolyGroup(self.hdobject, fnums)
+        ob = self.rna
+        pgs = dazRna(ob.data).DazPolygonGroup
+        for fgroup in hidden:
+            if fgroup not in pgs.keys():
+                fgroup = self.data.mappings.get(fgroup)
+            addMaskFaceModifier(ob, "DazPolygonGroup", fgroup, True)
+        if self.hdobject and self.hdobject != ob:
+            for fgroup in hidden:
+                if fgroup not in pgs.keys():
+                    fgroup = self.data.mappings.get(fgroup)
+                addMaskFaceModifier(self.hdobject, "DazPolygonGroup", fgroup, True)
 
 
 def isEmpty(vgrp, ob):
@@ -590,7 +598,7 @@ def isEmpty(vgrp, ob):
 #   Add multires
 #-------------------------------------------------------------
 
-def addMultires(context, ob, hdob, strict, subdivlevel):
+def addMultires(context, ob, hdob, strict, subdivlevel, geo):
     from .finger import getFingerPrint
     if bpy.app.version < (2,90,0):
         print("Cannot rebuild subdiv in Blender %d.%d.%d" % bpy.app.version)
@@ -634,7 +642,12 @@ def addMultires(context, ob, hdob, strict, subdivlevel):
         if hdfinger == finger or not strict:
             print('Rebuilt %d subdiv levels for "%s"' % (nlevels, hdob.name))
             mod.levels = mod.sculpt_levels = 0
-            if hdfinger != finger:
+            if hdfinger == finger:
+                if geo:
+                    geo.addFaceMap(hdob, "DazPolygonGroup", geo.polygon_groups, geo.polygon_indices)
+                    geo.addFaceMap(hdob, "DazMaterialGroup", geo.polygon_material_groups, geo.material_indices)
+                print("HDPO", hdob.name, hdob.data.DazPolygonGroup.keys())
+            else:
                 LS.hdMismatch.append(hdob.name)
             return 'MULTIRES'
 
@@ -697,7 +710,7 @@ class DAZ_OT_MakeMultires(DazPropsOperator, IsMesh):
             baseob = hdob
             hdob = tmp
         print('Base "%s", HD "%s"' % (baseob.name, hdob.name))
-        hdtype = addMultires(context, baseob, hdob, False, None)
+        hdtype = addMultires(context, baseob, hdob, False, None, None)
         if hdtype == 'MULTIRES':
             if self.useNewUvs or hdob.data.uv_layers is None:
                 copyUvLayers(context, baseob, hdob)
@@ -1269,16 +1282,6 @@ class Geometry(Asset, Channels):
             dazRna(ob).DazVisibilityDrivers = True
 
         if USE_ATTRIBUTES:
-            def addFaceMap(ob, aname, groups, indices):
-                pgs = getattr(dazRna(ob.data), aname)
-                for group in groups:
-                    pg = pgs.add()
-                    pg.name = group
-                    pg.a = len(pgs) - 1
-                attr = ob.data.attributes.new(aname, 'INT', 'FACE')
-                for fn,gn in enumerate(indices):
-                    attr.data[fn].value = gn
-
             geonodes = list(self.nodes.values())
             if me.vertices and geonodes and self.id:
                 pgs = dazRna(ob.data).DazGraftData
@@ -1292,8 +1295,8 @@ class Geometry(Asset, Channels):
                     vattr.data[vn].value = vn
                     gattr.data[vn].value = 0
             if me.polygons:
-                addFaceMap(ob, "DazPolygonGroup", self.polygon_groups, self.polygon_indices)
-                addFaceMap(ob, "DazMaterialGroup", self.polygon_material_groups, self.material_indices)
+                self.addFaceMap(ob, "DazPolygonGroup", self.polygon_groups, self.polygon_indices)
+                self.addFaceMap(ob, "DazMaterialGroup", self.polygon_material_groups, self.material_indices)
 
         self.validateMesh(me, obname)
         guideOb = None
@@ -1310,6 +1313,17 @@ class Geometry(Asset, Channels):
             self.validateMesh(guideMe, guideOb.name)
 
         return ob, guideOb
+
+
+    def addFaceMap(self, ob, aname, groups, indices):
+        pgs = getattr(dazRna(ob.data), aname)
+        for group in groups:
+            pg = pgs.add()
+            pg.name = group
+            pg.a = len(pgs) - 1
+        attr = ob.data.attributes.new(aname, 'INT', 'FACE')
+        for fn,gn in enumerate(indices):
+            attr.data[fn].value = gn
 
 
     def getEdges(self, geonode, faces):

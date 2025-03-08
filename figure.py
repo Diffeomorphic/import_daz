@@ -73,7 +73,7 @@ class FigureInstance(Instance):
                 self.selectChildren(rig)
         if self.hiddenBones:
             for geonode in self.geometries:
-                geonode.hideVertexGroups(self.hiddenBones.keys())
+                geonode.hideFaceGroups(self.hiddenBones.keys())
 
 
     def poseChildren(self, ob, rig):
