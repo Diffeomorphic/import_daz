@@ -479,8 +479,6 @@ class Instance(Accessor, Channels, SimNode):
         for geonode in self.geometries:
             geonode.finalize(context, self)
         self.buildChannels(ob)
-        if self.selectionParent:
-            dazRna(ob).DazParentBone = self.selectionParent
 
         target = None
         if self.followTarget:
@@ -651,7 +649,20 @@ class Instance(Accessor, Channels, SimNode):
         if ob is None:
             return
 
-        if self.parent is None:
+        if self.selectionParent:
+            rig = LS.activeObject
+            bname = self.selectionParent
+            if rig and rig.type == 'ARMATURE':
+                bname1 = getConvertedBoneName(rig, bname)
+                if bname1:
+                    ob.parent = rig
+                    ob.parent_bone = bname1
+                    ob.parent_type = 'BONE'
+                else:
+                    dazRna(ob).DazParentBone = bname
+            else:
+                dazRna(ob).DazParentBone = bname
+        elif self.parent is None:
             ob.parent = None
         elif self.parent.rna == ob:
             print("Warning: Trying to parent %s to itself" % ob)
@@ -712,6 +723,22 @@ class Instance(Accessor, Channels, SimNode):
                         transferShapesToMeshes(context, parob, [ob], snames,
                             useOverwrite=False,
                             useDrivers=False)
+
+#-------------------------------------------------------------
+#   Convert bonename, used by fix.py
+#-------------------------------------------------------------
+
+def getConvertedBoneName(rig, bname):
+    if bname in rig.pose.bones.keys():
+        return bname
+    rigtype = dazRna(rig).DazRig
+    if rigtype.startswith(("mhx", "rigify")):
+        from .fileutils import DF
+        conv = DF.loadEntry("genesis-%s" % rigtype, "converters")
+        bname = conv.get(bname, "").replace(".fk.", ".")
+        if bname in rig.pose.bones.keys():
+            return bname
+    return None
 
 #-------------------------------------------------------------
 #   Collection utilities

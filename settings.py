@@ -522,6 +522,7 @@ class LocalSettings:
         self.sources = {}
         self.trace = []
         self.error = False
+        self.activeObject = None
 
         self.materialMethod = 'EXTENDED_PRINCIPLED'
         self.skinColor = None

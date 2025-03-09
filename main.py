@@ -223,7 +223,9 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
         elif len(filepaths) > 1:
             t1 = perf_counter()
         LS.forImport(self)
+        ob = context.object
         for filepath in filepaths:
+            LS.activeObject = ob
             self.loadDazFile(filepath, context)
         if LS.render:
             LS.render.build(context)
