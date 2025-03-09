@@ -377,13 +377,14 @@ class MaskFacesGroup(GeoTree):
 
 def addMaskFaceModifier(ob, grpname, fgname, useFaceGroupMasks=False):
     from .tree import addNodeGroup
+    from .store import addModifierFirst
     if useFaceGroupMasks:
         pgs = getattr(dazRna(ob.data), grpname)
         attr = ob.data.attributes.get(grpname)
         if pgs and attr:
             pg = pgs.get(fgname)
             if pg:
-                mod = ob.modifiers.new("Mask FG %s" % fgname, 'NODES')
+                mod = addModifierFirst(ob, "Mask FG %s" % fgname, 'NODES')
                 mod.node_group = addNodeGroup(MaskFacesGroup, "DAZ Mask Faces", [])
                 mod["Socket_1"] = grpname
                 mod["Socket_2"] = pgs[fgname].a
