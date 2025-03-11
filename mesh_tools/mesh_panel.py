@@ -18,7 +18,7 @@ class DAZ_PT_Mesh(DAZ_PT_SetupTab, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.merge_meshes")
         if EXPERIMENTAL:
-            self.layout.operator("daz.find_tube")
+            self.layout.operator("daz.convert_tubes_curves")
 
 
 class DAZ_PT_Lowpoly(DAZ_PT_SetupTab, bpy.types.Panel):
