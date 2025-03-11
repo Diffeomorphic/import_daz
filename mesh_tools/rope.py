@@ -6,6 +6,7 @@ import bpy
 import numpy as np
 from ..error import *
 from ..utils import *
+from ..tables import getVertEdges, otherEnd
 
 #-------------------------------------------------------------
 #   Find Tube
@@ -19,24 +20,58 @@ class DAZ_OT_FindTube(DazOperator, IsMesh):
 
     def run(self, context):
         ob = context.object
-        rings = self.findRings(ob)
+        self.vertedges = getVertEdges(ob)
+        self.neighbors = {}
+        for vn in range(len(ob.data.vertices)):
+            self.neighbors[vn] = [otherEnd(vn, e) for e in self.vertedges[vn]]
+        ring = self.findFirstRing(ob)
+        print("FR", ring)
+        self.showVerts(ring, ob)
+        return
+        rings = self.findRings(ring, ob)
         print("RYY", rings)
         strand = self.findCenters(rings, ob)
         strands = [strand]
         self.buildCurves(context, strands, ob)
 
 
-    def findRings(self, ob):
-        from ..tables import getVertEdges, otherEnd
-        vertedges = getVertEdges(ob)
-        ring = [v.index for v in ob.data.vertices if v.select]
+    def findFirstRing(self, ob):
+        def findRing(vn, ring):
+            ring.append(vn)
+            for vn2 in self.neighbors[vn]:
+                v2 = ob.data.vertices[vn2]
+                if v2.select and vn2 not in ring:
+                    findRing(vn2, ring)
+
+        first = [0] + self.neighbors[0]
+        self.showVerts(first, ob)
+        setMode('EDIT')
+        bpy.ops.mesh.loop_multi_select(ring=False)
+        setMode('OBJECT')
+        rings = []
+        for vn in self.neighbors[0]:
+            ring = [0]
+            findRing(vn, ring)
+            rings.append((len(ring), ring))
+        rings.sort()
+        return rings[0][1]
+
+
+    def showVerts(self, vnums, ob):
+        setMode('EDIT')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        setMode('OBJECT')
+        for vn in vnums:
+            ob.data.vertices[vn].select = True
+
+    def findRings(self, ring, ob):
         rings = []
         taken = []
         while ring:
             print("RR", ring)
             rings.append(ring)
             taken += ring
-            redges = [(vn, vertedges[vn]) for vn in ring]
+            redges = [(vn, self.vertedges[vn]) for vn in ring]
             ring = []
             for vn,vedges in redges:
                 for e in vedges:
