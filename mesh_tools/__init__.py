@@ -6,7 +6,7 @@
 #   Debugging
 #----------------------------------------------------------
 
-from ..debug import DEBUG
+from ..debug import DEBUG, EXPERIMENTAL
 
 if not DEBUG:
     pass
@@ -18,6 +18,8 @@ elif "MeshTools" in locals():
     imp.reload(uvmaps)
     imp.reload(attr)
     imp.reload(lowpoly)
+    if EXPERIMENTAL:
+        imp.reload(rope)
     imp.reload(mesh_panel)
 else:
     print("Loading Mesh Tools")
@@ -26,6 +28,8 @@ else:
     from . import uvmaps
     from . import attr
     from . import lowpoly
+    if EXPERIMENTAL:
+        from . import rope
     from . import mesh_panel
 
 MeshTools = True
@@ -43,6 +47,9 @@ def register():
     attr.register()
     lowpoly.register()
     mesh_panel.register()
+    if EXPERIMENTAL:
+        from . import rope
+        rope.register()
 
 def unregister():
     from . import vertex_groups, modifiers, uvmaps, attr, lowpoly, mesh_panel
@@ -52,3 +59,6 @@ def unregister():
     attr.unregister()
     modifiers.unregister()
     vertex_groups.unregister()
+    if EXPERIMENTAL:
+        from . import rope
+        rope.unregister()

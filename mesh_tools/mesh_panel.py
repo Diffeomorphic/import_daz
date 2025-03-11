@@ -8,6 +8,7 @@
 
 import bpy
 from ..panel import DAZ_PT_SetupTab, DAZ_PT_RuntimeTab
+from ..debug import EXPERIMENTAL
 
 
 class DAZ_PT_Mesh(DAZ_PT_SetupTab, bpy.types.Panel):
@@ -16,6 +17,8 @@ class DAZ_PT_Mesh(DAZ_PT_SetupTab, bpy.types.Panel):
 
     def draw(self, context):
         self.layout.operator("daz.merge_meshes")
+        if EXPERIMENTAL:
+            self.layout.operator("daz.find_tube")
 
 
 class DAZ_PT_Lowpoly(DAZ_PT_SetupTab, bpy.types.Panel):

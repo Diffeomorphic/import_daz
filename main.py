@@ -223,9 +223,8 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
         elif len(filepaths) > 1:
             t1 = perf_counter()
         LS.forImport(self)
-        ob = context.object
+        LS.activeObject = context.object
         for filepath in filepaths:
-            LS.activeObject = ob
             self.loadDazFile(filepath, context)
         if LS.render:
             LS.render.build(context)
@@ -709,8 +708,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         if self.useFavoMorphs:
             self.favoPath = getExistingFilePath(self.favoPath, ".json")
         theFilePaths = LS.filepaths
+        active = context.object
+        vly = context.view_layer
         for filepath in filepaths:
             LS.filepaths = [filepath]
+            vly.objects.active = active
             try:
                 self.easyImport(context)
             except DazError as msg:
