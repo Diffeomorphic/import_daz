@@ -1405,6 +1405,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 return prop2
         if prop in rig.keys():
             return prop
+        pg = dazRna(rig).DazMorphNames.get(prop)
+        if pg and pg.s in rig.keys():
+            return pg.s
         return None
 
 
