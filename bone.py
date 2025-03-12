@@ -145,7 +145,7 @@ class BoneInstance(Instance):
             omat.col[3][0:3] = head
             eb.matrix = omat
         else:
-            omat = self.flipBone(omat, head, tail, flip)
+            omat = self.flipBone(omat, head, tail, flip, rdata.xyz)
             self.setFlip()
             if self.test:
                 print("FBONE", self.name, self.rotation_order, self.axes, self.flipped)
@@ -201,7 +201,9 @@ class BoneInstance(Instance):
             flip = self.FX
             self.axes = [0,2,1]
             self.flipped = [False,True,False]
-            self.flopped = [False,False,False]
+            # Changed for issue 2413
+            #self.flopped = [False,False,False]
+            self.flopped = [False,False,True]
         elif xyz == 'XZY':  #
             euler = Euler((0, 0, pi/2))
             flip = self.FZ
@@ -229,12 +231,12 @@ class BoneInstance(Instance):
         return omat, flip
 
 
-    def flipBone(self, omat, head, tail, flip):
+    def flipBone(self, omat, head, tail, flip, xyz):
         vec = tail-head
         yaxis = Vector(omat.col[1][0:3])
         if vec.dot(yaxis) < 0:
-            if self.test:
-                print("FLOP", self.name)
+            if xyz == 'ZYX' or self.test:
+                print("FLOP", self.name, xyz)
             self.flipped = self.flopped
             return omat @ flip
         else:
