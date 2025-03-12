@@ -19,7 +19,17 @@ class DAZ_OT_ConvertTubesCurves(DazOperator, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        ob = context.object
+        meshes = getSelectedMeshes(context)
+        for ob in meshes:
+            wmat = ob.matrix_world.copy()
+            par = ob.parent
+            activateObject(context, ob)
+            cuob = self.convertTube(context, ob)
+            cuob.parent = par
+            setWorldMatrix(cuob, wmat)
+
+
+    def convertTube(self, context, ob):
         obname = ob.name
         mats = list(ob.data.materials)
         colls = [coll for coll in bpy.data.collections if ob.name in coll.objects.keys()]
@@ -34,8 +44,7 @@ class DAZ_OT_ConvertTubesCurves(DazOperator, IsMesh):
                 strands.append(strand)
                 for coll in colls:
                     coll.objects.unlink(ob)
-        cuob = self.buildCurves(context, strands, obname, mats, colls)
-        activateObject(context, cuob)
+        return self.buildCurves(context, strands, obname, mats, colls)
 
 
     def findStrand(self, ob):
