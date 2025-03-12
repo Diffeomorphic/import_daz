@@ -307,6 +307,13 @@ class LoadMorph(DriverUser):
         prop = rawProp(self.getUniqueName(asset.getName()))
         if self.isBaked(prop):
             return " B"
+        if asset.name != prop:
+            pgs = dazRna(self.obj).DazMorphNames
+            pg = pgs.get(asset.name)
+            if pg is None:
+                pg = pgs.add()
+                pg.name = asset.name
+            pg.s = prop
         self.bodypart = bodypart
         skey,ok = self.buildShape(asset)
         if not ok:
