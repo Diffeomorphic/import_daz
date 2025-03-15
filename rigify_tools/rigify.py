@@ -382,22 +382,34 @@ class MetaMaker(RigifyCommon):
         self.reparentBones(ebones)
         setMode('OBJECT')
 
+        def getParams(attrs):
+            return [(key, getattr(attrs, key)) for key in dir(attrs) if key[0] != "_"]
+
+        def setParams(attrs, params):
+            for key,value in params:
+                try:
+                    setattr(attrs, key, value)
+                except AttributeError:
+                    pass
+
         print("  Add custom chains")
         chains = {}
         for pb in rig.pose.bones:
             if pb.rigify_type and pb.name not in meta.pose.bones.keys():
-                chains[pb.name] = pb.rigify_type
+                chains[pb.name] = (pb.rigify_type, getParams(pb.rigify_parameters))
         if chains:
             meta.select_set(True)
             rig.select_set(True)
             cbones = []
             setMode('EDIT')
             for bname in chains.keys():
-                cbones += self.addChain(bname, rig, meta)
+                cbones += self.addChain(bname, rig, meta, chains)
             setMode('OBJECT')
-            for bname,rtype in chains.items():
+            for bname,rdata in chains.items():
+                rtype,params = rdata
                 pb = meta.pose.bones[bname]
                 pb.rigify_type = rtype
+                setParams(pb.rigify_parameters, params)
             for bname,pname in cbones:
                 bone = meta.data.bones[bname]
                 setBoneNumLayer(bone, meta, R_CUSTOM)
@@ -485,22 +497,28 @@ class MetaMaker(RigifyCommon):
         setMode('OBJECT')
 
 
-    def addChain(self, bname, rig, meta):
+    def addChain(self, bname, rig, meta, chains):
         def getParents(eb, meta):
             par = eb.parent
-            if par and par.name not in self.daz.rigifybones.keys():
-                parents = getParents(par, meta)
-                parents.append((eb.name, par.name))
-                return parents
-            elif par:
-                return[(eb.name, self.daz.rigifybones[par.name])]
+            if par:
+                if par.name in self.daz.rigifybones.keys():
+                    return [(eb.name, self.daz.rigifybones[par.name])]
+                elif par.name in chains.keys():
+                    return [(eb.name, par.name)]
+                else:
+                    parents = getParents(par, meta)
+                    parents.append((eb.name, par.name))
+                    return parents
             else:
                 return [(eb.name, None)]
 
         def getChildren(eb, meta):
             if len(eb.children) == 1:
                 child = eb.children[0]
-                return [(child.name, eb.name)] + getChildren(child, meta)
+                if child.name in chains.keys():
+                    return []
+                else:
+                    return [(child.name, eb.name)] + getChildren(child, meta)
             else:
                 return []
 
@@ -516,6 +534,7 @@ class MetaMaker(RigifyCommon):
         root = rig.data.edit_bones[bname]
         parents = getParents(root, meta)
         children = getChildren(root, meta)
+        print("ADDC", bname, len(parents), len(children))
         addBones(rig, meta, parents)
         addBones(rig, meta, children)
         return parents + children
@@ -552,6 +571,7 @@ class MetaMaker(RigifyCommon):
                 elif pb["rigify_type"] == "spines.basic_tail":
                     connect += self.getChildren(pb)
                 elif pb["rigify_type"] in [
+                    "basic.raw_copy",
                     "spines.super_spine",
                     "spines.basic_spine",
                     "basic.super_copy",
