@@ -38,11 +38,11 @@ def copyGraftGroups(context, hdob, baseob, grafts):
     # Copy vertex groups from grafts to HD graft
     from .transfer import transferVertexGroups
     if len(grafts) == 1:
-        transferVertexGroups(context, grafts[0], [hdgraft], 1e-3)
+        transferVertexGroups(context, grafts[0], [hdgraft], 1e-3, False)
     else:
         weights = OrderedDict([(vgrp.name, []) for vgrp in hdgraft.vertex_groups])
         for graft in grafts:
-            transferVertexGroups(context, graft, [hdgraft], 1e-3)
+            transferVertexGroups(context, graft, [hdgraft], 1e-3, False)
             vgroups = {}
             for vgrp in graft.vertex_groups:
                 hdvgrp = hdgraft.vertex_groups.get(vgrp.name)

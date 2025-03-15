@@ -148,8 +148,8 @@ class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
         if not src.vertex_groups:
             raise DazError("Source mesh %s         \nhas no vertex groups" % src.name)
         t1 = perf_counter()
-        targets = list(self.getTargets(src, context))
-        transferVertexGroups(context, src, targets, self.threshold, useEdges=self.useEdges)
+        targets = list(self.getTargets(src, context, self.useEdges))
+        transferVertexGroups(context, src, targets, self.threshold, self.useEdges)
         t2 = perf_counter()
         print("Vertex groups transferred in %.1f seconds" % (t2-t1))
 

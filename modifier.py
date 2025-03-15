@@ -484,7 +484,7 @@ class SkinBinding(Modifier):
                 ok = False
             if not ok:
                 from .transfer import transferVertexGroups
-                transferVertexGroups(context, ob, [hdob], 1e-3)
+                transferVertexGroups(context, ob, [hdob], 1e-3, False)
 
 
     Removes = {"genesis9" : ["l_upperarm", "r_upperarm"]}

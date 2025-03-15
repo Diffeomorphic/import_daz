@@ -953,7 +953,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             if duphair:
                 from ..transfer import transferVertexGroups
                 useEdges = (self.proxyType == 'LINE')
-                transferVertexGroups(context, duphair, [proxy], 1e-3, useEdges=useEdges)
+                transferVertexGroups(context, duphair, [proxy], 1e-3, useEdges)
                 mod = proxy.modifiers.new("Armature", 'ARMATURE')
                 mod.object = duphair.parent
                 proxy.parent = duphair.parent

@@ -20,7 +20,6 @@ class MatchOperator(DazPropsOperator):
     useNonConforming = True
     ignoreRigidity = False
     needsTarget = True
-    useEdges = False
 
     def storeState(self, context):
         DazPropsOperator.storeState(self, context)
@@ -53,12 +52,12 @@ class MatchOperator(DazPropsOperator):
             self.tris = np.array(tris, dtype=np.uint32)
 
 
-    def getTargets(self, src, context):
+    def getTargets(self, src, context, useEdges):
         checkObjectTransforms(src)
         objects = []
         for ob in getSelectedMeshes(context):
             if (ob != src and
-                (len(ob.data.polygons) > 0 or self.useEdges) and
+                (len(ob.data.polygons) > 0 or useEdges) and
                 (dazRna(ob).DazConforms or self.useNonConforming)):
                 objects.append(ob)
                 checkObjectTransforms(ob)
@@ -165,7 +164,8 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                  ('BY_NUMBER', "By Number", "Transfer shapekeys by vertex number.\nBoth meshes must have the same number of vertices"),
                  ('BODY', "Body", "Only transfer vertices as long as they match exactly.\nUse to transfer shapekeys from body to merged mesh"),
                  ('GEOGRAFT', "Geograft", "Transfer shapekeys to nearest target vertex.\nUse to transfer shapekeys from geograft to merged mesh"),
-                 ('LEGACY', "Legacy", "Transfer using Blender's data transfer modifier.\nVery slow but works in general")],
+                 ('LEGACY', "Legacy", "Transfer using Blender's data transfer modifier.\nVery slow but works in general"),
+                 ('EDGES', "Edges", "Transfer using Blender's data transfer modifier and edge interpolation.\nNeeded for transfer to meshes without polygons")],
         name = "Transfer Method",
         description = "Method used to transfer morphs",
         default = 'NEAREST')
@@ -225,7 +225,8 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         self.eps = 0.02*GS.scale    # 0.2 mm
         if not self.useDrivers:
             self.useStrength = False
-        targets = self.getTargets(src, context)
+        useEdges = (self.transferMethod == 'EDGES')
+        targets = self.getTargets(src, context, useEdges)
         self.prepareBvhTree(context, src)
         self.createTmp()
         try:
@@ -581,7 +582,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         t1 = perf_counter()
         if self.bvhtree:
             self.findMatchNearest(self.bvhtree, src, trg)
-        elif self.transferMethod == 'LEGACY':
+        elif self.transferMethod in ['LEGACY', 'EDGES']:
             return True
         elif self.transferMethod == 'BODY':
             self.findMatchExact(src, trg)
@@ -597,7 +598,9 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
 
     def autoTransfer(self, src, trg, hskey):
         if self.transferMethod == 'LEGACY':
-            return self.autoTransferSlow(src, trg, hskey)
+            return self.autoTransferSlow(src, trg, hskey, 'POLYINTERP_NEAREST')
+        elif self.transferMethod == 'EDGES':
+            return self.autoTransferSlow(src, trg, hskey, 'EDGEINTERP_NEAREST')
         elif self.transferMethod in ['BODY', 'BY_NUMBER']:
             return self.autoTransferExact(src, trg, hskey)
         elif self.transferMethod in ['NEAREST', 'SELECTED']:
@@ -609,7 +612,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
     #   Slow transfer
     #----------------------------------------------------------
 
-    def autoTransferSlow(self, src, trg, hskey):
+    def autoTransferSlow(self, src, trg, hskey, vert_mapping):
         hverts = src.data.vertices
         cverts = trg.data.vertices
         facs = {0:1.0, 1:1.0, 2:1.0}
@@ -629,7 +632,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                 vgrp.add([vn], w, 'REPLACE')
             bpy.ops.object.data_transfer(
                 data_type = "VGROUP_WEIGHTS",
-                vert_mapping = 'POLYINTERP_NEAREST',
+                vert_mapping = vert_mapping,
                 layers_select_src = 'ACTIVE',
                 layers_select_dst = 'NAME')
             src.vertex_groups.remove(vgrp)

@@ -1827,7 +1827,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
         if hums:
             print("Update vertex groups: %s" % ob.name)
             vgnames = [vgrp.name for vgrp in ob.vertex_groups]
-            transferVertexGroups(context, hums[0], [ob], threshold)
+            transferVertexGroups(context, hums[0], [ob], threshold, False)
             used = []
             for mesh in children:
                 used += [vgrp.name for vgrp in mesh.vertex_groups]
