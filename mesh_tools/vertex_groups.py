@@ -133,7 +133,13 @@ class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
     bl_description = "Transfer vertex groups from active to selected"
     bl_options = {'UNDO'}
 
+    useEdges : BoolProperty(
+        name = "Edge Interpolation",
+        description = "Use edge interpolation instead of polygon interpolation",
+        default = False)
+
     def draw(self, context):
+        self.layout.prop(self, "useEdges")
         self.layout.prop(self, "threshold")
 
     def run(self, context):
@@ -143,7 +149,7 @@ class DAZ_OT_TransferVertexGroups(MatchOperator, IsMesh, ThresholdFloat):
             raise DazError("Source mesh %s         \nhas no vertex groups" % src.name)
         t1 = perf_counter()
         targets = list(self.getTargets(src, context))
-        transferVertexGroups(context, src, targets, self.threshold)
+        transferVertexGroups(context, src, targets, self.threshold, useEdges=self.useEdges)
         t2 = perf_counter()
         print("Vertex groups transferred in %.1f seconds" % (t2-t1))
 

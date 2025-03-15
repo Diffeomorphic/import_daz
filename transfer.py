@@ -20,6 +20,7 @@ class MatchOperator(DazPropsOperator):
     useNonConforming = True
     ignoreRigidity = False
     needsTarget = True
+    useEdges = False
 
     def storeState(self, context):
         DazPropsOperator.storeState(self, context)
@@ -57,7 +58,7 @@ class MatchOperator(DazPropsOperator):
         objects = []
         for ob in getSelectedMeshes(context):
             if (ob != src and
-                len(ob.data.polygons) > 0 and
+                (len(ob.data.polygons) > 0 or self.useEdges) and
                 (dazRna(ob).DazConforms or self.useNonConforming)):
                 objects.append(ob)
                 checkObjectTransforms(ob)
@@ -106,9 +107,14 @@ class MatchOperator(DazPropsOperator):
 #   Vertex group transfer
 #----------------------------------------------------------
 
-def transferVertexGroups(context, src, targets, threshold):
+def transferVertexGroups(context, src, targets, threshold, useEdges=False):
     activateObject(context, src)
-    targets = [trg for trg in targets if trg.data.polygons]
+    if useEdges:
+        targets = [trg for trg in targets if trg.data.edges]
+        vert_mapping = 'EDGEINTERP_NEAREST'
+    else:
+        targets = [trg for trg in targets if trg.data.polygons]
+        vert_mapping = 'POLYINTERP_NEAREST'
     if len(targets) == 0:
         return
     for trg in targets:
@@ -117,7 +123,7 @@ def transferVertexGroups(context, src, targets, threshold):
     print("Transfer vertex groups %s => %s" % (src.name, [trg.name for trg in targets]))
     bpy.ops.object.data_transfer(
         data_type = 'VGROUP_WEIGHTS',
-        vert_mapping = 'POLYINTERP_NEAREST',
+        vert_mapping = vert_mapping,
         layers_select_src = 'ALL',
         layers_select_dst = 'NAME')
     if threshold > 0:
