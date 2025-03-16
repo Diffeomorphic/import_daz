@@ -502,7 +502,7 @@ else:
         try:
             ui = rna.id_properties_ui(prop)
             return ui.as_dict()
-        except KeyError:
+        except (KeyError, TypeError):
             return {}
 
 #-------------------------------------------------------------
