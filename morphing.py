@@ -686,7 +686,7 @@ def transferShapesToMeshes(context, ob, meshes, snames,
         selectSet(mesh, True)
     try:
         bpy.ops.daz.transfer_shapekeys(
-            selected = [{"name" : sname} for sname in snames],
+            selection = [{"name" : sname} for sname in snames],
             useDrivers=useDrivers,
             useOverwrite=useOverwrite,
             useSelectedOnly=useSelectedOnly,
@@ -774,19 +774,20 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
         morphFiles = self.morphFiles.get(self.char)
         if morphFiles is None:
             return []
-        if self.selected:
-            selection = [select["name"] for select in self.selected]
+        if self.selection:
+            selected = [select["name"] for select in self.selection]
         elif LS.selection:
-            selection = LS.selection
+            selected = LS.selection
         else:
-            selection = []
-        print("MOOO", morphFiles)
-        print("SEL", selection)
+            selected = []
 
-        if selection:
-            for path in selection:
-                text = os.path.splitext(os.path.basename(path))[0]
-                namepaths.append((text, path, self.bodypart))
+        if selected:
+            abspaths = dict([(os.path.basename(path), path) for path in morphFiles.values()])
+            for file in selected:
+                text = os.path.splitext(file)[0]
+                path = abspaths.get(file)
+                if path:
+                    namepaths.append((text, path, self.bodypart))
         else:
             for item in self.getSelectedItems():
                 key = item.name
@@ -813,6 +814,7 @@ class StandardMorphSelector(Selector):
 
     def invoke(self, context, event):
         scn = context.scene
+        self.selectedItems.clear()
         self.selection.clear()
         if not self.setupCharacter(context):
             return {'FINISHED'}
@@ -823,8 +825,8 @@ class StandardMorphSelector(Selector):
             return {'CANCELLED'}
         for char,struct in self.morphFiles.items():
             for key,path in struct.items():
-                if key not in self.selection.keys():
-                    item = self.selection.add()
+                if key not in self.selectedItems.keys():
+                    item = self.selectedItems.add()
                     item.name = key
                     item.text = key
                     item.category = self.morphset
@@ -952,7 +954,7 @@ class DAZ_OT_ImportBodyMorphs(DazOperator, StandardMorphSelector, StandardMorphL
 
     def selectMhxCompatible(self, context):
         safe,unsafe = getMhxSafe(self.rig)
-        for item in self.selection:
+        for item in self.selectedItems:
             item.select = False
             for string in safe:
                 if string in item.text:
@@ -985,7 +987,7 @@ def getMhxSafe(rig):
 
 class FingerSkip:
     def deselectFingers(self, context):
-        for item in self.selection:
+        for item in self.selectedItems:
             item.select = (not isFingerShape(item.text))
 
     def drawSelectionRow(self):
@@ -1078,11 +1080,11 @@ class DAZ_OT_CreateBulges(DazOperator, FingerSkip, Selector):
 
     def invoke(self, context, event):
         ob = context.object
-        self.selection.clear()
+        self.selectedItems.clear()
         for vgrp in ob.vertex_groups:
             bname = getBulgeBone(vgrp.name)
-            if bname and bname not in self.selection.keys():
-                item = self.selection.add()
+            if bname and bname not in self.selectedItems.keys():
+                item = self.selectedItems.add()
                 item.name = bname
                 item.text = bname
                 item.select = True
@@ -1093,7 +1095,7 @@ class DAZ_OT_CreateBulges(DazOperator, FingerSkip, Selector):
         rig = ob.parent
         if not rig:
             raise DazError("No armature found")
-        createBulges(ob, rig, self.selection)
+        createBulges(ob, rig, self.selectedItems)
 
 
 def getBulgeBone(string):
@@ -2164,7 +2166,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                         for ob in getMeshChildren(rig):
                             ob.select_set(True)
                         bpy.ops.daz.transfer_shapekeys(
-                            selected = [{"name" : key} for key in keynames],
+                            selection = [{"name" : key} for key in keynames],
                             useNonConforming = self.useNonConforming,
                             ignoreRigidity = self.ignoreRigidity)
                 self.makePosable(context, rig)

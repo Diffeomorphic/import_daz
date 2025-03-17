@@ -736,11 +736,11 @@ class ShellDisabler:
     columnWidth = 350
 
     def addItems(self, context):
-        self.selection.clear()
+        self.selectedItems.clear()
         rig = getRigFromContext(context)
         for prop in rig.keys():
             if prop[0:6] == "INFLU ":
-                item = self.selection.add()
+                item = self.selectedItems.add()
                 item.name = prop
                 item.text = prop[6:]
                 item.select = False
@@ -754,7 +754,7 @@ class ShellDisabler:
     def run(self, context):
         rig = getRigFromContext(context)
         targets = {}
-        for item in self.selection:
+        for item in self.selectedItems:
             if item.select:
                 targets[propRef(item.name)] = rig[item.name]
         for ob in getMeshChildren(rig):

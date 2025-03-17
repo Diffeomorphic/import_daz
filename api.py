@@ -120,7 +120,7 @@ def set_global_setting(setting, value):
 def clear_selection():
     """clear_selection()
 
-    Clear the active file selection to be loaded by consecutive operators.
+    Deprecated. Clear the active file selection to be loaded by consecutive operators.
     """
     LS.selection = []
     print("File paths cleared")
@@ -129,7 +129,7 @@ def clear_selection():
 def get_selection():
     """get_selection()
 
-    Get the active file selection to be loaded by consecutive operators.
+    Deprecated. Get the active file selection to be loaded by consecutive operators.
 
     Returns:
     The active list of file paths (strings).
@@ -140,7 +140,7 @@ def get_selection():
 def set_selection(files):
     """set_selection(files)
 
-    Set the active file selection to be loaded by consecutive operators.
+    Deprecated. Set the active file selection to be loaded by consecutive operators.
 
     Arguments:
     ?files: A list of file paths (strings).
@@ -177,6 +177,7 @@ def set_slider(ob, prop, value):
     ?prop: Property name
     ?value: Property value
     """
+    from .utils import dazRna
     ob[prop] = value
     if prop in dazRna(ob).DazAlias.keys():
         alias = dazRna(ob).DazAlias[prop].s

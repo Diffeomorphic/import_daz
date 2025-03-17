@@ -773,7 +773,7 @@ class AddRemoveDriver:
 
 
     def invoke(self, context, event):
-        self.selection.clear()
+        self.selectedItems.clear()
         ob = context.object
         rig = ob.parent
         if (rig and rig.type != 'ARMATURE'):
@@ -782,7 +782,7 @@ class AddRemoveDriver:
         if skeys:
             for skey in skeys.key_blocks[1:]:
                 if self.includeShapekey(skeys, skey.name):
-                    item = self.selection.add()
+                    item = self.selectedItems.add()
                     item.name = item.text = skey.name
                     item.category = self.getCategory(rig, ob, skey.name)
                     item.select = False

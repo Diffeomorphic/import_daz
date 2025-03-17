@@ -48,9 +48,9 @@ class ShellRemover:
 
 
     def addItems(self):
-        self.selection.clear()
+        self.selectedItems.clear()
         for name,nodes in self.shells.items():
-            item = self.selection.add()
+            item = self.selectedItems.add()
             item.name = name
             item.text = name
             item.select = False

@@ -237,10 +237,10 @@ class DAZ_OT_CopyMasks(DazOperator, Selector, IsMesh):
 
     def invoke(self, context, event):
         ob = context.object
-        self.selection.clear()
+        self.selectedItems.clear()
         for mod in ob.modifiers:
             if mod.type == 'MASK':
-                item = self.selection.add()
+                item = self.selectedItems.add()
                 item.name = mod.name
                 item.text = mod.name
                 item.select = False
@@ -251,7 +251,7 @@ class DAZ_OT_CopyMasks(DazOperator, Selector, IsMesh):
         src = context.object
         masks = []
         for mod in src.modifiers:
-            item = self.selection.get(mod.name)
+            item = self.selectedItems.get(mod.name)
             if item and item.select:
                 masks.append(mod)
         masknames = []

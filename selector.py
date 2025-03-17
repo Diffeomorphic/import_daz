@@ -51,9 +51,9 @@ class DazSelectGroup(bpy.types.PropertyGroup):
 
 
 class Selector():
-    selection : CollectionProperty(type = DazSelectGroup)
+    selectedItems : CollectionProperty(type = DazSelectGroup)
 
-    selected : CollectionProperty(type = bpy.types.PropertyGroup)
+    selection : CollectionProperty(type = bpy.types.PropertyGroup)
 
     filter : StringProperty(
         name = "Filter",
@@ -73,7 +73,7 @@ class Selector():
         self.layout.prop(self, "filter", icon='VIEWZOOM', text="")
         self.drawExtra(context)
         self.layout.separator()
-        items = [item for item in self.selection if self.isSelected(item)]
+        items = [item for item in self.selectedItems if self.isSelected(item)]
         items.sort()
         nitems = len(items)
         ncols = self.ncols
@@ -111,13 +111,13 @@ class Selector():
 
 
     def selectAll(self, context):
-        for item in self.selection:
+        for item in self.selectedItems:
             if self.isSelected(item):
                 item.select = True
 
 
     def selectNone(self, context):
-        for item in self.selection:
+        for item in self.selectedItems:
             if self.isSelected(item):
                 item.select = False
 
@@ -135,14 +135,14 @@ class Selector():
 
 
     def getSelectedItems(self):
-        return [item for item in self.selection if item.select and self.isSelected(item)]
+        return [item for item in self.selectedItems if item.select and self.isSelected(item)]
 
 
     def getSelectedProps(self):
         if LS.selection:
             return LS.selection
-        elif len(self.selected) > 0:
-            return [item["name"] for item in self.selected]
+        elif self.selection is not None:
+            return [item["name"] for item in self.selection]
         else:
             return [item.name for item in self.getSelectedItems()]
 
@@ -150,9 +150,10 @@ class Selector():
     def invokeDialog(self, context):
         setSelector(self)
         LS.selection = []
-        self.selected.clear()
+        self.selection.clear()
+        self.invoked = True
         wm = context.window_manager
-        ncols = len(self.selection)//self.nrows + 1
+        ncols = len(self.selectedItems)//self.nrows + 1
         if ncols > self.ncols:
             ncols = self.ncols
         elif ncols < self.mincols:
@@ -165,10 +166,10 @@ class Selector():
         scn = context.scene
         ob = context.object
         rig = self.rig = getRigFromContext(context)
-        self.selection.clear()
+        self.selectedItems.clear()
         for idx,data in enumerate(self.getKeys(rig, ob)):
             prop,text,cat = data
-            item = self.selection.add()
+            item = self.selectedItems.add()
             item.name = prop
             item.text = text
             item.category = cat
