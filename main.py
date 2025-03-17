@@ -707,18 +707,14 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
             raise DazError("No valid files selected")
         if self.useFavoMorphs:
             self.favoPath = getExistingFilePath(self.favoPath, ".json")
-        theFilePaths = LS.filepaths
         active = context.object
         vly = context.view_layer
         for filepath in filepaths:
-            LS.filepaths = [filepath]
             vly.objects.active = active
             try:
-                self.easyImport(context)
+                self.easyImport(context, filepath)
             except DazError as msg:
                 ES.message = msg
-            finally:
-                LS.filepaths = theFilePaths
         if ES.message:
             ES.easy = False
             msg = ES.message[:-1]
@@ -729,9 +725,11 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                 self.raiseWarning(msg)
 
 
-    def easyImport(self, context):
+    def easyImport(self, context, filepath):
         time1 = perf_counter()
         bpy.ops.daz.import_daz_manually(
+            directory = os.path.dirname(filepath),
+            files = [{"name" : os.path.basename(filepath)}],
             materialMethod = self.materialMethod,
             skinColor = self.skinColor,
             clothesColor = self.clothesColor,
