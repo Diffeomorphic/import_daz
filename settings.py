@@ -516,7 +516,7 @@ class LocalSettings:
         self.button = None
         self.message = ""
         self.errorLines = []
-        self.filepaths = []
+        self.selection = []
         self.assets = {}
         self.otherAssets = {}
         self.sources = {}

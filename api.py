@@ -122,7 +122,7 @@ def clear_selection():
 
     Clear the active file selection to be loaded by consecutive operators.
     """
-    LS.filepaths = []
+    LS.selection = []
     print("File paths cleared")
 
 
@@ -134,7 +134,7 @@ def get_selection():
     Returns:
     The active list of file paths (strings).
     """
-    return LS.filepaths
+    return LS.selection
 
 
 def set_selection(files):
@@ -146,7 +146,7 @@ def set_selection(files):
     ?files: A list of file paths (strings).
     """
     if isinstance(files, list):
-        LS.filepaths = [file.replace("\\", "/") for file in files]
+        LS.selection = [file.replace("\\", "/") for file in files]
     else:
         try:
             raise DazError("File paths must be a list of strings")
@@ -216,6 +216,13 @@ def get_absolute_paths(paths):
         if abspath:
             abspaths.append(abspath)
     return abspaths
+
+
+def get_absolute_path(path):
+    """get_absolute_path()
+    """
+    abspaths = get_absolute_paths([path])
+    return (abspaths[0] if abspaths else None)
 
 #-------------------------------------------------------------
 #   Load DAZ file

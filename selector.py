@@ -53,6 +53,8 @@ class DazSelectGroup(bpy.types.PropertyGroup):
 class Selector():
     selection : CollectionProperty(type = DazSelectGroup)
 
+    selected : CollectionProperty(type = bpy.types.PropertyGroup)
+
     filter : StringProperty(
         name = "Filter",
         description = "Show only items containing this string",
@@ -137,15 +139,18 @@ class Selector():
 
 
     def getSelectedProps(self):
-        if LS.filepaths:
-            return LS.filepaths
+        if LS.selection:
+            return LS.selection
+        elif len(self.selected) > 0:
+            return [item["name"] for item in self.selected]
         else:
             return [item.name for item in self.getSelectedItems()]
 
 
     def invokeDialog(self, context):
         setSelector(self)
-        LS.filepaths = []
+        LS.selection = []
+        self.selected.clear()
         wm = context.window_manager
         ncols = len(self.selection)//self.nrows + 1
         if ncols > self.ncols:

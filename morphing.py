@@ -684,10 +684,9 @@ def transferShapesToMeshes(context, ob, meshes, snames,
         hides.append((mesh, mesh.hide_select))
         mesh.hide_select = False
         selectSet(mesh, True)
-    theFilePaths = LS.filepaths
-    LS.filepaths = snames
     try:
         bpy.ops.daz.transfer_shapekeys(
+            selected = [{"name" : sname} for sname in snames],
             useDrivers=useDrivers,
             useOverwrite=useOverwrite,
             useSelectedOnly=useSelectedOnly,
@@ -696,7 +695,6 @@ def transferShapesToMeshes(context, ob, meshes, snames,
     except DazError:
         pass
     finally:
-        LS.filepaths = theFilePaths
         for mesh, hidesel in hides:
             mesh.hide_select = hidesel
 
@@ -776,8 +774,17 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
         morphFiles = self.morphFiles.get(self.char)
         if morphFiles is None:
             return []
-        elif LS.filepaths:
-            for path in LS.filepaths:
+        if self.selected:
+            selection = [select["name"] for select in self.selected]
+        elif LS.selection:
+            selection = LS.selection
+        else:
+            selection = []
+        print("MOOO", morphFiles)
+        print("SEL", selection)
+
+        if selection:
+            for path in selection:
                 text = os.path.splitext(os.path.basename(path))[0]
                 namepaths.append((text, path, self.bodypart))
         else:
@@ -2156,14 +2163,10 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                     if activateObject(context, src):
                         for ob in getMeshChildren(rig):
                             ob.select_set(True)
-                        filepaths = LS.filepaths
-                        LS.filepaths = keynames
-                        try:
-                            bpy.ops.daz.transfer_shapekeys(
-                                useNonConforming = self.useNonConforming,
-                                ignoreRigidity = self.ignoreRigidity)
-                        finally:
-                            LS.filepaths = filepaths
+                        bpy.ops.daz.transfer_shapekeys(
+                            selected = [{"name" : key} for key in keynames],
+                            useNonConforming = self.useNonConforming,
+                            ignoreRigidity = self.ignoreRigidity)
                 self.makePosable(context, rig)
 
         # Import prop favorites

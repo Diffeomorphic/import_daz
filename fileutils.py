@@ -386,7 +386,7 @@ class MultiFile(ImportHelper):
         subtype='DIR_PATH')
 
     def invoke(self, context, event):
-        LS.filepaths = []
+        LS.selection = []
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -431,8 +431,8 @@ class MultiFile(ImportHelper):
 
 
         filepaths = []
-        if LS.filepaths:
-            for path in LS.filepaths:
+        if LS.selection:
+            for path in LS.selection:
                 filepath = getTypedFilePath(path, extensions)
                 if filepath:
                     filepaths.append(filepath)
