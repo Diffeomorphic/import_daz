@@ -116,10 +116,13 @@ def addHairNodeGroup(ob, name):
             asset_library_type = 'ESSENTIALS',
             asset_library_identifier = "",
             relative_asset_identifier = aid)
-        mod = ob.modifiers[-1]
-        group = mod.node_group
-        ob.modifiers.remove(mod)
-        print('Created node group "%s"' % group.name)
+        if ob.modifiers:
+            mod = ob.modifiers[-1]
+            group = mod.node_group
+            ob.modifiers.remove(mod)
+            print('Created node group "%s"' % group.name)
+        else:
+            print('Unable to create node group "%s"' % group.name)
     return group
 
 

@@ -188,6 +188,12 @@ class HairOptions:
 
     # Settings
 
+    childThreshold : IntProperty(
+        name = "Child Strand Threshold",
+        description = "Maximum number of strands that can use children",
+        min = 100,
+        default = 10000)
+
     nRenderChildren : IntProperty(
         name = "Render Children",
         description = "Number of hair children displayed in renders",
@@ -739,6 +745,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             box.prop(self, "nRenderStep")
             box.prop(self, "strandShape")
         elif self.output ==  'HAIR_CURVES':
+            box.prop(self, "childThreshold")
             box.prop(self, "nRenderChildren")
             box.prop(self, "viewFactor")
             box.prop(self, "childRadius")
@@ -994,12 +1001,13 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
                 socket = ("Input" if "Input_2" in mod.keys() else "Socket")
                 mod["%s_3" % socket] = self.hairRadius * 1e-3
                 mod["%s_2" % socket] = self.hairShape
-            mod = addMod(ob, "Duplicate Hair Curves")
-            if mod:
-                socket = ("Input" if "Input_2" in mod.keys() else "Socket")
-                mod["%s_2" % socket] = self.nRenderChildren
-                mod["%s_4" % socket] = self.viewFactor
-                mod["%s_5" % socket] = self.childRadius * 1e-3
+            if len(strands) < self.childThreshold and self.nRenderChildren > 0:
+                mod = addMod(ob, "Duplicate Hair Curves")
+                if mod:
+                    socket = ("Input" if "Input_2" in mod.keys() else "Socket")
+                    mod["%s_2" % socket] = self.nRenderChildren
+                    mod["%s_4" % socket] = self.viewFactor
+                    mod["%s_5" % socket] = self.childRadius * 1e-3
 
     def findMeshRects(self, hair):
         from ..tables import getVertFaces, findNeighbors
