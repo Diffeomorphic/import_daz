@@ -137,15 +137,15 @@ class Selector():
 
 
     def getSelectedProps(self):
-        if LS.selection:
-            return LS.selection
+        if LS.filepaths:
+            return LS.filepaths
         else:
             return [item.name for item in self.getSelectedItems()]
 
 
     def invokeDialog(self, context):
         setSelector(self)
-        LS.selection = []
+        LS.filepaths = []
         wm = context.window_manager
         ncols = len(self.selection)//self.nrows + 1
         if ncols > self.ncols:

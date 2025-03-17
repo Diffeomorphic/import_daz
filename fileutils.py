@@ -385,6 +385,11 @@ class MultiFile(ImportHelper):
     directory : StringProperty(
         subtype='DIR_PATH')
 
+    def invoke(self, context, event):
+        LS.filepaths = []
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
 
     def setPreferredFolder(self, rig, meshes, folders, usePeople):
         if GS.rememberLastFolder:
@@ -424,13 +429,20 @@ class MultiFile(ImportHelper):
             else:
                 return None
 
+
         filepaths = []
-        for file_elem in self.files:
-            path = os.path.join(self.directory, file_elem.name)
-            if os.path.isfile(path):
+        if LS.filepaths:
+            for path in LS.filepaths:
                 filepath = getTypedFilePath(path, extensions)
                 if filepath:
                     filepaths.append(filepath)
+        else:
+            for file_elem in self.files:
+                path = os.path.join(self.directory, file_elem.name)
+                if os.path.isfile(path):
+                    filepath = getTypedFilePath(path, extensions)
+                    if filepath:
+                        filepaths.append(filepath)
         return filepaths
 
 #-------------------------------------------------------------

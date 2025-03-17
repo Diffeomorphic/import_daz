@@ -684,8 +684,8 @@ def transferShapesToMeshes(context, ob, meshes, snames,
         hides.append((mesh, mesh.hide_select))
         mesh.hide_select = False
         selectSet(mesh, True)
-    selection = LS.selection
-    LS.selection = snames
+    theFilePaths = LS.filepaths
+    LS.filepaths = snames
     try:
         bpy.ops.daz.transfer_shapekeys(
             useDrivers=useDrivers,
@@ -696,7 +696,7 @@ def transferShapesToMeshes(context, ob, meshes, snames,
     except DazError:
         pass
     finally:
-        LS.selection = selection
+        LS.filepaths = theFilePaths
         for mesh, hidesel in hides:
             mesh.hide_select = hidesel
 
@@ -776,8 +776,8 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
         morphFiles = self.morphFiles.get(self.char)
         if morphFiles is None:
             return []
-        elif LS.selection:
-            for path in LS.selection:
+        elif LS.filepaths:
+            for path in LS.filepaths:
                 text = os.path.splitext(os.path.basename(path))[0]
                 namepaths.append((text, path, self.bodypart))
         else:
@@ -2156,14 +2156,14 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
                     if activateObject(context, src):
                         for ob in getMeshChildren(rig):
                             ob.select_set(True)
-                        selection = LS.selection
-                        LS.selection = keynames
+                        filepaths = LS.filepaths
+                        LS.filepaths = keynames
                         try:
                             bpy.ops.daz.transfer_shapekeys(
                                 useNonConforming = self.useNonConforming,
                                 ignoreRigidity = self.ignoreRigidity)
                         finally:
-                            LS.selection = selection
+                            LS.filepaths = filepaths
                 self.makePosable(context, rig)
 
         # Import prop favorites
