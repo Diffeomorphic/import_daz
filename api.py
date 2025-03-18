@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from urllib.parse import unquote
-from .error import DazError
 from .settings import GS, LS
 
 #----------------------------------------------------------
@@ -80,6 +78,7 @@ def get_canonical_filepath(filepath):
     ?filepath: String which represents a filepath
     """
     from .load_morph import getCanonicalFilePath
+    from urllib.parse import unquote
     return getCanonicalFilePath(unquote(filepath))
 
 #-------------------------------------------------------------
@@ -120,7 +119,7 @@ def set_global_setting(setting, value):
 def clear_selection():
     """clear_selection()
 
-    Deprecated. Clear the active file selection to be loaded by consecutive operators.
+    **Deprecated**. Clear the active file selection to be loaded by consecutive operators.
     """
     LS.selection = []
     print("File paths cleared")
@@ -129,7 +128,7 @@ def clear_selection():
 def get_selection():
     """get_selection()
 
-    Deprecated. Get the active file selection to be loaded by consecutive operators.
+    **Deprecated**. Get the active file selection to be loaded by consecutive operators.
 
     Returns:
     The active list of file paths (strings).
@@ -140,7 +139,7 @@ def get_selection():
 def set_selection(files):
     """set_selection(files)
 
-    Deprecated. Set the active file selection to be loaded by consecutive operators.
+    **Deprecated**. Set the active file selection to be loaded by consecutive operators.
 
     Arguments:
     ?files: A list of file paths (strings).
@@ -148,6 +147,7 @@ def set_selection(files):
     if isinstance(files, list):
         LS.selection = [file.replace("\\", "/") for file in files]
     else:
+        from .error import DazError
         try:
             raise DazError("File paths must be a list of strings")
         except:
@@ -221,6 +221,14 @@ def get_absolute_paths(paths):
 
 def get_absolute_path(path):
     """get_absolute_path()
+
+    Get the absolute filepath corresponding to the given relative filepath.
+
+    Arguments:
+    ?path: Path or reference relative to the DAZ root paths.
+
+    Returns:
+    The corresponding absolute path if it exist.
     """
     abspaths = get_absolute_paths([path])
     return (abspaths[0] if abspaths else None)
