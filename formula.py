@@ -75,7 +75,7 @@ class Formula:
                     if ref is None or key != "value":
                         return None,None,0
                     asset = self.getAsset(ref)
-                    if not hasattr(asset, "value"):
+                    if not hasattr(asset, "value") or asset.value is None:
                         return None,None,0
                     stack.append(asset.value)
                 elif "val" in struct.keys():

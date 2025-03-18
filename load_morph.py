@@ -611,6 +611,8 @@ class LoadMorph(DriverUser):
             elif asset.type == "int":
                 self.obj[raw] = asset.value
                 self.amt[final] = asset.value
+            elif asset.type == "string":
+                pass
             else:
                 self.setFloatLimits(self.obj, raw, asset, None, True)
                 self.setFloatLimits(self.amt, final, asset, skey, False)
