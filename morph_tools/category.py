@@ -59,10 +59,7 @@ class GeneralMorphSelector(Selector):
 
 
     def specialKey(self, key):
-        if (key[0:3] == "Daz" or
-            key[0:6] == "Adjust"):
-            return True
-        return False
+        return key.startswith(("Daz", "daz_importer", "Adjust"))
 
 
     def invoke(self, context, event):
@@ -486,10 +483,9 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
     def run(self, context):
         ob = context.object
         rig = getRigFromContext(context)
-        if self.invoked:
-            self.props = [item.name.lower() for item in self.getSelectedItems()]
+        self.props = [prop.lower() for prop in self.getSelectedProps()]
         if rig:
-            if not self.invoked:
+            if not self.props:
                 self.props = [key.lower() for key in rig.keys() if not self.specialKey(key)]
             self.updatePropLimits(rig, context)
         if ob != rig:
@@ -509,7 +505,7 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
                         skey.driver_remove("slider_max")
         amt = rig.data
         for raw in rig.keys():
-            if raw.lower() in self.props:
+            if raw.lower() in self.props and isinstance(rig[raw], float):
                 if self.useSliders:
                     setFloatProp(rig, raw, rig[raw], self.min, self.max, True)
                 if self.useFinal:
@@ -518,7 +514,6 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
                         setFloatProp(amt, final, amt[final], self.min, self.max, False)
         updateRigDrivers(context, rig)
         print("Slider limits updated")
-
 
 #------------------------------------------------------------------
 #   Remove all morph drivers
@@ -1085,7 +1080,11 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
             else:
                 items = dict([(item.name, item.name) for item in self.getSelectedItems()])
         else:
-            items = dict([(key, key) for key in rig.keys() if not self.specialKey(self, key)])
+            lprops = [prop.lower() for prop in self.getSelectedProps()]
+            if lprops:
+                items = dict([(key, key) for key in rig.keys() if key.lower() in lprops])
+            else:
+                items = dict([(key, key) for key in rig.keys() if not self.specialKey(key)])
         nitems = len(items)
         skeys = ob.data.shape_keys
         if skeys is None:
@@ -1121,7 +1120,6 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
                             existing[skey.name] = skey
                 mod = self.applyArmature(ob, rig, mod, key, mname)
                 clearProp(rig, key)
-        print("EX", existing.keys())
         t2 = perf_counter()
         print("Converted %d morphs in %g seconds" % (n, t2-t1))
         updateRigDrivers(context, rig)
