@@ -683,12 +683,12 @@ class DAZ_OT_RemoveShellImages(DazOperator, Selector, ShellRemover, IsMesh):
         Selector.draw(self, context)
 
     def run(self, context):
-        for item in self.getSelectedItems():
-            for data in self.shells[item.text].values():
+        for sname in self.getSelectedValues():
+            for data in self.shells[sname].values():
                 for mat,node in data:
                     self.replaceNodes(mat, node)
             if self.useDeleteProperties:
-                print("II", item.name, item.text)
+                print("II", sname)
 
 
     def invoke(self, context, event):

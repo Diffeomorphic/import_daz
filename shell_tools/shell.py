@@ -93,8 +93,8 @@ class DAZ_OT_RemoveShells(DazOperator, Selector, ShellRemover, IsMesh):
     columnWidth = 350
 
     def run(self, context):
-        for item in self.getSelectedItems():
-            for data in self.shells[item.text].values():
+        for sname in self.getSelectedValues():
+            for data in self.shells[sname].values():
                 for mat,node in data:
                     self.deleteNodes(mat, node)
 
@@ -220,8 +220,8 @@ class DAZ_OT_CopyShells(DazPropsOperator, ShellRemover, UniqueMaterials, ShellCo
     def run(self, context):
         src = context.object
         shells = {}
-        for item in self.getSelectedItems():
-            for data in self.shells[item.text].values():
+        for sname in self.getSelectedValues():
+            for data in self.shells[sname].values():
                 for mat,node in data:
                     mname = stripName(mat.name)
                     if mname not in shells.keys():

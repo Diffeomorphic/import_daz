@@ -132,10 +132,10 @@ class DAZ_OT_SaveMorphPresets(DazOperator, MorphPreset, Selector, IsMesh):
     def run(self, context):
         ob = context.object
         folder = self.getFullDirectory(context.scene)
-        for item in self.getSelectedItems():
-            filepath = "%s/%s.duf" % (folder, item.name)
-            skey = ob.data.shape_keys.key_blocks[item.name]
-            mname = bpy.path.clean_name(item.name)
+        for fname in self.getSelectedValues():
+            filepath = "%s/%s.duf" % (folder, fname)
+            skey = ob.data.shape_keys.key_blocks[fname]
+            mname = bpy.path.clean_name(fname)
             self.saveFile(context, filepath, ob, skey, mname, True)
 
 

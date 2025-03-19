@@ -125,8 +125,8 @@ class DAZ_OT_SelectStrandsBySize(DazOperator, IsMesh, Selector):
         if not (ob.data.polygons or ob.data.edges):
             return
         prox = Proxifier(ob)
-        for item in self.getSelectedItems():
-            for comp in self.groups[int(item.name)]:
+        for iname in self.getSelectedValues():
+            for comp in self.groups[int(iname)]:
                 prox.selectComp(comp, ob)
 
 

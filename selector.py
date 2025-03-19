@@ -61,6 +61,7 @@ class Selector():
         default = ""
         )
 
+    invoked = False
     defaultSelect = False
     columnWidth = 180
     ncols = 6
@@ -139,12 +140,13 @@ class Selector():
 
 
     def getScriptedValues(self):
-        if self.selection is not None:
-            return [item["name"] for item in self.selection]
-        elif LS.selection:
-            return LS.selection
-        else:
+        if self.invoked:
+            self.invoked = False
             return None
+        elif len(self.selection) > 0:
+            return [item["name"] for item in self.selection]
+        else:
+            return LS.selection
 
 
     def getSelectedValues(self):
@@ -174,6 +176,7 @@ class Selector():
         setSelector(self)
         LS.selection = []
         self.selection.clear()
+        self.invoked = True
         wm = context.window_manager
         ncols = len(self.selectedItems)//self.nrows + 1
         if ncols > self.ncols:
