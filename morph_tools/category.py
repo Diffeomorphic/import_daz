@@ -34,8 +34,6 @@ class GeneralMorphSelector(Selector):
         items = getCatEnums,
         name = "Category")
 
-    invoked = False
-
     def selectCondition(self, item):
         if self.morphset == "Custom":
             return (item.name in self.catnames[self.category])

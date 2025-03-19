@@ -194,6 +194,7 @@ theUseDumpErrors = False
 
 class DazOperator(bpy.types.Operator):
     useReport = True
+    invoked = False
 
     def execute(self, context):
         self.prequel(context)
@@ -216,6 +217,7 @@ class DazOperator(bpy.types.Operator):
             bpy.ops.daz.error('INVOKE_DEFAULT')
         finally:
             self.sequel(context)
+            self.invoked = False
         return{'FINISHED'}
 
 
@@ -325,6 +327,7 @@ def setTypedPropValue(ob, key, value, newvalue):
 class DazPropsOperator(DazOperator):
     dialogWidth = 300
     def invoke(self, context, event):
+        self.invoked = True
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=self.dialogWidth)
 

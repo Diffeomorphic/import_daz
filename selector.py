@@ -61,7 +61,6 @@ class Selector():
         default = ""
         )
 
-    invoked = False
     defaultSelect = False
     columnWidth = 180
     ncols = 6
@@ -141,7 +140,6 @@ class Selector():
 
     def getScriptedValues(self):
         if self.invoked:
-            self.invoked = False
             return None
         elif len(self.selection) > 0:
             return [item["name"] for item in self.selection]
@@ -167,9 +165,9 @@ class Selector():
         else:
             lprops = [prop.lower() for prop in selection]
             if lprops:
-                items = dict([(key, key) for key in rig.keys() if key.lower() in lprops])
+                return dict([(key, key) for key in rig.keys() if key.lower() in lprops])
             else:
-                items = dict([(key, key) for key in rig.keys() if not self.specialKey(key)])
+                return dict([(key, key) for key in rig.keys() if not self.specialKey(key)])
 
 
     def invokeDialog(self, context):
