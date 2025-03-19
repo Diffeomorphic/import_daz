@@ -65,7 +65,6 @@ class GeneralMorphSelector(Selector):
     def invoke(self, context, event):
         global theMorphEnums, theCatEnums
         rig = self.rig = getRigFromContext(context)
-        self.invoked = True
         theMorphEnums = [("All", "All", "All")]
         theCatEnums = [("All", "All", "All")]
         self.morphset = "All"
@@ -483,7 +482,7 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
     def run(self, context):
         ob = context.object
         rig = getRigFromContext(context)
-        self.props = [prop.lower() for prop in self.getSelectedProps()]
+        self.props = [prop.lower() for prop in self.getSelectedValues()]
         if rig:
             if not self.props:
                 self.props = [key.lower() for key in rig.keys() if not self.specialKey(key)]
@@ -737,7 +736,7 @@ class DAZ_OT_AddDrivenValueNodes(DazOperator, Selector, DriverUser, IsMesh):
             raise DazError("Object %s has not shapekeys" % ob.name)
         rig = getRigFromContext(context)
         mat = ob.data.materials[ob.active_material_index]
-        props = self.getSelectedProps()
+        props = self.getSelectedValues()
         nprops = len(props)
         for n,prop in enumerate(props):
             skey = skeys.key_blocks[prop]
@@ -760,7 +759,7 @@ class AddRemoveDriver:
         ob = context.object
         rig = ob.parent
         if (rig and rig.type == 'ARMATURE'):
-            for sname in self.getSelectedProps():
+            for sname in self.getSelectedValues():
                 self.handleShapekey(sname, rig, ob)
             updateRigDrivers(context, rig)
         updateDrivers(ob.data.shape_keys)
@@ -815,7 +814,7 @@ class DAZ_OT_AddShapeToCategory(DazOperator, AddRemoveDriver, Selector, CustomEn
             raise DazError("Cannot add to all categories")
         else:
             cat = self.custom
-        for sname in self.getSelectedProps():
+        for sname in self.getSelectedValues():
             skey = ob.data.shape_keys.key_blocks[sname]
             addToCategories(ob, [sname], None, cat)
             dazRna(ob).DazMeshMorphs = True
@@ -880,7 +879,7 @@ class DAZ_OT_RemoveShapeFromCategory(DazOperator, AddRemoveDriver, CustomSelecto
     def run(self, context):
         ob = context.object
         snames = []
-        for sname in self.getSelectedProps():
+        for sname in self.getSelectedValues():
             skey = ob.data.shape_keys.key_blocks[sname]
             snames.append(skey.name)
         if self.custom == "All":
@@ -1074,17 +1073,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
             raise DazError("No armature found")
         if dazRna(rig).DazDriversDisabled:
             raise DazError("Drivers are disabled")
-        if self.invoked:
-            if self.useLabels:
-                items = dict([(item.name, item.text) for item in self.getSelectedItems()])
-            else:
-                items = dict([(item.name, item.name) for item in self.getSelectedItems()])
-        else:
-            lprops = [prop.lower() for prop in self.getSelectedProps()]
-            if lprops:
-                items = dict([(key, key) for key in rig.keys() if key.lower() in lprops])
-            else:
-                items = dict([(key, key) for key in rig.keys() if not self.specialKey(key)])
+        items = self.getSelectedProps(rig, self.useLabels)
         nitems = len(items)
         skeys = ob.data.shape_keys
         if skeys is None:

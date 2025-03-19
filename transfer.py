@@ -252,7 +252,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         self.driverPaths = {}
         if self.useDrivers and hskeys.animation_data:
             self.driverPaths = dict([(fcu.data_path,fcu) for fcu in hskeys.animation_data.drivers])
-        snames = self.getSelectedProps()
+        snames = self.getSelectedValues()
         srcboxes = {}
         for sname in snames:
             hskey = hskeys.key_blocks[sname]

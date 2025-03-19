@@ -138,20 +138,42 @@ class Selector():
         return [item for item in self.selectedItems if item.select and self.isSelected(item)]
 
 
-    def getSelectedProps(self):
-        if LS.selection:
-            return LS.selection
-        elif self.selection is not None:
+    def getScriptedValues(self):
+        if self.selection is not None:
             return [item["name"] for item in self.selection]
+        elif LS.selection:
+            return LS.selection
         else:
+            return None
+
+
+    def getSelectedValues(self):
+        selection = self.getScriptedValues()
+        if selection is None:
             return [item.name for item in self.getSelectedItems()]
+        else:
+            return selection
+
+
+    def getSelectedProps(self, rig, useLabels):
+        selection = self.getScriptedValues()
+        if selection is None:
+            if self.useLabels:
+                return dict([(item.name, item.text) for item in self.getSelectedItems()])
+            else:
+                return dict([(item.name, item.name) for item in self.getSelectedItems()])
+        else:
+            lprops = [prop.lower() for prop in selection]
+            if lprops:
+                items = dict([(key, key) for key in rig.keys() if key.lower() in lprops])
+            else:
+                items = dict([(key, key) for key in rig.keys() if not self.specialKey(key)])
 
 
     def invokeDialog(self, context):
         setSelector(self)
         LS.selection = []
         self.selection.clear()
-        self.invoked = True
         wm = context.window_manager
         ncols = len(self.selectedItems)//self.nrows + 1
         if ncols > self.ncols:

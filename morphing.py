@@ -774,14 +774,14 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
         morphFiles = self.morphFiles.get(self.char)
         if morphFiles is None:
             return []
-        if self.selection:
-            selected = [select["name"] for select in self.selection]
-        elif LS.selection:
-            selected = LS.selection
-        else:
-            selected = []
-
-        if selected:
+        selected = self.getScriptedValues()
+        if selected is None:
+            for item in self.getSelectedItems():
+                key = item.name
+                path = morphFiles.get(key)
+                if path:
+                    namepaths.append((item.text, path, self.bodypart))
+        elif selected:
             abspaths = dict([(os.path.basename(path), path) for path in morphFiles.values()])
             for file in selected:
                 text = os.path.splitext(file)[0]
@@ -789,11 +789,9 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
                 if path:
                     namepaths.append((text, path, self.bodypart))
         else:
-            for item in self.getSelectedItems():
-                key = item.name
-                path = morphFiles.get(key)
-                if path:
-                    namepaths.append((item.text, path, self.bodypart))
+            for path in morphFiles.values():
+                text = os.path.splitext(os.path.basename(path))[0]
+                namepaths.append((text, path, self.bodypart))
         return namepaths
 
 #------------------------------------------------------------------------

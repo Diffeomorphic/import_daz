@@ -438,7 +438,7 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
             if prop not in rig.keys():
                 rig[prop] = 1.0
             props.append(prop)
-        snames = self.getSelectedProps()
+        snames = self.getSelectedValues()
         for skey in hum.data.shape_keys.key_blocks:
             if skey.name in snames:
                 skey.driver_remove("value")
