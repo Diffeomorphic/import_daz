@@ -411,8 +411,15 @@ class MetaMaker(RigifyCommon):
                 pb.rigify_type = rtype
                 setParams(pb.rigify_parameters, params)
             for bname,pname in cbones.items():
-                bone = meta.data.bones[bname]
-                setBoneNumLayer(bone, meta, R_CUSTOM)
+                mbone = meta.data.bones[bname]
+                if BLENDER3:
+                    setBoneNumLayer(mbone, meta, R_CUSTOM)
+                else:
+                    rbone = meta.data.bones[bname]
+                    colls = getBoneLayers(rbone, rig)
+                    layer = (colls[0].name if colls else R_CUSTOM)
+                    print("RR", bname, layer)
+                    setBoneNumLayer(mbone, meta, layer)
 
         print("  Add props to rigify")
         connect,disconnect = self.addRigifyProps(meta)
@@ -529,8 +536,9 @@ class MetaMaker(RigifyCommon):
                 eb.head = db.head
                 eb.tail = db.tail
                 eb.roll = db.roll
-                eb.parent = meta.data.edit_bones[pname]
-                eb.use_connect = db.use_connect
+                if pname:
+                    eb.parent = meta.data.edit_bones[pname]
+                    eb.use_connect = db.use_connect
                 cbones[bname] = pname
 
         root = rig.data.edit_bones[bname]
