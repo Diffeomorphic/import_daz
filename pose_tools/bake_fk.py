@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
+from mathutils import Matrix
 from ..utils import *
 from ..error import *
 from ..animation import FrameRange
