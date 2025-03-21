@@ -1045,10 +1045,11 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
         for fcu in rna.animation_data.drivers:
             for var in list(fcu.driver.variables):
                 trg = var.targets[0]
-                if trg.id == self.amt and trg.data_path in self.findrivers.keys():
+                fcuraw = self.findrivers.get(trg.data_path)
+                if trg.id == self.amt and fcuraw:
                     vname = var.name
                     fcu.driver.variables.remove(var)
-                    prop = self.findrivers[trg.data_path][1]
+                    prop = fcuraw[1]
                     addDriverVar(fcu, vname, propRef(prop), self.rig)
 
 
