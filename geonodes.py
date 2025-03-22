@@ -376,6 +376,8 @@ class MaskFacesGroup(GeoTree):
 # ---------------------------------------------------------------------
 
 def addMaskFaceModifier(ob, grpname, fgname, useFaceGroupMasks=False):
+    if fgname is None:
+        return
     from .tree import addNodeGroup
     from .store import addModifierFirst
     if useFaceGroupMasks:
