@@ -76,7 +76,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     gizmoFile = "mhx"
     useQuaternions = True
 
-    addTweakBones : BoolProperty(
+    useTweakBones : BoolProperty(
         name = "Tweak Bones",
         description = "Add tweak bones",
         default = False)
@@ -94,6 +94,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     useStretch : BoolProperty(
         name = "Stretchy Limbs",
         description = "Enable stretchiness for arms and legs",
+        default = True)
+
+    useSplitShin : BoolProperty(
+        name = "Split Shin Bone",
+        description = "Split the shin vertex groups into bend and twist parts",
         default = True)
 
     useSpineIk : BoolProperty(
@@ -156,7 +161,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             self.layout.prop(self, "elbowParent")
             self.layout.prop(self, "kneeParent")
         self.layout.prop(self, "useStretch")
-        self.layout.prop(self, "addTweakBones")
+        self.layout.prop(self, "useSplitShin")
+        self.layout.prop(self, "useTweakBones")
         self.drawMeta()
         self.layout.prop(self, "useSpineIk")
         self.layout.prop(self, "useTongueIk")
@@ -669,7 +675,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             bend.use_connect = eb.use_connect
             twist.use_connect = True
             eb.use_deform = False
-            if self.addTweakBones:
+            if self.useTweakBones:
                 btwkname = self.getTweakBoneName(bendname)
                 ttwkname = self.getTweakBoneName(twistname)
                 bendtwk = rig.data.edit_bones.new(btwkname)
@@ -699,7 +705,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
             for ob in getMeshChildren(rig):
                 if bname in ob.vertex_groups.keys():
-                    self.splitVertexGroup(ob, bname, bvgname, tvgname, eb.head, eb.tail)
+                    if self.useSplitShin:
+                        self.splitVertexGroup(ob, bname, bvgname, tvgname, eb.head, eb.tail)
+                    else:
+                        vgrp = ob.vertex_groups[bname]
+                        vgrp.name = bvgname
                 else:
                     base,suffix = bname.split(".",1)
                     bendgrp = ob.vertex_groups.get("%sBend.%s" % (base, suffix))
@@ -734,7 +744,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             if useStretch and stretch:
                 stretchTo(bend, trg, rig, stretch, "x")
                 stretchTo(twist, trg, rig, stretch, "x")
-            if self.addTweakBones:
+            if self.useTweakBones:
                 btwkname = self.getTweakBoneName(bendname)
                 ttwkname = self.getTweakBoneName(twistname)
                 bendtwk = rig.pose.bones[btwkname]
@@ -928,7 +938,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     #-------------------------------------------------------------
 
     def addTweaks(self, rig):
-        if not self.addTweakBones:
+        if not self.useTweakBones:
             self.tweakBones = []
             return
 
