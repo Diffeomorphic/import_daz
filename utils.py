@@ -583,29 +583,26 @@ def nextLetter(char):
     return ("f" if char == "d" else chr(ord(char) + 1))
 
 def isSimpleType(x):
-    return (isinstance(x, int) or
-            isinstance(x, float) or
-            isinstance(x, str) or
-            isinstance(x, bool) or
-            x is None)
+    return (isinstance(x, (int, float, str, bool)) or x is None)
+
+def castValue(value, model):
+    if isinstance(model, bool):
+        return bool(int(value))
+    elif isinstance(model, int):
+        return int(value)
+    elif isinstance(model, float):
+        return float(value)
+    else:
+        return value
 
 def clearProp(rna, prop):
-    value = rna.get(prop)
-    if value is None or isinstance(value, float):
-        rna[prop] = 0.0
-    elif isinstance(value, bool):
-        rna[prop] = False
-    elif isinstance(value, int):
-        rna[prop] = 0
+    model = rna.get(prop)
+    rna[prop] = castValue(0.0, model)
 
 def setProp(rna, prop):
-    value = rna.get(prop)
-    if value is None or isinstance(value, float):
-        rna[prop] = 1.0
-    elif isinstance(value, bool):
-        rna[prop] = True
-    elif isinstance(value, int):
-        rna[prop] = 1
+    model = rna.get(prop)
+    rna[prop] = castValue(1.0, model)
+
 
 def addToStruct(struct, key, prop, value):
     if key not in struct.keys():

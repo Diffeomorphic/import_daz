@@ -1246,12 +1246,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def makeValueFrame(self, bname, rig, bframe, value, n, offset):
         def setRigProp(rig, key, value, n, offset):
             if key:
-                oldval = rig[key]
-                if isinstance(oldval, int):
-                    value = int(value)
-                elif isinstance(oldval, float):
-                    value = float(value)
-                rig[key] = value
+                rig[key] = castValue(value, rig[key])
                 if self.useInsertKeys:
                     rig.keyframe_insert(propRef(key), frame=n+offset, group="Morphs")
 

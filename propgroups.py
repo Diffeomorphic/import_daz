@@ -339,16 +339,6 @@ if DAZ_PROPS:
 
 
         def run(self, context):
-            def cast(data, default):
-                if isinstance(default, bool):
-                    return bool(int(data))
-                elif isinstance(default, int):
-                    return int(data)
-                elif isinstance(default, float):
-                    return float(data)
-                else:
-                    return data
-
             def updateProps(rna):
                 def setCollProp(group, prop, value, pgs2):
                     if len(value) == 0:

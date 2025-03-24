@@ -52,12 +52,7 @@ class HairUpdater:
                 (key in ["material", "material_slot"] and
                  not self.affectMaterial)):
                 continue
-            if (
-                isinstance(attr, int) or
-                isinstance(attr, bool) or
-                isinstance(attr, float) or
-                isinstance(attr, str)
-                ):
+            if isinstance(attr, (int, bool, float, str)):
                 settings[key] = attr
         return settings
 

@@ -579,7 +579,7 @@ class Material(Asset, Channels):
 
     def getChannelColor(self, channel, default, warn=True):
         color = self.getChannelValue(channel, default, warn)
-        if isinstance(color, int) or isinstance(color, float):
+        if isinstance(color, (int, float)):
             color = (color, color, color)
         if channel and channel["type"] == "color":
             return srgbToLinearCorrect(color)
@@ -1254,9 +1254,7 @@ class MaterialCombiner:
 
 
     def checkEqual(self, attr1, attr2):
-        if (isinstance(attr1, int) or
-            isinstance(attr1, float) or
-            isinstance(attr1, str)):
+        if isinstance(attr1, (int, float, str)):
             return (attr1 == attr2)
         elif isinstance(attr1, bpy.types.Image):
             return (isinstance(attr2, bpy.types.Image) and (attr1.name == attr2.name))

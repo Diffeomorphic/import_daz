@@ -2081,7 +2081,7 @@ class CyclesTree(Tree):
 
 
     def multiplySomeTex(self, value, tex, slot=None):
-        if isinstance(value, float) or isinstance(value, int):
+        if isinstance(value, (float, int)):
             if tex and value != 1:
                 tex = self.multiplyScalarTex(value, tex, slot)
         elif tex:

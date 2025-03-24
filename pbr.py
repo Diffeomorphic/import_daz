@@ -604,7 +604,7 @@ class PbrTree(CyclesTree):
 
     def setPBRValue(self, slot, value, default, maxval=0):
         if isinstance(default, Vector):
-            if isinstance(value, float) or isinstance(value, int):
+            if isinstance(value, (int, float)):
                 value = Vector((value,value,value))
             self.pbr.inputs[slot].default_value[0:3] = value
         else:

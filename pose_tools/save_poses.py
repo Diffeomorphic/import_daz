@@ -181,10 +181,7 @@ class PoseCollector:
 
 
     def addValue(self, struct, key, value):
-        if (isinstance(value, int) or
-            isinstance(value, float) or
-            isinstance(value, bool) or
-            isinstance(value, str)):
+        if isinstance(value, (int, float, bool, str)):
             struct[key] = value
 
 #------------------------------------------------------------------
@@ -262,15 +259,8 @@ class PoseSetter:
                 morphs = ostruct.get("morphs")
                 if morphs:
                     for prop,value in morphs.items():
-                        if prop in rig.keys():
-                            value0 = rig[prop]
-                            if isinstance(value0, float):
-                                value = float(value)
-                            elif isinstance(value0, bool):
-                                value = bool(value)
-                            elif isinstance(value0, int):
-                                value = int(value)
-                        rig[prop] = value
+                        model = rig.get(prop)
+                        rig[prop] = castValue(value, model)
                         if self.auto:
                             rig.keyframe_insert(propRef(prop))
 
