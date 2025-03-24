@@ -804,7 +804,7 @@ class BendTwists:
                 ob.vertex_groups.remove(ogrp)
             ngrp = ob.vertex_groups.new(name=nname)
             for vn,w in weights.items():
-                if vn > 0:
+                if w > 0:
                     ngrp.add([vn], w, 'REPLACE')
 
         addGroup(ob, bvgname, bend)
