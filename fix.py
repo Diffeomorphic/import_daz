@@ -786,23 +786,29 @@ class BendTwists:
 
     def splitVertexGroup(self, ob, vgname, bvgname, tvgname, head, tail):
         vgrp = ob.vertex_groups.get(vgname)
-        bendgrp = ob.vertex_groups.new(name=bvgname)
-        bendgrp.name = bvgname
-        twistgrp = ob.vertex_groups.new(name=tvgname)
-        twistgrp.name = tvgname
         vec = tail-head
         vec /= vec.dot(vec)
+        bend = {}
+        twist = {}
         for v in ob.data.vertices:
             for g in v.groups:
                 if g.group == vgrp.index:
-                    x = vec.dot(v.co - head)
-                    if x < 0:
-                        x = 0
-                    elif x > 1:
-                        x = 1
-                    bendgrp.add([v.index], g.weight*(1-x), 'REPLACE')
-                    twistgrp.add([v.index], g.weight*x, 'REPLACE')
+                    x = max(0, min(1, vec.dot(v.co - head)))
+                    bend[v.index] = g.weight*(1-x)
+                    twist[v.index] = g.weight*x
         ob.vertex_groups.remove(vgrp)
+
+        def addGroup(ob, nname, weights):
+            ogrp = ob.vertex_groups.get(nname)
+            if ogrp:
+                ob.vertex_groups.remove(ogrp)
+            ngrp = ob.vertex_groups.new(name=nname)
+            for vn,w in weights.items():
+                if vn > 0:
+                    ngrp.add([vn], w, 'REPLACE')
+
+        addGroup(ob, bvgname, bend)
+        addGroup(ob, tvgname, twist)
 
 #-------------------------------------------------------------
 #   Retarget armature
