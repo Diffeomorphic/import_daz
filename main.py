@@ -1275,6 +1275,7 @@ def register():
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
     from .fileutils import copyPresets
     copyPresets("easy_import_daz", "easy_import_daz")
+    copyPresets("convert_to_mhx", "convert_to_mhx")
 
 
 def unregister():
