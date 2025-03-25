@@ -138,20 +138,27 @@ class BoneInstance(Instance):
         rmat = rdata.wsmat.to_4x4()
         if GS.zup:
             rmat = self.RX @ rmat @ self.RX.inverted()
+        poseOmat = None
         if rmat.determinant() > 1e-4:
-            omat = rmat.inverted() @ omat
+            poseOmat = rmat.inverted() @ omat
+
+        def setBoneMatrix(eb, omat, head, tail, flip, rdata):
+            omat = self.flipBone(omat, head, tail, flip, rdata.xyz)
+            self.setFlip()
+            omat.col[3][0:3] = head
+            eb.matrix = omat
 
         if GS.unflipped:
             omat.col[3][0:3] = head
             eb.matrix = omat
         else:
-            omat = self.flipBone(omat, head, tail, flip, rdata.xyz)
-            self.setFlip()
-            if self.test:
-                print("FBONE", self.name, self.rotation_order, self.axes, self.flipped)
-            omat.col[3][0:3] = head
-            eb.matrix = omat
+            setBoneMatrix(eb, omat, head, tail, flip, rdata)
             self.correctRoll(eb, figure)
+            if poseOmat is not None:
+                roll = eb.roll
+                setBoneMatrix(eb, poseOmat, head, tail, flip, rdata)
+                eb.roll = roll
+
         self.correctLength(eb, length)
 
         if self.name in BD.FaceRigs:
@@ -241,6 +248,16 @@ class BoneInstance(Instance):
             return omat @ flip
         else:
             return omat
+
+
+    def setFlip(self):
+        for n in range(3):
+            if (self.name.startswith(BD.UnFlips[n]) or
+                self.name in BD.UnFlipsSharp[n]):
+                self.flipped[n] = False
+            elif (self.name.startswith(BD.Flips[n]) or
+                self.name in BD.FlipsSharp[n]):
+                self.flipped[n] = True
 
 
     def correctRoll(self, eb, figure):
@@ -368,16 +385,6 @@ class BoneInstance(Instance):
             return BD.getDefaultMode(pb)
         else:
             return BD.getDefaultMode(pb)
-
-
-    def setFlip(self):
-        for n in range(3):
-            if (self.name.startswith(BD.UnFlips[n]) or
-                self.name in BD.UnFlipsSharp[n]):
-                self.flipped[n] = False
-            elif (self.name.startswith(BD.Flips[n]) or
-                self.name in BD.FlipsSharp[n]):
-                self.flipped[n] = True
 
 
     def buildPose(self, figure, inFace, targets, missing):
