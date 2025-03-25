@@ -1251,7 +1251,10 @@ class LoadMorph(DriverUser):
             mstring = ""
             if len(string) == 0:
                 reportError("Trying to multiply empty string", trigger=(1,1))
-            elif len(string) > 1 and string[1] == '*' and string[0].isupper():
+            elif (len(string) > 1 and
+                 string[1] == '*' and
+                 string[0].isupper() and
+                 string[0] not in ["K", "L"]):
                 varname = nextLetter(string[0])
             else:
                 varname = "M"
