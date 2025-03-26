@@ -111,63 +111,59 @@ class BoneInstance(Instance):
         if self.ignoreBone:
             return
         self.makeNameUnique(rig.data.edit_bones)
-        rdata = self.getHeadTail(center)
         eb = rig.data.edit_bones.new(self.name)
         figure.bones[self.name] = eb.name
         figinst.bones[self.name] = self
-        rdata.checkBone(self.name)
         eb.parent = parent
-        eb.head = head = d2b(rdata.head)
-        eb.tail = tail = d2b(rdata.tail)
-        length = (head-tail).length
-        omat = rdata.orient.to_matrix()
-        lsmat = self.getLocalMatrix(rdata.wsmat, omat)
-        if not eulerIsZero(lsmat.to_euler()):
-            self.isPosed = True
-        omat = omat.to_4x4()
-        if GS.zup:
-            omat = self.RX @ omat
-        flip = self.FX
-        if not GS.unflipped:
-            omat,flip = self.flipAxes(omat, rdata.xyz)
 
-        if self.test:
-            print("BB", self.name, rdata.orient)
+        def setBone(eb, rdata, usePosed):
+            rdata.checkBone(self.name)
+            eb.head = head = d2b(rdata.head)
+            eb.tail = tail = d2b(rdata.tail)
+            length = (head-tail).length
+            omat = rdata.orient.to_matrix()
+            lsmat = self.getLocalMatrix(rdata.wsmat, omat)
+            isPosed = (not eulerIsZero(lsmat.to_euler()))
+            omat = omat.to_4x4()
+            if GS.zup:
+                omat = self.RX @ omat
+            flip = self.FX
+            if not GS.unflipped:
+                omat,flip = self.flipAxes(omat, rdata.xyz)
+            rmat = rdata.wsmat.to_4x4()
+            if GS.zup:
+                rmat = self.RX @ rmat @ self.RX.inverted()
+            #  engetudouiti's fix for posed bones
+            if usePosed:
+                if rmat.determinant() > 1e-4:
+                    omat = rmat.inverted() @ omat
+            if GS.unflipped:
+                omat.col[3][0:3] = head
+                eb.matrix = omat
+            else:
+                omat = self.flipBone(omat, head, tail, flip, rdata.xyz)
+                omat.col[3][0:3] = head
+                eb.matrix = omat
+                self.correctRoll(eb, figure)
+            return length, isPosed
 
-        #  engetudouiti's fix for posed bones
-        rmat = rdata.wsmat.to_4x4()
-        if GS.zup:
-            rmat = self.RX @ rmat @ self.RX.inverted()
-        poseOmat = None
-        if rmat.determinant() > 1e-4:
-            poseOmat = rmat.inverted() @ omat
+        rdata0 = self.getHeadTail(center, False)
+        setBone(eb, rdata0, False)
+        roll = eb.roll
+        rdata = self.getHeadTail(center)
+        length, self.isPosed = setBone(eb, rdata, True)
+        self.setFlip()
+        eb.roll = roll
+        vec = (eb.tail - eb.head)
+        eb.tail = eb.head + length * vec.normalized()
 
-        def setBoneMatrix(eb, omat, head, tail, flip, rdata):
-            omat = self.flipBone(omat, head, tail, flip, rdata.xyz)
-            self.setFlip()
-            omat.col[3][0:3] = head
-            eb.matrix = omat
-
-        if GS.unflipped:
-            omat.col[3][0:3] = head
-            eb.matrix = omat
-        else:
-            setBoneMatrix(eb, omat, head, tail, flip, rdata)
-            self.correctRoll(eb, figure)
-            if poseOmat is not None:
-                roll = eb.roll
-                setBoneMatrix(eb, poseOmat, head, tail, flip, rdata)
-                eb.roll = roll
-
-        self.correctLength(eb, length)
-
-        if self.name in BD.FaceRigs:
-            isFace = True
         trgname = BD.Irises.get(eb.name)
         if trgname:
             trg = rig.data.edit_bones.get(trgname)
             if trg:
-                eb.tail = tail = trg.tail
+                eb.tail = trg.tail
+        if self.name in BD.FaceRigs:
+            isFace = True
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildEdit(figure, figinst, rig, eb, center, isFace)
@@ -250,16 +246,6 @@ class BoneInstance(Instance):
             return omat
 
 
-    def setFlip(self):
-        for n in range(3):
-            if (self.name.startswith(BD.UnFlips[n]) or
-                self.name in BD.UnFlipsSharp[n]):
-                self.flipped[n] = False
-            elif (self.name.startswith(BD.Flips[n]) or
-                self.name in BD.FlipsSharp[n]):
-                self.flipped[n] = True
-
-
     def correctRoll(self, eb, figure):
         if eb.name in BD.RollCorrection.keys():
             offset = BD.RollCorrection[eb.name]
@@ -298,11 +284,6 @@ class BoneInstance(Instance):
         elif offset == 180:
             f[i] = not f[i]
             f[k] = not f[k]
-
-
-    def correctLength(self, eb, length):
-        vec = (eb.tail - eb.head).normalized()
-        eb.tail = eb.head + length*vec
 
 
     def defaultInherit(self):
@@ -385,6 +366,16 @@ class BoneInstance(Instance):
             return BD.getDefaultMode(pb)
         else:
             return BD.getDefaultMode(pb)
+
+
+    def setFlip(self):
+        for n in range(3):
+            if (self.name.startswith(BD.UnFlips[n]) or
+                self.name in BD.UnFlipsSharp[n]):
+                self.flipped[n] = False
+            elif (self.name.startswith(BD.Flips[n]) or
+                self.name in BD.FlipsSharp[n]):
+                self.flipped[n] = True
 
 
     def buildPose(self, figure, inFace, targets, missing):
