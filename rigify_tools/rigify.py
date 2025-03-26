@@ -252,6 +252,7 @@ class MetaMaker(RigifyCommon):
         from ..figure import getRigType, finalizeArmature
         from ..merge_rigs import mergeBones, mergeVertexGroups, applyTransformToObjects
         from ..apply import safeTransformApply
+        from ..store import copyConstraints
 
         print("Create metarig")
         rig = context.object
@@ -382,6 +383,26 @@ class MetaMaker(RigifyCommon):
         self.reparentBones(ebones)
         setMode('OBJECT')
 
+        def setRigifyAttributes(rrna, mrna):
+            for attr in dir(rrna):
+                if attr.lower().startswith("rigify"):
+                    try:
+                        setattr(mrna, attr, getattr(rrna, attr))
+                    except AttributeError:
+                        pass
+
+        print("  Rigify armature data")
+        setRigifyAttributes(rig.data, meta.data)
+        if not BLENDER3:
+            knownlayers = [T_BONES, T_CUSTOM, T_TWEAK, T_WIDGETS, T_HIDDEN]
+            for coll in rig.data.collections:
+                if coll.name in knownlayers:
+                    continue
+                mcoll = meta.data.collections.get(coll.name)
+                if mcoll is None:
+                    mcoll = meta.data.collections.new(coll.name)
+                setRigifyAttributes(coll, mcoll)
+
         def getParams(attrs):
             return [(key, getattr(attrs, key)) for key in dir(attrs) if key[0] != "_"]
 
@@ -415,11 +436,12 @@ class MetaMaker(RigifyCommon):
                 if BLENDER3:
                     setBoneNumLayer(mbone, meta, R_CUSTOM)
                 else:
-                    rbone = meta.data.bones[bname]
-                    colls = getBoneLayers(rbone, rig)
+                    colls = getBoneLayers(mbone, rig)
                     layer = (colls[0].name if colls else R_CUSTOM)
-                    print("RR", bname, layer)
                     setBoneNumLayer(mbone, meta, layer)
+                    db = rig.pose.bones[bname]
+                    pb = meta.pose.bones[bname]
+                    copyConstraints(db, pb, meta)
 
         print("  Add props to rigify")
         connect,disconnect = self.addRigifyProps(meta)
@@ -544,7 +566,7 @@ class MetaMaker(RigifyCommon):
         root = rig.data.edit_bones[bname]
         parents = getParents(root, meta)
         children = getChildren(root, meta)
-        print("    Add Chain:", bname, len(parents), len(children))
+        print("    Add Chain:", bname, parents, len(children))
         addBones(rig, meta, parents, cbones)
         addBones(rig, meta, children, cbones)
 
