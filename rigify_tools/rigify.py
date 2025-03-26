@@ -415,8 +415,10 @@ class MetaMaker(RigifyCommon):
 
         print("  Add custom chains")
         chains = {}
-        for pb in rig.pose.bones:
-            if pb.rigify_type and pb.name not in meta.pose.bones.keys():
+        for pb in list(rig.pose.bones):
+            if pb.rigify_type:
+                if pb.name in meta.data.bones.keys():
+                    pb.name = "%s.001" % pb.name
                 chains[pb.name] = (pb.rigify_type, getParams(pb.rigify_parameters))
         if chains:
             meta.select_set(True)
