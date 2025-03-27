@@ -413,12 +413,11 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 if fcu:
                     scale[idx] = fcu.evaluate(frame)
             smat = Matrix.Diagonal(scale)
-            if (pb.parent and
-                pb.parent.name in smats.keys() and
-                inheritsScale(pb)):
+            if pb.parent and inheritsScale(pb):
                 parname = self.getDazBone(pb.parent.name, pb.parent)
-                psmat = smats[parname]
-                smat = smat @ psmat
+                psmat = smats.get(parname)
+                if psmat:
+                    smat = smat @ psmat
             mat = mat @ smat.to_4x4()
             smats[bname] = smat
 
@@ -528,7 +527,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
 
     def getDazBone(self, bname, pb, idx=None):
-        if not self.useHierarchical:
+        if not (self.useHierarchical and isinstance(pb, bpy.types.PoseBone)):
             return bname
         if idx is None:
             idx = dazRna(pb.bone).DazRigIndex
@@ -554,6 +553,8 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
             elif rig.parent_type == 'BONE':
                 node["parent"] = "#%s" % quote(rig.parent_bone)
         nodes[0] = [node]
+        if rig.type != 'ARMATURE':
+            return nodes
         for pb in rig.pose.bones:
             if self.skipBone(pb):
                 continue
@@ -623,10 +624,12 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         pg = dazRna(rig.data).DazMergedRigs.get(str(idx))
         if pg:
             string = pg.s
+            parent = pg.b
         else:
             string = dazRna(rig).DazUrl
+            parent = None
         path,figure = string.rsplit("#",1)
-        return path, figure, pg.b
+        return path, figure, parent
 
 
     def skipBone(self, pb):
