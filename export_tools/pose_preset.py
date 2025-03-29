@@ -137,9 +137,11 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
     def run(self, context):
         self.Z = Matrix.Rotation(pi/2, 4, 'X')
         rig = getRigFromContext(context, strict=False, activate=True)
-        if self.useHierarchical and dazRna(rig).DazRig.startswith(("mhx", "rigify")):
-            msg = "Hierarchical pose presets can only be made for original DAZ rigs.\nConsider generating %s rig with Keep DAZ Rig enabled" % dazRna(rig).DazRig
-            raise DazError(msg)
+        if self.useHierarchical:
+            if (dazRna(rig).DazRig.startswith(("mhx", "rigify")) or
+                not dazRna(rig).DazUrl):
+                msg = "Hierarchical pose presets can only be made for original DAZ rigs.\nConsider generating %s rig with Keep DAZ Rig enabled" % dazRna(rig).DazRig
+                raise DazError(msg)
         self.initData()
         if self.useBones:
             self.setupDriven(rig)
@@ -548,8 +550,9 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         self.ancestors[figure] = True
         if rig.parent:
             if rig.parent_type == 'OBJECT':
-                parent = dazRna(rig.parent).DazUrl.rsplit("#",1)[1]
-                node["parent"] = "#%s" % quote(parent)
+                parent = dazRna(rig.parent).DazUrl.rsplit("#",1)[-1]
+                if parent:
+                    node["parent"] = "#%s" % quote(parent)
             elif rig.parent_type == 'BONE':
                 node["parent"] = "#%s" % quote(rig.parent_bone)
         nodes[0] = [node]
@@ -596,8 +599,9 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
             node = addNode(pb, idx)
             nodes = [node]
             parent,parname = getParent(pb, None)
-            suffix = parname.rsplit("-",1)[-1]
-            if suffix != str(idx):
+            words = parname.rsplit("-",1)
+            idx2 = (0 if len(words) == 1 else int(words[1]))
+            if idx != idx2:
                 node["parent"] = "#%s" % quote(figure2)
                 figure = parname
         else:
