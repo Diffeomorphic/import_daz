@@ -737,17 +737,13 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
 
     def draw(self, context):
         scn = context.scene
-        self.layout.prop(dazRna(scn), "DazModifyBakedMorphs")
-        if dazRna(scn).DazModifyBakedMorphs:
-            DAZ_PT_Morphs.draw(self, context)
-        else:
-            rig = self.getCurrentRig(context)
-            if not self.hasTheseMorphs(rig):
-                return
-            for item in dazRna(rig).DazBaked.values():
-                value = rig.get(item.name)
-                if value is not None:
-                    self.layout.label(text = "%s : %.3f" % (item.text, value))
+        rig = self.getCurrentRig(context)
+        if not self.hasTheseMorphs(rig):
+            return
+        for item in dazRna(rig).DazBaked.values():
+            value = rig.get(item.name)
+            if value is not None:
+                self.layout.label(text = "%s : %.3f" % (item.text, value))
 
 #------------------------------------------------------------------------
 #    Custom panels

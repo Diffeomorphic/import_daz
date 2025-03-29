@@ -299,10 +299,6 @@ if DAZ_PROPS:
             min = 0.1, max = 10,
             default = 1.0)
 
-        DazModifyBakedMorphs : BoolProperty(
-            name = "Modify Baked Morphs",
-            default = False)
-
         DazDecalMask : StringProperty(
             name = "Decal Mask",
             description = "Path to decal mask texture",
@@ -628,10 +624,6 @@ def registerDazProperties():
         description = "Multiply all morphs in this section with this",
         min = 0.1, max = 10,
         default = 1.0)
-
-    bpy.types.Scene.DazModifyBakedMorphs = BoolProperty(
-        name = "Modify Baked Morphs",
-        default = False)
 
     bpy.types.Scene.DazDecalMask = StringProperty(
         name = "Decal Mask",
