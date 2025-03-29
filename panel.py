@@ -330,7 +330,8 @@ class DAZ_PT_BoneProps(DAZ_PT_SetupTab, DazPropsPanel, bpy.types.Panel, IsArmatu
 
     def draw(self, context):
         pb = context.active_pose_bone
-        self.showDazProps("BONE", pb.bone, self.layout)
+        if pb:
+            self.showDazProps("BONE", pb.bone, self.layout)
 
 
 class DAZ_PT_PoseBoneProps(DAZ_PT_SetupTab, DazPropsPanel, bpy.types.Panel, IsArmature):
@@ -340,7 +341,8 @@ class DAZ_PT_PoseBoneProps(DAZ_PT_SetupTab, DazPropsPanel, bpy.types.Panel, IsAr
 
     def draw(self, context):
         pb = context.active_pose_bone
-        self.showDazProps("POSEBONE", pb, self.layout)
+        if pb:
+            self.showDazProps("POSEBONE", pb, self.layout)
 
 
 class DAZ_PT_SceneProps(DAZ_PT_SetupTab, DazPropsPanel, bpy.types.Panel):
