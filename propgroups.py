@@ -153,6 +153,7 @@ if DAZ_PROPS:
         DazAngle : FloatProperty()
         DazTrueName : StringProperty()
         DazRigIndex : IntProperty(default=0)
+        DazBoneParentRig : IntProperty(default=-1)
 
 
     class DazImporterPoseBone(DazImporterGroup):
@@ -491,6 +492,7 @@ def registerDazProperties():
     bpy.types.Bone.DazAngle = FloatProperty()
     bpy.types.Bone.DazTrueName = StringProperty()
     bpy.types.Bone.DazRigIndex = IntProperty(default=0)
+    bpy.types.Bone.DazBoneParentRig = IntProperty(default=-1)
 
     bpy.types.PoseBone.DazRotMode = StringProperty(default='XYZ')
     bpy.types.PoseBone.DazAxes = IntVectorProperty(size=3, default=(0,1,2))

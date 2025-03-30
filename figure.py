@@ -599,6 +599,7 @@ class ExtraBones(DriverUser):
             dazRna(pb).DazRotLocks = dazRna(db).DazRotLocks
             dazRna(pb).DazLocLocks = dazRna(db).DazLocLocks
             dazRna(pb.bone).DazRigIndex = dazRna(db.bone).DazRigIndex
+            dazRna(pb.bone).DazBoneParentRig = dazRna(db.bone).DazBoneParentRig
             pb.bone.inherit_scale = db.bone.inherit_scale
 
         from .driver import getShapekeyDriver

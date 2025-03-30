@@ -267,9 +267,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 deletes.append(subrig)
                 for bname,binfo in subbones.items():
                     if bname in bones.keys():
-                        if binfo.use_deform:
-                            bone = rig.data.bones[bname]
-                            bone.use_deform = True
+                        bone = rig.data.bones[bname]
+                        bone.use_deform = binfo.use_deform
                     else:
                         head0 = heads.get(bname)
                         if head0 and (binfo.head-head0).length > self.duplicateDistance * GS.scale:
@@ -351,6 +350,14 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                     if pb:
                         binfo.setPoseBone(pb, rig)
                         enableBoneNumLayer(pb.bone, rig, T_CUSTOM)
+                        if (pb.bone.parent and
+                            subrig.parent and
+                            subrig.parent_type == 'BONE'):
+                            parindex = dazRna(pb.bone.parent).DazRigIndex
+                            boneindex = dazRna(pb.bone).DazRigIndex
+                            if parindex != boneindex:
+                                dazRna(pb.bone).DazBoneParentRig = parindex
+                                print("FF", rig.name, bname, parindex, boneindex)
 
         # Widgets
         if widgets:

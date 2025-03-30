@@ -541,13 +541,13 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
     def getNodes(self, rig):
         nodes = {}
-        self.ancestors = {}
+        self.ancestors = {0 : {}}
         figure = dazRna(rig).DazUrl.rsplit("#",1)[1]
         node = {
             "id" : figure,
             "url" : "name://@selection/%s:" % quote(figure),
         }
-        self.ancestors[figure] = True
+        self.ancestors[0][figure] = True
         if rig.parent:
             if rig.parent_type == 'OBJECT':
                 parent = dazRna(rig.parent).DazUrl.rsplit("#",1)[-1]
@@ -591,35 +591,54 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 "url" : "name://@selection/%s:" % quote(pb.name),
                 "parent" : "#%s" % quote(parname)
             }
-            self.ancestors[bname] = True
+            self.ancestors[idx][bname] = True
             return node
 
-        path2,figure2,boneparent2 = self.getPathFigure(rig, idx)
-        if boneparent2:
-            node = addNode(pb, idx)
-            nodes = [node]
-            parent,parname = getParent(pb, None)
-            words = parname.rsplit("-",1)
-            idx2 = (0 if len(words) == 1 else int(words[1]))
-            if idx != idx2:
-                node["parent"] = "#%s" % quote(figure2)
-                figure = parname
-        else:
-            node = addNode(pb, idx)
-            nodes = [node]
-            parent,parname = getParent(pb, idx)
-            while parent and parname not in self.ancestors.keys():
-                node = addNode(parent, idx)
-                nodes.append(node)
-                parent,parname = getParent(parent, idx)
-        if figure2 not in self.ancestors.keys():
+        def addFigure(figure2, figure, idx):
             node = {
                 "id" : figure2,
                 "url" : "name://@selection/%s:" % quote(figure2),
                 "parent" : "#%s" % quote(figure)
             }
-            nodes.append(node)
-            self.ancestors[figure2] = True
+            self.ancestors[idx][figure2] = True
+            return node
+
+        def addAncestors(pb, idx):
+            node = addNode(pb, idx)
+            nodes = [node]
+            parent,parname = getParent(pb, idx)
+            while parent and parname not in self.ancestors[idx].keys():
+                node = addNode(parent, idx)
+                nodes.append(node)
+                parent,parname = getParent(parent, idx)
+            return nodes
+
+        path2,figure2,boneparent2 = self.getPathFigure(rig, idx)
+        if idx not in self.ancestors.keys():
+            self.ancestors[idx] = {}
+        if boneparent2:
+            parent,parname = getParent(pb, None)
+            words = parname.rsplit("-",1)
+            idx2 = (0 if len(words) == 1 else int(words[1]))
+            if idx == idx2:
+                node = addNode(pb, idx)
+                nodes = [node]
+            else:
+                nodes = addAncestors(pb, idx)
+                if figure2 not in self.ancestors[idx].keys():
+                    node = addFigure(figure2, figure, idx)
+                    nodes.append(node)
+        else:
+            node = addNode(pb, idx)
+            nodes = [node]
+            parent,parname = getParent(pb, idx)
+            while parent:
+                node = addNode(parent, idx)
+                nodes.append(node)
+                parent,parname = getParent(parent, idx)
+            if figure2 not in self.ancestors[idx].keys():
+                node = addFigure(figure2, figure, idx)
+                nodes.append(node)
         nodes.reverse()
         return nodes
 
