@@ -52,7 +52,7 @@ class BoneInfo:
             eb.matrix = self.matrix_world @ self.matrix_local
         else:
             eb.matrix = self.matrix_local
-        self.use_deform = self.use_deform
+        eb.use_deform = self.use_deform
         if self.parent is not None:
             if self.parent in ebones.keys():
                 eb.parent = ebones[self.parent]
@@ -267,8 +267,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 deletes.append(subrig)
                 for bname,binfo in subbones.items():
                     if bname in bones.keys():
-                        bone = rig.data.bones[bname]
-                        bone.use_deform = binfo.use_deform
+                        if binfo.use_deform:
+                            bone = rig.data.bones[bname]
+                            bone.use_deform = True
                     else:
                         head0 = heads.get(bname)
                         if head0 and (binfo.head-head0).length > self.duplicateDistance * GS.scale:

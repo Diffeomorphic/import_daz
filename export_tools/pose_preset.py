@@ -583,9 +583,8 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
             else:
                 return None, figure2
 
-        def addNode(pb, idx):
+        def addNode(pb, parname, idx):
             bname = self.getDazBone(pb.name, pb, idx)
-            parent,parname = getParent(pb, idx)
             node = {
                 "id" : bname,
                 "url" : "name://@selection/%s:" % quote(pb.name),
@@ -603,39 +602,26 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
             self.ancestors[idx][figure2] = True
             return node
 
-        def addAncestors(pb, idx):
-            node = addNode(pb, idx)
-            nodes = [node]
-            parent,parname = getParent(pb, idx)
-            while parent and parname not in self.ancestors[idx].keys():
-                node = addNode(parent, idx)
-                nodes.append(node)
-                parent,parname = getParent(parent, idx)
-            return nodes
-
-        path2,figure2,boneparent2 = self.getPathFigure(rig, idx)
+        path2,figure2 = self.getPathFigure(rig, idx)
         if idx not in self.ancestors.keys():
             self.ancestors[idx] = {}
-        if boneparent2:
+        paridx = dazRna(pb.bone).DazBoneParentRig
+        if paridx >= 0:
             parent,parname = getParent(pb, None)
-            words = parname.rsplit("-",1)
-            idx2 = (0 if len(words) == 1 else int(words[1]))
-            if idx == idx2:
-                node = addNode(pb, idx)
-                nodes = [node]
-            else:
-                nodes = addAncestors(pb, idx)
-                if figure2 not in self.ancestors[idx].keys():
-                    node = addFigure(figure2, figure, idx)
-                    nodes.append(node)
-        else:
-            node = addNode(pb, idx)
+            node = addNode(pb, figure2, idx)
             nodes = [node]
-            parent,parname = getParent(pb, idx)
-            while parent:
-                node = addNode(parent, idx)
+            if figure2 not in self.ancestors[idx].keys():
+                node = addFigure(figure2, parname, idx)
                 nodes.append(node)
+        else:
+            parent,parname = getParent(pb, idx)
+            node = addNode(pb, parname, idx)
+            nodes = [node]
+            while parent and parname not in self.ancestors[idx].keys():
+                pb = parent
                 parent,parname = getParent(parent, idx)
+                node = addNode(pb, parname, idx)
+                nodes.append(node)
             if figure2 not in self.ancestors[idx].keys():
                 node = addFigure(figure2, figure, idx)
                 nodes.append(node)
@@ -647,12 +633,10 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         pg = dazRna(rig.data).DazMergedRigs.get(str(idx))
         if pg:
             string = pg.s
-            parent = pg.b
         else:
             string = dazRna(rig).DazUrl
-            parent = None
         path,figure = string.rsplit("#",1)
-        return path, figure, parent
+        return path, figure
 
 
     def skipBone(self, pb):
@@ -689,7 +673,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 return "%s:%s#%s" % (figure, path, figure)
             else:
                 idx = dazRna(pb.bone).DazRigIndex
-                path,figure,boneparent = self.getPathFigure(rig, idx)
+                path,figure = self.getPathFigure(rig, idx)
                 id = dazRna(pb.bone).DazTrueName
                 if not id:
                     id = pb.name
