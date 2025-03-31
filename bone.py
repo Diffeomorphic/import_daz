@@ -61,7 +61,8 @@ class BoneInstance(Instance):
         self.name = self.node.name
         self.roll = 0.0
         self.useRoll = False
-        #node.inherits_scale = False
+        if GS.useInheritScale:
+            self.inherits_scale = True
         self.axes = [0,1,2]
         self.flipped = [False,False,False]
         self.flopped = [False,False,False]
@@ -287,7 +288,7 @@ class BoneInstance(Instance):
 
 
     def defaultInherit(self):
-        return ('FULL' if (self.inherits_scale or GS.useInheritScale) else 'NONE')
+        return ('FULL' if self.inherits_scale else 'NONE')
 
 
     def buildBoneProps(self, rig, center):

@@ -101,7 +101,7 @@ class Instance(Accessor, Channels, SimNode):
         node.geometries = []
         self.rotation_order = node.rotation_order
         self.inherits_scale = node.inherits_scale
-        node.inherits_scale = True
+        node.inherits_scale = False
         self.parent = None
         self.selectionParent = None
         parent = struct.get("parent")
@@ -829,7 +829,7 @@ class Node(Asset, Formula, Channels):
         self.center = None
         self.geometries = []
         self.rotation_order = 'XYZ'
-        self.inherits_scale = True
+        self.inherits_scale = False
         self.attributes = self.defaultAttributes()
         self.origAttrs = self.defaultAttributes()
         self.figure = None
