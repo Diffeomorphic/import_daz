@@ -418,18 +418,32 @@ def getScannedFile(name, scanpath, checkVersion):
     return struct
 
 
+def initScannedInfo(self):
+    self.ids = {}
+    self.ids2 = {}
+    self.defins = {}
+    self.defins2 = {}
+    self.formulas = {}
+    self.formulas2 = {}
+    self.minmax = {}
+    self.minmax2 = {}
+    self.alias = {}
+    self.alias2 = {}
+
+
 def loadScannedInfo(self, name, rig, relpath):
     def loadScanned(name, scanpath):
-        defins = formulas = minmax = alias = {}
+        ids = defins = formulas = minmax = alias = {}
         struct = getScannedFile(name, scanpath, True)
         if struct:
+            ids = struct.get("ids", {})
             formulas = struct["formulas"]
             minmax = struct["minmax"]
             if "alias" in struct.keys():
                 alias = struct["alias"]
             if relpath:
                 defins = struct["definitions"]
-        return defins, formulas, minmax, alias
+        return defins, formulas, minmax, alias, ids
 
     table = {
         "Genesis3-female" : "Genesis3Female",
@@ -446,11 +460,11 @@ def loadScannedInfo(self, name, rig, relpath):
         print(msg)
         return False
         raise DazError(msg)
-    self.defins, self.formulas, self.minmax, self.alias = loadScanned(name, scanpath)
+    self.defins, self.formulas, self.minmax, self.alias, self.ids = loadScanned(name, scanpath)
     if name in AltNames.keys():
         name2,relpath2 = AltNames[name]
         scanpath2 = getScanPath(name2)
-        self.defins2, self.formulas2, self.minmax2, self.alias2 = loadScanned(name2, scanpath2)
+        self.defins2, self.formulas2, self.minmax2, self.alias2, self.ids2 = loadScanned(name2, scanpath2)
     return True
 
 #----------------------------------------------------------
@@ -461,13 +475,25 @@ def loadMissingMorphs(self, context, rig, missing, cat):
     from .morphing import CustomMorphLoader, StandardMorphLoader, addToCategories
     if not missing or not self.defins:
         return False
+
+    def getPath(defins):
+        path = defins.get(key)
+        if path:
+            return path
+        path = defins.get(key1)
+        if path:
+            return path
+        return defins.get(key2)
+
     standards = {}
     customs = []
     for ref in missing:
         key = normKey(ref)
-        path = self.defins.get(key)
+        key1 = self.ids.get(key)
+        key2 = self.ids2.get(key)
+        path = getPath(self.defins)
         if path is None:
-            path = self.defins2.get(key)
+            path = getPath(self.defins2)
         if path:
             path = GS.getAbsPath(path)
         if path:

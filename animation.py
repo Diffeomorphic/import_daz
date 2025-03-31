@@ -1531,7 +1531,7 @@ class StandardAnimation:
 
     def run(self, context):
         from .uilist import updateScrollbars
-        from .scan import getCharData, loadScannedInfo, checkNeedUpdates
+        from .scan import getCharData, initScannedInfo, loadScannedInfo, checkNeedUpdates
         dazfiles = self.getMultiFiles(["dsf", "duf"])
         nfiles = len(dazfiles)
         if nfiles == 0:
@@ -1543,15 +1543,9 @@ class StandardAnimation:
             rig = context.object
         if rig is None:
             raise DazError("No object selected")
-        self.defins = {}
-        self.formulas = {}
-        self.defins2 = {}
-        self.formulas2 = {}
-        self.minmax = {}
-        self.minmax2 = {}
+        initScannedInfo(self)
         self.shapekeys = {}
         self.altmorphs = {}
-        self.alias = {}
         if self.affectMorphs:
             if mesh and mesh.data.shape_keys:
                 self.shapekeys = mesh.data.shape_keys.key_blocks
