@@ -520,6 +520,7 @@ def loadMissingMorphs(self, context, rig, missing, cat):
         mloader.morphset = "Custom"
         mloader.category = cat
         mloader.hideable = True
+        mloader.useVisible = True
         dazRna(rig).DazCustomMorphs = True
         print("\nLoading morphs in category %s" % cat)
         mloader.getAllMorphs(customs, context)

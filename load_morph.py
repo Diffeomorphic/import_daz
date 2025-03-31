@@ -37,6 +37,7 @@ class LoadMorph(DriverUser):
     onlyProperties = False
     defaultMultiplier = 1.0
     useMulti = False
+    useVisible = False
     disableErc = False
     useMakePosable = False
     # Previously defined in __init__ function
@@ -584,6 +585,7 @@ class LoadMorph(DriverUser):
         if asset:
             visible = (asset.visible or
                        self.stripPrefix or
+                       self.useVisible or
                        GS.useMakeHiddenSliders)
             self.visible[raw] = visible
             self.primary[raw] = True
