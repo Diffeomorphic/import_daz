@@ -1034,7 +1034,15 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
     bl_description = "Convert selected morphs to shapekeys.\nAll morphs are converted when called from script"
     bl_options = {'UNDO'}
 
-    ignoreZeroShapes = False
+    ignoreZeroShapes : BoolProperty(
+        name = "Ignore Zero Shapekeys",
+        description = "Don't create shapekeys for zero morphs",
+        default = True)
+
+    useAllMeshes : BoolProperty(
+        name = "All Meshes",
+        description = "Convert morphs for all meshes in the figure",
+        default = True)
 
     useLabels : BoolProperty(
         name = "Labels As Names",
@@ -1058,6 +1066,10 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
     def draw(self, context):
         GeneralMorphSelector.draw(self, context)
         row = self.layout.row()
+        row.prop(self, "useAllMeshes")
+        row.prop(self, "ignoreZeroShapes")
+        row.label(text="")
+        row = self.layout.row()
         row.prop(self, "useLabels")
         row.prop(self, "useAnimation")
         row.prop(self, "onDelete")
@@ -1071,56 +1083,80 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
             raise DazError("No armature found")
         if dazRna(rig).DazDriversDisabled:
             raise DazError("Drivers are disabled")
+        if self.useAllMeshes:
+            meshes = getMeshChildren(rig)
+        else:
+            meshes = [ob]
+
+        def getExistingShapes(ob, items):
+            skeys = ob.data.shape_keys
+            if skeys is None:
+                return {}
+            elif self.onDelete == 'USED':
+                return {}
+            elif self.onDelete == "ALL":
+                return dict([(skey.name, skey) for skey in skeys.key_blocks[1:]])
+            elif self.onDelete == "BY_NAME":
+                return dict([(skey.name, skey) for skey in skeys.key_blocks[1:]
+                            if not skey.name.lower().startswith("pjcm")])
+            else:
+                return {}
+
         items = self.getSelectedProps(rig, self.useLabels)
         nitems = len(items)
-        skeys = ob.data.shape_keys
-        if skeys is None:
-            existing = {}
-        elif self.onDelete == 'USED':
-            existing = {}
-        elif self.onDelete == "ALL":
-            existing = dict([(skey.name, skey)
-                for skey in skeys.key_blocks[1:]])
-        elif self.onDelete == "BY_NAME":
-            existing = dict([(skey.name, skey)
-                for skey in skeys.key_blocks[1:]
-                if not skey.name.lower().startswith("pjcm")])
-        else:
-            existing = {}
+        self.existing = {}
+        for ob in meshes:
+            self.existing[ob.name] = getExistingShapes(ob, items)
+
+        def clearExisting(mname, skeys, existing):
+            if skeys and mname in existing.keys():
+                del existing[mname]
+                skey = skeys.key_blocks[mname]
+                skey.name = "%s.001" % skey.name
+                existing[skey.name] = skey
+
+        def clearUsed(skeys, existing):
+            for skey in skeys.key_blocks[1:]:
+                if skey.value != 0.0 and mname != skey.name:
+                    existing[skey.name] = skey
+
         startProgress("Convert morphs to shapekeys")
         t1 = t = perf_counter()
         for n,pair in enumerate(items.items()):
             key,mname = pair
             showProgress(n, nitems)
             clearProp(rig, key)
-            if mname in existing.keys():
-                del existing[mname]
-                skey = skeys.key_blocks[mname]
-                skey.name = "%s.001" % skey.name
-                existing[skey.name] = skey
+            for ob in meshes:
+                clearExisting(mname, ob.data.shape_keys, self.existing[ob.name])
             if mname:
                 setProp(rig, key)
                 updateRigDrivers(context, rig)
-                if self.onDelete == 'USED':
-                    for skey in skeys.key_blocks[1:]:
-                        if skey.value != 0.0 and mname != skey.name:
-                            existing[skey.name] = skey
-                mod = self.applyArmature(ob, rig, mod, key, mname)
+                for ob in meshes:
+                    if self.onDelete == 'USED':
+                        clearUsed(ob.data.shape_keys, self.existing[ob.name])
+                    if activateObject(context, ob):
+                        self.applyArmature(ob, rig, key, mname)
                 clearProp(rig, key)
         t2 = perf_counter()
         print("Converted %d morphs in %g seconds" % (n, t2-t1))
         updateRigDrivers(context, rig)
         if self.useAnimation and rig.animation_data:
-            self.convertFcurves(ob.data.shape_keys, rig.animation_data.action, items)
-        deleted = []
-        for mname,skey in existing.items():
-            self.clearShape(skey)
-            deleted.append(skey.name)
-            ob.shape_key_remove(skey)
+            for ob in meshes:
+                self.convertFcurves(ob.data.shape_keys, rig.animation_data.action, items)
+
+        def deleteExisting(ob, existing):
+            deleted = []
+            for mname,skey in existing.items():
+                self.clearShape(skey)
+                deleted.append(skey.name)
+                ob.shape_key_remove(skey)
+            if GS.verbosity >= 3:
+                print("Deleted:", ob.name, deleted)
+
+        for ob in meshes:
+            deleteExisting(ob, self.existing[ob.name])
         t2 = perf_counter()
         print("%d morphs converted in %g seconds" % (nitems, t2-t1))
-        if GS.verbosity >= 3:
-            print("Deleted:", deleted)
 
 
     def convertFcurves(self, skeys, act, items):
@@ -1154,8 +1190,11 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         skey.mute = False
 
 
-    def applyArmature(self, ob, rig, mod, key, mname):
+    def applyArmature(self, ob, rig, key, mname):
         from ..driver import getPropMinMax
+        mod = getModifier(ob, 'ARMATURE')
+        if mod is None:
+            return
         mod.name = mname
         bpy.ops.object.modifier_apply_as_shapekey(modifier=mname)
         skeys = ob.data.shape_keys
@@ -1173,7 +1212,6 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
         nmod.use_deform_preserve_volume = True
         for i in range(len(ob.modifiers)-1):
             bpy.ops.object.modifier_move_up(modifier=nmod.name)
-        return nmod
 
 #-------------------------------------------------------------
 #   Initialize
