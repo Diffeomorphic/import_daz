@@ -45,16 +45,22 @@ class DAZ_PT_Simulation(DAZ_PT_SetupTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 def register():
-    print("Register Simulation Tools")
-    bpy.utils.register_class(DAZ_PT_Simulation)
-    from . import simulation, deflection
-    simulation.register()
-    deflection.register()
+    try:
+        print("Register Simulation Tools")
+        bpy.utils.register_class(DAZ_PT_Simulation)
+        from . import simulation, deflection
+        simulation.register()
+        deflection.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    bpy.utils.unregister_class(DAZ_PT_Simulation)
-    from . import simulation, deflection
-    simulation.unregister()
-    deflection.unregister()
+    try:
+        bpy.utils.unregister_class(DAZ_PT_Simulation)
+        from . import simulation, deflection
+        simulation.unregister()
+        deflection.unregister()
+    except (RuntimeError, ValueError):
+        pass
 
 

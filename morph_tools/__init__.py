@@ -30,16 +30,22 @@ else:
 #----------------------------------------------------------
 
 def register():
-    print("Register Morph Tools")
-    from . import category, shapekeys, morph_action, morph_panel
-    category.register()
-    shapekeys.register()
-    morph_action.register()
-    morph_panel.register()
+    try:
+        print("Register Morph Tools")
+        from . import category, shapekeys, morph_action, morph_panel
+        category.register()
+        shapekeys.register()
+        morph_action.register()
+        morph_panel.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    from . import category, shapekeys, morph_action, morph_panel
-    morph_panel.unregister()
-    morph_action.unregister()
-    shapekeys.unregister()
-    category.unregister()
+    try:
+        from . import category, shapekeys, morph_action, morph_panel
+        morph_panel.unregister()
+        morph_action.unregister()
+        shapekeys.unregister()
+        category.unregister()
+    except (RuntimeError, ValueError):
+        pass

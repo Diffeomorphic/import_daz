@@ -99,30 +99,36 @@ classes = [
 ]
 
 def register():
-    print("Register Hair Tools")
-    for cls in classes:
-        bpy.utils.register_class(cls)
-    from . import hair_builder, make_hair, hair_rig, hair_select
-    hair_builder.register()
-    make_hair.register()
-    hair_rig.register()
-    hair_select.register()
-    if BLENDER3:
-        bpy.utils.register_class(DAZ_PT_HairParticles)
-        from .import particles
-        particles.register()
+    try:
+        print("Register Hair Tools")
+        for cls in classes:
+            bpy.utils.register_class(cls)
+        from . import hair_builder, make_hair, hair_rig, hair_select
+        hair_builder.register()
+        make_hair.register()
+        hair_rig.register()
+        hair_select.register()
+        if BLENDER3:
+            bpy.utils.register_class(DAZ_PT_HairParticles)
+            from .import particles
+            particles.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
-    from . import hair_builder, make_hair, hair_rig, hair_select
-    hair_builder.unregister()
-    make_hair.unregister()
-    hair_rig.unregister()
-    hair_select.unregister()
-    if BLENDER3:
-        bpy.utils.unregister_class(DAZ_PT_HairParticles)
-        from .import particles
-        particles.unregister()
+    try:
+        for cls in classes:
+            bpy.utils.unregister_class(cls)
+        from . import hair_builder, make_hair, hair_rig, hair_select
+        hair_builder.unregister()
+        make_hair.unregister()
+        hair_rig.unregister()
+        hair_select.unregister()
+        if BLENDER3:
+            bpy.utils.unregister_class(DAZ_PT_HairParticles)
+            from .import particles
+            particles.unregister()
+    except (RuntimeError, ValueError):
+        pass
 
 

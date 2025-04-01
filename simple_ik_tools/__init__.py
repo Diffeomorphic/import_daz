@@ -34,12 +34,18 @@ def setSimpleToFk(rig, layers, useInsertKeys, frame):
 #----------------------------------------------------------
 
 def register():
-    print("Register Simple IK Tools")
-    from . import simple, panel
-    simple.register()
-    panel.register()
+    try:
+        print("Register Simple IK Tools")
+        from . import simple, panel
+        simple.register()
+        panel.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    from . import simple, panel
-    simple.unregister()
-    panel.unregister()
+    try:
+        from . import simple, panel
+        simple.unregister()
+        panel.unregister()
+    except (RuntimeError, ValueError):
+        pass

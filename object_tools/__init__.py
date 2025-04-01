@@ -45,18 +45,24 @@ class DAZ_PT_Objects(DAZ_PT_SetupTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 def register():
-    print("Register Object Tools")
-    bpy.utils.register_class(DAZ_PT_Objects)
-    from . import mannequin, categorize, scale
-    mannequin.register()
-    categorize.register()
-    scale.register()
+    try:
+        print("Register Object Tools")
+        bpy.utils.register_class(DAZ_PT_Objects)
+        from . import mannequin, categorize, scale
+        mannequin.register()
+        categorize.register()
+        scale.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    bpy.utils.unregister_class(DAZ_PT_Objects)
-    from . import mannequin, categorize, scale
-    mannequin.unregister()
-    categorize.unregister()
-    scale.unregister()
+    try:
+        bpy.utils.unregister_class(DAZ_PT_Objects)
+        from . import mannequin, categorize, scale
+        mannequin.unregister()
+        categorize.unregister()
+        scale.unregister()
+    except (RuntimeError, ValueError):
+        pass
 
 

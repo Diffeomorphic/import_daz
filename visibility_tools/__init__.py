@@ -49,14 +49,20 @@ class DAZ_PT_SetupVisibility(DAZ_PT_SetupTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 def register():
-    print("Register Visibility Tools")
-    bpy.utils.register_class(DAZ_PT_SetupVisibility)
-    from . import hide
-    hide.register()
+    try:
+        print("Register Visibility Tools")
+        bpy.utils.register_class(DAZ_PT_SetupVisibility)
+        from . import hide
+        hide.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    bpy.utils.unregister_class(DAZ_PT_SetupVisibility)
-    from . import hide
-    hide.unregister()
+    try:
+        bpy.utils.unregister_class(DAZ_PT_SetupVisibility)
+        from . import hide
+        hide.unregister()
+    except (RuntimeError, ValueError):
+        pass
 
 

@@ -54,23 +54,29 @@ class DAZ_PT_FACS(DAZ_PT_RuntimeTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 def register():
-    print("Register FACS Tools")
-    bpy.utils.register_class(DAZ_PT_FACS)
-    from . import facsbase, facecap, livelink, fbxfacs, vmdfacs, moho
-    facsbase.register()
-    facecap.register()
-    livelink.register()
-    fbxfacs.register()
-    vmdfacs.register()
-    moho.register()
+    try:
+        print("Register FACS Tools")
+        bpy.utils.register_class(DAZ_PT_FACS)
+        from . import facsbase, facecap, livelink, fbxfacs, vmdfacs, moho
+        facsbase.register()
+        facecap.register()
+        livelink.register()
+        fbxfacs.register()
+        vmdfacs.register()
+        moho.register()
+    except (RuntimeError, ValueError):
+        pass
 
 
 def unregister():
-    bpy.utils.unregister_class(DAZ_PT_FACS)
-    from . import facsbase, facecap, livelink, fbxfacs, vmdfacs, moho
-    facsbase.unregister()
-    facecap.unregister()
-    livelink.unregister()
-    fbxfacs.unregister()
-    vmdfacs.unregister()
-    moho.unregister()
+    try:
+        bpy.utils.unregister_class(DAZ_PT_FACS)
+        from . import facsbase, facecap, livelink, fbxfacs, vmdfacs, moho
+        facsbase.unregister()
+        facecap.unregister()
+        livelink.unregister()
+        fbxfacs.unregister()
+        vmdfacs.unregister()
+        moho.unregister()
+    except (RuntimeError, ValueError):
+        pass

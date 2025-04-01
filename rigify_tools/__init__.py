@@ -35,14 +35,20 @@ from .layers import R_DETAIL, R_CUSTOM
 #----------------------------------------------------------
 
 def register():
-    print("Register Rigify Tools")
-    from . import rigify, rigify_snap, panel
-    rigify.register()
-    rigify_snap.register()
-    panel.register()
+    try:
+        print("Register Rigify Tools")
+        from . import rigify, rigify_snap, panel
+        rigify.register()
+        rigify_snap.register()
+        panel.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    from . import rigify, rigify_snap, panel
-    rigify.unregister()
-    rigify_snap.unregister()
-    panel.unregister()
+    try:
+        from . import rigify, rigify_snap, panel
+        rigify.unregister()
+        rigify_snap.unregister()
+        panel.unregister()
+    except (RuntimeError, ValueError):
+        pass

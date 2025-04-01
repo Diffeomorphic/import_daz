@@ -47,12 +47,18 @@ class DAZ_PT_HDMesh(DAZ_PT_SetupTab, bpy.types.Panel):
 #----------------------------------------------------------
 
 def register():
-    print("Register HD Tools")
-    bpy.utils.register_class(DAZ_PT_HDMesh)
-    from . import hd_morphs
-    hd_morphs.register()
+    try:
+        print("Register HD Tools")
+        bpy.utils.register_class(DAZ_PT_HDMesh)
+        from . import hd_morphs
+        hd_morphs.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    bpy.utils.unregister_class(DAZ_PT_HDMesh)
-    from . import hd_morphs
-    hd_morphs.unregister()
+    try:
+        bpy.utils.unregister_class(DAZ_PT_HDMesh)
+        from . import hd_morphs
+        hd_morphs.unregister()
+    except (RuntimeError, ValueError):
+        pass

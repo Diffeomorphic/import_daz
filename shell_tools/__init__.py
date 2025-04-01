@@ -80,18 +80,24 @@ classes = [
 ]
 
 def register():
-    print("Register Shell Tools")
-    for cls in classes:
-        bpy.utils.register_class(cls)
-    from . import shell, import_shell, lie
-    shell.register()
-    import_shell.register()
-    lie.register()
+    try:
+        print("Register Shell Tools")
+        for cls in classes:
+            bpy.utils.register_class(cls)
+        from . import shell, import_shell, lie
+        shell.register()
+        import_shell.register()
+        lie.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
-    from . import shell, import_shell, lie
-    lie.unregister()
-    import_shell.unregister()
-    shell.unregister()
+    try:
+        for cls in classes:
+            bpy.utils.unregister_class(cls)
+        from . import shell, import_shell, lie
+        lie.unregister()
+        import_shell.unregister()
+        shell.unregister()
+    except (RuntimeError, ValueError):
+        pass

@@ -34,22 +34,28 @@ else:
 #----------------------------------------------------------
 
 def register():
-    print("Register Rig Tools")
-    from . import varia, ikgoals, prefix
-    from . import wrappers, legacy, rig_panel
-    varia.register()
-    ikgoals.register()
-    prefix.register()
-    wrappers.register()
-    legacy.register()
-    rig_panel.register()
+    try:
+        print("Register Rig Tools")
+        from . import varia, ikgoals, prefix
+        from . import wrappers, legacy, rig_panel
+        varia.register()
+        ikgoals.register()
+        prefix.register()
+        wrappers.register()
+        legacy.register()
+        rig_panel.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    from . import varia, ikgoals, prefix
-    from . import wrappers, legacy, rig_panel
-    rig_panel.unregister()
-    legacy.unregister()
-    wrappers.unregister()
-    prefix.unregister()
-    ikgoals.unregister()
-    varia.unregister()
+    try:
+        from . import varia, ikgoals, prefix
+        from . import wrappers, legacy, rig_panel
+        rig_panel.unregister()
+        legacy.unregister()
+        wrappers.unregister()
+        prefix.unregister()
+        ikgoals.unregister()
+        varia.unregister()
+    except (RuntimeError, ValueError):
+        pass

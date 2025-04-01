@@ -98,22 +98,28 @@ classes = [
 ]
 
 def register():
-    print("Register Pose Tools")
-    for cls in classes:
-        bpy.utils.register_class(cls)
-    from . import save_poses, mute, gaze, bake_fk, copy_pose
-    save_poses.register()
-    mute.register()
-    gaze.register()
-    bake_fk.register()
-    copy_pose.register()
+    try:
+        print("Register Pose Tools")
+        for cls in classes:
+            bpy.utils.register_class(cls)
+        from . import save_poses, mute, gaze, bake_fk, copy_pose
+        save_poses.register()
+        mute.register()
+        gaze.register()
+        bake_fk.register()
+        copy_pose.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
-    from . import save_poses, mute, gaze, bake_fk, copy_pose
-    save_poses.unregister()
-    mute.unregister()
-    gaze.unregister()
-    bake_fk.unregister()
-    copy_pose.unregister()
+    try:
+        for cls in classes:
+            bpy.utils.unregister_class(cls)
+        from . import save_poses, mute, gaze, bake_fk, copy_pose
+        save_poses.unregister()
+        mute.unregister()
+        gaze.unregister()
+        bake_fk.unregister()
+        copy_pose.unregister()
+    except (RuntimeError, ValueError):
+        pass

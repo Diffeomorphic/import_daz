@@ -36,24 +36,30 @@ else:
 #----------------------------------------------------------
 
 def register():
-    print("Register Material Tools")
-    from . import editor, udim, decal, combo, palette, missing, material_panel
-    editor.register()
-    decal.register()
-    udim.register()
-    combo.register()
-    palette.register()
-    missing.register()
-    material_panel.register()
+    try:
+        print("Register Material Tools")
+        from . import editor, udim, decal, combo, palette, missing, material_panel
+        editor.register()
+        decal.register()
+        udim.register()
+        combo.register()
+        palette.register()
+        missing.register()
+        material_panel.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    from . import editor, udim, decal, combo, palette, missing, material_panel
-    editor.unregister()
-    udim.unregister()
-    decal.unregister()
-    combo.unregister()
-    palette.unregister()
-    missing.unregister()
-    material_panel.unregister()
+    try:
+        from . import editor, udim, decal, combo, palette, missing, material_panel
+        editor.unregister()
+        udim.unregister()
+        decal.unregister()
+        combo.unregister()
+        palette.unregister()
+        missing.unregister()
+        material_panel.unregister()
+    except (RuntimeError, ValueError):
+        pass
 
 

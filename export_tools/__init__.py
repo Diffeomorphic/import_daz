@@ -49,19 +49,25 @@ classes = [
 ]
 
 def register():
-    print("Register Export Tools")
-    for cls in classes:
-        bpy.utils.register_class(cls)
-    from . import preset, pose_preset, morph_preset
-    preset.register()
-    pose_preset.register()
-    morph_preset.register()
+    try:
+        print("Register Export Tools")
+        for cls in classes:
+            bpy.utils.register_class(cls)
+        from . import preset, pose_preset, morph_preset
+        preset.register()
+        pose_preset.register()
+        morph_preset.register()
+    except (RuntimeError, ValueError):
+        pass
 
 
 def unregister():
-    for cls in reversed(classes):
-        bpy.utils.unregister_class(cls)
-    from . import preset, pose_preset, morph_preset
-    morph_preset.unregister()
-    pose_preset.unregister()
-    preset.unregister()
+    try:
+        for cls in reversed(classes):
+            bpy.utils.unregister_class(cls)
+        from . import preset, pose_preset, morph_preset
+        morph_preset.unregister()
+        pose_preset.unregister()
+        preset.unregister()
+    except (RuntimeError, ValueError):
+        pass

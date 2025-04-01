@@ -45,17 +45,19 @@ class DAZ_PT_DazMhxBuild(DAZ_PT_SetupTab, bpy.types.Panel):
 #   Register
 #----------------------------------------------------------
 
-classes = [
-    DAZ_PT_DazMhxBuild,
-]
-
 def register():
-    print("Register MHX Tools")
-    bpy.utils.register_class(DAZ_PT_DazMhxBuild)
-    from . import mhx
-    mhx.register()
+    try:
+        print("Register MHX Tools")
+        bpy.utils.register_class(DAZ_PT_DazMhxBuild)
+        from . import mhx
+        mhx.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    bpy.utils.unregister_class(DAZ_PT_DazMhxBuild)
-    from . import mhx
-    mhx.unregister()
+    try:
+        bpy.utils.unregister_class(DAZ_PT_DazMhxBuild)
+        from . import mhx
+        mhx.unregister()
+    except (RuntimeError, ValueError):
+        pass

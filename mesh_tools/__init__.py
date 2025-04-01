@@ -37,22 +37,28 @@ MeshTools = True
 #----------------------------------------------------------
 
 def register():
-    print("Register Mesh Tools")
-    from . import vertex_groups, modifiers, uvmaps, attr, lowpoly, mesh_panel, tube
-    vertex_groups.register()
-    modifiers.register()
-    uvmaps.register()
-    attr.register()
-    lowpoly.register()
-    mesh_panel.register()
-    tube.register()
+    try:
+        print("Register Mesh Tools")
+        from . import vertex_groups, modifiers, uvmaps, attr, lowpoly, mesh_panel, tube
+        vertex_groups.register()
+        modifiers.register()
+        uvmaps.register()
+        attr.register()
+        lowpoly.register()
+        mesh_panel.register()
+        tube.register()
+    except (RuntimeError, ValueError):
+        pass
 
 def unregister():
-    from . import vertex_groups, modifiers, uvmaps, attr, lowpoly, mesh_panel, tube
-    mesh_panel.unregister()
-    lowpoly.unregister()
-    uvmaps.unregister()
-    attr.unregister()
-    modifiers.unregister()
-    vertex_groups.unregister()
-    tube.unregister()
+    try:
+        from . import vertex_groups, modifiers, uvmaps, attr, lowpoly, mesh_panel, tube
+        mesh_panel.unregister()
+        lowpoly.unregister()
+        uvmaps.unregister()
+        attr.unregister()
+        modifiers.unregister()
+        vertex_groups.unregister()
+        tube.unregister()
+    except (RuntimeError, ValueError):
+        pass
