@@ -1028,7 +1028,7 @@ class DAZ_OT_RemoveShapekeyDrivers(DazOperator, AddRemoveDriver, CustomSelector,
 #   Convert pose to shapekey
 #-------------------------------------------------------------
 
-class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
+class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMeshArmature):
     bl_idname = "daz.convert_morphs_to_shapekeys"
     bl_label = "Convert Morphs To Shapekeys"
     bl_description = "Convert selected morphs to shapekeys.\nAll morphs are converted when called from script"
@@ -1041,7 +1041,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
 
     useAllMeshes : BoolProperty(
         name = "All Meshes",
-        description = "Convert morphs for all meshes in the figure",
+        description = "Convert morphs for all meshes in the figure.\nHas no effect if armature is active",
         default = True)
 
     useLabels : BoolProperty(
@@ -1077,16 +1077,19 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMesh):
     def run(self, context):
         ob = context.object
         scn = context.scene
-        mod = getModifier(ob, 'ARMATURE')
-        rig = ob.parent
-        if (rig is None or rig.type != 'ARMATURE' or mod is None):
-            raise DazError("No armature found")
+        if ob.type == 'MESH':
+            rig = ob.parent
+            if (rig is None or rig.type != 'ARMATURE'):
+                raise DazError("No armature found")
+            if self.useAllMeshes:
+                meshes = getMeshChildren(rig)
+            else:
+                meshes = getSelectedMeshes(context)
+        else:
+            rig = ob
+            meshes = getMeshChildren(rig)
         if dazRna(rig).DazDriversDisabled:
             raise DazError("Drivers are disabled")
-        if self.useAllMeshes:
-            meshes = getMeshChildren(rig)
-        else:
-            meshes = [ob]
 
         def getExistingShapes(ob, items):
             skeys = ob.data.shape_keys
