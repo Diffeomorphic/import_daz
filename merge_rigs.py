@@ -409,6 +409,7 @@ class DAZ_OT_CopyPose(DazPropsOperator, LockEnabler, IsArmature):
 
 
     def run(self, context):
+        self.limitType = 'MUTE'
         rig,subrigs = getSelectedRigs(context)
         if rig is None:
             raise DazError("No source armature")
@@ -432,7 +433,7 @@ class DAZ_OT_CopyPose(DazPropsOperator, LockEnabler, IsArmature):
         gmats = dict([(pb.name, pb.matrix.copy()) for pb in rig.pose.bones])
         for subrig in subrigs:
             if self.useDisableLocks:
-                self.enableLocksLimits(rig, False, 0.0)
+                self.enableLocksLimits(subrig, False, 0.0, True)
             print("Copy bones to %s:" % subrig.name)
             setWorldMatrix(subrig, rig.matrix_world)
             for pb in subrig.pose.bones:
