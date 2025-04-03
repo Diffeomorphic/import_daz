@@ -400,20 +400,26 @@ class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
         description = "Remove limits for posed bones",
         default = True)
 
+    useImposeLocks : BoolProperty(
+        name = "Impose Locks",
+        description = "Impose locks",
+        default = False)
+
     def draw(self, context):
+        scn = context.scene
         self.layout.prop(self, "useRemoveLimits")
-
-    def setLocks(self, pb):
-        pb.lock_location = pb.lock_rotation = FFalse
-
+        self.layout.prop(self, "useImposeLocks")
+        self.layout.prop( scn.tool_settings, "use_keyframe_insert_auto")
 
     def run(self, context):
-        self.limitType = 'MUTE'
+        from .animation import insertKeys, imposeLocks
         rig,subrigs = getSelectedRigs(context)
         if rig is None:
             raise DazError("No source armature")
         if not subrigs:
             raise DazError("No target armature")
+        scn = context.scene
+        auto = scn.tool_settings.use_keyframe_insert_auto
 
         def snapBone(pb, gmats):
             M1 = gmats.get(pb.name)
@@ -436,12 +442,16 @@ class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
             for pb in subrig.pose.bones:
                 if pb.name in rig.pose.bones.keys():
                     snapBone(pb, gmats)
+                    if self.useImposeLocks:
+                        imposeLocks(pb)
                     if self.useRemoveLimits:
                         vec = Vector(pb.matrix_basis.to_euler())
                         if vec.length > 1e-3:
                             for cns in list(pb.constraints):
                                 if cns.type == 'LIMIT_ROTATION':
                                     pb.constraints.remove(cns)
+                    if auto:
+                        insertKeys(pb, True, scn.frame_current)
 
 #-------------------------------------------------------------
 #   Find excluded objects
