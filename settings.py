@@ -101,6 +101,7 @@ class GlobalSettings:
 
         self.useArmature = True
         self.useQuaternions = False
+        self.keepRollAngles = False
         self.useLockLoc = True
         self.useLimitLoc = True
         self.useLockRot = True

@@ -7,7 +7,6 @@ from mathutils import Matrix
 from .utils import *
 from .error import *
 from .driver import DriverUser
-from .locks import LockEnabler
 
 #-------------------------------------------------------------
 #   Get selected rigs
@@ -390,19 +389,19 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 #   Copy bone locations
 #-------------------------------------------------------------
 
-class DAZ_OT_CopyPose(DazPropsOperator, LockEnabler, IsArmature):
+class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
     bl_idname = "daz.copy_pose"
     bl_label = "Copy Pose"
     bl_description = "Copy pose from active rig to selected rigs"
     bl_options = {'UNDO'}
 
-    useDisableLocks : BoolProperty(
-        name = "Disable Locks And Limits",
-        description = "Disable locks and limits",
-        default = False)
+    useRemoveLimits : BoolProperty(
+        name = "Remove Limits",
+        description = "Remove limits for posed bones",
+        default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "useDisableLocks")
+        self.layout.prop(self, "useRemoveLimits")
 
     def setLocks(self, pb):
         pb.lock_location = pb.lock_rotation = FFalse
@@ -432,13 +431,18 @@ class DAZ_OT_CopyPose(DazPropsOperator, LockEnabler, IsArmature):
 
         gmats = dict([(pb.name, pb.matrix.copy()) for pb in rig.pose.bones])
         for subrig in subrigs:
-            if self.useDisableLocks:
-                self.enableLocksLimits(subrig, False, 0.0, True)
             print("Copy bones to %s:" % subrig.name)
             setWorldMatrix(subrig, rig.matrix_world)
             for pb in subrig.pose.bones:
                 if pb.name in rig.pose.bones.keys():
                     snapBone(pb, gmats)
+                    if self.useRemoveLimits:
+                        vec = Vector(pb.matrix_basis.to_euler())
+                        if vec.length > 1e-3:
+                            for cns in list(pb.constraints):
+                                if cns.type == 'LIMIT_ROTATION':
+                                    print("REM", pb.name, vec)
+                                    pb.constraints.remove(cns)
 
 #-------------------------------------------------------------
 #   Find excluded objects
