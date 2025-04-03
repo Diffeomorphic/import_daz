@@ -226,7 +226,8 @@ def applyRestPoses(context, rig, useMergeTiedBones=False):
         setWorldMatrix(ob, wmat)
     from .modifier import newArmatureModifier
     for ob in hasamt:
-        newArmatureModifier(rig.name, ob, rig)
+        if activateObject(context, ob):
+            newArmatureModifier(rig.name, ob, rig)
     return [subrig for subrig,children in tied]
 
 
