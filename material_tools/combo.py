@@ -123,6 +123,9 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
                         self.selectNodes(node.inputs["Fac"], slot)
                     elif slot.endswith("Color"):
                         self.selectNodes(node.inputs["Color"], slot)
+                elif node.type == 'MIX':
+                    self.selectNodes(node.inputs["A"], "%s:A" % slot)
+                    self.selectNodes(node.inputs["B"], "%s:B" % slot)
                 else:
                     for socket in node.inputs:
                         self.selectNodes(socket, slot)
