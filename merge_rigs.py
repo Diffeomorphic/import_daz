@@ -441,7 +441,6 @@ class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
                         if vec.length > 1e-3:
                             for cns in list(pb.constraints):
                                 if cns.type == 'LIMIT_ROTATION':
-                                    print("REM", pb.name, vec)
                                     pb.constraints.remove(cns)
 
 #-------------------------------------------------------------
