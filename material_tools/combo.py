@@ -88,6 +88,11 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
                     return True
             return False
 
+        def slotEnds(slot, string):
+            while slot.endswith((":A", ":B", ":F")):
+                slot = slot[:-2]
+            return slot.endswith(string)
+
         from ..cycles import isGroupType
         for link in socket.links:
             node = link.to_node
@@ -119,11 +124,12 @@ class DAZ_OT_MakeComboMaterials(MaterialSelector, DazPropsOperator):
                     self.nodes[node.name] = node
                     self.tnodes[node.name] = TNode(node)
                 if isGroupType(node, ("DAZ Color Effect", "DAZ Tinted Effect")):
-                    if slot.endswith("Fac"):
+                    if slotEnds(slot, "Fac"):
                         self.selectNodes(node.inputs["Fac"], slot)
-                    elif slot.endswith("Color"):
+                    elif slotEnds(slot, "Color"):
                         self.selectNodes(node.inputs["Color"], slot)
                 elif node.type == 'MIX':
+                    self.selectNodes(node.inputs["Factor"], "%s:F" % slot)
                     self.selectNodes(node.inputs["A"], "%s:A" % slot)
                     self.selectNodes(node.inputs["B"], "%s:B" % slot)
                 else:
