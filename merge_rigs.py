@@ -431,9 +431,23 @@ class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
                 if M0 is None:
                     return
                 R0 = pb.parent.bone.matrix_local
-                pb.matrix_basis = R1.inverted() @ R0 @ M0.inverted() @ M1
+                mat = R1.inverted() @ R0 @ M0.inverted() @ M1
             else:
-                pb.matrix_basis = R1.inverted() @ M1
+                mat = R1.inverted() @ M1
+            trans,quat,scale = mat.decompose()
+            if trans.length < 1e-3*GS.scale:
+                mat = mat.to_3x3().to_4x4()
+                trans = Zero
+            vec = Vector(quat.to_euler())
+            if vec.length < 1e-3:
+                mat = Matrix.Translation(trans)
+            pb.matrix_basis = mat
+
+        def removeLimits(pb, vec, ctype, threshold):
+            if vec.length > 1e-3:
+                for cns in list(pb.constraints):
+                    if cns.type == ctype:
+                        pb.constraints.remove(cns)
 
         gmats = dict([(pb.name, pb.matrix.copy()) for pb in rig.pose.bones])
         for subrig in subrigs:
@@ -446,10 +460,8 @@ class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
                         imposeLocks(pb)
                     if self.useRemoveLimits:
                         vec = Vector(pb.matrix_basis.to_euler())
-                        if vec.length > 1e-3:
-                            for cns in list(pb.constraints):
-                                if cns.type == 'LIMIT_ROTATION':
-                                    pb.constraints.remove(cns)
+                        removeLimits(pb, vec, 'LIMIT_ROTATION', 1e-3)
+                        removeLimits(pb, pb.matrix_basis.to_translation(), 'LIMIT_LOCATION', 1e-3*GS.scale)
                     if auto:
                         insertKeys(pb, True, scn.frame_current)
 
