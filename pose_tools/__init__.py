@@ -54,6 +54,7 @@ class DAZ_PT_DazMorePoseTools(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "More Pose Tools"
 
     def draw(self, context):
+        self.layout.operator("daz.copy_absolute_pose")
         self.layout.operator("daz.object_pose_to_bones")
         self.layout.separator()
         self.layout.operator("daz.save_poses_to_file")

@@ -405,10 +405,16 @@ class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
         description = "Impose locks",
         default = False)
 
+    keepLocation : BoolProperty(
+        name = "Keep Location",
+        description = "Keep local location for bones with parent",
+        default = False)
+
     def draw(self, context):
         scn = context.scene
         self.layout.prop(self, "useRemoveLimits")
         self.layout.prop(self, "useImposeLocks")
+        self.layout.prop(self, "keepLocation")
         self.layout.prop( scn.tool_settings, "use_keyframe_insert_auto")
 
     def run(self, context):
@@ -430,10 +436,16 @@ class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
                 M0 = gmats.get(pb.parent.name)
                 if M0 is None:
                     return
+                loc = pb.matrix_basis.col[3].copy()
                 R0 = pb.parent.bone.matrix_local
                 mat = R1.inverted() @ R0 @ M0.inverted() @ M1
+                if self.keepLocation:
+                    mat.col[3] = loc
             else:
                 mat = R1.inverted() @ M1
+            pb.matrix_basis = truncMatrix(mat)
+
+        def truncMatrix(mat):
             trans,quat,scale = mat.decompose()
             if trans.length < 1e-3*GS.scale:
                 mat = mat.to_3x3().to_4x4()
@@ -441,7 +453,7 @@ class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
             vec = Vector(quat.to_euler())
             if vec.length < 1e-3:
                 mat = Matrix.Translation(trans)
-            pb.matrix_basis = mat
+            return mat
 
         def removeLimits(pb, vec, ctype, threshold):
             if vec.length > 1e-3:
