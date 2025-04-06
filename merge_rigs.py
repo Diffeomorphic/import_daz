@@ -410,11 +410,17 @@ class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
         description = "Keep local location for bones with parent",
         default = False)
 
+    useSelectedOnly : BoolProperty(
+        name = "Selected Bones Only",
+        description = "Only copy pose to selected bones",
+        default = False)
+
     def draw(self, context):
         scn = context.scene
         self.layout.prop(self, "useRemoveLimits")
         self.layout.prop(self, "useImposeLocks")
         self.layout.prop(self, "keepLocation")
+        self.layout.prop(self, "useSelectedOnly")
         self.layout.prop( scn.tool_settings, "use_keyframe_insert_auto")
 
     def run(self, context):
@@ -465,17 +471,19 @@ class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
         for subrig in subrigs:
             print("Copy bones to %s:" % subrig.name)
             setWorldMatrix(subrig, rig.matrix_world)
-            for pb in subrig.pose.bones:
-                if pb.name in rig.pose.bones.keys():
-                    snapBone(pb, gmats)
-                    if self.useImposeLocks:
-                        imposeLocks(pb)
-                    if self.useRemoveLimits:
-                        vec = Vector(pb.matrix_basis.to_euler())
-                        removeLimits(pb, vec, 'LIMIT_ROTATION', 1e-3)
-                        removeLimits(pb, pb.matrix_basis.to_translation(), 'LIMIT_LOCATION', 1e-3*GS.scale)
-                    if auto:
-                        insertKeys(pb, True, scn.frame_current)
+            pbones = [pb for pb in subrig.pose.bones if pb.name in rig.pose.bones.keys()]
+            if self.useSelectedOnly:
+                pbones = [pb for pb in pbones if pb.bone.select]
+            for pb in pbones:
+                snapBone(pb, gmats)
+                if self.useImposeLocks:
+                    imposeLocks(pb)
+                if self.useRemoveLimits:
+                    vec = Vector(pb.matrix_basis.to_euler())
+                    removeLimits(pb, vec, 'LIMIT_ROTATION', 1e-3)
+                    removeLimits(pb, pb.matrix_basis.to_translation(), 'LIMIT_LOCATION', 1e-3*GS.scale)
+                if auto:
+                    insertKeys(pb, True, scn.frame_current)
 
 #-------------------------------------------------------------
 #   Find excluded objects
