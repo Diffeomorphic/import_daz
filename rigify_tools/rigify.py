@@ -268,7 +268,7 @@ class MetaMaker(RigifyCommon):
             from ..convert import optimizePose
             optimizePose(context, True)
         if self.keepRig:
-            dazrig = self.saveDazRig(context)
+            dazrig = self.saveDazRig(context, rig)
         else:
             dazrig = None
         finalizeArmature(rig)

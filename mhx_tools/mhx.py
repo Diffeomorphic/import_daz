@@ -244,7 +244,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.makeRealParents(context, rig)
         self.meshes = getMeshChildren(rig)
         if self.keepRig:
-            nrig = self.saveDazRig(context)
+            nrig = self.saveDazRig(context, rig)
         else:
             nrig = None
         self.store.storeAllDrivers(rig, nrig, self.meshes)

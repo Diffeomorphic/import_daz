@@ -265,7 +265,7 @@ class Fixer(DriverUser):
         self.clearTmpDriver(0)
 
 
-    def saveDazRig(self, context):
+    def saveDazRig(self, context, rig):
         def dazName(string):
             return "%s_DAZ" % string
 
@@ -280,7 +280,6 @@ class Fixer(DriverUser):
                 for fcu in rna.animation_data.drivers:
                     fcu.mute = False
 
-        rig = context.object
         scn = context.scene
         coll = getCollection(context, rig)
         activateObject(context, rig)
