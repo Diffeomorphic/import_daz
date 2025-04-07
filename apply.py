@@ -72,7 +72,7 @@ class DAZ_OT_ApplyRestPoses(CollectionShower, DazPropsOperator, IsArmature):
     bl_options = {'UNDO'}
 
     useApplyTransforms : BoolProperty(
-        name = "Apply Transforms",
+        name = "Apply Object Transforms",
         description = "Apply Object Transforms",
         default = False)
 

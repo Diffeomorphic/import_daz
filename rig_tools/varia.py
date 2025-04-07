@@ -132,6 +132,28 @@ class DAZ_OT_MakeEulers(DazOperator, IsArmature):
         for fcu in deletes:
             fcurves.remove(fcu)
 
+#-------------------------------------------------------------
+#   Copy Roll
+#-------------------------------------------------------------
+
+class DAZ_OT_CopyRolls(DazOperator, IsArmature):
+    bl_idname = "daz.copy_rolls"
+    bl_label = "Copy Roll Angles"
+    bl_description = "Copy roll angles from active to selected"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        src = context.object
+        targets = [trg for trg in getSelectedArmatures(context) if trg != src]
+        src.select_set(True)
+        setMode('EDIT')
+        for trg in targets:
+            for srcb in src.data.edit_bones:
+                eb = trg.data.edit_bones.get(srcb.name)
+                if eb:
+                    eb.roll = srcb.roll
+        #setMode('OBJECT')
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -139,6 +161,7 @@ class DAZ_OT_MakeEulers(DazOperator, IsArmature):
 classes = [
     DAZ_OT_HideUnusedLinks,
     DAZ_OT_MakeEulers,
+    DAZ_OT_CopyRolls
 ]
 
 def register():

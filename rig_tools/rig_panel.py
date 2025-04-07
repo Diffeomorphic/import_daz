@@ -18,6 +18,7 @@ class DAZ_PT_Figures(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.change_prefix_to_suffix")
         self.layout.operator("daz.change_suffix_to_prefix")
         self.layout.separator()
+        self.layout.operator("daz.copy_rolls")
         self.layout.operator("daz.lock_channels")
         self.layout.operator("daz.clear_center")
         self.layout.operator("daz.optimize_pose")
