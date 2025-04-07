@@ -132,7 +132,7 @@ class Instance(Accessor, Channels, SimNode):
         self.isShell = False
         self.center = Vector((0,0,0))
         self.cpoint = Vector((0,0,0))
-        self.wmat = self.wrot = self.wscale = Matrix()
+        self.worldmat = self.wmat = self.wrot = self.wscale = Matrix()
         self.wtrans = Vector((0,0,0))
         self.lscale = Matrix()
         self.refcoll = None
