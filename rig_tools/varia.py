@@ -136,11 +136,19 @@ class DAZ_OT_MakeEulers(DazOperator, IsArmature):
 #   Copy Roll
 #-------------------------------------------------------------
 
-class DAZ_OT_CopyRolls(DazOperator, IsArmature):
+class DAZ_OT_CopyRolls(DazPropsOperator, IsArmature):
     bl_idname = "daz.copy_rolls"
     bl_label = "Copy Roll Angles"
     bl_description = "Copy roll angles from active to selected"
     bl_options = {'UNDO'}
+
+    useOrientation : BoolProperty(
+        name = "Copy Bone Orientation",
+        description = "Copy the full bone matrix rather than just the roll angle",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useOrientation")
 
     def run(self, context):
         src = context.object
@@ -151,7 +159,12 @@ class DAZ_OT_CopyRolls(DazOperator, IsArmature):
             for srcb in src.data.edit_bones:
                 eb = trg.data.edit_bones.get(srcb.name)
                 if eb:
-                    eb.roll = srcb.roll
+                    if self.useOrientation:
+                        ematrix = srcb.matrix.copy()
+                        ematrix.col[3][:3] = eb.head.copy()
+                        eb.matrix = ematrix
+                    else:
+                        eb.roll = srcb.roll
         #setMode('OBJECT')
 
 #----------------------------------------------------------
