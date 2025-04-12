@@ -513,7 +513,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     bg.colors.active = (1.0, 1.0, 0.8)
 
 
-    def addToLayer(self, pb, layer, rig, bgname):
+    def addToLayer(self, pb, layer, rig, bgname, unique=True):
         if isinstance(layer, tuple):
             if pb.name[0] == "l":
                 layer = layer[0]
@@ -522,7 +522,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             else:
                 print("MISSING LAYER", layer, pb.name)
                 return
-        setBoneNumLayer(pb.bone, rig, layer)
+        if unique:
+            enableBoneNumLayer(pb.bone, rig, layer)
+        else:
+            setBoneNumLayer(pb.bone, rig, layer)
         if rig and bgname:
             setBonegroup(pb, rig, bgname, self.BoneGroups[bgname])
 
@@ -671,11 +674,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                         addHint(foreIK, rig)
                     ikConstraint(foreIK, handIK, elbow, -90, 2, rig)
                     cns = dampedTrack(shldrBend, foreIK, rig, prop=armProp)
-                    cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp, space='LOCAL')
+                    cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp, space='LOCAL_WITH_PARENT')
                     cns.use_x = cns.use_z = False
                     setEulerOrder(cns, BD.getDefaultMode(shldrBend))
                     cns = dampedTrack(foreBend, handIK, rig, prop=armProp)
-                    cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='LOCAL')
+                    cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='LOCAL_WITH_PARENT')
                     cns.use_x = cns.use_z = False
                     setEulerOrder(cns, foreTwist.rotation_mode)
                     self.setCustomShape(shldrIK, "CS_Arrows")
@@ -693,7 +696,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                         addHint(shinIK, rig)
                     ikConstraint(shinIK, footIK, knee, -90, 2, rig)
                     cns = dampedTrack(thighBend, shinIK, rig, prop=legProp)
-                    cns = copyRotation(thighTwist, thighIK, rig, prop=legProp, space='LOCAL')
+                    cns = copyRotation(thighTwist, thighIK, rig, prop=legProp, space='LOCAL_WITH_PARENT')
                     cns.use_x = cns.use_z = False
                     setEulerOrder(cns, BD.getDefaultMode(thighBend))
                     cns = copyTransform(shin, shinIK, rig, prop=legProp, space='POSE')
