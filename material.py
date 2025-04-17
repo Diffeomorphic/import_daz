@@ -1050,7 +1050,11 @@ class LocalTextureSaver(HiddenTextureUser):
             raise DazError(msg)
         if src != trg and not os.path.exists(trg):
             print("Copy %s\n=> %s" % (src, trg))
-            copyfile(src, trg)
+            try:
+                copyfile(src, trg)
+            except:
+                print("Copying failed")
+                return None
         if img is None:
             if trg in bpy.data.images.keys():
                 img = bpy.data.images[trg]
