@@ -281,14 +281,6 @@ if DAZ_PROPS:
             default = ""
         )
 
-        DazMorphCatsContent : EnumProperty(
-            items = [],
-            name = "Morph")
-
-        DazNewCatName : StringProperty(
-            name = "New Name",
-            default = "Name")
-
         DazUsedPropsOnly : BoolProperty(
             name = "Show Used Morphs Only",
             description = "Only display morphs with nonzero \"final\" value",
@@ -607,14 +599,6 @@ def registerDazProperties():
         description = "Show only items containing this string",
         default = ""
     )
-
-    bpy.types.Scene.DazMorphCatsContent = EnumProperty(
-        items = [],
-        name = "Morph")
-
-    bpy.types.Scene.DazNewCatName = StringProperty(
-        name = "New Name",
-        default = "Name")
 
     bpy.types.Scene.DazUsedPropsOnly = BoolProperty(
         name = "Show Used Morphs Only",
