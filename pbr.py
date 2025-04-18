@@ -356,6 +356,8 @@ class PbrTree(CyclesTree):
             self.linkScalar(spectex, self.pbr, spec, "Specular")
         else:
             self.replaceSlot(self.pbr, "IOR", 1.5)
+            if strength == 0:
+                refl = 0
             self.linkScalar(refltex, self.pbr, refl, "Specular IOR Level")
             color = strength*Vector(color)
             coltex = self.mixTexs('MULTIPLY', strtex, coltex)
