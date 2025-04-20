@@ -98,9 +98,12 @@ class MatchOperator(DazPropsOperator):
         if msg:
             msg = ("%s.\n" % msg +
                    'Transfer from "%s" to "%s".\n' % (src.name, trg.name) +
-                   "Consider using the Legacy transfer method instead")
-            raise DazError(msg)
+                   "Using the Legacy transfer method instead")
+            #raise DazError(msg)
+            print(msg)
+            return False
         self.match = (tris, w, offsets)
+        return True
 
 #----------------------------------------------------------
 #   Vertex group transfer
@@ -234,7 +237,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         finally:
             self.deleteTmp()
         t2 = perf_counter()
-        print("Morphs transferred in %.1f seconds" % (t2-t1))
+        print("All morphs transferred in %.1f seconds" % (t2-t1))
         if failed:
             msg = ("Morph transfer to the following meshes\nfailed due to insufficient memory:")
             for trg in failed:
@@ -257,7 +260,9 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         for sname in snames:
             hskey = hskeys.key_blocks[sname]
             srcboxes[sname] = self.computeShapeBox(src, hskey)
+        transferMethod = self.transferMethod
         for trg in targets:
+            self.transferMethod = transferMethod
             if not self.transferMorphs(snames, src, trg, srcboxes, context):
                 failed.append(trg)
             newLine()
@@ -270,6 +275,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         from .modifier import getBasicShape
 
         startProgress("Transfer morphs %s => %s" %(src.name, trg.name))
+        t1 = perf_counter()
         scn = context.scene
         GS.setRootPaths()
         activateObject(context, src)
@@ -389,6 +395,10 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
             if not ES.easy:
                 print("No shapekeys transferred to %s" % trg.name)
             trg.shape_key_remove(cbasic)
+        t2 = perf_counter()
+        if not ES.easy:
+            print("")
+        print("Morphs transferred in %.1f seconds" % (t2-t1))
         return True
 
 
@@ -581,7 +591,10 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
     def findMatch(self, src, trg):
         t1 = perf_counter()
         if self.bvhtree:
-            self.findMatchNearest(self.bvhtree, src, trg)
+            ok = self.findMatchNearest(self.bvhtree, src, trg)
+            if not ok:
+                self.transferMethod = 'LEGACY'
+                return True
         elif self.transferMethod in ['LEGACY', 'EDGES']:
             return True
         elif self.transferMethod == 'BODY':
