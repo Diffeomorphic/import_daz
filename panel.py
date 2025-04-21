@@ -164,7 +164,7 @@ class DAZ_PT_SetupRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Rigging"
 
     def draw(self, context):
-        self.layout.operator("daz.connect_bone_chains")
+        pass
 
 #----------------------------------------------------------
 #   Utilities panel

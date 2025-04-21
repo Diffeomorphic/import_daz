@@ -243,8 +243,6 @@ class BoneInstance(Instance):
         vec = tail-head
         yaxis = Vector(omat.col[1][0:3])
         if vec.dot(yaxis) < 0:
-            if xyz == 'ZYX' or self.test:
-                print("FLOP", self.name, xyz)
             self.flipped = self.flopped
             return omat @ flip
         else:

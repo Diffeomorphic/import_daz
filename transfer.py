@@ -97,9 +97,7 @@ class MatchOperator(DazPropsOperator):
             msg = "Incompatible numpy dimensions: A = %s, B = %s" % (A.shape, B.shape)
         if msg:
             msg = ("%s.\n" % msg +
-                   'Transfer from "%s" to "%s".\n' % (src.name, trg.name) +
                    "Using the Legacy transfer method instead")
-            #raise DazError(msg)
             print(msg)
             return False
         self.match = (tris, w, offsets)

@@ -32,7 +32,10 @@ class DAZ_PT_Chains(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Chains"
 
     def draw(self, context):
+        self.layout.operator("daz.select_chains")
         self.layout.operator("daz.select_matching_bones")
+        self.layout.separator()
+        self.layout.operator("daz.connect_bone_chains")
         self.layout.operator("daz.add_ik_goals")
         self.layout.operator("daz.add_winders")
         self.layout.operator("daz.add_tails")
