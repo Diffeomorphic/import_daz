@@ -135,7 +135,6 @@ class DataFolders:
                 if finger in fingers and negative not in fingers:
                     return entry
         print("No entry found")
-        print("FF", fingers)
         return {}
 
 

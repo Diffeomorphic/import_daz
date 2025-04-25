@@ -140,7 +140,6 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, BoneChains, IsArmature):
         for ob in rig.children:
             if ob.parent_type == 'BONE':
                 wmats.append((ob, ob.matrix_world.copy()))
-        print("CC", self.chains)
         setMode('EDIT')
         for chain in self.chains:
             parb = rig.data.edit_bones[chain[0]]

@@ -203,7 +203,7 @@ class FACSImporter(BoneHandler, IsMeshArmature):
                 rig["MhaGaze_L"] = 0.0
                 rig["MhaGaze_R"] = 0.0
                 entry = DF.findEntry(rig.keys(), "facs")
-        if entry is None:
+        if not entry:
             print("No entry")
             return
         self.getSource(context)

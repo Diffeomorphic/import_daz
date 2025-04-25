@@ -357,7 +357,6 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                             boneindex = dazRna(pb.bone).DazRigIndex
                             if parindex != boneindex:
                                 dazRna(pb.bone).DazBoneParentRig = parindex
-                                print("FF", rig.name, bname, parindex, boneindex)
 
         # Widgets
         if widgets:
