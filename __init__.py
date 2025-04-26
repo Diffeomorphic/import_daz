@@ -27,6 +27,31 @@ bl_info = {
     "category": "Import-Export"}
 
 #----------------------------------------------------------
+#   In some Blender builds numpy isn't found because
+#   "site-packages" is not in sys.path
+#----------------------------------------------------------
+
+import sys
+import os
+try:
+    import numpy
+    fail = False
+except ModuleNotFoundError:
+    fail = True
+
+if fail:
+    missing = []
+    for path in sys.path:
+        if os.path.basename(path) == "python":
+            packpath = os.path.join(path, "site-packages")
+            if packpath not in sys.path:
+                missing.append(packpath)
+    print("Adding missing packages")
+    for path in missing:
+        print("  Add %s" % path)
+        sys.path.append(path)
+
+#----------------------------------------------------------
 #   Modules
 #----------------------------------------------------------
 
@@ -100,9 +125,6 @@ from .api import *
 #----------------------------------------------------------
 #   Preferences
 #----------------------------------------------------------
-
-import sys
-import os
 
 def toggleSimpleIkTools(self, context):
     toggleModule("simple_ik_tools", self.useSimpleIkTools)
