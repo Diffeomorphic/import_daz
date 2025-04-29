@@ -35,6 +35,7 @@ class LoadMorph(DriverUser):
     onMorphSuffix = 'NONE'
     useSearchAlias = True
     onlyProperties = False
+    useMakeHiddenSliders = False
     defaultMultiplier = 1.0
     useMulti = False
     useVisible = False
@@ -586,6 +587,7 @@ class LoadMorph(DriverUser):
             visible = (asset.visible or
                        self.stripPrefix or
                        self.useVisible or
+                       self.useMakeHiddenSliders or
                        GS.useMakeHiddenSliders)
             self.visible[raw] = visible
             self.primary[raw] = True
@@ -1512,7 +1514,9 @@ class LoadMorph(DriverUser):
                 if len(words) == 2:
                     string = words[0]
             string = "clamp(%s,%g,%g)" % (string, self.currentAsset.min, self.currentAsset.max)
-        if ((GS.useMakeHiddenSliders or self.stripPrefix) and
+        if ((GS.useMakeHiddenSliders or
+             self.useMakeHiddenSliders or
+             self.stripPrefix) and
             isPath(path) and
             "u" not in vvars.keys()):
             final = unPath(path)
@@ -1774,6 +1778,7 @@ class LoadMorph(DriverUser):
     def optimizeJcmDrivers(self):
         if (not GS.useOptimizeJcms or
             GS.useMakeHiddenSliders or
+            self.useMakeHiddenSliders or
             self.rig is None or
             self.amt is None or
             self.amt.animation_data is None or

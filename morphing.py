@@ -1564,6 +1564,11 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         description = "Only load properties and property drivers",
         default = False)
 
+    useMakeHiddenSliders : BoolProperty(
+        name = "Make Hidden Sliders",
+        description = "Create properties for hidden morphs,\nso they can be displayed in the UI.\nOverrides the corresponding global setting",
+        default = False)
+
     useSearchAlias = False
     useMulti = True
 
@@ -1574,6 +1579,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, Daz
         if self.bodypart == "Face":
             self.layout.prop(self, "useTransferFace")
         self.layout.prop(self, "onlyProperties")
+        self.layout.prop(self, "useMakeHiddenSliders")
         self.layout.prop(self, "treatHD")
         PosableMaker.draw(self, context)
 
