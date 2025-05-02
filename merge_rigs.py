@@ -368,7 +368,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 print("Convert %s to widgets for %s" % (ob.name, rig.name))
                 activateObject(context, ob)
                 wc = WidgetConverter()
-                wc.convertWidgets(context, rig, ob)
+                wc.convertWidgets(context, rig, ob, wrig)
                 enableRigNumLayer(rig, T_WIDGETS)
 
         # Restore all objects

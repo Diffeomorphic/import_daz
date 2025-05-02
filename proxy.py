@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-from mathutils import Vector, Euler
+from mathutils import Vector, Euler, Matrix
 from .error import *
 from .tables import *
 from .utils import *
@@ -941,7 +941,7 @@ class DAZ_OT_PrintStatistics(bpy.types.Operator, IsMesh):
 class WidgetConverter:
     deleteUnused = True
 
-    def convertWidgets(self, context, rig, ob):
+    def convertWidgets(self, context, rig, ob, wrig):
         from .node import createHiddenCollection
         if rig is None or not rig.type == 'ARMATURE':
             raise DazError("Object has no armature parent")
@@ -954,12 +954,14 @@ class WidgetConverter:
         euler = Euler((0,180*D,90*D))
         factor = 1/GS.scale
         mat = factor*euler.to_matrix()
+        offset,quat,scale = wrig.matrix_world.decompose()
+        print("Gizmo offset = %s" % offset)
         self.gizmos = []
         for idx,verts in vgverts.items():
             if not verts:
                 continue
             bone = rig.data.bones.get(vgnames[idx])
-            verts = self.transform(verts, mat, bone)
+            verts = self.transform(verts, mat, offset, bone)
             faces = vgfaces[idx]
             key = vgnames[idx]
             gname = "GZM_"+key
@@ -1045,14 +1047,15 @@ class WidgetConverter:
         return vgnames, vgverts, vgfaces
 
 
-    def transform(self, verts, mat, bone):
+    def transform(self, verts, mat, offset, bone):
         if bone:
-            center = bone.head_local
+            center = Vector(bone.head_local)
         else:
             vsum = Vector((0,0,0))
             for co in verts:
                 vsum += co
             center = vsum/len(verts)
+        center -= offset
         verts = [mat@(co-center) for co in verts]
         return verts
 
@@ -1154,7 +1157,7 @@ class DAZ_OT_ConvertWidgets(WidgetConverter, DazPropsOperator, IsMesh):
     def run(self, context):
         ob = context.object
         rig = ob.parent
-        self.convertWidgets(context, rig, ob)
+        self.convertWidgets(context, rig, ob, rig)
 
 #------------------------------------------------------------------------
 #   Collections
