@@ -1666,6 +1666,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                         words = trg.bone_target.rsplit(".",1)
                         if len(words) != 2:
                             pass
+                        elif words[0] in ("upper_arm", "forearm", "thigh"):
+                            if trg.transform_type in ("ROT_X", "ROT_Z"):
+                                trg.bone_target = "%s.bend.%s" % (words[0], words[1])
+                            elif trg.transform_type == "ROT_Y":
+                                trg.bone_target = "%s.twist.%s" % (words[0], words[1])
                         elif words[0][-4:] == "Bend":
                             trg.bone_target = "%s.bend.%s" % (words[0][:-4], words[1])
                         elif words[0][-4:] == "Twist":
