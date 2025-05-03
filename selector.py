@@ -416,7 +416,8 @@ def setActivated(ob, key, value):
     if ob is None:
         return
     pg = getActivateGroup(ob, key)
-    setBoolProp(pg, "active", value, True)
+    if pg:
+        setBoolProp(pg, "active", value, True)
 
 
 def getActivated(ob, rna, key, force=False):
@@ -426,7 +427,7 @@ def getActivated(ob, rna, key, force=False):
         return True
     else:
         pg = getActivateGroup(ob, key)
-        return pg.active
+        return (pg.active if pg else False)
 
 
 def getExistingActivateGroup(rig, key):
@@ -446,7 +447,9 @@ def getActivateGroup(rig, key):
             return pg
         except TypeError as err:
             msg = "Failed to load morph, because\n%s" % err
-        raise DazError(msg)
+            print(msg)
+            return None
+        #raise DazError(msg)
 
 
 class DAZ_OT_ActivateAll(DazOperator, Activator):
