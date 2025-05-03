@@ -6,6 +6,7 @@ import os
 import sys
 import numpy as np
 import bpy
+from mathutils import Matrix
 from .driver import DriverUser, setFloatProp
 from .utils import *
 from .error import reportError, DazError, addItem
@@ -756,7 +757,6 @@ class LoadMorph(DriverUser):
                 return Zero
 
         from .node import getTransformMatrices
-        from mathutils import Matrix
         offsets = {}
         for pb in self.rig.pose.bones:
             tfm,trans = self.ercBones.get(pb.name, (None,None))
@@ -797,6 +797,7 @@ class LoadMorph(DriverUser):
             skey.mute = True
             skey.value = 0.0
         for final,ercBones in self.ercMorphs.items():
+            ob.active_shape_key_index = 0
             prop = baseProp(final)
             fcus = []
             for fcu in self.rig.animation_data.drivers:
@@ -804,6 +805,8 @@ class LoadMorph(DriverUser):
                 if bname and bname not in ercBones.keys() and cnsname is None:
                     fcus.append((fcu, fcu.mute))
                     fcu.mute = True
+            for pb in self.rig.pose.bones:
+                pb.matrix_basis = Matrix()
             self.rig[prop] = 1.0
             updateDrivers(self.amt)
             applyArmatureModifier(ob)

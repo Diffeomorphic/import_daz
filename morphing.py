@@ -2044,7 +2044,6 @@ class ScanFinder:
         else:
             morph = unquote(morph)
             path = findPathRecursiveFromObject(morph, ob, ["Morphs/", "Base/Morphs/"])
-            print("MO", morph, ob.name, path)
             if path:
                 self.addNamePath(morph, path, self.namepaths)
                 return True
