@@ -161,14 +161,82 @@ class DAZ_OT_LockAllChannels(DazPropsOperator, IsObject):
         description = "Enable locks",
         default = True)
 
+    useObjects : BoolProperty(
+        name = "Objects",
+        description = "Enable/Disable locks for objects",
+        default = True)
+
+    useBones : BoolProperty(
+        name = "Bones",
+        description = "Enable/Disable locks for bones",
+        default = False)
+
+    useLocX : BoolProperty(
+        name = "X Loc",
+        description = "Lock X location",
+        default = True)
+
+    useLocY : BoolProperty(
+        name = "Y Loc",
+        description = "Lock Y location",
+        default = True)
+
+    useLocZ : BoolProperty(
+        name = "Z Loc",
+        description = "Lock X location",
+        default = True)
+
+    useRotX : BoolProperty(
+        name = "X Rot",
+        description = "Lock X rotation",
+        default = True)
+
+    useRotY : BoolProperty(
+        name = "Y Rot",
+        description = "Lock Y rotation",
+        default = True)
+
+    useRotZ : BoolProperty(
+        name = "Z Rot",
+        description = "Lock X rotation",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useLock")
+        self.layout.prop(self, "useObjects")
+        self.layout.prop(self, "useBones")
+        if self.useBones:
+            row = self.layout.row()
+            row.prop(self, "useLocX")
+            row.prop(self, "useLocY")
+            row.prop(self, "useLocZ")
+            row = self.layout.row()
+            row.prop(self, "useRotX")
+            row.prop(self, "useRotY")
+            row.prop(self, "useRotZ")
 
     def run(self, context):
         value = (TTrue if self.useLock else FFalse)
         for ob in getSelectedObjects(context):
-            for channel in ["lock_location", "lock_rotation", "lock_scale"]:
-                setattr(ob, channel, value)
+            if self.useObjects:
+                for channel in ["lock_location", "lock_rotation", "lock_scale"]:
+                    setattr(ob, channel, value)
+            if self.useBones and ob.type == 'ARMATURE':
+                for pb in ob.pose.bones:
+                    for channel in ["lock_location", "lock_rotation", "lock_scale"]:
+                        setattr(pb, channel, value)
+                    if not self.useLocX:
+                        pb.lock_location[0] = False
+                    if not self.useLocY:
+                        pb.lock_location[1] = False
+                    if not self.useLocZ:
+                        pb.lock_location[2] = False
+                    if not self.useRotX:
+                        pb.lock_rotation[0] = False
+                    if not self.useRotY:
+                        pb.lock_rotation[1] = False
+                    if not self.useRotZ:
+                        pb.lock_rotation[2] = False
 
 #----------------------------------------------------------
 #   Initialize

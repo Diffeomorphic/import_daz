@@ -103,6 +103,10 @@ class PoseCollector:
                 for morph in morphs:
                     if getActivated(rig, rig, morph):
                         mstruct[morph] = rig[morph]
+                influs = ostruct["influences"] = {}
+                for key,value in rig.items():
+                    if key.startswith("INFLU"):
+                        influs[key] = float(value)
                 for key,value in amt.items():
                     if (key[0:3] in ["Mha"] and
                         key[3:9] not in ["ToeTar", "ArmStr", "LegStr"]):
@@ -263,6 +267,13 @@ class PoseSetter:
                         rig[prop] = castValue(value, model)
                         if self.auto:
                             rig.keyframe_insert(propRef(prop))
+                influs = ostruct.get("influences")
+                if influs:
+                    for prop,value in influs.items():
+                        if prop in rig.keys():
+                            rig[prop] = value
+                            if self.auto:
+                                rig.keyframe_insert(propRef(prop))
 
 
     def setTransform(self, pb, struct):
