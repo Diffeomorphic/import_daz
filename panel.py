@@ -949,11 +949,15 @@ class DAZ_PT_ShellVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
         props = getShellProps(context)
         props.sort()
         if props:
-            row = self.layout.row()
-            op = row.operator("daz.set_shell_influence", text="All")
+            split = self.layout.split(factor=0.25)
+            op = split.operator("daz.set_shell_influence", text="All")
             op.value = 1.0
-            op = row.operator("daz.set_shell_influence", text="None")
+            op = split.operator("daz.set_shell_influence", text="None")
             op.value = 0.0
+            op = split.operator("daz.key_shell_influence", text="", icon='KEY_HLT')
+            op.enable = True
+            op = split.operator("daz.key_shell_influence", text="", icon='KEY_DEHLT')
+            op.enable = False
             self.layout.prop(dazRna(scn), "DazFilter", icon='VIEWZOOM', text="")
             for prop,ob in props:
                 row = self.layout.row()

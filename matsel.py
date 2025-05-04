@@ -196,9 +196,30 @@ class DAZ_OT_SetShellInfluence(DazOperator, IsMeshArmature):
     value : FloatProperty()
 
     def run(self, context):
+        from .selector import autoKeyProp
+        scn = context.scene
         props = getShellProps(context)
         for prop,ob in props:
             ob[prop] = self.value
+            autoKeyProp(ob, prop, scn, scn.frame_current, False)
+        updateDrivers(ob)
+
+
+class DAZ_OT_KeyShellInfluence(DazOperator, IsMeshArmature):
+    bl_idname = "daz.key_shell_influence"
+    bl_label = "Key Shell Influence"
+
+    enable : BoolProperty()
+
+    def run(self, context):
+        from .selector import keyProp, unkeyProp
+        scn = context.scene
+        props = getShellProps(context)
+        for prop,ob in props:
+            if self.enable:
+                keyProp(ob, prop, scn.frame_current)
+            else:
+                unkeyProp(ob, prop, scn.frame_current)
         updateDrivers(ob)
 
 
@@ -228,13 +249,17 @@ class DAZ_OT_ToggleShellInfluence(DazOperator, IsMeshArmature):
     object : StringProperty()
 
     def run(self, context):
+        from .selector import autoKeyProp
+        scn = context.scene
         ob = bpy.data.objects.get(self.object)
         if ob is None:
             return
         elif ob[self.prop] > 0:
             ob[self.prop] = 0.0
+            autoKeyProp(ob, self.prop, scn, scn.frame_current, False)
         else:
             ob[self.prop] = 1.0
+            autoKeyProp(ob, self.prop, scn, scn.frame_current, False)
         updateDrivers(ob)
 
 
@@ -366,6 +391,7 @@ classes = [
     DAZ_OT_SelectSkinMaterials,
     DAZ_OT_SelectSkinRedMaterials,
     DAZ_OT_SetShellInfluence,
+    DAZ_OT_KeyShellInfluence,
     DAZ_OT_ToggleShellInfluence,
     DAZ_OT_UpdateMaterials,
 ]
