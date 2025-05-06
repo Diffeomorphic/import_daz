@@ -1668,7 +1668,7 @@ class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
         else:
             print(ob.name)
         from .finger import getFingerPrint
-        url = quote(dazRna(ob).DazUrl)
+        url = quote(dazRna(ob).DazUrl).lower()
         if url not in struct.keys():
             struct[url] = {}
         ostruct = struct[url]
@@ -2076,9 +2076,10 @@ class ScanFinder:
 
 
     def getParent(self, ob, url):
+        url = url.lower()
         rig = getRigFromMesh(ob)
         for child in rig.children:
-            if dazRna(child).DazUrl == url:
+            if dazRna(child).DazUrl.lower() == url:
                 return child
         return None
 
