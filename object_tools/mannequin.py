@@ -73,6 +73,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         self.layout.prop(self, "headType")
         self.layout.prop(self, "mannColl")
         self.layout.prop(self, "meshColl")
+        return
         self.layout.prop(self, "useNormals")
         self.layout.prop(self, "useVertexGroups")
         if self.useVertexGroups:
@@ -80,6 +81,15 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
             self.layout.prop(self, "threshold")
         self.layout.prop(self, "useVertexColors")
         self.layout.prop(self, "useUvLayers")
+
+
+    def invoke(self, context, event):
+        name = stripName(context.object.name)
+        if name.endswith(" Mesh"):
+            name = name[:-5]
+        self.mannColl = "%s Mannequin" % name
+        self.meshColl = "%s Meshes" % name
+        return DazPropsOperator.invoke(self, context, event)
 
 
     def storeState(self, context):
@@ -129,6 +139,8 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         mangrp = None
         scn = context.scene
         coll = rigcoll = getCollection(context, rig)
+        if self.meshColl in rigcoll.children.keys():
+            raise DazError('Collection "%s" already exists' % self.meshColl)
         obs = {}
         nobs = {}
         from ..proxy import createSubCollection
