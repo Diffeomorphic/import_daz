@@ -139,8 +139,9 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         mangrp = None
         scn = context.scene
         coll = rigcoll = getCollection(context, rig)
-        if self.meshColl in rigcoll.children.keys():
-            raise DazError('Collection "%s" already exists' % self.meshColl)
+        for collname in (self.meshColl, self.mannColl):
+            if collname in rigcoll.children.keys():
+                raise DazError('Collection "%s" already exists' % collname)
         obs = {}
         nobs = {}
         from ..proxy import createSubCollection
