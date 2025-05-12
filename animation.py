@@ -1154,6 +1154,18 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     #   Animate bones
     #-------------------------------------------------------------
 
+    def getDefaultTranslation(self, rig, bname):
+        return Zero
+
+
+    def getDefaultRotation(self, rig, bname):
+        return Zero
+
+
+    def getDefaultScale(self, rig, bname):
+        return One
+
+
     def animateBones(self, context, anims, offset, prop, filepath):
         rig = context.object
         errors = {}
@@ -1162,10 +1174,15 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             n = -1
             for bname, channels in banim.items():
                 for key,channel in channels.items():
-                    if key in ["rotation", "translation"]:
-                        self.addFrames(bname, channel, 3, key, frames, default=(0,0,0))
+                    if key == "translation":
+                        default = self.getDefaultTranslation(rig, bname)
+                        self.addFrames(bname, channel, 3, key, frames, default=default)
+                    elif key == "rotation":
+                        default = self.getDefaultRotation(rig, bname)
+                        self.addFrames(bname, channel, 3, key, frames, default=default)
                     elif key == "scale":
-                        self.addFrames(bname, channel, 3, key, frames, default=(1,1,1))
+                        default = self.getDefaultScale(rig, bname)
+                        self.addFrames(bname, channel, 3, key, frames, default=default)
                     elif key == "general_scale":
                         self.addFrames(bname, channel, 1, key, frames)
 
@@ -1361,7 +1378,11 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 elif nmax == 3:
                     if cname not in bframe.keys():
                         bframe[cname] = Vector(default)
-                    bframe[cname][comp] = y
+                    self.setFrameComp(bframe, cname, comp, y)
+
+
+    def setFrameComp(self, bframe, cname, comp, y):
+        bframe[cname][comp] = y
 
 
     def clearScales(self, rig, frame):
@@ -1641,6 +1662,28 @@ def loadAltMorphs(rig):
 class NodePose:
     def getId(self, ob):
         return dazRna(ob).DazUrl.rsplit("#",1)[-1]
+
+
+    def setFrameComp(self, bframe, cname, comp, y):
+        if cname in ("translation", "rotation") and y == 0:
+            return
+        bframe[cname][comp] = y
+
+
+    def getDefaultTranslation(self, rig, bname):
+        if not self.isObject(bname, rig) and rig.type == 'ARMATURE':
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                return Vector(dazRna(pb).DazTranslation)
+        return Zero
+
+
+    def getDefaultRotation(self, rig, bname):
+        if not self.isObject(bname, rig) and rig.type == 'ARMATURE':
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                return Vector(dazRna(pb).DazRotation)
+        return Zero
 
 
     def parseAnimations(self, struct, banims, vanims, xanims, interps, rig):
