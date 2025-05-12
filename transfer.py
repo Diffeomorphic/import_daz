@@ -777,17 +777,18 @@ def pruneVertexGroups(ob, threshold, bnames, verbose):
     def findVertexGroups(ob, bnames):
         nverts = len(ob.data.vertices)
         nvgrps = len(ob.vertex_groups)
-        vnames = [vgrp.name for vgrp in ob.vertex_groups if vgrp.name not in bnames]
+        vinfos = [(gn,vgrp.name) for gn,vgrp in enumerate(ob.vertex_groups)
+                   if vgrp.name not in bnames]
         weights = dict([(gn, np.zeros(nverts, dtype=float)) for gn in range(nvgrps)])
         for v in ob.data.vertices:
             for g in v.groups:
                 weights[g.group][v.index] = g.weight
-        return vnames,weights
+        return vinfos,weights
 
-    vnames,weights = findVertexGroups(ob, bnames)
+    vinfos,weights = findVertexGroups(ob, bnames)
     for vgrp in list(ob.vertex_groups):
         ob.vertex_groups.remove(vgrp)
-    for gn,vname in enumerate(vnames):
+    for gn,vname in vinfos:
         cweights = weights[gn]
         cweights[cweights > 1] = 1
         cweights[cweights < threshold] = 0

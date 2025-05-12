@@ -73,7 +73,6 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         self.layout.prop(self, "headType")
         self.layout.prop(self, "mannColl")
         self.layout.prop(self, "meshColl")
-        return
         self.layout.prop(self, "useNormals")
         self.layout.prop(self, "useVertexGroups")
         if self.useVertexGroups:
@@ -113,7 +112,11 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
 
     def run(self, context):
         obs,nobs,rig = self.addMannequins(context)
-        return
+        if not (self.useNormals or
+                self.useVertexGroups or
+                self.useVertexColors or
+                self.useUvLayers):
+            return
         if self.ignoreBoneGroups:
             bnames = rig.data.bones.keys()
         else:
@@ -129,8 +132,6 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         rig = ob.parent
         if not (rig and rig.type == 'ARMATURE'):
             raise DazError("Mesh %s has no armature parent" % ob)
-        #setActiveObject(context, rig)
-        #setMode('OBJECT')
         oldlayers = getRigLayers(rig)
         enableAllRigLayers(rig)
         oldpose = rig.data.pose_position
@@ -340,8 +341,9 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
             transfer(data_type='VGROUP_WEIGHTS', layers_select_src='ALL', layers_select_dst='NAME')
             for nob in nobs:
                 pruneVertexGroups(nob, self.threshold, bnames, False)
-        if ob.data.vertex_colors and self.useVertexColors:
-            transfer(data_type='VCOL', layers_select_src='ALL', layers_select_dst='NAME')
+        if self.useVertexColors:
+            transfer(data_type='COLOR_VERTEX', layers_select_src='ALL', layers_select_dst='NAME')
+            transfer(data_type='COLOR_CORNER', layers_select_src='ALL', layers_select_dst='NAME')
         if ob.data.uv_layers and self.useUvLayers:
             transfer(data_type='UV', layers_select_src='ALL', layers_select_dst='NAME')
 
