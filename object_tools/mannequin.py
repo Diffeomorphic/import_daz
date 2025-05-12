@@ -113,6 +113,7 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
 
     def run(self, context):
         obs,nobs,rig = self.addMannequins(context)
+        return
         if self.ignoreBoneGroups:
             bnames = rig.data.bones.keys()
         else:
@@ -128,8 +129,8 @@ class DAZ_OT_AddMannequin(DazPropsOperator, IsMesh):
         rig = ob.parent
         if not (rig and rig.type == 'ARMATURE'):
             raise DazError("Mesh %s has no armature parent" % ob)
-        setActiveObject(context, rig)
-        setMode('OBJECT')
+        #setActiveObject(context, rig)
+        #setMode('OBJECT')
         oldlayers = getRigLayers(rig)
         enableAllRigLayers(rig)
         oldpose = rig.data.pose_position
