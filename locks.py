@@ -171,6 +171,11 @@ class DAZ_OT_LockAllChannels(DazPropsOperator, IsObject):
         description = "Enable/Disable locks for bones",
         default = False)
 
+    ignoreTransformed : BoolProperty(
+        name = "Ignore Transformed Channels",
+        description = "Clear locks for transformed channels",
+        default = False)
+
     useLocX : BoolProperty(
         name = "X Loc",
         description = "Lock X location",
@@ -205,7 +210,8 @@ class DAZ_OT_LockAllChannels(DazPropsOperator, IsObject):
         self.layout.prop(self, "useLock")
         self.layout.prop(self, "useObjects")
         self.layout.prop(self, "useBones")
-        if self.useBones:
+        if self.useBones and self.useLock:
+            self.layout.prop(self, "ignoreTransformed")
             row = self.layout.row()
             row.prop(self, "useLocX")
             row.prop(self, "useLocY")
@@ -219,12 +225,22 @@ class DAZ_OT_LockAllChannels(DazPropsOperator, IsObject):
         value = (TTrue if self.useLock else FFalse)
         for ob in getSelectedObjects(context):
             if self.useObjects:
-                for channel in ["lock_location", "lock_rotation", "lock_scale"]:
-                    setattr(ob, channel, value)
+                for lock in ["lock_location", "lock_rotation", "lock_scale"]:
+                    setattr(ob, lock, value)
             if self.useBones and ob.type == 'ARMATURE':
                 for pb in ob.pose.bones:
-                    for channel in ["lock_location", "lock_rotation", "lock_scale"]:
-                        setattr(pb, channel, value)
+                    for lock,channel,default,scale in [
+                        ("lock_location", "location", 0.0, GS.scale),
+                        ("lock_rotation", "rotation_euler", 0.0, 1.0),
+                        ("lock_scale", "scale", 1.0, 1.0)]:
+                        setattr(pb, lock, value)
+                        if self.ignoreTransformed:
+                            eps = 1e-4*scale
+                            locks = getattr(pb, lock)
+                            rot = getattr(pb, channel)
+                            for idx in range(3):
+                                if abs(rot[idx] - default) > eps:
+                                    locks[idx] = False
                     if not self.useLocX:
                         pb.lock_location[0] = False
                     if not self.useLocY:
