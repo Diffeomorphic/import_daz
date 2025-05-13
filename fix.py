@@ -62,6 +62,13 @@ class Fixer(DriverUser):
         description = "Keep the original DAZ rig for deformation",
         default = False)
 
+    deformRigSpace : EnumProperty(
+        items = [('POSE', "Pose", "Pose space"),
+                 ('LOCAL', "Local", "Local space (owner orientation)")],
+        name = "Deform Rig Space",
+        description = "Space used by copy transforms constraints for most bones",
+        default = 'POSE')
+
     useModifyDazRig : BoolProperty(
         name = "Modify DAZ Rig",
         description = "Change the rest pose of the deform rig to match the control rig",
@@ -70,6 +77,7 @@ class Fixer(DriverUser):
     def drawMeta(self):
         self.layout.prop(self, "keepRig")
         if self.keepRig:
+            self.layout.prop(self, "deformRigSpace")
             self.layout.prop(self, "useModifyDazRig")
         self.layout.prop(self, "useFingerIk")
 

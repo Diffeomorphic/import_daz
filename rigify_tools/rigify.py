@@ -1592,6 +1592,9 @@ class Rigifier(RigifyCommon):
         #    cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
+        elif self.deformRigSpace == 'LOCAL':
+            cns = copyTransform(pb, rb, gen, space='LOCAL')
+            cns.target_space = 'LOCAL_OWNER_ORIENT'
         else:
             cns = copyTransform(pb, rb, gen, space='POSE')
 
