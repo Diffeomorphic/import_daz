@@ -1741,16 +1741,18 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         if rb is None:
             print('Cannot tie "%s" to "%s"' % (pb.name, rname))
             return
-        useLocal = False
+        useLocal = usePose = False
         if (not pb.parent or
             rb.name.startswith(("hand0.", "foot."))):
-            pass
+            usePose = True
         elif (pb.name in facebones or
               ".twist" in rb.name):
             useLocal = True
 
         if useLocal:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
+        elif usePose:
+            cns = copyTransform(pb, rb, gen, space='POSE')
         elif self.deformRigSpace == 'LOCAL':
             cns = copyTransform(pb, rb, gen, space='LOCAL')
             cns.target_space = 'LOCAL_OWNER_ORIENT'
