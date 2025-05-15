@@ -900,7 +900,7 @@ class Rigifier(RigifyCommon):
         else:
             pname = ""
         if not isDrvBone(bname):
-            print("MISS", bname, rname, pname)
+            print("Missing bone:", bname, rname, pname)
         return None
 
 
@@ -1569,9 +1569,9 @@ class Rigifier(RigifyCommon):
             cns.target_space = 'LOCAL_OWNER_ORIENT'
             cns = copyLocation(pb, rb, gen, space='POSE')
             cns.head_tail = 1.0
-        #elif rname.startswith(("DEF-toe", "DEF-palm", "DEF-spine")):
-        #    cns = copyRotation(pb, rb, gen, space='LOCAL')
-        #    cns.target_space = 'LOCAL_OWNER_ORIENT'
+        elif rname.startswith(("DEF-toe", "DEF-palm", "DEF-spine")):
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
+            cns.target_space = 'LOCAL_OWNER_ORIENT'
         elif "twist" in pb.name.lower():
             cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif pb.name in facebones:
@@ -1583,7 +1583,7 @@ class Rigifier(RigifyCommon):
             offset = (porient - rorient).length
             if offset > self.ownerThreshold:
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
-                print("Owner orientation", pb.name, offset)
+                print("Owner orientation:", pb.name, offset)
         else:
             cns = copyRotation(pb, rb, gen, space='POSE')
 
