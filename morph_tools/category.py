@@ -47,6 +47,8 @@ class GeneralMorphSelector(Selector):
 
 
     def getKeys(self, rig, ob):
+        if rig is None:
+            return []
         from ..morphing import getMorphList
         morphs = getMorphList(rig, self.morphset, sets=MS.Standards)
         keys = [(item.name, item.text, "All") for item in morphs]
@@ -70,17 +72,19 @@ class GeneralMorphSelector(Selector):
         self.morphnames["All"] = []
         for morphset in MS.Standards:
             theMorphEnums.append((morphset, morphset, morphset))
-            pg = getattr(dazRna(self.rig), "Daz%s" % morphset)
-            self.morphnames["All"] += list(pg.keys())
-            self.morphnames[morphset] = pg.keys()
+            if rig:
+                pg = getattr(dazRna(rig), "Daz%s" % morphset)
+                self.morphnames["All"] += list(pg.keys())
+                self.morphnames[morphset] = pg.keys()
         theMorphEnums.append(("Custom", "Custom", "Custom"))
         self.catnames = {}
         self.catnames["All"] = []
-        for cat in dazRna(rig).DazMorphCats:
-            theCatEnums.append((cat.name, cat.name, cat.name))
-            self.morphnames["All"] += list(cat.morphs.keys())
-            self.catnames["All"] += list(cat.morphs.keys())
-            self.catnames[cat.name] = cat.morphs.keys()
+        if rig:
+            for cat in dazRna(rig).DazMorphCats:
+                theCatEnums.append((cat.name, cat.name, cat.name))
+                self.morphnames["All"] += list(cat.morphs.keys())
+                self.catnames["All"] += list(cat.morphs.keys())
+                self.catnames[cat.name] = cat.morphs.keys()
         return Selector.invoke(self, context, event)
 
 #------------------------------------------------------------------------
@@ -949,7 +953,6 @@ class DAZ_OT_RemoveZeroShapekeys(DazOperator, IsShape):
         ob = context.object
         skeys = ob.data.shape_keys
         deletes = dict([(skey.name, skey) for skey in skeys.key_blocks[1:] if skey.value == 0.0])
-        print("DD", deletes)
         if skeys.animation_data and skeys.animation_data.action:
             fcurves = getActionBag(skeys.animation_data.action, 'KEY').fcurves
             for fcu in list(fcurves):
@@ -958,10 +961,11 @@ class DAZ_OT_RemoveZeroShapekeys(DazOperator, IsShape):
                     fcurves.remove(fcu)
         for skey in deletes.values():
             ob.shape_key_remove(skey)
+        ob.active_shape_key_index = 0
+        updateDrivers(ob.data.shape_keys)
         rig = ob.parent
         if (rig and rig.type == 'ARMATURE'):
             updateRigDrivers(context, rig)
-        updateDrivers(ob.data.shape_keys)
         updateScrollbars(context)
 
 #-------------------------------------------------------------

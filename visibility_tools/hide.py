@@ -398,10 +398,10 @@ class ShapekeySelector(Selector):
         return (ob and ob.type == 'MESH' and ob.data.shape_keys)
 
     def selectCondition(self, item):
-        return (item.name not in ("Basic", "Basis"))
+        return True
 
     def getKeys(self, rig, ob):
-        return [(skey.name, skey.name, skey.name) for skey in ob.data.shape_keys.key_blocks]
+        return [(skey.name, skey.name, skey.name) for skey in ob.data.shape_keys.key_blocks[1:]]
 
 
 class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):

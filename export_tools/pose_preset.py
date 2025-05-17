@@ -252,10 +252,13 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
 
     def getShapeFcurves(self, act, skeys):
+        if len(skeys.key_blocks) == 0:
+            return
+        basename = skeys.key_blocks[0].name
         fcurves = getActionBag(act, 'KEY').fcurves
         for fcu in fcurves:
             sname,channel = getShapeChannel(fcu)
-            if sname and sname not in ("Basic", "Basis"):
+            if sname and sname == basename:
                 self.morphs[sname] = fcu
 
 
