@@ -1752,10 +1752,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             cns = copyRotation(pb, rb, gen, space='LOCAL')
             porient = Vector(pb.bone.matrix_local.to_euler())
             rorient = Vector(rb.bone.matrix_local.to_euler())
-            offset = (porient - rorient).length
+            offset = (porient - rorient).length/D
             if offset > self.ownerThreshold:
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
-                print("Owner orientation", pb.name, offset)
+                print("Owner orientation: %s %.2f" % (pb.name, offset))
         else:
             cns = copyRotation(pb, rb, gen, space='POSE')
 

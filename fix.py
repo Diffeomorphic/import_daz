@@ -72,7 +72,8 @@ class Fixer(DriverUser):
     ownerThreshold : FloatProperty(
         name = "Owner Threshold",
         description = "Use local space (owner orientation) if difference in orientation exceeds this",
-        default = 0.01)
+        min = 0, max = 89,
+        default = 89)
 
     useModifyDazRig : BoolProperty(
         name = "Modify DAZ Rig",

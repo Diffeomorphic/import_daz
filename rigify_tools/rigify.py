@@ -1560,18 +1560,18 @@ class Rigifier(RigifyCommon):
         rb = gen.pose.bones.get(rname)
         if rb is None:
             return
-        elif pb.name == "pelvis":
-            pass
-        elif rname.startswith(("DEF-foot", "DEF-hand")):
-            cns = copyRotation(pb, rb, gen, space='POSE')
         elif pb.name == "hip":
-            cns = copyTransform(pb, rb, gen, space='LOCAL')
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
             cns.target_space = 'LOCAL_OWNER_ORIENT'
             cns = copyLocation(pb, rb, gen, space='POSE')
             cns.head_tail = 1.0
-        elif rname.startswith(("DEF-toe", "DEF-palm", "DEF-spine")):
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
-            cns.target_space = 'LOCAL_OWNER_ORIENT'
+        elif pb.name == "pelvis":
+            pass
+        #elif rname.startswith(("DEF-foot", "DEF-hand")):
+        #    cns = copyRotation(pb, rb, gen, space='POSE')
+        #elif rname.startswith(("DEF-toe", "DEF-palm", "DEF-spine")):
+        #    cns = copyRotation(pb, rb, gen, space='LOCAL')
+        #    cns.target_space = 'LOCAL_OWNER_ORIENT'
         elif "twist" in pb.name.lower():
             cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif pb.name in facebones:
@@ -1580,10 +1580,10 @@ class Rigifier(RigifyCommon):
             cns = copyRotation(pb, rb, gen, space='LOCAL')
             porient = Vector(pb.bone.matrix_local.to_euler())
             rorient = Vector(rb.bone.matrix_local.to_euler())
-            offset = (porient - rorient).length
+            offset = (porient - rorient).length/D
             if offset > self.ownerThreshold:
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
-                print("Owner orientation:", pb.name, offset)
+                print("Owner orientation: %s %.2f" % (pb.name, offset))
         else:
             cns = copyRotation(pb, rb, gen, space='POSE')
 
