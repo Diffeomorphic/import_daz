@@ -1571,7 +1571,9 @@ class Rigifier(RigifyCommon):
             cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
-        elif self.deformRigSpace == 'LOCAL':
+        elif pb.name.endswith("Collar"):
+            cns = copyRotation(pb, rb, gen, space='LOCAL_WITH_PARENT')
+        else:
             cns = copyRotation(pb, rb, gen, space='LOCAL')
             porient = Vector(pb.bone.matrix_local.to_euler())
             rorient = Vector(rb.bone.matrix_local.to_euler())
@@ -1579,8 +1581,6 @@ class Rigifier(RigifyCommon):
             if offset > self.ownerThreshold:
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
                 print("Owner orientation: %s %.2f" % (pb.name, offset))
-        else:
-            cns = copyRotation(pb, rb, gen, space='POSE')
 
 #-------------------------------------------------------------
 #  Buttons

@@ -62,13 +62,6 @@ class Fixer(DriverUser):
         description = "Keep the original DAZ rig for deformation",
         default = False)
 
-    deformRigSpace : EnumProperty(
-        items = [('LOCAL', "Local", "Local space (owner orientation)"),
-                 ('POSE', "Pose", "Pose space")],
-        name = "Deform Rig Space",
-        description = "Space used by copy transforms constraints for most bones",
-        default = 'LOCAL')
-
     ownerThreshold : FloatProperty(
         name = "Owner Threshold",
         description = "Use local space (owner orientation) if difference in orientation exceeds this",
@@ -83,7 +76,6 @@ class Fixer(DriverUser):
     def drawMeta(self):
         self.layout.prop(self, "keepRig")
         if self.keepRig:
-            self.layout.prop(self, "deformRigSpace")
             self.layout.prop(self, "ownerThreshold")
             self.layout.prop(self, "useModifyDazRig")
         self.layout.prop(self, "useFingerIk")

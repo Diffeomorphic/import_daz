@@ -1742,13 +1742,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             print('Cannot tie "%s" to "%s"' % (pb.name, rname))
             return
         if (not pb.parent or
-            rb.name.startswith(("hand0.", "foot."))):
+            rb.name.startswith("hand0.")):
             cns = copyTransform(pb, rb, gen, space='POSE')
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
         elif ".twist" in rb.name:
             cns = copyRotation(pb, rb, gen, space='LOCAL')
-        elif self.deformRigSpace == 'LOCAL':
+        else:
             cns = copyRotation(pb, rb, gen, space='LOCAL')
             porient = Vector(pb.bone.matrix_local.to_euler())
             rorient = Vector(rb.bone.matrix_local.to_euler())
@@ -1756,8 +1756,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             if offset > self.ownerThreshold:
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
                 print("Owner orientation: %s %.2f" % (pb.name, offset))
-        else:
-            cns = copyRotation(pb, rb, gen, space='POSE')
 
     #-------------------------------------------------------------
     #   Error on missing bone

@@ -258,7 +258,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         fcurves = getActionBag(act, 'KEY').fcurves
         for fcu in fcurves:
             sname,channel = getShapeChannel(fcu)
-            if sname and sname == basename:
+            if sname and sname != basename:
                 self.morphs[sname] = fcu
 
 
