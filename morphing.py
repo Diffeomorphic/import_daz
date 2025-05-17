@@ -1111,7 +1111,7 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
             stores.append(ModStore(mod))
             ob.modifiers.remove(mod)
     if ob.data.shape_keys is None:
-        ob.shape_key_add(name="Basic")
+        ob.shape_key_add(name="Basis")
 
     bulges = []
     vgrps = list(ob.vertex_groups)
@@ -2230,7 +2230,7 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         if skeys:
             return list(skeys.key_blocks.keys())
         else:
-            return ["Basic"]
+            return ["Basis"]
 
 
     def getNewShapes(self, ob, oldshapes):

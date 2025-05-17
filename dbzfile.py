@@ -585,8 +585,8 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
 
 
     def buildMeshMorph(self, ob, rig, dbz):
-        from .modifier import getBasicShape
-        basic,skeys,new = getBasicShape(ob)
+        from .modifier import getBasisShape
+        basis,skeys,new = getBasisShape(ob)
         sname = dbz.name
         if sname in skeys.key_blocks.keys():
             skey = skeys.key_blocks[sname]

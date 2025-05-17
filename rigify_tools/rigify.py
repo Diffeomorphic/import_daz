@@ -1567,11 +1567,6 @@ class Rigifier(RigifyCommon):
             cns.head_tail = 1.0
         elif pb.name == "pelvis":
             pass
-        #elif rname.startswith(("DEF-foot", "DEF-hand")):
-        #    cns = copyRotation(pb, rb, gen, space='POSE')
-        #elif rname.startswith(("DEF-toe", "DEF-palm", "DEF-spine")):
-        #    cns = copyRotation(pb, rb, gen, space='LOCAL')
-        #    cns.target_space = 'LOCAL_OWNER_ORIENT'
         elif "twist" in pb.name.lower():
             cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif pb.name in facebones:

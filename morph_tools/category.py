@@ -401,14 +401,14 @@ def getShapeKeyCoords(ob):
 
 def applyMorphs(rig, props):
     for ob in getShapeChildren(rig):
-        basic = ob.data.shape_keys.key_blocks[0]
+        basis = ob.data.shape_keys.key_blocks[0]
         skeys,coords = getShapeKeyCoords(ob)
         for skey in skeys:
             path = 'key_blocks["%s"].value' % skey.name
             getDrivingProps(ob.data.shape_keys, path, props)
             ob.shape_key_remove(skey)
-        basic = ob.data.shape_keys.key_blocks[0]
-        ob.shape_key_remove(basic)
+        basis = ob.data.shape_keys.key_blocks[0]
+        ob.shape_key_remove(basis)
         for vn,co in enumerate(coords):
             ob.data.vertices[vn].co = co
     print("Morphs applied")

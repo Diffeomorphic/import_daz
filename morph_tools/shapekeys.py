@@ -97,7 +97,7 @@ class DAZ_OT_MeshToShape(DazOperator, IsMesh):
             raise DazError("Target mesh must have shapekeys")
         idx = trg.active_shape_key_index
         if idx == 0:
-            raise DazError("Cannot transfer to Basic shapekeys")
+            raise DazError("Cannot transfer to Basis shapekeys")
         objects = [ob for ob in getSelectedMeshes(context) if ob != trg]
         if len(objects) != 1:
             raise DazError("Exactly two meshes must be selected")

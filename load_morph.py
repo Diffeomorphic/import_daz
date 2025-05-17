@@ -781,11 +781,11 @@ class LoadMorph(DriverUser):
 
     def applyErcArmature(self, context, ob):
         from .apply import applyArmatureModifier
-        from .modifier import getBasicShape, newArmatureModifier
+        from .modifier import getBasisShape, newArmatureModifier
         from .driver import getPropMinMax, Driver
 
         activateObject(context, ob)
-        basic,skeys,new = getBasicShape(ob)
+        basis,skeys,new = getBasisShape(ob)
         drivers = []
         if skeys.animation_data:
             for fcu in list(skeys.animation_data.drivers):

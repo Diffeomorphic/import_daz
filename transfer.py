@@ -270,7 +270,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
     def transferMorphs(self, snames, src, trg, srcboxes, context):
         from .load_morph import printName
         from .morphing import MP
-        from .modifier import getBasicShape
+        from .modifier import getBasisShape
 
         startProgress("Transfer morphs %s => %s" %(src.name, trg.name))
         t1 = perf_counter()
@@ -281,7 +281,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         if not self.findMatch(src, trg):
             return False
         hskeys = src.data.shape_keys
-        cbasic,cskeys,new = getBasicShape(trg)
+        cbasis,cskeys,new = getBasisShape(trg)
         if src.active_shape_key_index < 0:
             src.active_shape_key_index = 0
         trg.active_shape_key_index = 0
@@ -387,12 +387,12 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
             else:
                 printName(" -", sname)
 
-        if (cbasic and
+        if (cbasis and
             len(trg.data.shape_keys.key_blocks) == 1 and
-            trg.data.shape_keys.key_blocks[0] == cbasic):
+            trg.data.shape_keys.key_blocks[0] == cbasis):
             if not ES.easy:
                 print("No shapekeys transferred to %s" % trg.name)
-            trg.shape_key_remove(cbasic)
+            trg.shape_key_remove(cbasis)
         t2 = perf_counter()
         if not ES.easy:
             print("")

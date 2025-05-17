@@ -74,9 +74,9 @@ class DAZ_OT_AddPush(DazOperator, IsMesh):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        from ..modifier import getBasicShape
+        from ..modifier import getBasisShape
         for ob in getSelectedMeshes(context):
-            basic,skeys,new = getBasicShape(ob)
+            basis,skeys,new = getBasisShape(ob)
             skey = ob.shape_key_add(name="Push")
             scale = GS.scale
             for n,v in enumerate(ob.data.vertices):
