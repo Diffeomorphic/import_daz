@@ -1,7 +1,7 @@
 // DAZ Studio Script
 
 var appName = "export_to_blender";
-var version = "\"4.4.0.2563\"";
+var version = "\"4.4.0.2615\"";
 var useExportHD = false;
 var useHDConvention = false;
 var useHDUVs = false;
@@ -32,7 +32,7 @@ function createDialog()
     // from all other [uniquely named] DzBasicDialog instances
     oDlgWgt.objectName = sKey;
 
-    var filepath = getScenePath()
+    var filepath = getScenePath();
     button1 = popup("Export HD", false, wDlg, oDlgWgt);
     button2 = popup("HD Convention", false, wDlg, oDlgWgt);
     button3 = popup("Export HD UVs", true, wDlg, oDlgWgt);
@@ -80,6 +80,17 @@ function exportHighdefToBlender(filepath)
     fp.writeLine("    \"application\": \"export_highdef_to_blender\",");
     fp.writeLine("    \"version\": " + version + ",");
 
+    var filepath = getScenePath();
+    fp.writeLine("    \"filepath\": \"" + filepath + "\",");
+    
+    var cmgr = App.getContentMgr();
+    fp.writeLine("    \"rootpaths\": {");
+    doDirs(fp, "content", cmgr.getNumContentDirectories(), cmgr.getContentDirectoryPath, ",");
+    doDirs(fp, "builtin_mdl", cmgr.getNumBuiltInMDLDirectories(), cmgr.getBuiltInMDLDirectoryPath, ",");
+    doDirs(fp, "import_dirs", cmgr.getNumImportDirectories(), cmgr.getImportDirectoryPath, ",");
+    doDirs(fp, "mdl_dirs", cmgr.getNumMDLDirectories(), cmgr.getMDLDirectoryPath, "");
+    fp.writeLine("    },")
+
     fp.writeLine("    \"figures\": [");
 
     for ( var i = 0; i < Scene.getNumNodes(); i++ )
@@ -109,10 +120,10 @@ function exportHighdefToBlender(filepath)
         }
     }
 
-    fp.writeLine("    {" );
+    fp.writeLine("    {");
     fp.writeLine("        \"name\": \"dummy\",");
     fp.writeLine("        \"num verts\": 0");
-    fp.writeLine("    }" );
+    fp.writeLine("    }");
 
     fp.writeLine("    ]");
     fp.writeLine("}" );
@@ -136,6 +147,19 @@ function exportHighdefToBlender(filepath)
     else
         msg = "Text file \"" + filepath + "\"\nsaved in " + (time2-time1)/1000 + " seconds.";
     MessageBox.information( msg, appName, "&OK" );
+}
+
+   
+function doDirs(fp, key, ndirs, fcn, endchar)
+{
+    fp.writeLine("        \"" + key + "\": [");
+    var c = ",";
+    for (var n=0; n<ndirs; n++)
+    {
+    	if (n == ndirs-1) c = "";
+        fp.writeLine("            \"" + fcn(n) + "\"" + c);        
+    }
+    fp.writeLine("        ]" + endchar);
 }
 
 //===============================================================================
