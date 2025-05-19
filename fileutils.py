@@ -317,11 +317,11 @@ class ImageFile:
 
 class DazImageFile:
     filename_ext = ".duf"
-    filter_glob : StringProperty(default="*.duf;*.dsf;*.png;*.jpeg;*.jpg;*.bmp", options={'HIDDEN'})
+    filter_glob : StringProperty(default="*.duf;*.dsf;*.dbz;*.png;*.jpeg;*.jpg;*.bmp", options={'HIDDEN'})
 
 
 class DazFile:
-    filename_ext = ".dsf;.duf;*.dbz"
+    filename_ext = ".dsf;.duf;.dbz"
     filter_glob : StringProperty(default="*.dsf;*.duf;*.dbz", options={'HIDDEN'})
 
 

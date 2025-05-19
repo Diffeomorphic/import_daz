@@ -87,6 +87,9 @@ class DazLoader:
     def loadDazFile(self, filepath, context):
         from .dbzfile import getFitFile, fitToFile
 
+        if os.path.splitext(filepath)[-1] == ".dbz":
+            filepath = self.loadDbzInfo(filepath)
+
         LS.scene = filepath
         if bpy.app.version < (3,1,0) and GS.shellMethod == 'GEONODES':
             GS.shellMethod = 'MATERIAL'
@@ -191,6 +194,17 @@ class DazLoader:
         print('File "%s" loaded in %.3f seconds' % (filepath, t2-t1))
         return main
 
+
+    def loadDbzInfo(self, filepath):
+        from .load_json import JL
+        struct = JL.load(filepath)
+        dufpath = struct.get("filepath")
+        if dufpath is None:
+            raise DazError('DBZ file lacks info about file path and root paths:\n  "%s"' % filepath)
+        GS.readDazPaths(struct["rootpaths"], None, True)
+        print('DUF path: "%s"' % dufpath)
+        return dufpath
+
 #------------------------------------------------------------------
 #   Import DAZ
 #------------------------------------------------------------------
@@ -217,7 +231,7 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazIma
 
     def run(self, context):
         GS.checkAbsPaths()
-        filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
+        filepaths = self.getMultiFiles(["duf", "dsf", "dse", "dbz"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")
         elif len(filepaths) > 1:

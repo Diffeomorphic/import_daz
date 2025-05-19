@@ -50,7 +50,7 @@ function createDialog()
 	    );
         }
         if (filepath) {
-            exportHighdefToBlender(filepath);
+            exportToBlender(filepath);
         }
     }
 }
@@ -68,7 +68,7 @@ function popup(text, checked, wDlg, oDlgWgt)
 }
 
 
-function exportHighdefToBlender(filepath)
+function exportToBlender(filepath)
 {
     var date1 = new Date();
     var time1 = date1.getTime();
@@ -80,15 +80,19 @@ function exportHighdefToBlender(filepath)
     fp.writeLine("    \"application\": \"export_highdef_to_blender\",");
     fp.writeLine("    \"version\": " + version + ",");
 
-    var filepath = getScenePath();
-    fp.writeLine("    \"filepath\": \"" + filepath + "\",");
+    var origpath = Scene.getFilename();
+    fp.writeLine("    \"filepath\": \"" + origpath + "\",");
     
     var cmgr = App.getContentMgr();
     fp.writeLine("    \"rootpaths\": {");
-    doDirs(fp, "content", cmgr.getNumContentDirectories(), cmgr.getContentDirectoryPath, ",");
-    doDirs(fp, "builtin_mdl", cmgr.getNumBuiltInMDLDirectories(), cmgr.getBuiltInMDLDirectoryPath, ",");
-    doDirs(fp, "import_dirs", cmgr.getNumImportDirectories(), cmgr.getImportDirectoryPath, ",");
-    doDirs(fp, "mdl_dirs", cmgr.getNumMDLDirectories(), cmgr.getMDLDirectoryPath, "");
+    doDirs(fp, "content", cmgr.getNumContentDirectories(), cmgr.getContentDirectoryPath);
+    doDirs(fp, "builtin_mdl", cmgr.getNumBuiltInMDLDirectories(), cmgr.getBuiltInMDLDirectoryPath);
+    doDirs(fp, "import_dirs", cmgr.getNumImportDirectories(), cmgr.getImportDirectoryPath);
+    doDirs(fp, "mdl_dirs", cmgr.getNumMDLDirectories(), cmgr.getMDLDirectoryPath);
+    path = cmgr.getBuiltInContentDirectoryPath();
+    fp.writeLine("        \"builtin_content\" : \"" + path + "\",");            
+    path = cmgr.getCloudContentDirectoryPath();
+    fp.writeLine("        \"cloud_content\" : \"" + path + "\"");        
     fp.writeLine("    },")
 
     fp.writeLine("    \"figures\": [");
@@ -150,7 +154,7 @@ function exportHighdefToBlender(filepath)
 }
 
    
-function doDirs(fp, key, ndirs, fcn, endchar)
+function doDirs(fp, key, ndirs, fcn)
 {
     fp.writeLine("        \"" + key + "\": [");
     var c = ",";
@@ -159,7 +163,7 @@ function doDirs(fp, key, ndirs, fcn, endchar)
     	if (n == ndirs-1) c = "";
         fp.writeLine("            \"" + fcn(n) + "\"" + c);        
     }
-    fp.writeLine("        ]" + endchar);
+    fp.writeLine("        ],");
 }
 
 //===============================================================================
