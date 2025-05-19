@@ -7,7 +7,7 @@ import bpy
 from mathutils import Matrix
 from .error import *
 from .utils import *
-from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
+from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile, DbzImageFile
 from .morphing import MorphSuffix, MorphTypeOptions, FavoOptions, PosableMaker
 from .merge_rigs import MergeRigsOptions
 from .merge_grafts import MergeGeograftOptions
@@ -200,7 +200,11 @@ class DazLoader:
         struct = JL.load(filepath)
         dufpath = struct.get("filepath")
         if dufpath is None:
-            raise DazError('DBZ file lacks info about file path and root paths:\n  "%s"' % filepath)
+            dufpath = "%s.duf" % os.path.splitext(filepath)[0]
+            if os.path.exists(dufpath):
+                return dufpath
+            else:
+                raise DazError('DBZ file lacks info about file path and root paths:\n  "%s"' % filepath)
         GS.readDazPaths(struct["rootpaths"], None, True)
         print('DUF path: "%s"' % dufpath)
         return dufpath
@@ -209,7 +213,7 @@ class DazLoader:
 #   Import DAZ
 #------------------------------------------------------------------
 
-class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DazImageFile, MultiFile):
+class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DbzImageFile, MultiFile):
     """Load a DAZ File"""
     bl_idname = "daz.import_daz_manually"
     bl_label = "Import DAZ Manually"
@@ -558,7 +562,7 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, MultiFile, I
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, PosableMaker, DazImageFile, MultiFile):
+class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, PosableMaker, DbzImageFile, MultiFile):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -716,7 +720,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     def run(self, context):
         from .fileutils import getExistingFilePath
         GS.checkAbsPaths()
-        filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
+        filepaths = self.getMultiFiles(["duf", "dsf", "dse", "dbz"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")
         if self.useFavoMorphs:
