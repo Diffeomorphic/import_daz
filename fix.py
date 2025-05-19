@@ -68,16 +68,8 @@ class Fixer(DriverUser):
         min = 0, max = 89,
         default = 89)
 
-    useModifyDazRig : BoolProperty(
-        name = "Modify DAZ Rig",
-        description = "Change the rest pose of the deform rig to match the control rig",
-        default = False)
-
     def drawMeta(self):
         self.layout.prop(self, "keepRig")
-        if self.keepRig:
-            self.layout.prop(self, "ownerThreshold")
-            self.layout.prop(self, "useModifyDazRig")
         self.layout.prop(self, "useFingerIk")
 
 
@@ -543,20 +535,6 @@ class Fixer(DriverUser):
             print("Tie bones of %s to %s" % (rig.name, gen.name))
         facebones = self.setupFaceBones(rig)
         assoc = dict([(bname,rname) for rname,bname in self.renamedBones.items()])
-        if self.useModifyDazRig:
-            activateObject(context, gen)
-            setMode('EDIT')
-            bdata = dict([(eb.name, (eb.head.copy(), eb.tail.copy(), eb.roll)) for eb in gen.data.edit_bones])
-            setMode('OBJECT')
-            activateObject(context, rig)
-            setMode('EDIT')
-            for eb in rig.data.edit_bones:
-                rname = assoc.get(eb.name, eb.name)
-                data = bdata.get(rname)
-                if data:
-                    eb.head, eb.tail, eb.roll = data
-            setMode('OBJECT')
-            activateObject(context, gen)
         for pb in rig.pose.bones:
             for cns in list(pb.constraints):
                 pb.constraints.remove(cns)

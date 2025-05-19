@@ -229,21 +229,12 @@ class MetaMaker(RigifyCommon):
         description = "Display layers for face and custom bones.\nNot for Rigify legacy",
         default = True)
 
-    if bpy.app.version >= (3,3,0):
-        useSeparateIkToe : BoolProperty(
-            name = "Separate IK Toes",
-            description = "Create separate IK toe controls for better IK/FK snapping",
-            default = True)
-    else:
-        useSeparateIkToe = False
-
-
     def draw(self, context):
         self.layout.prop(self, "useOptimizePose")
-        self.layout.prop(self, "useAutoAlign")
-        self.layout.prop(self, "useRecalcRoll")
-        self.layout.prop(self, "useSplitShin")
-        self.layout.prop(self, "useCustomLayers")
+        #self.layout.prop(self, "useAutoAlign")
+        #self.layout.prop(self, "useRecalcRoll")
+        #self.layout.prop(self, "useSplitShin")
+        #self.layout.prop(self, "useCustomLayers")
 
 
     def createMeta(self, context):
@@ -595,7 +586,7 @@ class MetaMaker(RigifyCommon):
                     pb.rigify_parameters.rotation_axis = 'x'
                     pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
                 elif pb["rigify_type"] == "limbs.leg":
-                    pb.rigify_parameters.extra_ik_toe = self.useSeparateIkToe
+                    pb.rigify_parameters.extra_ik_toe = (bpy.app.version >= (3,3,0))
                     pb.rigify_parameters.rotation_axis = 'x'
                     pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
                 elif pb["rigify_type"] == "limbs.arm":
@@ -1609,8 +1600,6 @@ class DAZ_OT_ConvertToRigify(DazPropsOperator, MetaMaker, Rigifier, Fixer, Gizmo
     def draw(self, context):
         MetaMaker.draw(self, context)
         self.layout.prop(self, "useDeleteMeta")
-        if bpy.app.version >= (3,3,0):
-            self.layout.prop(self, "useSeparateIkToe")
         self.drawMeta()
         self.drawRigify()
 
