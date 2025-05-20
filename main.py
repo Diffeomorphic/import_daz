@@ -224,8 +224,7 @@ class DazLoader:
         if dufpath is None:
             dufpath = "%s.duf" % os.path.splitext(filepath)[0]
             return checkedDufPath(dufpath)
-        if GS.dbzRootUpdate:
-            GS.readDazPaths(struct["rootpaths"], None, True)
+        GS.readDazPaths(struct["rootpaths"], None, True)
         return checkedDufPath(dufpath)
 
 #------------------------------------------------------------------
@@ -246,11 +245,14 @@ class ImportDAZManually(DazOperator, ColorOptions, FitOptions, DazLoader):
         box = self.layout.box()
         box.label(text = "For more options, see Global Settings.")
 
+
     def storeState(self, context):
-        pass
+        self.rootPaths = (GS.contentDirs.copy(), GS.mdlDirs.copy(), GS.cloudDirs.copy())
+
 
     def restoreState(self, context):
-        pass
+        GS.contentDirs, GS.mdlDirs, GS.cloudDirs = self.rootPaths
+
 
     def run(self, context):
         GS.checkAbsPaths()
