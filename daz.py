@@ -295,9 +295,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Only DBZ Files",
         description = "Only import dbz files with baked morphs.\nIf disable duf/dsf files can be imported too")
 
-    dbzRootUpdate : BoolProperty(
-        name = "DBZ Updates Root Paths",
-        description = "Update root paths when importing a modern dbz file")
+    rootsFromDbz : BoolProperty(
+        name = "Root Paths From DBZ",
+        description = "Use root paths from dbz file.\nGlobal root paths are updated")
 
     scale : FloatProperty(
         name = "Unit Scale",
@@ -721,7 +721,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box = col.box()
         box.label(text = "General")
         box.prop(self, "onlyDbz")
-        box.prop(self, "dbzRootUpdate")
+        box.prop(self, "rootsFromDbz")
         box.prop(self, "scale")
         box.prop(self, "verbosity")
         box.prop(self, "caseSensitivePaths")

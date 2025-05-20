@@ -90,8 +90,8 @@ class FitOptions(MultiFile):
             self.filter_glob = "*.dbz"
             self.fitMeshes = 'DBZFILE'
         else:
-            self.filename_ext = ".dsf;.duf;.dbz"
-            self.filter_glob = "*.duf;*.dsf;*.dbz;*.png;*.jpeg;*.jpg;*.bmp"
+            self.filename_ext = ".dsf;.duf"
+            self.filter_glob = "*.duf;*.dsf;*.png;*.jpeg;*.jpg;*.bmp"
         return MultiFile.invoke(self, context, event)
 
 #------------------------------------------------------------------
@@ -224,7 +224,8 @@ class DazLoader:
         if dufpath is None:
             dufpath = "%s.duf" % os.path.splitext(filepath)[0]
             return checkedDufPath(dufpath)
-        GS.readDazPaths(struct["rootpaths"], None, True)
+        if GS.rootsFromDbz:
+            GS.readDazPaths(struct["rootpaths"], None, True)
         return checkedDufPath(dufpath)
 
 #------------------------------------------------------------------
@@ -245,16 +246,11 @@ class ImportDAZManually(DazOperator, ColorOptions, FitOptions, DazLoader):
         box = self.layout.box()
         box.label(text = "For more options, see Global Settings.")
 
-
     def storeState(self, context):
-        if not GS.dbzRootUpdate:
-            self.rootPaths = (GS.contentDirs.copy(), GS.mdlDirs.copy(), GS.cloudDirs.copy())
-
+        pass
 
     def restoreState(self, context):
-        if not GS.dbzRootUpdate:
-            GS.contentDirs, GS.mdlDirs, GS.cloudDirs = self.rootPaths
-
+        pass
 
     def run(self, context):
         GS.checkAbsPaths()
