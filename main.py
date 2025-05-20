@@ -14,7 +14,6 @@ from .merge_grafts import MergeGeograftOptions
 from .merge_uvs import UVLayerMergerOptions
 from .daz import MaterialMethodItems
 
-
 #------------------------------------------------------------------
 #   Color options
 #------------------------------------------------------------------
@@ -88,12 +87,11 @@ class FitOptions(MultiFile):
     def invoke(self, context, event):
         if GS.onlyDbz:
             self.filename_ext = ".dbz"
-            self.filter_glob = "*.dbz;*.png;*.jpeg;*.jpg;*.bmp"
+            self.filter_glob = "*.dbz"
             self.fitMeshes = 'DBZFILE'
         else:
             self.filename_ext = ".dsf;.duf;.dbz"
             self.filter_glob = "*.duf;*.dsf;*.dbz;*.png;*.jpeg;*.jpg;*.bmp"
-
         return MultiFile.invoke(self, context, event)
 
 #------------------------------------------------------------------
@@ -213,18 +211,22 @@ class DazLoader:
 
 
     def loadDbzInfo(self, filepath):
+        def checkedDufPath(dufpath):
+            if os.path.exists(dufpath):
+                print('DUF path: "%s"' % dufpath)
+                return dufpath
+            else:
+                raise DazError('DBZ file lacks info about file path and root paths:\n  "%s"' % filepath)
+
         from .load_json import JL
         struct = JL.load(filepath)
         dufpath = struct.get("filepath")
         if dufpath is None:
             dufpath = "%s.duf" % os.path.splitext(filepath)[0]
-            if os.path.exists(dufpath):
-                return dufpath
-            else:
-                raise DazError('DBZ file lacks info about file path and root paths:\n  "%s"' % filepath)
-        GS.readDazPaths(struct["rootpaths"], None, True)
-        print('DUF path: "%s"' % dufpath)
-        return dufpath
+            return checkedDufPath(dufpath)
+        if GS.dbzRootUpdate:
+            GS.readDazPaths(struct["rootpaths"], None, True)
+        return checkedDufPath(dufpath)
 
 #------------------------------------------------------------------
 #   Import DAZ
