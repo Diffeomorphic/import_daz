@@ -247,11 +247,13 @@ class ImportDAZManually(DazOperator, ColorOptions, FitOptions, DazLoader):
 
 
     def storeState(self, context):
-        self.rootPaths = (GS.contentDirs.copy(), GS.mdlDirs.copy(), GS.cloudDirs.copy())
+        if not GS.dbzRootUpdate:
+            self.rootPaths = (GS.contentDirs.copy(), GS.mdlDirs.copy(), GS.cloudDirs.copy())
 
 
     def restoreState(self, context):
-        GS.contentDirs, GS.mdlDirs, GS.cloudDirs = self.rootPaths
+        if not GS.dbzRootUpdate:
+            GS.contentDirs, GS.mdlDirs, GS.cloudDirs = self.rootPaths
 
 
     def run(self, context):
