@@ -7,12 +7,13 @@ import bpy
 from mathutils import Matrix
 from .error import *
 from .utils import *
-from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile, DbzImageFile
+from .fileutils import SingleFile, MultiFile, DazFile, DazImageFile
 from .morphing import MorphSuffix, MorphTypeOptions, FavoOptions, PosableMaker
 from .merge_rigs import MergeRigsOptions
 from .merge_grafts import MergeGeograftOptions
 from .merge_uvs import UVLayerMergerOptions
 from .daz import MaterialMethodItems
+
 
 #------------------------------------------------------------------
 #   Color options
@@ -61,7 +62,10 @@ class ColorOptions:
 #   Fit options
 #------------------------------------------------------------------
 
-class FitOptions:
+class FitOptions(MultiFile):
+    filename_ext = ".dbz"
+    filter_glob : StringProperty(default="*.duf;*.dsf;*.dbz;*.png;*.jpeg;*.jpg;*.bmp", options={'HIDDEN'})
+
     fitMeshes : EnumProperty(
         items = [('SHARED', "Unmorphed Shared (Environments)", "Don't fit meshes. All objects share the same mesh.\nFor environments with identical objects like leaves"),
                  ('UNIQUE', "Unmorped Unique (Environments)", "Don't fit meshes. Each object has unique mesh instance.\nFor environments with objects with same mesh but different materials, like paintings"),
@@ -74,10 +78,23 @@ class FitOptions:
         default = 'DBZFILE')
 
     def draw(self, context):
-        box = self.layout.box()
-        box.label(text = "Mesh Fitting")
-        box.prop(self, "fitMeshes", expand=True)
-        self.layout.separator()
+        if not GS.onlyDbz:
+            box = self.layout.box()
+            box.label(text = "Mesh Fitting")
+            box.prop(self, "fitMeshes", expand=True)
+            self.layout.separator()
+
+
+    def invoke(self, context, event):
+        if GS.onlyDbz:
+            self.filename_ext = ".dbz"
+            self.filter_glob = "*.dbz;*.png;*.jpeg;*.jpg;*.bmp"
+            self.fitMeshes = 'DBZFILE'
+        else:
+            self.filename_ext = ".dsf;.duf;.dbz"
+            self.filter_glob = "*.duf;*.dsf;*.dbz;*.png;*.jpeg;*.jpg;*.bmp"
+
+        return MultiFile.invoke(self, context, event)
 
 #------------------------------------------------------------------
 #   DAZ Loader
@@ -213,7 +230,7 @@ class DazLoader:
 #   Import DAZ
 #------------------------------------------------------------------
 
-class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DbzImageFile, MultiFile):
+class ImportDAZManually(DazOperator, ColorOptions, FitOptions, DazLoader):
     """Load a DAZ File"""
     bl_idname = "daz.import_daz_manually"
     bl_label = "Import DAZ Manually"
@@ -235,10 +252,10 @@ class ImportDAZManually(DazOperator, DazLoader, ColorOptions, FitOptions, DbzIma
 
     def run(self, context):
         GS.checkAbsPaths()
-        filepaths = self.getMultiFiles(["duf", "dsf", "dse", "dbz"])
+        filepaths = self.getMultiFiles(["dbz", "duf", "dsf"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")
-        elif len(filepaths) > 1:
+        if len(filepaths) > 1:
             t1 = perf_counter()
         LS.forImport(self)
         LS.activeObject = context.object
@@ -372,7 +389,7 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, MultiFile, I
     def run(self, context):
         from .cycles import CyclesMaterial
         GS.checkAbsPaths()
-        filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
+        filepaths = self.getMultiFiles(["duf", "dsf"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")
         ob = context.object
@@ -562,7 +579,7 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, MultiFile, I
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, PosableMaker, DbzImageFile, MultiFile):
+class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, PosableMaker):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -704,7 +721,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         scn = context.scene
         self.favoPath = dazRna(scn).DazFavoPath
         self.useFavoMorphs = (self.favoPath != "")
-        return MultiFile.invoke(self, context, event)
+        return FitOptions.invoke(self, context, event)
 
 
     def storeState(self, context):
@@ -720,7 +737,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
     def run(self, context):
         from .fileutils import getExistingFilePath
         GS.checkAbsPaths()
-        filepaths = self.getMultiFiles(["duf", "dsf", "dse", "dbz"])
+        filepaths = self.getMultiFiles(["dbz", "duf", "dsf"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")
         if self.useFavoMorphs:

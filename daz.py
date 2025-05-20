@@ -291,6 +291,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Absolute Paths File",
         description = "File with scanned absolute paths")
 
+    onlyDbz : BoolProperty(
+        name = "Only DBZ Files",
+        description = "Only import dbz files with baked morphs.\nIf disable duf/dsf files can be imported too")
+
     scale : FloatProperty(
         name = "Unit Scale",
         description = "Scale used to convert between DAZ and Blender units.\nDefault unit meters",
@@ -712,6 +716,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         col = split.column()
         box = col.box()
         box.label(text = "General")
+        box.prop(self, "onlyDbz")
         box.prop(self, "scale")
         box.prop(self, "verbosity")
         box.prop(self, "caseSensitivePaths")

@@ -320,11 +320,6 @@ class DazImageFile:
     filter_glob : StringProperty(default="*.duf;*.dsf;*.png;*.jpeg;*.jpg;*.bmp", options={'HIDDEN'})
 
 
-class DbzImageFile:
-    filename_ext = ".dsf;.duf;.dbz"
-    filter_glob : StringProperty(default="*.duf;*.dsf;*.dbz;*.png;*.jpeg;*.jpg;*.bmp", options={'HIDDEN'})
-
-
 class DazFile:
     filename_ext = ".dsf;.duf;.dbz"
     filter_glob : StringProperty(default="*.dsf;*.duf;*.dbz", options={'HIDDEN'})
@@ -333,21 +328,6 @@ class DazFile:
 class DufFile:
     filename_ext = ".dsf;.duf"
     filter_glob : StringProperty(default="*.dsf;*.duf", options={'HIDDEN'})
-
-
-class FbxFile:
-    filename_ext = ".fbx"
-    filter_glob : StringProperty(default="*.fbx", options={'HIDDEN'})
-
-
-class TextFile:
-    filename_ext = ".txt"
-    filter_glob : StringProperty(default="*.txt", options={'HIDDEN'})
-
-
-class CsvFile:
-    filename_ext = ".csv"
-    filter_glob : StringProperty(default="*.csv", options={'HIDDEN'})
 
 #-------------------------------------------------------------
 #   SingleFile and MultiFile

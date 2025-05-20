@@ -6,7 +6,7 @@ import bpy
 from mathutils import *
 from .error import *
 from .utils import *
-from .fileutils import SingleFile, JsonFile, JsonExportFile, DF
+from .fileutils import SingleFile, JsonFile, DF
 
 #-------------------------------------------------------------
 #   Load pose
