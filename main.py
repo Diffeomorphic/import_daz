@@ -258,10 +258,10 @@ class ImportDAZManually(DazOperator, ColorOptions, FitOptions, DazLoader):
         box.label(text = "For more options, see Global Settings.")
 
     def storeState(self, context):
-        pass
+        self.rootPaths = (GS.contentDirs.copy(), GS.mdlDirs.copy(), GS.cloudDirs.copy())
 
     def restoreState(self, context):
-        pass
+        GS.contentDirs, GS.mdlDirs, GS.cloudDirs = self.rootPaths
 
     def run(self, context):
         GS.checkAbsPaths()

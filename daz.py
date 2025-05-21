@@ -716,11 +716,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         col = split.column()
         box = col.box()
         box.label(text = "General")
+        box.prop(self, "onlyDbz")
         box.prop(self, "scale")
         box.prop(self, "verbosity")
         box.prop(self, "caseSensitivePaths")
         box.prop(self, "rememberLastFolder")
-        box.prop(self, "onlyDbz")
 
         box = col.box()
         box.label(text = "Meshes")
