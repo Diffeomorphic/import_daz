@@ -230,17 +230,13 @@ class DazLoader:
         if dufpath is None:
             dufpath = "%s.duf" % os.path.splitext(filepath)[0]
             return checkedDufPath(dufpath)
-
         pstruct = struct.get("rootpaths")
-        if self.rootPaths and pstruct:
+        if pstruct:
             paths = ([pstruct["cloud_content"]] +
                       pstruct["content"] +
                       pstruct["mdl_dirs"])
             if checkExist(paths):
                 GS.readDazPaths(struct["rootpaths"], None, True)
-                if GS.rootsFromDbz:
-                    self.rootPaths = None
-
         return checkedDufPath(dufpath)
 
 #------------------------------------------------------------------
@@ -261,15 +257,11 @@ class ImportDAZManually(DazOperator, ColorOptions, FitOptions, DazLoader):
         box = self.layout.box()
         box.label(text = "For more options, see Global Settings.")
 
-
     def storeState(self, context):
-        self.rootPaths = (GS.contentDirs.copy(), GS.mdlDirs.copy(), GS.cloudDirs.copy())
-
+        pass
 
     def restoreState(self, context):
-        if self.rootPaths:
-            GS.contentDirs, GS.mdlDirs, GS.cloudDirs = self.rootPaths
-
+        pass
 
     def run(self, context):
         GS.checkAbsPaths()

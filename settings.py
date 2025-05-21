@@ -41,8 +41,7 @@ class GlobalSettings:
         self.rootPaths = []
         self.absPaths = {}
 
-        self.onlyDbz = True
-        self.rootsFromDbz = True
+        self.onlyDbz = False
         self.scale = 0.01
         self.verbosity = 2
         self.rememberLastFolder = False

@@ -295,10 +295,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Only DBZ Files",
         description = "Only import dbz files with baked morphs.\nIf disable duf/dsf files can be imported too")
 
-    rootsFromDbz : BoolProperty(
-        name = "Root Paths From DBZ",
-        description = "Use root paths from dbz file.\nGlobal root paths are updated")
-
     scale : FloatProperty(
         name = "Unit Scale",
         description = "Scale used to convert between DAZ and Blender units.\nDefault unit meters",
@@ -720,12 +716,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         col = split.column()
         box = col.box()
         box.label(text = "General")
-        box.prop(self, "onlyDbz")
-        box.prop(self, "rootsFromDbz")
         box.prop(self, "scale")
         box.prop(self, "verbosity")
         box.prop(self, "caseSensitivePaths")
         box.prop(self, "rememberLastFolder")
+        box.prop(self, "onlyDbz")
 
         box = col.box()
         box.label(text = "Meshes")
