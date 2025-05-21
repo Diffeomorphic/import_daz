@@ -97,7 +97,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         default = True)
 
     useSplitShin : BoolProperty(
-        name = "Split Shin Bone",
+        name = "Split Shin Vertex Group",
         description = "Split the shin vertex groups into bend and twist parts",
         default = True)
 

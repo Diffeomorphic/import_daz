@@ -218,14 +218,29 @@ class DazLoader:
             else:
                 raise DazError('DBZ file lacks info about file path and root paths:\n  "%s"' % filepath)
 
+        def checkExist(paths):
+            for path in paths:
+                if not os.path.exists(path):
+                    return False
+            return True
+
         from .load_json import JL
         struct = JL.load(filepath)
         dufpath = struct.get("filepath")
         if dufpath is None:
             dufpath = "%s.duf" % os.path.splitext(filepath)[0]
             return checkedDufPath(dufpath)
-        if GS.rootsFromDbz:
-            GS.readDazPaths(struct["rootpaths"], None, True)
+
+        pstruct = struct.get("rootpaths")
+        if self.rootPaths and pstruct:
+            paths = ([pstruct["cloud_content"]] +
+                      pstruct["content"] +
+                      pstruct["mdl_dirs"])
+            if checkExist(paths):
+                GS.readDazPaths(struct["rootpaths"], None, True)
+                if GS.rootsFromDbz:
+                    self.rootPaths = None
+
         return checkedDufPath(dufpath)
 
 #------------------------------------------------------------------
@@ -246,11 +261,15 @@ class ImportDAZManually(DazOperator, ColorOptions, FitOptions, DazLoader):
         box = self.layout.box()
         box.label(text = "For more options, see Global Settings.")
 
+
     def storeState(self, context):
-        pass
+        self.rootPaths = (GS.contentDirs.copy(), GS.mdlDirs.copy(), GS.cloudDirs.copy())
+
 
     def restoreState(self, context):
-        pass
+        if self.rootPaths:
+            GS.contentDirs, GS.mdlDirs, GS.cloudDirs = self.rootPaths
+
 
     def run(self, context):
         GS.checkAbsPaths()

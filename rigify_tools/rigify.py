@@ -220,8 +220,8 @@ class MetaMaker(RigifyCommon):
         default = False)
 
     useSplitShin : BoolProperty(
-        name = "Split Shin Bone",
-        description = "Split the shin bone into bend and twist parts",
+        name = "Split Shin Vertex Group",
+        description = "Split the shin vertex groups into bend and twist parts",
         default = False)
 
     useCustomLayers : BoolProperty(
@@ -233,7 +233,7 @@ class MetaMaker(RigifyCommon):
         self.layout.prop(self, "useOptimizePose")
         #self.layout.prop(self, "useAutoAlign")
         #self.layout.prop(self, "useRecalcRoll")
-        #self.layout.prop(self, "useSplitShin")
+        self.layout.prop(self, "useSplitShin")
         #self.layout.prop(self, "useCustomLayers")
 
 
