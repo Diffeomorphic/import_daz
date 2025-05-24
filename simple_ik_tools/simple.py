@@ -566,7 +566,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 cns = copyLocation(hand, handIK, rig, space='POSE')
                 addDriver(cns, "influence", rig, (propRef("DazStretchArms"), propRef(armProp)), "x1*x2")
                 cns = copyRotation(hand, handIK, rig, prop=armProp, space='POSE')
-                setEulerOrder(cns, hand.rotation_mode)
+                cns.euler_order = hand.rotation_mode
                 self.addToLayer(handIK, S_ARMIK, rig, "IK")
             if self.useLegs:
                 legProp = "DazLegIK_%s" % suffix
@@ -580,7 +580,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns = copyLocation(foot, footIK, rig, space='POSE')
                     addDriver(cns, "influence", rig, (propRef("DazStretchLegs"), propRef(legProp)), "x1*x2")
                     cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
-                    setEulerOrder(cns, foot.rotation_mode)
+                    cns.euler_order = foot.rotation_mode
                 else:
                     toe, heelIK, toeIK, tarsalIK = self.getEntry(self.footTable, prefix, rpbs)
                     toeIK.rotation_mode = toe.rotation_mode
@@ -591,9 +591,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns = copyLocation(foot, footIK, rig, space='POSE')
                     addDriver(cns, "influence", rig, (propRef("DazStretchLegs"), propRef(legProp)), "x1*x2")
                     cns = copyRotation(foot, footIK, rig, prop=legProp, space='POSE')
-                    setEulerOrder(cns, foot.rotation_mode)
+                    cns.euler_order = foot.rotation_mode
                     cns = copyRotation(toe, toeIK, rig, prop=legProp, space='POSE')
-                    setEulerOrder(cns, toe.rotation_mode)
+                    cns.euler_order = toe.rotation_mode
                     self.addToLayer(heelIK, S_LEGIK, rig, "IK")
                     self.addToLayer(toeIK, S_LEGIK, rig, "IK")
                     self.addToLayer(tarsalIK, S_LEGIK, rig, "IK")
@@ -676,12 +676,12 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
                     cns = dampedTrack(shldrBend, foreIK, rig, prop=armProp)
                     cns = copyRotation(shldrTwist, shldrIK, rig, prop=armProp, space='POSE')
-                    setEulerOrder(cns, BD.getDefaultMode(shldrBend))
+                    cns.euler_order = BD.getDefaultMode(shldrBend)
                     cns = dampedTrack(shldrTwist, foreIK, rig, prop=armProp)
 
                     cns = dampedTrack(foreBend, handIK, rig, prop=armProp)
                     cns = copyRotation(foreTwist, handIK, rig, prop=armProp, space='POSE')
-                    setEulerOrder(cns, foreTwist.rotation_mode)
+                    cns.euler_order = foreTwist.rotation_mode
                     cns = dampedTrack(foreTwist, handIK, rig, prop=armProp)
 
                     self.setCustomShape(shldrIK, "CS_Arrows")
@@ -701,11 +701,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
                     cns = dampedTrack(thighBend, shinIK, rig, prop=legProp)
                     cns = copyRotation(thighTwist, thighIK, rig, prop=legProp, space='POSE')
-                    setEulerOrder(cns, BD.getDefaultMode(thighBend))
+                    cns.euler_order = BD.getDefaultMode(thighBend)
                     cns = dampedTrack(thighTwist, shinIK, rig, prop=legProp)
 
                     cns = copyTransform(shin, shinIK, rig, prop=legProp, space='POSE')
-                    setEulerOrder(cns, shin.rotation_mode)
                     self.setCustomShape(thighIK, "CS_Arrows")
                     shinIK.custom_shape = None
                     setBonegroup(thighIK, rig, "IK", self.BoneGroups["IK"])

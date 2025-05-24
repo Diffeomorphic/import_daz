@@ -133,7 +133,7 @@ def copyLocation(bone, target, rig, prop=None, expr="x", space='POSE'):
     return cns
 
 
-def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL'):
+def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL', lock=False):
     cns = bone.constraints.new('COPY_ROTATION')
     cns.name = "Copy Rotation %s" % target.name
     cns.target = rig
@@ -141,9 +141,16 @@ def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL'):
     cns.owner_space = space
     cns.target_space = space
     if bone.rotation_mode != 'QUATERNION':
-        setEulerOrder(cns, bone.rotation_mode)
+        cns.euler_order = bone.rotation_mode
+        if lock:
+            if bone.lock_rotation[0]:
+                cns.use_x = False
+            if bone.lock_rotation[1]:
+                cns.use_y = False
+            if bone.lock_rotation[2]:
+                cns.use_z = False
     elif target.rotation_mode != 'QUATERNION':
-        setEulerOrder(cns, target.rotation_mode)
+        cns.euler_order = target.rotation_mode
     if prop is not None:
         addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
@@ -202,7 +209,7 @@ def addHint(pb, rig):
     cns = pb.constraints.new('LIMIT_ROTATION')
     cns.name = "Hint"
     cns.owner_space = 'LOCAL'
-    setEulerOrder(cns, pb.rotation_mode)
+    cns.euler_order = pb.rotation_mode
     cns.min_x = cns.max_x = 18*D
     cns.use_limit_x = cns.use_limit_y = cns.use_limit_z = True
     cns.use_transform_limit = True

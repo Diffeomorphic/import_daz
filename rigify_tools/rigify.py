@@ -1559,13 +1559,13 @@ class Rigifier(RigifyCommon):
         elif pb.name == "pelvis":
             pass
         elif "twist" in pb.name.lower():
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
+            cns = copyRotation(pb, rb, gen, space='LOCAL', lock=self.keepLocks)
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
         elif pb.name.endswith("Collar"):
             cns = copyRotation(pb, rb, gen, space='LOCAL_WITH_PARENT')
         else:
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
+            cns = copyRotation(pb, rb, gen, space='LOCAL', lock=self.keepLocks)
             porient = Vector(pb.bone.matrix_local.to_euler())
             rorient = Vector(rb.bone.matrix_local.to_euler())
             offset = (porient - rorient).length/D

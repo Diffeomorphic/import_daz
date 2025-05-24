@@ -1741,15 +1741,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         if rb is None:
             print('Cannot tie "%s" to "%s"' % (pb.name, rname))
             return
-        if (not pb.parent or
-            rb.name.startswith("hand0.")):
+        if pb.parent is None:
             cns = copyTransform(pb, rb, gen, space='POSE')
+        elif rb.name.startswith("hand0."):
+            cns = copyRotation(pb, rb, gen, space='POSE')
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
         elif ".twist" in rb.name:
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
+            cns = copyRotation(pb, rb, gen, space='LOCAL', lock=self.keepLocks)
         else:
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
+            cns = copyRotation(pb, rb, gen, space='LOCAL', lock=self.keepLocks)
             porient = Vector(pb.bone.matrix_local.to_euler())
             rorient = Vector(rb.bone.matrix_local.to_euler())
             offset = (porient - rorient).length/D

@@ -503,7 +503,7 @@ class BoneInstance(Instance):
         if useLimits and GS.useLimitRot and not self.isPosed:
             from .rig_utils import limitRotation
             cns = limitRotation(pb, rig)
-            setEulerOrder(cns, BD.getDefaultMode(pb))
+            cns.euler_order = BD.getDefaultMode(pb)
             for n,limit in enumerate(limits):
                 idx = self.axes[n]
                 xyz = self.IndexComp[idx]

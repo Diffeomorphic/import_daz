@@ -139,7 +139,7 @@ class DAZ_OT_FixLimitRotConstraints(DazOperator, IsArmature):
         for pb in rig.pose.bones:
             for cns in pb.constraints:
                 if cns.type == 'LIMIT_ROTATION':
-                    setEulerOrder(cns, BD.getDefaultMode(pb))
+                    cns.euler_order = BD.getDefaultMode(pb)
 
 #----------------------------------------------------------
 #   Initialize
