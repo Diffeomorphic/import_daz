@@ -2,7 +2,6 @@ import bpy
 op = bpy.context.active_operator
 
 op.useImproveIk = False
-op.useLimitConstraints = True
 op.useFingerIk = False
 op.useTongueIk = False
 op.driverRotationMode = 'NATIVE'
