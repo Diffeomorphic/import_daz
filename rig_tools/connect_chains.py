@@ -187,16 +187,19 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, BoneChains, IsArmature):
         if self.useArms:
             for prefix in ["l", "r"]:
                 chain = self.getLimbBoneNames(rig, prefix, "Arm")
-                self.chains.append(chain)
+                if chain:
+                    self.chains.append(chain)
         if self.useLegs:
             for prefix in ["l", "r"]:
                 chain = self.getLimbBoneNames(rig, prefix, "Leg")
-                self.chains.append(chain)
+                if chain:
+                    self.chains.append(chain)
         if self.useFingers:
             for prefix in ["l", "r"]:
                 for finger in ["Thumb", "Index", "Mid", "Ring", "Pinky"]:
                     chain = self.getLimbBoneNames(rig, prefix, finger)
-                    self.chains.append(chain)
+                    if chain:
+                        self.chains.append(chain)
         if self.useToes:
             for prefix in ["l", "r"]:
                 for toe in ["BigToe", "SmallToe1", "SmallToe2", "SmallToe3", "SmallToe4"]:
@@ -205,14 +208,16 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, BoneChains, IsArmature):
                         self.chains.append(chain)
         if self.useTongue:
             chain = self.getLimbBoneNames(rig, "", "Tongue")
-            self.chains.append(chain)
+            if chain:
+                self.chains.append(chain)
         if self.useSpine:
             chain = self.getLimbBoneNames(rig, "", "Spine")
-            self.chains.append(chain)
+            if chain:
+                self.chains.append(chain)
         if self.useNeck:
             chain = self.getLimbBoneNames(rig, "", "Neck")
-            self.chains.append(chain)
-        return
+            if chain:
+                self.chains.append(chain)
 
 
     def getChildNames(self, bone):

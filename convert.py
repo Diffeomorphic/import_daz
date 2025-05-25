@@ -77,6 +77,27 @@ def optimizePose(context, useApplyRestPose):
             pb = rig.pose.bones.get(bname)
             if pb:
                 pb.matrix_basis = mat
+                if useApplyRestPose:
+                    cns = getConstraint(pb, 'LIMIT_ROTATION')
+                    if cns:
+                        cns.min_x -= angle
+                        cns.max_x -= angle
+                    shiftDriver(rig, rig, bname, angle)
+                    shiftDriver(rig.data, rig, bname, angle)
+                    for ob in getShapeChildren(rig):
+                        shiftDriver(ob.data.shape_keys, rig, bname, angle)
+
+    def shiftDriver(rna, rig, bname, angle):
+        if rna.animation_data is None:
+            return
+        for fcu in rna.animation_data.drivers:
+            for var in fcu.driver.variables:
+                for trg in var.targets:
+                    if (trg.id == rig and
+                        trg.bone_target == bname and
+                        trg.transform_type == 'ROT_X'):
+                        string = fcu.driver.expression.replace(var.name, "(%s+%.3f)" % (var.name, angle))
+                        fcu.driver.expression = string
 
     setXAngle(-9*D, ["lThigh", "lThighBend", "l_thigh", "rThigh", "rThighBend", "r_thigh"], rig)
     setXAngle(18*D, ["lShin", "lShinBend", "l_shin", "rShin", "rShinBend", "r_shin"], rig)
