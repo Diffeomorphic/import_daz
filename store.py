@@ -242,15 +242,12 @@ class ModStore:
 
 
 def addModifierFirst(ob, modname, modtype):
-    exclude = ['ARMATURE', 'MULTIRES']
-    stores = []
-    for mod in ob.modifiers:
-        if mod.type not in exclude:
-            stores.append(ModStore(mod))
-            ob.modifiers.remove(mod)
+    n = len(ob.modifiers)
     mod = ob.modifiers.new(modname, modtype)
-    for store in stores:
-        store.restore(ob)
+    if getModifier(ob, 'ARMATURE'):
+        ob.modifiers.move(n, 1)
+    else:
+        ob.modifiers.move(n, 0)
     return mod
 
 

@@ -438,7 +438,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         full_body_grp = hum.vertex_groups.new(name=f"FullBody_{hum.name}")
         full_body_grp.add([v.index for v in hum.data.vertices], 1.0, 'REPLACE')
 
-        from .store import ModStore
         from .geometry import getActiveUvLayer
         stores = []
         delmasks = []
@@ -457,9 +456,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     words = mod.node_group.name.split(":")
                     if words[0] == "Geograft" and baseName(words[-1]) == "END":
                         hum.modifiers.remove(mod)
-            elif mod.type not in ('ARMATURE', 'MULTIRES'):
-                stores.append(ModStore(mod))
-                hum.modifiers.remove(mod)
 
         cuvname = getActiveUvLayer(hum).name
         self.replaceTexco(hum, cuvname, True)
@@ -488,7 +484,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         graftgrp.addGrafts(grafts, hum.name)
 
         # Create the modifier
-        mod = hum.modifiers.new(groupname, 'NODES')
+        from .store import addModifierFirst
+        mod = addModifierFirst(hum, groupname, 'NODES')
         mod.node_group = graftgrp.group
 
         # Handle all the inputs generated from the geografts - Placed below the inputs that apply to the entire geonode group
@@ -530,9 +527,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             for mod in graft.modifiers:
                 if mod.type == 'NODES':
                     mod.show_viewport = mod.show_render = True
-
-        for store in stores:
-            store.restore(hum)
 
 
     def retargetShellModifiers(self, hum, grafts):

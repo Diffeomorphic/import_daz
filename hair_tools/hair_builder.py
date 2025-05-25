@@ -280,18 +280,10 @@ class HairBuilder(Pinner, Collision, Cloth):
 
     def addHairModifier(self, hair, group, groupname, modname, args=[]):
         from ..tree import addNodeGroup
-        from ..store import ModStore
-        stores = []
-        for mod in list(hair.modifiers):
-            if not (mod.type == 'NODES' and
-                    mod.node_group and
-                    mod.node_group.name == groupname):
-                stores.append(ModStore(mod))
-            hair.modifiers.remove(mod)
+        n = len(hair.modifiers)
         mod = hair.modifiers.new(modname, 'NODES')
         mod.node_group = addNodeGroup(group, groupname, args)
-        for store in stores:
-            store.restore(hair)
+        hair.modifiers.move(n, 0)
         return mod
 
 

@@ -1104,12 +1104,6 @@ def getBulgeBone(string):
 
 def createBulges(ob, rig, selection=None, ignoreFingers=True):
     from .driver import removeModifiers, addTransformVar
-    from .store import ModStore
-    stores = []
-    for mod in list(ob.modifiers):
-        if mod.type != 'MULTIRES':
-            stores.append(ModStore(mod))
-            ob.modifiers.remove(mod)
     if ob.data.shape_keys is None:
         ob.shape_key_add(name="Basis")
 
@@ -1127,7 +1121,9 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
             elif ignoreFingers and isFingerShape(vgrp.name):
                 ob.vertex_groups.remove(vgrp)
                 continue
+            n = len(ob.modifiers)
             mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
+            ob.modifiers.move(n, 0)
             mod.strength = -2*GS.scale
             mod.mid_level = 0
             mod.vertex_group = vgrp.name
@@ -1170,8 +1166,6 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
         removeModifiers(fcu)
 
     dazRna(ob.data).DazBulges.clear()
-    for store in stores:
-        store.restore(ob)
 
 #------------------------------------------------------------------------
 #   Import all standard morphs in one bunch, for performance
