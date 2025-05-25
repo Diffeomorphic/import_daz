@@ -108,12 +108,15 @@ class MetaData:
             "gaze.R" :          ["GZM_Circle", 0.25, R_FACE],
             "ik_tongue" :       ["GZM_Cone", 0.4, R_FACE],
         }
-        for key,data in entry["gizmos"].items():
-            self.gizmos[key] = data
-
         if BLENDER3:
+            table = dict([(lname,layer) for layer,lname in RigifyLayers.items()])
+            for key,data in entry["gizmos"].items():
+                gizmo,scale,lname = data
+                self.gizmos[key] = (gizmo, scale, table[lname])
             self.layer_correct = {}
         else:
+            for key,data in entry["gizmos"].items():
+                self.gizmos[key] = data
             self.layer_correct = entry.get("layer_correct", {})
 
 
@@ -207,7 +210,7 @@ class MetaMaker(RigifyCommon):
     useOptimizePose : BoolProperty(
         name = "Optimize Pose For IK",
         description = "Optimize rest pose before rigifying.\nFor hand animation, because poses will not be imported correctly",
-        default = True)
+        default = False)
 
     useAutoAlign : BoolProperty(
         name = "Auto Align Hand/Foot",
@@ -1213,6 +1216,14 @@ class Rigifier(RigifyCommon):
             from ..fix import setDriverModes
             setDriverModes(gen, self.driverRotationMode, True)
 
+        if not self.useOptimizePose:
+            from ..rig_utils import addHint
+            for bname in ["MCH-shin_ik.L", "MCH-shin_ik.R", "MCH-forearm_ik.L", "MCH-forearm_ik.R"]:
+                pb = gen.pose.bones[bname]
+                n = len(pb.constraints)
+                addHint(pb, gen)
+                pb.constraints.move(n, 0)
+
         #Clean up
         print("  Clean up")
         #gen.data.display_type = 'WIRE'
@@ -1240,7 +1251,7 @@ class Rigifier(RigifyCommon):
                     break
         if BLENDER3:
             from .rigify_snap import setRigifyFkIk, setRigifyLayers, clearOtherRigify
-            setRigifyFkIk(gen, 1.0, False, 0)
+            setRigifyFkIk(gen, 0.0, False, 0)
             setRigifyLayers(rig, True, gen.data.layers)
             clearOtherRigify(gen, False, 0)
         if activateObject(context, rig):
@@ -1249,6 +1260,7 @@ class Rigifier(RigifyCommon):
             if activateObject(context, meta):
                 deleteObjects(context, [meta])
         activateObject(context, gen)
+
         enableRigNumLayers(gen, self.meta.layers)
         gen.name = name
         if dazrig:
