@@ -67,14 +67,21 @@ def loadPose(context, rig, entry):
 #-------------------------------------------------------------
 
 def optimizePose(context, useApplyRestPose):
-    from .apply import applyRestPoses
     rig = context.object
-    char = getCharacterFromRig(rig)
-    if char is None:
-        reportError("Could not optimize pose because the character was not recognized.")
-        return
-    entry = DF.loadEntry(char, "ikposes")
-    loadPose(context, rig, entry)
+    for pb in rig.pose.bones:
+        pb.matrix_basis = Matrix()
+
+    def setXAngle(angle, bnames, rig):
+        mat = Euler((angle, 0, 0), 'YZX').to_matrix().to_4x4()
+        for bname in bnames:
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                pb.matrix_basis = mat
+
+    setXAngle(-9*D, ["lThigh", "lThighBend", "l_thigh", "rThigh", "rThighBend", "r_thigh"], rig)
+    setXAngle(18*D, ["lShin", "lShinBend", "l_shin", "rShin", "rShinBend", "r_shin"], rig)
+    setXAngle(-9*D, ["lFoot", "l_foot", "rFoot", "r_foot"], rig)
+    from .apply import applyRestPoses
     if useApplyRestPose:
         applyRestPoses(context, rig)
 

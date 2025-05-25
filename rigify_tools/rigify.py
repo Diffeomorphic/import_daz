@@ -209,7 +209,10 @@ class RigifyCommon:
 class MetaMaker(RigifyCommon):
     useOptimizePose : BoolProperty(
         name = "Optimize Pose For IK",
-        description = "Optimize rest pose before rigifying.\nFor hand animation, because poses will not be imported correctly",
+        description = (
+            "Optimize rest pose before rigifying.\n" +
+            "For hand animation only, because poses will not be imported or exported correctly.\n" +
+            "Hint constraints are added to IK forearm and shin bones if this option is disabled"),
         default = False)
 
     useAutoAlign : BoolProperty(

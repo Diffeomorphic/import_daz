@@ -21,7 +21,6 @@ class DataFolders:
         self.converters = {}
         self.restposes = {}
         self.parents = {}
-        self.ikposes = {}
         self.presets = {}
         self.lowpoly = {}
         self.softbody = {}
