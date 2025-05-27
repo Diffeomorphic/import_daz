@@ -207,13 +207,13 @@ class RigifyCommon:
 #-------------------------------------------------------------
 
 class MetaMaker(RigifyCommon):
-    useOptimizePose : BoolProperty(
-        name = "Optimize Pose For IK",
-        description = (
-            "Optimize rest pose before rigifying.\n" +
-            "For hand animation only, because poses will not be imported or exported correctly.\n" +
-            "Hint constraints are added to IK forearm and shin bones if this option is disabled"),
-        default = False)
+    ikOptimization : EnumProperty(
+        items = [('POSE', "IK Pose", "Change the Genesis rest pose into the Rigify rest pose. Works with poles, does not work with DAZ poses"),
+                 ('HINT', "IK Hint", "Add a hint angle to IK constraints, works with DAZ poses"),
+                 ('NONE', "None", "No IK optimization. Works with prebended figures, where the Rigify rest pose is exported from DAZ studio")],
+        name = "IK Optimization",
+        description = "Method used for optimizing the rest pose before rigifying",
+        default = 'HINT')
 
     useAutoAlign : BoolProperty(
         name = "Auto Align Hand/Foot",
@@ -236,7 +236,7 @@ class MetaMaker(RigifyCommon):
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "useOptimizePose")
+        self.layout.prop(self, "ikOptimization")
         #self.layout.prop(self, "useAutoAlign")
         #self.layout.prop(self, "useRecalcRoll")
         self.layout.prop(self, "useSplitShin")
@@ -261,7 +261,7 @@ class MetaMaker(RigifyCommon):
             raise DazError("Rigify: %s is neither an armature nor has armature parent" % ob)
         self.makeRealParents(context, rig)
 
-        if self.useOptimizePose and dazRna(rig).DazRig.startswith("genesis"):
+        if self.ikOptimization == 'POSE' and dazRna(rig).DazRig.startswith("genesis"):
             from ..convert import optimizePose
             optimizePose(context, True)
         if self.keepRig:
@@ -301,7 +301,7 @@ class MetaMaker(RigifyCommon):
         meta["DazMetaRig"] = True
         meta.DazRig = "metarig"
         meta["DazSplitShin"] = self.useSplitShin
-        meta["DazOptimizePose"]= self.useOptimizePose
+        meta["DazIkOptimization"]= self.ikOptimization
         meta["DazFingerIk"] = self.useFingerIk
         meta["DazCustomLayers"] = self.useCustomLayers
 
@@ -1220,13 +1220,8 @@ class Rigifier(RigifyCommon):
             from ..fix import setDriverModes
             setDriverModes(gen, self.driverRotationMode, True)
 
-        if not meta["DazOptimizePose"]:
-            from ..rig_utils import addHint
-            for bname in ["MCH-shin_ik.L", "MCH-shin_ik.R", "MCH-forearm_ik.L", "MCH-forearm_ik.R"]:
-                pb = gen.pose.bones[bname]
-                n = len(pb.constraints)
-                addHint(pb, gen)
-                pb.constraints.move(n, 0)
+        if meta["DazIkOptimization"] == 'HINT':
+            self.addHints(meta, gen)
 
         #Clean up
         print("  Clean up")
@@ -1555,6 +1550,29 @@ class Rigifier(RigifyCommon):
                                 setattr(pb, "use_ik_limit_%s" % comp, True)
                                 setattr(pb, "ik_min_%s" % comp, dmin)
                                 setattr(pb, "ik_max_%s" % comp, dmax)
+
+
+    def addHints(self, meta, gen):
+        from ..rig_utils import addHint
+        bnames = [("MCH-shin_ik.L", "thigh_ik_target.L"),
+                  ("MCH-shin_ik.R", "thigh_ik_target.R"),
+                  ("MCH-forearm_ik.L", "upper_arm_ik_target.L"),
+                  ("MCH-forearm_ik.R", "upper_arm_ik_target.R")]
+        setMode('EDIT')
+        for bname,polename in bnames:
+            eb = gen.data.edit_bones.get(bname)
+            pole = gen.data.edit_bones.get(polename)
+            if eb and pole:
+                offs = eb.head[0] - pole.head[0]
+                pole.head[0] += offs
+                pole.tail[0] += offs
+        setMode('OBJECT')
+        for bname,polename in bnames:
+            pb = gen.pose.bones.get(bname)
+            if pb:
+                n = len(pb.constraints)
+                addHint(pb, gen)
+                pb.constraints.move(n, 0)
 
 
     def tieBone(self, pb, gen, assoc, facebones, rigtype):
