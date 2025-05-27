@@ -301,6 +301,7 @@ class MetaMaker(RigifyCommon):
         meta["DazMetaRig"] = True
         meta.DazRig = "metarig"
         meta["DazSplitShin"] = self.useSplitShin
+        meta["DazOptimizePose"]= self.useOptimizePose
         meta["DazFingerIk"] = self.useFingerIk
         meta["DazCustomLayers"] = self.useCustomLayers
 
@@ -1219,7 +1220,7 @@ class Rigifier(RigifyCommon):
             from ..fix import setDriverModes
             setDriverModes(gen, self.driverRotationMode, True)
 
-        if not self.useOptimizePose:
+        if not meta["DazOptimizePose"]:
             from ..rig_utils import addHint
             for bname in ["MCH-shin_ik.L", "MCH-shin_ik.R", "MCH-forearm_ik.L", "MCH-forearm_ik.R"]:
                 pb = gen.pose.bones[bname]
