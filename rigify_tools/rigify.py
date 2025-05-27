@@ -805,7 +805,6 @@ class MetaMaker(RigifyCommon):
 class Rigifier(RigifyCommon):
     def drawRigify(self):
         self.layout.prop(self, "useTongueIk")
-        self.layout.prop(self, "useImproveIk")
         self.layout.prop(self, "useLimitConstraints")
         self.layout.prop(self, "driverRotationMode")
         self.layout.prop(self, "addNondeformExtras")
@@ -915,23 +914,22 @@ class Rigifier(RigifyCommon):
         from ..rig_utils import unhideAllObjects
 
         print("Rigify metarig")
-        setMode('OBJECT')
-        coll = getCollection(context, rig)
-        unhideAllObjects(context, rig)
-        if rig.name not in coll.objects.keys():
-            coll.objects.link(rig)
-        self.meshes = (getMeshChildren(dazrig) if dazrig else getMeshChildren(rig))
-
         setMode('POSE')
         try:
             bpy.ops.pose.rigify_generate()
         except:
             raise DazError("Cannot rigify %s rig %s    " % (dazRna(rig).DazRig, rig.name))
         setMode('OBJECT')
-
         scn = context.scene
         gen = context.object
         gen.data["MhaFeatures"] = 0
+
+        coll = getCollection(context, rig)
+        unhideAllObjects(context, rig)
+        if rig.name not in coll.objects.keys():
+            coll.objects.link(rig)
+        self.meshes = (getMeshChildren(dazrig) if dazrig else getMeshChildren(rig))
+
         if not BLENDER3:
             # Add rig UI
             makeBoneCollections(gen, RigifyLayers)
@@ -1211,11 +1209,6 @@ class Rigifier(RigifyCommon):
         if meta["DazFingerIk"]:
             self.fixFingerIk(rig, gen)
 
-        # Improve IK
-        if self.useImproveIk:
-            from ..rig_utils import improveIk
-            improveIk(gen, exclude=self.tongueBones)
-
         if self.driverRotationMode:
             from ..fix import setDriverModes
             setDriverModes(gen, self.driverRotationMode, True)
@@ -1400,23 +1393,13 @@ class Rigifier(RigifyCommon):
         pb = rig.pose.bones.get(dname)
         if pb:
             rotmode = pb.rotation_mode
-            locks = list(pb.lock_rotation)
-            locks[1] = False
         else:
             print("Missing DAZ bone", dname)
             return
-        pb = gen.pose.bones.get("%s_ik.%s" % rname)
-        if pb is None:
-            pb = gen.pose.bones.get("MCH-%s_ik.%s" % rname)
-        if pb is None:
-            pb = gen.pose.bones.get("%s.ik.%s" % rname)
-        if pb is None:
-            pb = gen.pose.bones.get("MCH-%s.ik.%s" % rname)
-        if pb is None:
-            print("Missing IK bone: %s_ik.%s" % rname)
-        pb.rotation_mode = rotmode
-        for n,x in enumerate(["x", "y", "z"]):
-            setattr(pb, "lock_ik_%s" % x, locks[n])
+        for pattern in ["%s_ik.%s", "MCH-%s_ik.%s", "%s.ik.%s", "MCH-%s.ik.%s"]:
+            pb = gen.pose.bones.get(pattern % rname)
+            if pb:
+                pb.rotation_mode = rotmode
 
 
     def rigifySplitGroup(self, rname, dname, ob, rig, before, meta, gen):
@@ -1554,20 +1537,24 @@ class Rigifier(RigifyCommon):
 
     def addHints(self, meta, gen):
         from ..rig_utils import addHint
-        bnames = [("MCH-shin_ik.L", "thigh_ik_target.L"),
-                  ("MCH-shin_ik.R", "thigh_ik_target.R"),
-                  ("MCH-forearm_ik.L", "upper_arm_ik_target.L"),
-                  ("MCH-forearm_ik.R", "upper_arm_ik_target.R")]
+        bnames = [("MCH-shin_ik.L", "thigh_ik_target.L", "MCH-thigh_ik_target.parent.L"),
+                  ("MCH-shin_ik.R", "thigh_ik_target.R", "MCH-thigh_ik_target.parent.R"),
+                  ("MCH-forearm_ik.L", "upper_arm_ik_target.L", "MCH-upper_arm_ik_target.parent.L"),
+                  ("MCH-forearm_ik.R", "upper_arm_ik_target.R", "MCH-upper_arm_ik_target.parent.R")]
         setMode('EDIT')
-        for bname,polename in bnames:
+        for bname,polename,parname in bnames:
             eb = gen.data.edit_bones.get(bname)
             pole = gen.data.edit_bones.get(polename)
+            parent = gen.data.edit_bones.get(parname)
             if eb and pole:
-                offs = eb.head[0] - pole.head[0]
-                pole.head[0] += offs
-                pole.tail[0] += offs
+                y = pole.length
+                pole.head[0] = eb.head[0]
+                pole.tail = pole.head + Vector((0, y, 0))
+                if parent:
+                    parent.head = pole.head
+                    parent.tail = pole.tail
         setMode('OBJECT')
-        for bname,polename in bnames:
+        for bname,polename,parname in bnames:
             pb = gen.pose.bones.get(bname)
             if pb:
                 n = len(pb.constraints)

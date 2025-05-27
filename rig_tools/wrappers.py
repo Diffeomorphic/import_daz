@@ -8,20 +8,6 @@ from ..utils import *
 from ..daz import DriverModeItems
 
 #-------------------------------------------------------------
-#   Improve IK
-#-------------------------------------------------------------
-
-class DAZ_OT_ImproveIK(DazOperator, IsArmature):
-    bl_idname = "daz.improve_ik"
-    bl_label = "Improve IK"
-    bl_description = "Improve IK behaviour"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        from ..rig_utils import improveIk
-        improveIk(context.object)
-
-#-------------------------------------------------------------
 #   Optimize pose for IK
 #   Function used by rigify
 #-------------------------------------------------------------
@@ -163,7 +149,6 @@ class DAZ_OT_RemoveDrivenBones(DazOperator, IsArmature):
 #----------------------------------------------------------
 
 classes = [
-    DAZ_OT_ImproveIK,
     DAZ_OT_OptimizePose,
     DAZ_OT_SetDriverModes,
     DAZ_OT_BatchSetCustomShape,

@@ -22,7 +22,6 @@ class DAZ_PT_Figures(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.lock_channels")
         self.layout.operator("daz.clear_center")
         self.layout.operator("daz.optimize_pose")
-        self.layout.operator("daz.improve_ik")
         self.layout.operator("daz.set_driver_modes")
 
 

@@ -217,9 +217,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.addConstraints(rig, IK)
         if GS.ercMethod in ('ARMATURE', 'ALL') and self.useErcIk:
             copyOffsetDrivers(rig)
-        if self.useImproveIk:
-            from ..rig_utils import improveIk
-            improveIk(rig)
         modernizeBones(rig)
         rig["DazSimpleIK"] = True
         from ..driver import setFloatProp
