@@ -210,7 +210,7 @@ class MetaMaker(RigifyCommon):
     ikOptimization : EnumProperty(
         items = [('POSE', "IK Pose", "Change the Genesis rest pose into the Rigify rest pose. Works with poles, does not work with DAZ poses"),
                  ('HINT', "IK Hint", "Add a hint angle to IK constraints, works with DAZ poses"),
-                 ('NONE', "None", "No IK optimization. Works with prebended figures, where the Rigify rest pose is exported from DAZ studio")],
+                 ('NONE', "IK None", "No IK optimization. Works with prebended figures, where the Rigify rest pose is exported from DAZ studio")],
         name = "IK Optimization",
         description = "Method used for optimizing the rest pose before rigifying",
         default = 'HINT')
@@ -1214,7 +1214,9 @@ class Rigifier(RigifyCommon):
             setDriverModes(gen, self.driverRotationMode, True)
 
         if meta["DazIkOptimization"] == 'HINT':
-            self.addHints(meta, gen)
+            self.fixPoles(meta, gen, True)
+        elif meta["DazIkOptimization"] == 'NONE':
+            self.fixPoles(meta, gen, False)
 
         #Clean up
         print("  Clean up")
@@ -1535,7 +1537,7 @@ class Rigifier(RigifyCommon):
                                 setattr(pb, "ik_max_%s" % comp, dmax)
 
 
-    def addHints(self, meta, gen):
+    def fixPoles(self, meta, gen, useHint):
         from ..rig_utils import addHint
         bnames = [("MCH-shin_ik.L", "thigh_ik_target.L", "MCH-thigh_ik_target.parent.L"),
                   ("MCH-shin_ik.R", "thigh_ik_target.R", "MCH-thigh_ik_target.parent.R"),
@@ -1554,12 +1556,13 @@ class Rigifier(RigifyCommon):
                     parent.head = pole.head
                     parent.tail = pole.tail
         setMode('OBJECT')
-        for bname,polename,parname in bnames:
-            pb = gen.pose.bones.get(bname)
-            if pb:
-                n = len(pb.constraints)
-                addHint(pb, gen)
-                pb.constraints.move(n, 0)
+        if useHint:
+            for bname,polename,parname in bnames:
+                pb = gen.pose.bones.get(bname)
+                if pb:
+                    n = len(pb.constraints)
+                    addHint(pb, gen)
+                    pb.constraints.move(n, 0)
 
 
     def tieBone(self, pb, gen, assoc, facebones, rigtype):
