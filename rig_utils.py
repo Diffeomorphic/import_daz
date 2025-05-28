@@ -205,11 +205,14 @@ def ikConstraint(last, target, pole, angle, count, rig, prop=None, expr="x"):
     return cns
 
 
-def addHint(pb, rig):
+def addHint(pb, rig, rotmode=None):
     cns = pb.constraints.new('LIMIT_ROTATION')
     cns.name = "Hint"
     cns.owner_space = 'LOCAL'
-    cns.euler_order = pb.rotation_mode
+    if rotmode:
+        cns.euler_order = rotmode
+    else:
+        cns.euler_order = pb.rotation_mode
     cns.min_x = cns.max_x = 18*D
     cns.use_limit_x = cns.use_limit_y = cns.use_limit_z = True
     cns.use_transform_limit = True

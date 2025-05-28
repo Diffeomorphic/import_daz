@@ -387,10 +387,11 @@ class LegacyFigure(Figure):
 #   Add extra face bones
 #-------------------------------------------------------------
 
-def copyBoneInfo(srcpb, trgpb):
+def copyBoneInfo(srcpb, trgpb, usePoseBone=True):
     modernizeBone(trgpb)
-    for attr in ["rotation_mode", "lock_location", "lock_rotation", "lock_scale"]:
-        setattr(trgpb, attr, getattr(srcpb, attr))
+    if usePoseBone:
+        for attr in ["rotation_mode", "lock_location", "lock_rotation", "lock_scale"]:
+            setattr(trgpb, attr, getattr(srcpb, attr))
     for attr in ["bbone_x", "bbone_z", "use_relative_parent", "use_local_location", "use_inherit_rotation", "inherit_scale"]:
         setattr(trgpb.bone, attr, getattr(srcpb.bone, attr))
     for attr in ["DazRotMode"]:

@@ -1153,7 +1153,6 @@ class Rigifier(RigifyCommon):
                 bname = self.getOrgDefBone(rname, gen)
                 assoc[dname] = bname
                 assoc["%sBend" % dname] = bname
-                self.fixIkBone(dname, rig, (rname0, suffix), gen)
         self.fixBoneDrivers(gen, rig, assoc)
         self.renameBendTwistDrivers(gen.data)
 
@@ -1306,7 +1305,7 @@ class Rigifier(RigifyCommon):
             trgname in gen.pose.bones.keys()):
             srcpb = rig.pose.bones[srcname]
             trgpb = gen.pose.bones[trgname]
-            copyBoneInfo(srcpb, trgpb)
+            copyBoneInfo(srcpb, trgpb, usePoseBone=False)
             if srcpb.custom_shape:
                 trgpb.custom_shape = srcpb.custom_shape
                 if hasattr(trgpb, "custom_shape_scale"):
@@ -1389,19 +1388,6 @@ class Rigifier(RigifyCommon):
             for mod in ob.modifiers:
                 if mod.type == 'ARMATURE' and mod.object == rig:
                     mod.object = newrig
-
-
-    def fixIkBone(self, dname, rig, rname, gen):
-        pb = rig.pose.bones.get(dname)
-        if pb:
-            rotmode = pb.rotation_mode
-        else:
-            print("Missing DAZ bone", dname)
-            return
-        for pattern in ["%s_ik.%s", "MCH-%s_ik.%s", "%s.ik.%s", "MCH-%s.ik.%s"]:
-            pb = gen.pose.bones.get(pattern % rname)
-            if pb:
-                pb.rotation_mode = rotmode
 
 
     def rigifySplitGroup(self, rname, dname, ob, rig, before, meta, gen):
@@ -1561,7 +1547,7 @@ class Rigifier(RigifyCommon):
                 pb = gen.pose.bones.get(bname)
                 if pb:
                     n = len(pb.constraints)
-                    addHint(pb, gen)
+                    addHint(pb, gen, 'YZX')
                     pb.constraints.move(n, 0)
 
 
