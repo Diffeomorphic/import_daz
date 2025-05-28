@@ -1156,34 +1156,26 @@ class Rigifier(RigifyCommon):
         self.fixBoneDrivers(gen, rig, assoc)
         self.renameBendTwistDrivers(gen.data)
 
-        # Limit constraints
-        if self.useLimitConstraints:
-            from ..store import copyConstraint
-            def addLimits(pb, rname):
-                dname = self.daz.dazbones.get(rname)
-                if isinstance(dname, str):
-                    db = rig.pose.bones.get(dname)
-                    if db:
+        # Locks and limit constraints
+        from ..store import copyConstraint
+        def addLimits(pb, rname):
+            dname = self.daz.dazbones.get(rname)
+            if isinstance(dname, str):
+                db = rig.pose.bones.get(dname)
+                if db:
+                    pb.lock_location = db.lock_location
+                    pb.lock_rotation = db.lock_rotation
+                    pb.lock_scale = db.lock_scale
+                    if self.useLimitConstraints:
                         for cns in db.constraints:
                             if cns.type.startswith("LIMIT"):
-                                copyConstraint(cns, pb, gen)
+                                tcns = copyConstraint(cns, pb, gen)
 
-            for pb in gen.pose.bones:
-                addLimits(pb, pb.name)
-                if pb.name[-5:-1] == "_fk.":
-                    rname = "%s.%s" % (pb.name[:-5], pb.name[-1])
-                    addLimits(pb, rname)
-
-        # Unlock bend locks
-        for rname in ["upper_arm", "forearm", "thigh"]:
-            for suffix in ["L", "R"]:
-                bname = "%s_fk.%s" % (rname, suffix)
-                pb = gen.pose.bones.get(bname)
-                if pb is None:
-                    bname = "%s.fk.%s" % (rname, suffix)
-                    pb = gen.pose.bones.get(bname)
-                if pb:
-                    pb.lock_rotation = FFalse
+        for pb in gen.pose.bones:
+            addLimits(pb, pb.name)
+            if pb.name[-5:-1] == "_fk.":
+                rname = "%s.%s" % (pb.name[:-5], pb.name[-1])
+                addLimits(pb, rname)
 
         # Face bone and gizmos
         if dazRna(rig).DazRig == "genesis9":

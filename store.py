@@ -24,7 +24,7 @@ ConstraintAttributes = [
 
 YAttributes = ["use_y", "invert_y", "use_limit_y", "use_min_y", "use_max_y", "min_y", "max_y"]
 
-def copyConstraints(src, trg, rig=None):
+def copyConstraints(src, trg, rig):
     for scns in src.constraints:
         copyConstraint(scns, trg, rig)
 
@@ -36,6 +36,7 @@ def copyConstraint(scns, trg, rig):
             setattr(tcns, attr, getattr(scns, attr))
     if rig and hasattr(tcns, "target"):
         tcns.target = rig
+    return tcns
 
 
 class ConstraintStore:

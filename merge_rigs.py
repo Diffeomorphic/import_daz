@@ -571,9 +571,12 @@ def mergeBones(rig, mergers, parents, context):
     removeBoneSumDrivers(rig, deletes)
 
     swapped = {}
-    for key,bnames in mergers.items():
-        for bname in bnames:
-            swapped[bname] = key
+    for bname,mnames in mergers.items():
+        pb = rig.pose.bones.get(bname)
+        if pb:
+            pb.lock_rotation[1] = False
+        for mname in mnames:
+            swapped[bname] = bname
     for ob in rig.children:
         if ob.parent_type == 'BONE' and ob.parent_bone in swapped.keys():
             wmat = ob.matrix_world.copy()
@@ -582,16 +585,16 @@ def mergeBones(rig, mergers, parents, context):
 
     setMode('EDIT')
     for bname,pname in parents.items():
-        if (pname in rig.data.edit_bones.keys() and
-            bname in rig.data.edit_bones.keys()):
-            eb = rig.data.edit_bones[bname]
-            parb = rig.data.edit_bones[pname]
+        eb = rig.data.edit_bones.get(bname)
+        parb = rig.data.edit_bones.get(pname)
+        if eb and parb:
             eb.use_connect = False
             eb.parent = parb
             parb.tail = eb.head
 
-    for eb in rig.data.edit_bones:
-        if eb.name in deletes:
+    for bname in deletes:
+        eb = rig.data.edit_bones.get(bname)
+        if eb:
             rig.data.edit_bones.remove(eb)
 
 
