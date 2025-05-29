@@ -209,11 +209,12 @@ class RigifyCommon:
 class MetaMaker(RigifyCommon):
     ikOptimization : EnumProperty(
         items = [('POSE', "IK Pose", "Change the Genesis rest pose into the Rigify rest pose. Works with poles, does not work with DAZ poses"),
+                 ('POLE', "IK Poles", "Change the location of the IK poles. Works with both poles and DAZ poses"),
                  ('HINT', "IK Hint", "Add a hint angle to IK constraints, works with DAZ poses"),
                  ('NONE', "IK None", "No IK optimization. Works with prebended figures, where the Rigify rest pose is exported from DAZ studio")],
         name = "IK Optimization",
         description = "Method used for optimizing the rest pose before rigifying",
-        default = 'HINT')
+        default = 'POSE')
 
     useAutoAlign : BoolProperty(
         name = "Auto Align Hand/Foot",
@@ -1206,7 +1207,7 @@ class Rigifier(RigifyCommon):
 
         if meta["DazIkOptimization"] == 'HINT':
             self.fixPoles(meta, gen, True)
-        elif meta["DazIkOptimization"] == 'NONE':
+        elif meta["DazIkOptimization"] == 'POLE':
             self.fixPoles(meta, gen, False)
 
         #Clean up

@@ -99,9 +99,9 @@ def optimizePose(context, useApplyRestPose):
                         string = fcu.driver.expression.replace(var.name, "(%s+%.3f)" % (var.name, angle))
                         fcu.driver.expression = string
 
-    setXAngle(-9*D, ["lThigh", "lThighBend", "l_thigh", "rThigh", "rThighBend", "r_thigh"], rig)
+    setXAngle(-18*D, ["lThigh", "lThighBend", "l_thigh", "rThigh", "rThighBend", "r_thigh"], rig)
     setXAngle(18*D, ["lShin", "lShinBend", "l_shin", "rShin", "rShinBend", "r_shin"], rig)
-    setXAngle(-9*D, ["lFoot", "l_foot", "rFoot", "r_foot"], rig)
+    #setXAngle(0*D, ["lFoot", "l_foot", "rFoot", "r_foot"], rig)
     from .apply import applyRestPoses
     if useApplyRestPose:
         applyRestPoses(context, rig)
