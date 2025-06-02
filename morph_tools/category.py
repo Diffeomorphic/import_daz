@@ -35,16 +35,21 @@ class GeneralMorphSelector(Selector):
         name = "Category")
 
     def selectCondition(self, item):
-        if self.morphset == "Custom":
+        if (self.morphset == "Custom" or
+            (self.morphset == "All" and self.category != "All")):
             return (item.name in self.catnames[self.category])
         else:
             return (item.name in self.morphnames[self.morphset])
 
     def draw(self, context):
         self.layout.prop(self, "morphset")
-        self.layout.prop(self, "category")
+        if self.morphset in ["All", "Custom"]:
+            self.layout.prop(self, "category")
+        self.drawMore()
         Selector.draw(self, context)
 
+    def drawMore(self):
+        pass
 
     def getKeys(self, rig, ob):
         if rig is None:
@@ -73,9 +78,9 @@ class GeneralMorphSelector(Selector):
         for morphset in MS.Standards:
             theMorphEnums.append((morphset, morphset, morphset))
             if rig:
-                pg = getattr(dazRna(rig), "Daz%s" % morphset)
-                self.morphnames["All"] += list(pg.keys())
-                self.morphnames[morphset] = pg.keys()
+                pgs = getattr(dazRna(rig), "Daz%s" % morphset)
+                self.morphnames["All"] += list(pgs.keys())
+                self.morphnames[morphset] = pgs.keys()
         theMorphEnums.append(("Custom", "Custom", "Custom"))
         self.catnames = {}
         self.catnames["All"] = []
@@ -1221,6 +1226,61 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMeshArma
             bpy.ops.object.modifier_move_up(modifier=nmod.name)
 
 #-------------------------------------------------------------
+#   Move morphs to category
+#-------------------------------------------------------------
+
+class DAZ_OT_MoveMorphsToCategory(DazOperator, GeneralMorphSelector, IsMeshArmature):
+    bl_idname = "daz.move_morphs_to_category"
+    bl_label = "Move Morphs To Category"
+    bl_description = "Move selected morphs to selected category"
+    bl_options = {'UNDO'}
+
+    newCategory : StringProperty(
+        name = "New Category",
+        description = "Name of the new category",
+        default = "New")
+
+    def drawMore(self):
+        self.layout.prop(self, "newCategory")
+
+
+    def run(self, context):
+        rig = getRigFromContext(context)
+        cats = []
+        props = []
+        labels = []
+        for pg in self.getSelectedItems():
+            if pg.category != "All":
+                cats.append(pg.category)
+            props.append(pg.name)
+            labels.append(pg.text)
+
+        def removeMorphs(pgs, props):
+            morphs = list(enumerate(pgs.keys()))
+            morphs.sort()
+            morphs.reverse()
+            for idx,prop in morphs:
+                if prop in props:
+                    pgs.remove(idx)
+
+        if self.morphset == "All":
+            for morphset in MS.Morphsets:
+                pgs = getattr(dazRna(rig), "Daz%s" % morphset)
+                removeMorphs(pgs, props)
+            for key in set(cats):
+                cat = dazRna(rig).DazMorphCats[key]
+                removeMorphs(cat.morphs, props)
+        elif self.morphset == "Custom":
+            for key in set(cats):
+                cat = dazRna(rig).DazMorphCats[key]
+                removeMorphs(cat.morphs, props)
+        else:
+            pgs = getattr(dazRna(rig), "Daz%s" % self.morphset)
+            removeMorphs(pgs, props)
+
+        addToCategories(rig, props, labels, self.newCategory)
+
+#-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
 
@@ -1242,6 +1302,7 @@ classes = [
     DAZ_OT_RemoveZeroShapekeys,
 
     DAZ_OT_ConvertMorphsToShapes,
+    DAZ_OT_MoveMorphsToCategory,
 ]
 
 def register():

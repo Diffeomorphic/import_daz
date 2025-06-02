@@ -17,6 +17,7 @@ class DAZ_PT_Categories(DAZ_PT_SetupTab, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.add_shape_to_category")
         self.layout.operator("daz.remove_shape_from_category")
+        self.layout.operator("daz.move_morphs_to_category")
         self.layout.operator("daz.rename_category")
         self.layout.operator("daz.join_categories")
         self.layout.operator("daz.remove_categories")
