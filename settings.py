@@ -64,6 +64,8 @@ class GlobalSettings:
         self.toonMethod = 'FREESTYLE'
         self.skinMethod = 'IRAY'
         self.viewportColors = 'GUESS'
+        self.skinColor = [0.6, 0.4, 0.25, 1.0]
+        self.clothesColor = [0.09, 0.01, 0.015, 1.0]
         self.shellMethod = 'MATERIAL'
         self.usePruneNodes = True
 
@@ -177,6 +179,7 @@ class GlobalSettings:
                 try:
                     setattr(btn, attr, value)
                 except:
+                    print("TO", attr, value)
                     pass
 
 
@@ -244,10 +247,11 @@ class GlobalSettings:
             print("Load settings from %s" % filepath)
             settings = struct["daz-settings"]
             for attr,value in settings.items():
-                if (hasattr(self, attr) and
-                    isinstance(value, (float, int, bool, str)) and
-                    attr not in ["settingsDir"]):
-                    setattr(self, attr, value)
+                if hasattr(self, attr) and attr not in ["settingsDir"]:
+                    if isinstance(value, (float, int, bool, str)):
+                        setattr(self, attr, value)
+                    elif attr.endswith("Color"):
+                        setattr(self, attr, value)
             if "contentDirs" in settings.keys():
                 self.contentDirs = readNewDirs("contentDirs", settings)
                 self.mdlDirs = readNewDirs("mdlDirs", settings)
@@ -342,8 +346,11 @@ class GlobalSettings:
         struct = {}
         for attr in dir(self):
             value = getattr(self, attr)
-            if attr[0] != "_" and isinstance(value, (int, float, bool, str)):
-                struct[attr] = value
+            if attr[0] != "_":
+                if isinstance(value, (int, float, bool, str)):
+                    struct[attr] = value
+                elif attr.endswith("Color"):
+                    struct[attr] = tuple(value)
         for attr in ["contentDirs", "mdlDirs", "cloudDirs"]:
             paths = []
             for path in getattr(self, attr):
@@ -657,8 +664,12 @@ class LocalSettings:
             self.hairMaterialMethod = 'HAIR_BSDF'
         else:
             self.hairMaterialMethod = 'PRINCIPLED'
-        self.skinColor = btn.skinColor
-        self.clothesColor = btn.clothesColor
+        if GS.viewportColors == 'GLOBAL':
+            self.skinColor = GS.skinColor
+            self.clothesColor = GS.clothesColor
+        else:
+            self.skinColor = btn.skinColor
+            self.clothesColor = btn.clothesColor
 
 
     def forImport(self, btn):

@@ -426,9 +426,26 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         items = [('ORIGINAL', "Original", "Original diffuse color"),
                  ('RANDOM', "Random", "Random colors for each material"),
                  ('GUESS', "Guess", "Guess colors based on name"),
+                 ('GLOBAL', "Global", "Guess colors based on name, using global color settings"),
                  ],
         name = "Viewport",
         description = "Method to display object in viewport")
+
+    skinColor : FloatVectorProperty(
+        name = 'Skin',
+        subtype = "COLOR",
+        size = 4,
+        min = 0.0,
+        max = 1.0
+    )
+
+    clothesColor : FloatVectorProperty(
+        name = "Clothes",
+        subtype = "COLOR",
+        size = 4,
+        min = 0.0,
+        max = 1.0
+    )
 
     worldMethod : EnumProperty(
         items = [('ALWAYS', "Always", "Always create world material"),
@@ -802,6 +819,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         drawEnum(self, box, "skinMethod")
         drawEnum(self, box, "onHairMaterial")
         drawEnum(self, box, "viewportColors")
+        row = box.row()
+        row.prop(self, "skinColor")
+        row.prop(self, "clothesColor")
         drawEnum(self, box, "worldMethod")
         box.prop(self, "useMaterialsByIndex")
         box.prop(self, "useMaterialsByName")

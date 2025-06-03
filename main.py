@@ -48,14 +48,12 @@ class ColorOptions:
             box = self.layout.box()
             box.label(text = "Material Method")
             box.prop(self, "materialMethod", expand=True)
-        box = self.layout.box()
-        box.label(text = "Viewport Color")
         if GS.viewportColors == 'GUESS':
+            box = self.layout.box()
+            box.label(text = "Viewport Color")
             row = box.row()
             row.prop(self, "skinColor")
             row.prop(self, "clothesColor")
-        else:
-            box.label(text = GS.viewportColors)
 
 #------------------------------------------------------------------
 #   Fit options
@@ -1041,9 +1039,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     bpy.ops.daz.merge_geografts(
                         useMergeUvs = self.useMergeUvs,
                         keepOriginal = self.keepOriginal)
-                    if GS.viewportColors == 'GUESS':
+                    if GS.viewportColors in ['GUESS', 'GLOBAL']:
                         from .guess import guessMaterialColor
-                        LS.skinColor = self.skinColor
+                        LS.skinColor = (self.skinColor if GS.viewportColors == 'GUESS' else GS.skinColor)
                         for mat in firstMesh.data.materials:
                             guessMaterialColor(mat, 'GUESS', True, LS.skinColor)
 
