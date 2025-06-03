@@ -806,7 +806,7 @@ class MetaMaker(RigifyCommon):
 class Rigifier(RigifyCommon):
     def drawRigify(self):
         self.layout.prop(self, "useTongueIk")
-        self.layout.prop(self, "useLimitConstraints")
+        #self.layout.prop(self, "useLimitConstraints")
         self.layout.prop(self, "driverRotationMode")
         self.layout.prop(self, "addNondeformExtras")
 

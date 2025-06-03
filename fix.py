@@ -65,7 +65,7 @@ class Fixer(DriverUser):
     keepLocks : BoolProperty(
         name = "Keep DAZ Locks",
         description = "Keep rotation locks of the original DAZ rig",
-        default = False)
+        default = True)
 
     ownerThreshold : FloatProperty(
         name = "Owner Threshold",
@@ -75,8 +75,6 @@ class Fixer(DriverUser):
 
     def drawMeta(self):
         self.layout.prop(self, "keepRig")
-        if self.keepRig:
-            self.layout.prop(self, "keepLocks")
         self.layout.prop(self, "useFingerIk")
 
 
