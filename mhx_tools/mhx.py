@@ -104,7 +104,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     useSpineIk : BoolProperty(
         name = "Spine IK",
         description = "Spine IK (experimental)",
-        default = True)
+        default = False)
 
     useShaftWinder : BoolProperty(
         name = "Shaft Winder",
@@ -1447,6 +1447,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             ignore += self.tongueBones
         if self.useShaftWinder:
             ignore += self.getShaftBones(rig)
+        ignore = []
         self.store.restoreAllConstraints(context, rig, ignore)
         if dazRna(rig).DazRig not in ["genesis3", "genesis8"]:
             return
