@@ -241,8 +241,9 @@ class BoneInstance(Instance):
 
     def flipBone(self, omat, head, tail, flip, xyz):
         vec = tail-head
-        yaxis = Vector(omat.col[1][0:3])
-        if vec.dot(yaxis) < 0:
+        yaxis = Vector(omat.col[1][0:3]).normalized()
+        eps = 0.01*GS.scale     # 0.1 mm
+        if vec.dot(yaxis) < eps:
             self.flipped = self.flopped
             return omat @ flip
         else:

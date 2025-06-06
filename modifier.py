@@ -776,7 +776,8 @@ class SkinBinding(Modifier):
 def buildVertexGroup(ob, vgname, weights, default=None):
     if weights:
         if vgname in ob.vertex_groups.keys():
-            print("Duplicate vertex group:\n  %s %s" % (ob.name, vgname))
+            if GS.verbosity >= 3:
+                print("Duplicate vertex group:\n  %s %s" % (ob.name, vgname))
             return ob.vertex_groups[vgname]
         else:
             vgrp = ob.vertex_groups.new(name=vgname)
