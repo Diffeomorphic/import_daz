@@ -31,7 +31,7 @@ def getDupName(subrig, bname):
 
 
 class BoneInfo:
-    def __init__(self, bone, pb, parname, wmat):
+    def __init__(self, bone, pb, parname, wmat, parentBone):
         self.head = bone.head_local.copy()
         self.tail = bone.tail_local.copy()
         self.matrix_local = bone.matrix_local.copy()
@@ -41,13 +41,14 @@ class BoneInfo:
         self.index = 0
         self.matrix = pb.matrix.copy()
         self.matrix_world = wmat
+        self.parentBone = parentBone
 
 
     def setEditBone(self, bname, ebones, subrig):
         eb = ebones.new(bname)
         eb.head = self.head
         eb.tail = self.tail
-        if self.matrix_world:
+        if self.matrix_world and self.parentBone is None:
             eb.matrix = self.matrix_world @ self.matrix_local
         else:
             eb.matrix = self.matrix_local
@@ -229,7 +230,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                         parname = bone.parent.name
                     else:
                         parname = parentBone
-                    bones[bone.name] = BoneInfo(bone, pb, parname, wmat)
+                    bones[bone.name] = BoneInfo(bone, pb, parname, wmat, parentBone)
                 meshes = [child for child in rig.children if child.type == 'MESH']
                 info.append((rig, bones, meshes))
             else:
@@ -279,9 +280,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 addMergedRig(rig, subrig, idx)
 
         # Create the new editbones
-        hasNew = False
-        taken = []
         for info,dups in zip(infos, dupss):
+            hasNew = False
+            taken = []
             rig,bones,_meshes = info[0]
             activateObject(context, rig)
             setMode('EDIT')
@@ -296,9 +297,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                             binfo.setEditBone(bname, rig.data.edit_bones, subrig)
                             taken.append(bname)
             setMode('OBJECT')
-        modernizeBones(rig)
-        if hasNew:
-            enableRigNumLayer(rig, T_CUSTOM)
+            modernizeBones(rig)
+            if hasNew:
+                enableRigNumLayer(rig, T_CUSTOM)
 
         from .driver import copyProp, retargetDrivers
         from .morphing import copyCategories
@@ -359,14 +360,12 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                                 dazRna(pb.bone).DazBoneParentRig = parindex
 
         # Widgets
-        if widgets:
-            from .proxy import WidgetConverter
-            wrig = widgets[0]
+        from .proxy import WidgetConverter
+        for wrig in widgets:
             rig = wrig.parent
             ob = getMeshChildren(wrig)[0]
             if rig and ob and rig.type == 'ARMATURE':
                 print("Convert %s to widgets for %s" % (ob.name, rig.name))
-                activateObject(context, ob)
                 wc = WidgetConverter()
                 wc.convertWidgets(context, rig, ob, wrig)
                 enableRigNumLayer(rig, T_WIDGETS)

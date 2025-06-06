@@ -949,19 +949,18 @@ class WidgetConverter:
         coll = context.scene.collection
         hidden = createHiddenCollection(context, rig)
         activateObject(context, ob)
+        bpy.ops.object.parent_clear(type='CLEAR')
 
         vgnames,vgverts,vgfaces = self.getVertexGroupMesh(ob)
         euler = Euler((0,180*D,90*D))
         factor = 1/GS.scale
         mat = factor*euler.to_matrix()
-        offset,quat,scale = wrig.matrix_world.decompose()
-        print("Gizmo offset = %s" % offset)
         self.gizmos = []
         for idx,verts in vgverts.items():
             if not verts:
                 continue
             bone = rig.data.bones.get(vgnames[idx])
-            verts = self.transform(verts, mat, offset, bone)
+            verts = self.transform(verts, mat, bone)
             faces = vgfaces[idx]
             key = vgnames[idx]
             gname = "GZM_"+key
@@ -1047,7 +1046,7 @@ class WidgetConverter:
         return vgnames, vgverts, vgfaces
 
 
-    def transform(self, verts, mat, offset, bone):
+    def transform(self, verts, mat, bone):
         if bone:
             center = Vector(bone.head_local)
         else:
@@ -1055,7 +1054,6 @@ class WidgetConverter:
             for co in verts:
                 vsum += co
             center = vsum/len(verts)
-        center -= offset
         verts = [mat@(co-center) for co in verts]
         return verts
 
