@@ -1094,7 +1094,7 @@ def clearParent(ob):
     setWorldMatrix(ob, wmat)
 
 
-def getTransformMatrices(pb, rig, bonemap):
+def getTransformMatrices(pb, rig, bonemap, worldmat):
     def getParent(pb):
         for cns in pb.constraints:
             if (cns.type == 'COPY_TRANSFORMS' and
@@ -1111,10 +1111,13 @@ def getTransformMatrices(pb, rig, bonemap):
         return pb.parent
 
     def getBlenderMatrix(bone):
+        mat = bone.matrix_local
+        if worldmat:
+            mat = mat @ worldmat.inverted()
         if GS.zup:
-            return Matrix.Rotation(-90*D, 4, 'X') @ bone.matrix_local
+            return Matrix.Rotation(-90*D, 4, 'X') @ mat
         else:
-            return bone.matrix_local
+            return mat
 
     def getDazMatrix(bone):
         dmat = Euler(Vector(dazRna(bone).DazOrient)*D, 'XYZ').to_matrix().to_4x4()
@@ -1135,15 +1138,15 @@ def getTransformMatrices(pb, rig, bonemap):
     return dmat,bmat,rmat,parent
 
 
-def getTransformMatrix(pb, rig):
-    dmat,bmat,rmat,parent = getTransformMatrices(pb, rig, {})
+def getTransformMatrix(pb, rig, worldmat=None):
+    dmat,bmat,rmat,parent = getTransformMatrices(pb, rig, {}, worldmat)
     tmat = dmat.inverted() @ bmat
     return tmat.to_3x3()
 
 
-def getBoneMatrix(tfm, pb, rig, bonemap={}):
+def getBoneMatrix(tfm, pb, rig, bonemap={}, worldmat=None):
     from .transform import roundMatrix
-    dmat,bmat,rmat,parent = getTransformMatrices(pb, rig, bonemap)
+    dmat,bmat,rmat,parent = getTransformMatrices(pb, rig, bonemap, worldmat)
     rotmat = tfm.getRotMat(pb)
     wmat = dmat @ rotmat @ tfm.getScaleMat() @ dmat.inverted()
     wmat = wmat.to_3x3().to_4x4()

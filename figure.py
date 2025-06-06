@@ -54,6 +54,7 @@ class FigureInstance(Instance):
 
     def finalize(self, context):
         from .finger import getFingeredCharacters
+        from .bone import BoneInstance
         rig,meshes,chars,modded = getFingeredCharacters(self.rna, False)
         if rig and meshes:
             mesh = meshes[0]
@@ -67,7 +68,10 @@ class FigureInstance(Instance):
                 dazRna(mesh).DazMesh = char
         Instance.finalize(self, context)
         if rig:
-            enableRigNumLayers(rig, [T_BONES, T_WIDGETS])
+            for child in self.children.values():
+                if isinstance(child, BoneInstance):
+                    child.buildFormulas(rig, False)
+                enableRigNumLayers(rig, [T_BONES, T_WIDGETS])
             if chars:
                 activateObject(context, rig)
                 self.selectChildren(rig)
@@ -104,7 +108,6 @@ class FigureInstance(Instance):
     def poseRig(self, context):
         if not GS.useArmature:
             return
-        from .bone import BoneInstance
         rig = self.rna
         activateObject(context, rig)
         setMode('OBJECT')
@@ -116,9 +119,6 @@ class FigureInstance(Instance):
         self.fixDependencyLoops(rig)
         setMode('OBJECT')
         self.loadAltMorphs()
-        for child in self.children.values():
-            if isinstance(child, BoneInstance):
-                child.buildFormulas(rig, False)
         self.addPointingConstraints(rig)
 
 
