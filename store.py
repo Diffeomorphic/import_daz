@@ -26,7 +26,8 @@ YAttributes = ["use_y", "invert_y", "use_limit_y", "use_min_y", "use_max_y", "mi
 
 def copyConstraints(src, trg, rig):
     for scns in src.constraints:
-        copyConstraint(scns, trg, rig)
+        if getConstraint(trg, scns.type) is None:
+            copyConstraint(scns, trg, rig)
 
 
 def copyConstraint(scns, trg, rig):
