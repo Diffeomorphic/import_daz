@@ -165,18 +165,6 @@ class LoadMorph(DriverUser):
 
     def loadAllMorphs(self, namepaths):
         self.initAll()
-        if self.rig:
-            wmat = self.rig.matrix_world.copy()
-            setWorldMatrix(self.rig, Matrix())
-            try:
-                self.loadAllMorphs1(namepaths)
-            finally:
-                setWorldMatrix(self.rig, wmat)
-        else:
-            self.loadAllMorphs1(namepaths)
-
-
-    def loadAllMorphs1(self, namepaths):
         name = namepaths[0][0]
         if self.rig:
             self.baked = [self.bakedName(key) for key in dazRna(self.rig).DazBaked.keys()]

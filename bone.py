@@ -303,23 +303,7 @@ class BoneInstance(Instance):
         dazRna(bone).DazOrient = self.attributes["orientation"]
 
         rdata = self.getHeadTail(center)
-        rdata0 = self.getHeadTail(center, False)
         dazRna(bone).DazHead = rdata.dazhead
-        dazRna(bone).DazAngle = 0
-
-        vec = d2b00(rdata.tail) - d2b00(rdata.head)
-        vec0 = d2b00(rdata0.tail) - d2b00(rdata0.head)
-        if vec.length > 0 and vec0.length > 0:
-            vec /= vec.length
-            vec0 /= vec0.length
-            sprod = vec.dot(vec0)
-            if sprod < -0.99:
-                dazRna(bone).DazAngle = pi
-                dazRna(bone).DazNormal = vec.cross(vec0)
-            elif sprod < 0.99:
-                dazRna(bone).DazAngle = math.acos(sprod)
-                dazRna(bone).DazNormal = vec.cross(vec0)
-
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildBoneProps(rig, center)

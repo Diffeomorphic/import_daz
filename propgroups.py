@@ -149,8 +149,6 @@ if DAZ_PROPS:
     class DazImporterBone(DazImporterGroup):
         DazHead : FloatVectorProperty(size=3, default=(0,0,0))
         DazOrient : FloatVectorProperty(size=3, default=(0,0,0))
-        DazNormal : FloatVectorProperty(size=3, default=(0,0,0))
-        DazAngle : FloatProperty()
         DazTrueName : StringProperty()
         DazRigIndex : IntProperty(default=0)
         DazBoneParentRig : IntProperty(default=-1)
@@ -480,8 +478,6 @@ def registerDazProperties():
 
     bpy.types.Bone.DazHead = FloatVectorProperty(size=3, default=(0,0,0))
     bpy.types.Bone.DazOrient = FloatVectorProperty(size=3, default=(0,0,0))
-    bpy.types.Bone.DazNormal = FloatVectorProperty(size=3, default=(0,0,0))
-    bpy.types.Bone.DazAngle = FloatProperty()
     bpy.types.Bone.DazTrueName = StringProperty()
     bpy.types.Bone.DazRigIndex = IntProperty(default=0)
     bpy.types.Bone.DazBoneParentRig = IntProperty(default=-1)

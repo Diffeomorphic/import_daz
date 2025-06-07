@@ -1128,10 +1128,7 @@ def getTransformMatrices(pb, rig, bonemap):
         parent = getParent(pb)
     else:
         parent = pb.parent
-    if parent:
-        rmat = Matrix.Rotation(dazRna(parent.bone).DazAngle, 4, dazRna(parent.bone).DazNormal)
-    else:
-        rmat = Matrix()
+    rmat = Matrix()
     return dmat,bmat,rmat,parent
 
 

@@ -64,7 +64,6 @@ class FigureInstance(Instance):
         from .finger import getFingeredCharacters
         from .bone import BoneInstance
         rig,meshes,chars,modded = getFingeredCharacters(self.rna, False)
-        print("FINA", rig.name)
         if rig and meshes:
             mesh = meshes[0]
             char = chars[0]
@@ -406,9 +405,9 @@ def copyBoneInfo(srcpb, trgpb, usePoseBone=True):
         setattr(trgpb.bone, attr, getattr(srcpb.bone, attr))
     for attr in ["DazRotMode"]:
         setattr(dazRna(trgpb), attr, getattr(dazRna(srcpb), attr))
-    for attr in ["DazAngle", "DazTrueName"]:
+    for attr in ["DazTrueName"]:
         setattr(dazRna(trgpb.bone), attr, getattr(dazRna(srcpb.bone), attr))
-    for attr in ["DazOrient", "DazHead", "DazNormal"]:
+    for attr in ["DazOrient", "DazHead"]:
         setattr(dazRna(trgpb.bone), attr, tuple(getattr(dazRna(srcpb.bone), attr)))
     for attr in ["DazRestRotation", "DazAxes", "DazFlips", "DazLocLocks", "DazRotLocks"]:
         setattr(dazRna(trgpb), attr, tuple(getattr(dazRna(srcpb), attr)))
