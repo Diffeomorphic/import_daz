@@ -167,6 +167,36 @@ class DAZ_OT_CopyRolls(DazPropsOperator, IsArmature):
                         eb.roll = srcb.roll
         #setMode('OBJECT')
 
+#-------------------------------------------------------------
+#   Check Rest Poses
+#-------------------------------------------------------------
+
+class DAZ_OT_CheckRestPoses(DazOperator, IsArmature):
+    bl_idname = "daz.check_rest_poses"
+    bl_label = "Check Rest Poses"
+    bl_description = "Check that rest pose is the same"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        rig1 = context.object
+        eps = 1e-4
+        for rig2 in getSelectedArmatures(context):
+            if rig2 != rig1:
+                diffs = {}
+                setMode('EDIT')
+                for eb2 in rig2.data.edit_bones:
+                    eb1 = rig1.data.edit_bones.get(eb2.name)
+                    if eb1:
+                        if ((eb1.head - eb2.head).length > eps or
+                            (eb1.tail - eb2.tail).length > eps or
+                            abs(eb1.roll - eb2.roll) > eps):
+                            diff = (eb1.roll, eb2.roll)
+                            diffs[eb1.name] = diff
+                setMode('OBJECT')
+                print('Checked "%s" vs "%s"' % (rig2.name, rig1.name))
+                for bname,diff in diffs.items():
+                    print(bname, diff)
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -174,7 +204,8 @@ class DAZ_OT_CopyRolls(DazPropsOperator, IsArmature):
 classes = [
     DAZ_OT_HideUnusedLinks,
     DAZ_OT_MakeEulers,
-    DAZ_OT_CopyRolls
+    DAZ_OT_CopyRolls,
+    DAZ_OT_CheckRestPoses
 ]
 
 def register():

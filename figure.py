@@ -45,10 +45,18 @@ class FigureInstance(Instance):
         if isUnitMatrix(mat):
             return
         activateObject(context, rig)
-        headtails = dict([(b.name, (mat@b.head_local, mat@b.tail_local)) for b in rig.data.bones])
-        setMode('EDIT')
-        for eb in rig.data.edit_bones:
-            eb.head, eb.tail = headtails[eb.name]
+        if GS.keepRollAngles:
+            emats = dict([(bone.name, (mat@bone.head_local.copy(), mat@bone.tail_local.copy()))
+                           for bone in rig.data.bones])
+            setMode('EDIT')
+            for eb in rig.data.edit_bones:
+                eb.head, eb.tail = emats[eb.name]
+        else:
+            emats = dict([(bone.name, mat@bone.matrix_local.copy())
+                           for bone in rig.data.bones])
+            setMode('EDIT')
+            for eb in rig.data.edit_bones:
+                eb.matrix = emats[eb.name]
         setMode('OBJECT')
 
 
@@ -56,6 +64,7 @@ class FigureInstance(Instance):
         from .finger import getFingeredCharacters
         from .bone import BoneInstance
         rig,meshes,chars,modded = getFingeredCharacters(self.rna, False)
+        print("FINA", rig.name)
         if rig and meshes:
             mesh = meshes[0]
             char = chars[0]
@@ -72,6 +81,7 @@ class FigureInstance(Instance):
                 if isinstance(child, BoneInstance):
                     child.buildFormulas(rig, False)
                 enableRigNumLayers(rig, [T_BONES, T_WIDGETS])
+
             if chars:
                 activateObject(context, rig)
                 self.selectChildren(rig)
