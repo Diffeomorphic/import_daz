@@ -761,10 +761,8 @@ class LoadMorph(DriverUser):
         for pb in self.rig.pose.bones:
             tfm,trans = self.ercBones.get(pb.name, (None,None))
             if tfm:
-                offset = trans - getParentTrans(pb)
-                dmat,bmat,rmat,parent = getTransformMatrices(pb, self.rig, {})
-                tmat = rmat.inverted() @ Matrix.Translation(offset) @ rmat
-                tfm.trans = tmat.to_translation()
+                dmat,bmat,parent = getTransformMatrices(pb, self.rig, {})
+                tfm.trans = trans - getParentTrans(pb)
                 self.addPoseboneDriver(pb, tfm)
 
 

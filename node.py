@@ -1128,28 +1128,26 @@ def getTransformMatrices(pb, rig, bonemap):
         parent = getParent(pb)
     else:
         parent = pb.parent
-    rmat = Matrix()
-    return dmat,bmat,rmat,parent
+    return dmat,bmat,parent
 
 
 def getTransformMatrix(pb, rig):
-    dmat,bmat,rmat,parent = getTransformMatrices(pb, rig, {})
+    dmat,bmat,parent = getTransformMatrices(pb, rig, {})
     tmat = dmat.inverted() @ bmat
     return tmat.to_3x3()
 
 
 def getBoneMatrix(tfm, pb, rig, bonemap={}):
     from .transform import roundMatrix
-    dmat,bmat,rmat,parent = getTransformMatrices(pb, rig, bonemap)
+    dmat,bmat,parent = getTransformMatrices(pb, rig, bonemap)
     rotmat = tfm.getRotMat(pb)
     wmat = dmat @ rotmat @ tfm.getScaleMat() @ dmat.inverted()
     wmat = wmat.to_3x3().to_4x4()
-    tmat = rmat.inverted() @ tfm.getTransMat() @ rmat
+    tmat = tfm.getTransMat()
     mat = bmat.inverted() @ tmat @ wmat @ bmat
     roundMatrix(mat, 1e-4)
     if pb.name in TestBones:
         print("BMM", pb.name)
-        print(tfm.getTransMat())
         print("WMAT", wmat)
         print("TMAT", tmat)
         print("BMAT", bmat)

@@ -6,7 +6,6 @@ import bpy
 from ..framer import Framer
 from ..animation import HideOperator, FrameConverter
 from ..bone_data import BD
-from ..node import getTransformMatrices
 from ..rig_utils import copyTransform
 from .preset import *
 
@@ -779,11 +778,11 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 self.addKeys(locs, anim, 0.01)
                 anims.append(anim)
         else:
-            dmat,bmat,xmat,parent = getTransformMatrices(pb, rig, {})
+            from ..node import getTransformMatrices
+            dmat,bmat,parent = getTransformMatrices(pb, rig, {})
             if parent:
-                mat = xmat @ dmat
-                inv = mat.inverted()
-                tmats = [mat @ Matrix.Translation(vec) @ inv for vec in vecs]
+                dinv = dmat.inverted()
+                tmats = [dmat @ Matrix.Translation(vec) @ dinv for vec in vecs]
                 vecs = [tmat.to_translation() for tmat in tmats]
             for idx,x in enumerate(["x","y","z"]):
                 if (not self.includeLocks and
