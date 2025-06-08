@@ -550,7 +550,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
             "url" : "name://@selection/%s:" % quote(figure),
         }
         self.ancestors[0][figure] = True
-        if rig.parent:
+        if False and rig.parent:
             if rig.parent_type == 'OBJECT':
                 parent = dazRna(rig.parent).DazUrl.rsplit("#",1)[-1]
                 if parent:
@@ -701,6 +701,9 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         if self.useObject or self.useHierarchical:
             objkey = self.getDazObject(rig)
             Ls = [self.Ls[frame][objkey] for frame in range(self.frame_start, self.frame_end+1)]
+            if rig.parent:
+                pmat = self.Z.inverted() @ rig.matrix_parent_inverse @ self.Z
+                Ls = [pmat @ L for L in Ls]
             locs = [L.to_translation() for L in Ls]
             self.getTrans("", rig, rig, locs, 1/GS.scale, anims)
 
