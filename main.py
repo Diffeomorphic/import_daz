@@ -43,6 +43,7 @@ class ColorOptions:
         description = "Material Method",
         default = 'EXTENDED_PRINCIPLED')
 
+
     def draw(self, context):
         if GS.materialMethod == 'SELECT':
             box = self.layout.box()
@@ -55,11 +56,16 @@ class ColorOptions:
             row.prop(self, "skinColor")
             row.prop(self, "clothesColor")
 
+
+    def getColors(self):
+        self.skinColor = GS.getSkinColor()
+        self.clothesColor = GS.getClothesColor()
+
 #------------------------------------------------------------------
 #   Fit options
 #------------------------------------------------------------------
 
-class FitOptions(MultiFile):
+class FitOptions:
     filename_ext = ".dbz"
     filter_glob : StringProperty(default="*.duf;*.dsf;*.dbz;*.png;*.jpeg;*.jpg;*.bmp", options={'HIDDEN'})
 
@@ -74,6 +80,7 @@ class FitOptions(MultiFile):
         description = "Mesh fitting method",
         default = 'DBZFILE')
 
+
     def draw(self, context):
         if not GS.onlyDbz:
             box = self.layout.box()
@@ -82,7 +89,7 @@ class FitOptions(MultiFile):
             self.layout.separator()
 
 
-    def invoke(self, context, event):
+    def getFits(self):
         if GS.onlyDbz:
             self.filename_ext = ".dbz"
             self.filter_glob = "*.dbz"
@@ -90,7 +97,6 @@ class FitOptions(MultiFile):
         else:
             self.filename_ext = ".dsf;.duf"
             self.filter_glob = "*.duf;*.dsf;*.png;*.jpeg;*.jpg;*.bmp"
-        return MultiFile.invoke(self, context, event)
 
 #------------------------------------------------------------------
 #   DAZ Loader
@@ -241,7 +247,7 @@ class DazLoader:
 #   Import DAZ
 #------------------------------------------------------------------
 
-class ImportDAZManually(DazOperator, ColorOptions, FitOptions, DazLoader):
+class ImportDAZManually(DazOperator, ColorOptions, FitOptions, MultiFile, DazLoader):
     """Load a DAZ File"""
     bl_idname = "daz.import_daz_manually"
     bl_label = "Import DAZ Manually"
@@ -254,6 +260,11 @@ class ImportDAZManually(DazOperator, ColorOptions, FitOptions, DazLoader):
         self.layout.separator()
         box = self.layout.box()
         box.label(text = "For more options, see Global Settings.")
+
+    def invoke(self, context, event):
+        self.getColors()
+        self.getFits()
+        return MultiFile.invoke(self, context, event)
 
     def storeState(self, context):
         self.rootPaths = (GS.contentDirs.copy(), GS.mdlDirs.copy(), GS.cloudDirs.copy())
@@ -348,7 +359,7 @@ class ImportDAZManually(DazOperator, ColorOptions, FitOptions, DazLoader):
 #   Import DAZ Materials
 #------------------------------------------------------------------
 
-class MaterialLoader(ColorOptions):
+class MaterialLoader(ColorOptions, MultiFile):
     def loadDazFile(self, filepath, context):
         from .load_json import JL
         LS.scene = filepath
@@ -362,7 +373,12 @@ class MaterialLoader(ColorOptions):
         return main
 
 
-class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, MultiFile, IsMesh):
+    def invoke(self, context, event):
+        self.getColors()
+        return MultiFile.invoke(self, context, event)
+
+
+class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
     bl_idname = "daz.import_daz_materials"
     bl_label = "Import DAZ Materials"
     bl_description = "Load materials from a native DAZ file to the active mesh"
@@ -396,6 +412,7 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, MultiFile, I
             if not self.useReassign:
                 self.layout.prop(self, "useMatchNames")
         self.layout.prop(self, "useAddSlots")
+
 
     def run(self, context):
         from .cycles import CyclesMaterial
@@ -590,7 +607,7 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, MultiFile, I
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, PosableMaker):
+class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, PosableMaker):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -732,7 +749,9 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
         scn = context.scene
         self.favoPath = dazRna(scn).DazFavoPath
         self.useFavoMorphs = (self.favoPath != "")
-        return FitOptions.invoke(self, context, event)
+        self.getColors()
+        self.getFits()
+        return MultiFile.invoke(self, context, event)
 
 
     def storeState(self, context):
@@ -1039,7 +1058,7 @@ class EasyImportDAZ(DazOperator, ColorOptions, FitOptions, MergeGeograftOptions,
                     bpy.ops.daz.merge_geografts(
                         useMergeUvs = self.useMergeUvs,
                         keepOriginal = self.keepOriginal)
-                    if GS.viewportColors in ['GUESS', 'GLOBAL']:
+                    if GS.viewportColors == 'GUESS':
                         from .guess import guessMaterialColor
                         LS.skinColor = (self.skinColor if GS.viewportColors == 'GUESS' else GS.skinColor)
                         for mat in firstMesh.data.materials:

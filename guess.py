@@ -87,7 +87,7 @@ def guessMaterialColor(mat, choose, enforce, default, defaultType='CLOTHES'):
         color = (random(), random(), random(), 1)
         setDiffuse(mat, color)
 
-    elif choose in ['GUESS', 'GLOBAL']:
+    elif choose == 'GUESS':
         if mat.diffuse_color[3] < 1.0:
             pass
         elif mtype == 'SKIN':

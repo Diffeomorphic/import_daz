@@ -6,13 +6,13 @@ import bpy
 import os
 from ..utils import *
 from ..error import *
-from ..main import MaterialLoader, DazImageFile, MultiFile
+from ..main import MaterialLoader, DazImageFile
 
 #------------------------------------------------------------------
 #   Import Shell node groups
 #------------------------------------------------------------------
 
-class ImportShells(DazOperator, MaterialLoader, DazImageFile, MultiFile):
+class ImportShells(DazOperator, MaterialLoader, DazImageFile):
     bl_idname = "daz.import_shells"
     bl_label = "Import Shells"
     bl_description = "Load shell node groups from native DAZ file"

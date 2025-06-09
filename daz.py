@@ -426,7 +426,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         items = [('ORIGINAL', "Original", "Original diffuse color"),
                  ('RANDOM', "Random", "Random colors for each material"),
                  ('GUESS', "Guess", "Guess colors based on name"),
-                 ('GLOBAL', "Global", "Guess colors based on name, using global color settings"),
                  ],
         name = "Viewport",
         description = "Method to display object in viewport")

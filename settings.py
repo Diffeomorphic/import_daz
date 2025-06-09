@@ -64,8 +64,14 @@ class GlobalSettings:
         self.toonMethod = 'FREESTYLE'
         self.skinMethod = 'IRAY'
         self.viewportColors = 'GUESS'
-        self.skinColor = [0.6, 0.4, 0.25, 1.0]
-        self.clothesColor = [0.09, 0.01, 0.015, 1.0]
+        self.skinColor0 = 0.6
+        self.skinColor1 = 0.4
+        self.skinColor2 = 0.25
+        self.skinColor3 = 1.0
+        self.clothesColor0 = 0.09
+        self.clothesColor1 = 0.01
+        self.clothesColor2 = 0.015
+        self.clothesColor3 = 1.0
         self.shellMethod = 'MATERIAL'
         self.usePruneNodes = True
 
@@ -131,6 +137,19 @@ class GlobalSettings:
         self.onScaleEyeMoisture = 'APPLY'
 
 
+    def getSkinColor(self):
+        return (self.skinColor0, self.skinColor1, self.skinColor2, self.skinColor3)
+
+    def getClothesColor(self):
+        return (self.clothesColor0, self.clothesColor1, self.clothesColor2, self.clothesColor3)
+
+    def setSkinColor(self, color):
+        self.skinColor0, self.skinColor1, self.skinColor2, self.skinColor3 = color
+
+    def setClothesColor(self, color):
+        self.clothesColor0, self.clothesColor1, self.clothesColor2, self.clothesColor3 = color
+
+
     def getSettingsDir(self, context):
         if context:
             name = __name__.rsplit(".", 1)[0]
@@ -181,6 +200,8 @@ class GlobalSettings:
                 except:
                     print("TO", attr, value)
                     pass
+        btn.skinColor = self.getSkinColor()
+        btn.clothesColor = self.getClothesColor()
 
 
     def fromDialog(self, btn):
@@ -200,6 +221,8 @@ class GlobalSettings:
                 hasattr(btn, attr) and
                 attr not in ["contentDirs", "cloudDirs", "mdlDirs", "errorFile", "scanFile", "absScanFile"]):
                 setattr(self, attr, getattr(btn, attr))
+        self.setSkinColor(btn.skinColor)
+        self.setClothesColor(btn.clothesColor)
         self.contentDirs = getPaths(btn.contentDirs)
         self.mdlDirs = getPaths(btn.mdlDirs)
         self.cloudDirs = getPaths(btn.cloudDirs)
@@ -346,11 +369,8 @@ class GlobalSettings:
         struct = {}
         for attr in dir(self):
             value = getattr(self, attr)
-            if attr[0] != "_":
-                if isinstance(value, (int, float, bool, str)):
-                    struct[attr] = value
-                elif attr.endswith("Color"):
-                    struct[attr] = tuple(value)
+            if attr[0] != "_" and isinstance(value, (int, float, bool, str)):
+                struct[attr] = value
         for attr in ["contentDirs", "mdlDirs", "cloudDirs"]:
             paths = []
             for path in getattr(self, attr):
@@ -664,12 +684,10 @@ class LocalSettings:
             self.hairMaterialMethod = 'HAIR_BSDF'
         else:
             self.hairMaterialMethod = 'PRINCIPLED'
-        if GS.viewportColors == 'GLOBAL':
-            self.skinColor = GS.skinColor
-            self.clothesColor = GS.clothesColor
-        else:
-            self.skinColor = btn.skinColor
-            self.clothesColor = btn.clothesColor
+        self.skinColor = btn.skinColor
+        self.clothesColor = btn.clothesColor
+        GS.setSkinColor(btn.skinColor)
+        GS.setClothesColor(btn.clothesColor)
 
 
     def forImport(self, btn):
