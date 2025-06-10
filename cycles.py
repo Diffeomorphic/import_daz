@@ -246,7 +246,7 @@ class CyclesTree(Tree):
         self.bumptex = None
         self.texco = None
         self.uvnodes = {}
-        self.detrough = 0
+        self.detrough = 1.0
         self.detroughtex = None
         self.displacement = None
         self.volume = None
@@ -778,7 +778,7 @@ class CyclesTree(Tree):
                 if self.bump:
                     self.links.new(self.normal.outputs["Normal"], self.bump.inputs["Normal"])
 
-        self.detrough, self.detroughtex,_ = self.getColorTex(["Detail Specular Roughness Mult"], "NONE", 0, False)
+        self.detrough, self.detroughtex,_ = self.getColorTex(["Detail Specular Roughness Mult"], "NONE", 1.0, False)
         self.texco = texco
 
     #-------------------------------------------------------------

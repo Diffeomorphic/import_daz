@@ -398,7 +398,7 @@ class PbrTree(CyclesTree):
                     roughtex = self.multiplyTexs(self.detroughtex, roughtex)
                 self.linkScalar(roughtex, self.pbr, roughness, "Roughness")
             else:
-                self.replaceSlot(self.pbr, "Roughness", 0.0)
+                self.replaceSlot(self.pbr, "Roughness", 0.5)
         else:
             if self.pureMetal:
                 self.replaceSlot(self.pbr, "Specular Tint", Tint(1.0))
