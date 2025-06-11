@@ -1049,9 +1049,9 @@ class CyclesTree(Tree):
             ratio = 1 - ratio
         else:
             ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
-            rough1,roughtex1,_ = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
+            rough1,roughtex1,_ = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", 0.5, False)
             self.setRoughness(node, "Roughness 1", rough1, roughtex1)
-            rough2,roughtex2,_ = self.getColorTex(["Specular Lobe 2 Roughness"], "NONE", 0.0, False)
+            rough2,roughtex2,_ = self.getColorTex(["Specular Lobe 2 Roughness"], "NONE", 0.3, False)
             self.setRoughness(node, "Roughness 2", rough2, roughtex2)
 
         node.inputs["Ratio"].default_value = ratio
