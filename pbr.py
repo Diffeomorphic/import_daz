@@ -394,7 +394,7 @@ class PbrTree(CyclesTree):
                 if LS.materialMethod == 'EXTENDED_PRINCIPLED':
                     self.replaceSlot(self.pbr, "Roughness", 0.0)
                 else:
-                    rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
+                    rough1,rough2,roughtex,ratio = self.getDualRoughness()
                     roughness = rough1*(1-ratio) + rough2*ratio
                     if False and self.isEnabled("Detail"):
                         roughness *= self.detrough

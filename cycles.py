@@ -1043,7 +1043,7 @@ class CyclesTree(Tree):
             self.links.new(colorOutput(iortex), node.inputs["IOR"])
 
         if self.owner.shader == 'PBRSKIN':
-            rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
+            rough1,rough2,roughtex,ratio = self.getDualRoughness()
             self.setRoughness(node, "Roughness 1", rough1, roughtex)
             self.setRoughness(node, "Roughness 2", rough2, roughtex)
             ratio = 1 - ratio
@@ -1060,7 +1060,7 @@ class CyclesTree(Tree):
         LS.usedFeatures["Glossy"] = True
 
 
-    def getDualRoughness(self, default):
+    def getDualRoughness(self, default=0.5):
         roughness,roughtex,_ = self.getColorTex(["Specular Lobe 1 Roughness"], "NONE", default, False)
         lobe2mult = self.getValue(["Specular Lobe 2 Roughness Mult"], 1.0)
         duallobemult = self.getValue(["Dual Lobe Specular Roughness Mult"], 1.0)
@@ -1084,7 +1084,7 @@ class CyclesTree(Tree):
         if self.owner.shader == 'PBRSKIN':
             node = self.addGroup(MetalGroupPbrSkin, "DAZ Metal PBR")
             self.linkColor(self.diffuseTex, node, self.diffuseColor, "Color")
-            rough1,rough2,roughtex, ratio = self.getDualRoughness(0.0)
+            rough1,rough2,roughtex, ratio = self.getDualRoughness()
             self.setRoughness(node, "Roughness 1", rough1, roughtex)
             self.setRoughness(node, "Roughness 2", rough2, roughtex)
             node.inputs["Dual Ratio"].default_value = ratio
