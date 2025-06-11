@@ -391,12 +391,15 @@ class PbrTree(CyclesTree):
             if self.pureMetal:
                 self.replaceSlot(self.pbr, "Specular Tint", Tint(0.0))
             if self.isEnabled("Dual Lobe Specular"):
-                rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
-                roughness = rough1*(1-ratio) + rough2*ratio
-                if self.isEnabled("Detail"):
-                    roughness *= self.detrough
-                    roughtex = self.multiplyTexs(self.detroughtex, roughtex)
-                self.linkScalar(roughtex, self.pbr, roughness, "Roughness")
+                if LS.materialMethod == 'EXTENDED_PRINCIPLED':
+                    self.replaceSlot(self.pbr, "Roughness", 0.0)
+                else:
+                    rough1,rough2,roughtex,ratio = self.getDualRoughness(0.0)
+                    roughness = rough1*(1-ratio) + rough2*ratio
+                    if False and self.isEnabled("Detail"):
+                        roughness *= self.detrough
+                        roughtex = self.multiplyTexs(self.detroughtex, roughtex)
+                    self.linkScalar(roughtex, self.pbr, roughness, "Roughness")
             else:
                 self.replaceSlot(self.pbr, "Roughness", 0.5)
         else:

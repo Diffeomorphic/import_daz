@@ -965,7 +965,7 @@ class CyclesTree(Tree):
         node = self.addGroup(MakeupGroup, "DAZ Makeup")
         color,tex,_ = self.getColorTex(["Makeup Base Color"], "COLOR", WHITE, False)
         self.linkColor(tex, node, color, "Color")
-        roughness,roughtex,_ = self.getColorTex(["Makeup Roughness Mult"], "NONE", 0.0, False)
+        roughness,roughtex,_ = self.getColorTex(["Makeup Roughness Mult"], "NONE", 1.0, False)
         self.linkScalar(roughtex, node, roughness, "Roughness")
         self.linkBumpNormal(node)
         wt,wttex,texslot = self.getColorTex(["Makeup Weight"], "NONE", 0.0, False, isMask=True)
