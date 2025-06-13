@@ -626,17 +626,24 @@ class MorphOptions(PosableMaker):
     def handleMissingMorphs(self, context, rig):
         if self.useShapekeys or not self.useLoadMissing or not self.used:
             return False
+
+        def isRigProp(prop, rig):
+            if prop in rig.keys():
+                return True
+            altformula = self.altmorphs.get(prop)
+            if altformula:
+                alt = list(altformula.keys())[0]
+                return (alt in rig.keys())
+            return False
+
         missing = []
         for prop in self.used:
-            if prop in rig.keys():
-                pass
-            elif prop in self.altmorphs.keys():
-                altformula = self.altmorphs[prop]
-                alt = list(altformula.keys())[0]
-                if alt not in rig.keys():
-                    missing.append(prop)
-            else:
-                missing.append(prop)
+            if isRigProp(prop, rig):
+                continue
+            pg2 = dazRna(rig).DazMorphNames.get(prop)
+            if pg2 and isRigProp(pg2.s, rig):
+                continue
+            missing.append(prop)
         if not missing:
             return False
         elif self.useScanned:
