@@ -199,6 +199,7 @@ class Scanner:
         if key is None:
             return
         if (self.useMinmax and
+            hasattr(asset, "min") and
             asset.min is not None and
             asset.max is not None):
             self.minmax[key] = (asset.min, asset.max)
