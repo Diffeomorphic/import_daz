@@ -740,7 +740,7 @@ class LocalSettings:
         self.useUV = True
 
 
-    def forMaterial(self, btn, ob):
+    def forMaterial(self, btn):
         self.__init__()
         self.reset(btn)
         self.useImages = True
