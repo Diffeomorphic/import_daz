@@ -452,7 +452,7 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
                     matches = []
                     if USE_ATTRIBUTES and self.useReassign:
                         self.matchFromGroups(ob, main, matches)
-                    elif self.useReplaceSlots:
+                    else:
                         self.matchFromNames(ob, main, matches)
                     if matches:
                         self.assignMaterials(context, ob, matches)
