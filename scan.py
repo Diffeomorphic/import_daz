@@ -358,7 +358,7 @@ class DAZ_OT_ScanMorphDatabase(DazPropsOperator, CharSelector, Scanner):
         t1 = perf_counter()
         struct = self.setupScanner(name, relpath)
         self.wm = context.window_manager
-        self.wm.progress_begin(0, self.maxcount)
+        self.wm.progress_begin(0, 9998)
         LS.forMorphLoad(self.mesh)
         for morphpath in GS.getAbsPaths("%s/Morphs" % relpath):
             self.scanMorphs(morphpath, len(morphpath))
