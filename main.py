@@ -389,6 +389,14 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
         description = "Add all materials to selected meshes",
         default = False)
 
+    matchMethod : EnumProperty(
+        items = [('GROUP', "Material Group", "Original material groups.\nMetadata must not be erased"),
+                 ('NAME', "Name", "Match on material names"),
+                 ('INDEX', "Index",
+                 "Match on material index.\nFails if materials have been reordered or merged")],
+        name = "Match Method",
+        description = "Match materials with this method")
+
     useMatchNames : BoolProperty(
         name = "Match Names",
         description = "Match material names",
@@ -403,9 +411,7 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
         ColorOptions.draw(self, context)
         self.layout.prop(self, "useAddMaterials")
         if not self.useAddMaterials:
-            self.layout.prop(self, "useReassign")
-            if not self.useReassign:
-                self.layout.prop(self, "useMatchNames")
+            self.layout.prop(self, "matchMethod")
 
 
     def run(self, context):
@@ -450,10 +456,12 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
                     self.addMaterials(context, ob, main)
                 else:
                     matches = []
-                    if USE_ATTRIBUTES and self.useReassign:
+                    if self.matchMethod == 'GROUP':
                         self.matchFromGroups(ob, main, matches)
-                    else:
+                    elif self.matchMethod == 'NAME':
                         self.matchFromNames(ob, main, matches)
+                    elif self.matchMethod == 'INDEX':
+                        self.matchFromIndex(ob, main, matches)
                     if matches:
                         self.assignMaterials(context, ob, matches)
         if LS.render:
@@ -484,11 +492,15 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
 
     def matchFromNames(self, ob, main, matches):
         for n,dmat in enumerate(main.materials):
-            if self.useMatchNames:
-                idx,mat = self.getMatch(dmat, ob.data.materials)
-                if mat:
-                    matches.append((idx, mat, dmat))
-            else:
+            idx,mat = self.getMatch(dmat, ob.data.materials)
+            if mat:
+                matches.append((idx, mat, dmat))
+
+
+    def matchFromIndex(self, ob, main, matches):
+        nmats = len(ob.data.materials)
+        for n,dmat in enumerate(main.materials):
+            if n < nmats:
                 matches.append((n, None, dmat))
 
 
