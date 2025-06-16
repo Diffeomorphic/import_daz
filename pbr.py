@@ -99,38 +99,42 @@ class PbrTree(CyclesTree):
     def buildLayer(self, uvname):
         self.column = 3
         self.buildNormal(uvname)
-        self.buildBump(uvname)
+        if LS.materialMethod != 'FBX_COMPATIBLE':
+            self.buildBump(uvname)
         self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=5)
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
         self.column = 4
-        self.buildDetail(uvname)
+        if LS.materialMethod == 'EXTENDED_PRINCIPLED':
+            self.buildDetail(uvname)
         self.column = 5
         useTopCoatNode = self.checkTopCoat()
         self.column = 4
         self.buildPBRNode(useTopCoatNode, uvname)
         self.postPBR = False
         self.column = 7
-        if self.owner.useTranslucency:
-            self.buildTranslucency(uvname)
-            self.postPBR = True
-        if self.buildMakeup():
-            self.postPBR = True
-        if self.buildOverlay():
-            self.postPBR = True
-        if self.buildFlakes():
-            self.postPBR = True
-        if self.prepareWeighted():
-            CyclesTree.buildGlossyOrDualLobe(self)
-            self.postPBR = True
-        else:
-            self.buildGlossyOrDualLobe()
+        if LS.materialMethod == 'EXTENDED_PRINCIPLED':
+            if self.owner.useTranslucency:
+                self.buildTranslucency(uvname)
+                self.postPBR = True
+            if self.buildMakeup():
+                self.postPBR = True
+            if self.buildOverlay():
+                self.postPBR = True
+            if self.buildFlakes():
+                self.postPBR = True
+            if self.prepareWeighted():
+                CyclesTree.buildGlossyOrDualLobe(self)
+                self.postPBR = True
+            else:
+                self.buildGlossyOrDualLobe()
         if self.owner.isRefractive():
             self.buildRefraction()
-        if useTopCoatNode:
-            self.postPBR = True
-            self.buildTopCoat(uvname)
-        self.buildWeighted()
+        if LS.materialMethod == 'EXTENDED_PRINCIPLED':
+            if useTopCoatNode:
+                self.postPBR = True
+                self.buildTopCoat(uvname)
+            self.buildWeighted()
         self.buildEmission()
 
 
@@ -236,8 +240,6 @@ class PbrTree(CyclesTree):
             effect = self.getValue(["Base Color Effect"], 0)
             tint = self.getColor(["SSS Reflectance Tint"], WHITE)
             fac,factex = self.getFacFromTranslucency()
-        transwt,wttex,texslot = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
-        transcolor,transtex,_ = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
 
         self.pbr.inputs[PBR.SubsurfWeight].default_value = 0
         self.diffuseInput = tex
@@ -245,6 +247,9 @@ class PbrTree(CyclesTree):
             not self.isEnabled("Subsurface")):
             self.linkColor(tex, self.pbr, color, "Base Color")
             return
+
+        transwt,wttex,texslot = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
+        transcolor,transtex,_ = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
 
         if effect:
             hasEffect,effnode = self.buildColorEffect(effect, color, tex, tint, 1-transwt, wttex, self.pbr, facslot=None, colorslot="Base Color")
@@ -396,9 +401,10 @@ class PbrTree(CyclesTree):
                 else:
                     rough1,rough2,roughtex,ratio = self.getDualRoughness()
                     roughness = rough1*(1-ratio) + rough2*ratio
-                    if False and self.isEnabled("Detail"):
-                        roughness *= self.detrough
-                        roughtex = self.multiplyTexs(self.detroughtex, roughtex)
+                    if self.isEnabled("Detail"):
+                        detrough, detroughtex,_ = self.getColorTex(["Detail Specular Roughness Mult"], "NONE", 1.0, False)
+                        roughness *= detrough
+                        roughtex = self.multiplyTexs(detroughtex, roughtex)
                     self.linkScalar(roughtex, self.pbr, roughness, "Roughness")
             else:
                 self.replaceSlot(self.pbr, "Roughness", 0.5)
@@ -468,9 +474,7 @@ class PbrTree(CyclesTree):
     #-------------------------------------------------------------
 
     def buildGlossyOrDualLobe(self):
-        if LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE']:
-            return
-        elif self.owner.basemix == 2:
+        if self.owner.basemix == 2:
             CyclesTree.buildGlossyOrDualLobe(self)
         elif self.isEnabled("Dual Lobe Specular"):
             dualLobeWeight = self.getValue(["Dual Lobe Specular Weight"], 0)
@@ -486,7 +490,7 @@ class PbrTree(CyclesTree):
     def buildRefraction(self):
         if not self.isEnabled("Transmission"):
             return 0, None
-        if LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE'] or self.owner.isPureRefractive():
+        if LS.materialMethod != 'EXTENDED_PRINCIPLED' or self.owner.isPureRefractive():
             col = self.column
             self.column = 5
             weight,wttex,texslot = self.getColorTex("getChannelRefractionWeight", "NONE", 0.0, isMask=True)

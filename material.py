@@ -32,7 +32,6 @@ class Material(Asset, Channels):
         Channels.__init__(self)
         self.scene = None
         self.shader = 'UBER_IRAY'
-        #self.channels = OrderedDict()
         self.textures = OrderedDict()
         self.groups = []
         self.ignore = False
@@ -243,7 +242,7 @@ class Material(Asset, Channels):
                 self.useTranslucency = False
             elif self.isVolume():
                 self.useVolume = True
-        elif LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE']:
+        elif LS.materialMethod == 'FBX_COMPATIBLE':
             self.useTranslucency = False
             self.useVolume = False
 

@@ -242,7 +242,6 @@ def showBox(scn, attr, layout):
 MaterialMethodItems = [
     ('BSDF', "BSDF (Cycles Only)", "For Cycles, best IRAY quality"),
     ('EXTENDED_PRINCIPLED', "Extended Principled", "For Eevee and Cycles, limited IRAY quality"),
-    ('SINGLE_PRINCIPLED', "Single Principled", 'For manual fitting of textures and then export to game engine.\nUse "Build Unused Textures" in global settings, very limited IRAY quality'),
     ('FBX_COMPATIBLE', "FBX Compatible", 'For manual fitting of textures and then export to FBX.\nUse "Build Unused Textures" in global settings, very limited IRAY quality'),
 ]
 

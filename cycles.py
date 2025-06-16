@@ -255,6 +255,7 @@ class CyclesTree(Tree):
         self.useCutout = False
         self.pureMetal = False
         self.thickness = None
+        self.usedTextures = {}
 
 
     def isEnabled(self, channel):
@@ -674,8 +675,7 @@ class CyclesTree(Tree):
     #-------------------------------------------------------------
 
     def buildBump(self, uvname):
-        if (not self.isEnabled("Bump") or
-            LS.materialMethod == 'FBX_COMPATIBLE'):
+        if not self.isEnabled("Bump"):
             return
         bumpmode = self.owner.getLayeredValue(["Bump Mode"], 0)
         if bumpmode == 0:
@@ -876,8 +876,7 @@ class CyclesTree(Tree):
     #-------------------------------------------------------------
 
     def buildOverlay(self):
-        if (not self.getValue(["Diffuse Overlay Weight"], 0) or
-            LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE']):
+        if not self.getValue(["Diffuse Overlay Weight"], 0):
             return False
         self.addColumn()
         fac,factex,texslot = self.getColorTex(["Diffuse Overlay Weight"], "NONE", 0, isMask=True)
@@ -957,8 +956,7 @@ class CyclesTree(Tree):
 
     def buildMakeup(self):
         if (not self.isEnabled("Makeup") or
-            not self.getValue(["Makeup Weight"], 0) or
-            LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE']):
+            not self.getValue(["Makeup Weight"], 0)):
             return False
         from .cgroup import MakeupGroup
         self.addColumn()
@@ -978,8 +976,7 @@ class CyclesTree(Tree):
 
     def buildFlakes(self):
         if (not self.isEnabled("Metallic Flakes") or
-            not self.getValue(["Metallic Flakes Weight"], 0) or
-            LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE']):
+            not self.getValue(["Metallic Flakes Weight"], 0)):
             return False
         from .cgroup import FlakesGroup
         self.addColumn()
@@ -1175,8 +1172,7 @@ class CyclesTree(Tree):
 
 
     def buildWeighted(self):
-        if (self.owner.basemix != 2 or
-            LS.materialMethod in ['SINGLE_PRINCIPLED', 'FBX_COMPATIBLE']):
+        if self.owner.basemix != 2:
             return False
         diffweight,difftex,_ = self.getColorTex(["Diffuse Weight"], "NONE", 0)
         glossweight,glosstex,texslot = self.getColorTex(["Glossy Weight"], "NONE", 0)
@@ -1814,7 +1810,7 @@ class CyclesTree(Tree):
         self.column += 2
         texnodes = {}
         for key,channel in self.owner.channels.items():
-            if key not in self.owner.usedChannels.keys():
+            if key not in self.usedTextures.keys():
                 colorspace = getColorSpace(key.lower())
                 texnode,texslot = self.addTexImageNode(channel, colorspace, False)
                 if texnode:
@@ -1939,6 +1935,8 @@ class CyclesTree(Tree):
     def addTexImageNode(self, channel, colorSpace, isMask):
         def newTexture(asset, map):
             innode,texnode,outnode,isnew = self.addSingleTexture(col, asset, map, imgmod, colorSpace)
+            if "id" in channel.keys():
+                self.usedTextures[channel["id"]] = texnode.name
             if self.isDecal:
                 texnode.extension = 'CLIP'
                 self.clipsocket = texnode.outputs.get("Alpha")
