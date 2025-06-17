@@ -45,18 +45,11 @@ class FigureInstance(Instance):
         if isUnitMatrix(mat):
             return
         activateObject(context, rig)
-        if GS.keepRollAngles:
-            emats = dict([(bone.name, (mat@bone.head_local.copy(), mat@bone.tail_local.copy()))
-                           for bone in rig.data.bones])
-            setMode('EDIT')
-            for eb in rig.data.edit_bones:
-                eb.head, eb.tail = emats[eb.name]
-        else:
-            emats = dict([(bone.name, mat@bone.matrix_local.copy())
-                           for bone in rig.data.bones])
-            setMode('EDIT')
-            for eb in rig.data.edit_bones:
-                eb.matrix = emats[eb.name]
+        emats = dict([(bone.name, mat@bone.matrix_local.copy())
+                       for bone in rig.data.bones])
+        setMode('EDIT')
+        for eb in rig.data.edit_bones:
+            eb.matrix = emats[eb.name]
         setMode('OBJECT')
 
 

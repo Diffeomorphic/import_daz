@@ -544,10 +544,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Quaternions",
         description = "Use quaternions for ball-and-socket joints (shoulders and hips)")
 
-    keepRollAngles : BoolProperty(
-        name = "Keep Roll Angles",
-        description = "Keep roll angles for bones with baked rotatoins.\nBreaks pose copying")
-
     driverRotationMode : EnumProperty(
         items = DriverModeItems,
         name = "Driver Rotation Modes",
@@ -759,7 +755,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Rigging")
         box.prop(self, "useArmature")
         box.prop(self, "useQuaternions")
-        box.prop(self, "keepRollAngles")
         drawEnum(self, box, "driverRotationMode")
         box.prop(self, "useLockLoc")
         box.prop(self, "useLimitLoc")

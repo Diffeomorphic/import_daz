@@ -150,15 +150,9 @@ class BoneInstance(Instance):
                 self.correctRoll(eb, figure)
             return length, isPosed
 
-        if GS.keepRollAngles:
-            rdata0 = self.getHeadTail(center, False)
-            setBone(eb, rdata0, False)
-            roll = eb.roll
         rdata = self.getHeadTail(center)
         length, self.isPosed = setBone(eb, rdata, True)
         self.setFlip()
-        if GS.keepRollAngles:
-            eb.roll = roll
         vec = (eb.tail - eb.head)
         eb.tail = eb.head + length * vec.normalized()
 
