@@ -403,7 +403,7 @@ class Fixer(DriverUser):
 
 
     def addTongueControl(self, rig, layers):
-        from .rig_utils import setMhx, mhxProp, stretchTo, addMuteDriver
+        from .rig_utils import setMhx, mhxProp, stretchTo, copyTransform, addMuteDriver
         from .winder import addWinder
         from .driver import addDriver
         if len(self.tongueBones) == 0:
@@ -421,7 +421,10 @@ class Fixer(DriverUser):
             prop2 = "MhaTongueIk"
             setMhx(rig, prop2, 0.0)
             rig.data["MhaFeatures"] |= F_TONGUE
-            for bname in self.tongueBones:
+            gname = "ik_%s" % self.tongueBones[-1]
+            goal = rig.pose.bones[gname]
+            nbones = len(self.tongueBones)
+            for n,bname in enumerate(self.tongueBones):
                 pb = rig.pose.bones[bname]
                 pb.lock_location = TTrue
                 for cns in list(pb.constraints):
@@ -430,6 +433,9 @@ class Fixer(DriverUser):
                 trgb = rig.pose.bones["ik_%s" % bname]
                 trgb.bone.use_deform = False
                 self.addGizmo(trgb, "GZM_Ball", 0.2)
+                if n < nbones-1:
+                    cns = copyTransform(trgb, goal, rig, space='LOCAL')
+                    cns.influence = (n+1)/nbones
                 cns = stretchTo(pb, trgb, rig, prop2)
                 addMuteDriver(cns, rig, prop1)
 
