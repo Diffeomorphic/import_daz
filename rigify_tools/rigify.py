@@ -1043,10 +1043,10 @@ class Rigifier(RigifyCommon):
         for suffix in ["L", "R"]:
             self.addSingleGazeBone(gen, suffix, R_FACE, R_HELP)
         self.addCombinedGazeBone(gen, R_FACE, R_HELP)
-        self.checkTongueIk(rig)
+        self.tongueBones = self.checkTongueIk(rig)
         if self.useTongueIk:
             setMode('EDIT')
-            self.addTongueIkBones(gen, R_FACE, R_DEF, R_HELP)
+            self.addIkBones("tongue", self.tongueBones, gen, R_FACE, R_DEF, R_HELP, None)
 
         setMode('OBJECT')
         # Add constraints to new bones
@@ -1195,7 +1195,7 @@ class Rigifier(RigifyCommon):
             self.addGazeConstraint(gen, suffix)
         self.addGazeFollowsHead(gen)
         if self.useTongueIk:
-            self.addTongueControl(gen, [R_FACE, R_DETAIL])
+            self.addIkControl("tongue", self.tongueBones, "MhaTongueControl", "MhaTongueIk", 0, gen, [R_FACE, R_DETAIL])
 
         # Finger IK
         if meta["DazFingerIk"]:

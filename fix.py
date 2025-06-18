@@ -365,15 +365,16 @@ class Fixer(DriverUser):
     #-------------------------------------------------------------
 
     def checkTongueIk(self, rig):
-        self.tongueBones = [bone.name for bone in rig.data.bones if ("tongue" in bone.name and not isDrvBone(bone.name))]
-        if len(self.tongueBones) < 3:
+        bnames = [bone.name for bone in rig.data.bones if ("tongue" in bone.name and not isDrvBone(bone.name))]
+        if len(bnames) < 3:
             print("Did not find tongue")
             self.useTongueIk = False
             return
         if not ES.easy:
-            print("Tongue bones:", self.tongueBones)
-        if self.checkDriven(rig, self.tongueBones, "Tongue IK"):
+            print("Tongue bones:", bnames)
+        if self.checkDriven(rig, bnames, "Tongue IK"):
             self.useTongueIk = False
+        return bnames
 
 
     def checkDriven(self, rig, bnames, string):
@@ -389,8 +390,12 @@ class Fixer(DriverUser):
     #   Tongue Control
     #-------------------------------------------------------------
 
-    def addIkBones(self, bnames, rig, layer, deflayer, helplayer, parname):
+    def addIkBones(self, wname, bnames, rig, layer, deflayer, helplayer, parname):
         from .rig_utils import makeBone
+        if (len(bnames) == 0 or
+            bnames[0] not in rig.data.edit_bones.keys()):
+            print("%s bone %s not found." % (wname.capitalize(), self.tongueBones[0]))
+            return
         first = rig.data.edit_bones[bnames[0]]
         if parname:
             parent = rig.data.edit_bones[parname]
@@ -408,15 +413,12 @@ class Fixer(DriverUser):
             invb = makeBone("inv_%s" % bname, rig, trgb.tail, trgb.head, 0, helplayer, invb)
 
 
-    def addTongueIkBones(self, rig, layer, deflayer, helplayer):
-        if (len(self.tongueBones) == 0 or
-            self.tongueBones[0] not in rig.data.edit_bones.keys()):
-            print("Tongue bone %s not found." % self.tongueBones[0])
+    def addIkControl(self, wname, bnames, prop1, prop2, flag, rig, layers, influs=None):
+        if len(bnames) == 0:
             return
-        self.addIkBones(self.tongueBones, rig, layer, deflayer, helplayer, None)
-
-
-    def addIkControl(self, wname, bnames, prop1, prop2, flag, rig, layers):
+        elif bnames[0] not in rig.pose.bones.keys():
+            print("%s bone %s not found." % (wname.capitalize(), bnames[0]))
+            return
         from .rig_utils import setMhx, mhxProp, stretchTo, copyLocation, addMuteDriver
         from .winder import addWinder
         from .driver import addDriver
@@ -425,8 +427,8 @@ class Fixer(DriverUser):
         if winder is None:
             return
         self.addGizmo(winder, "GZM_Knuckle", 1.0)
-        if self.useTongueIk:
-            setMhx(rig, prop2, 0.0)
+        if True:    #self.useTongueIk:
+            setMhx(rig, prop2, 1.0)
             rig.data["MhaFeatures"] |= flag
             nbones = len(bnames)
             for n,bname in enumerate(bnames):
@@ -449,15 +451,6 @@ class Fixer(DriverUser):
                     cns.influence = ((n+1)/nbones)**1.6
                 cns = stretchTo(pb, trgb, rig, prop2)
                 addMuteDriver(cns, rig, prop1)
-
-
-    def addTongueControl(self, rig, layers):
-        if len(self.tongueBones) == 0:
-            return
-        elif self.tongueBones[0] not in rig.pose.bones.keys():
-            print("Tongue bone %s not found." % self.tongueBones[0])
-            return
-        self.addIkControl("tongue", self.tongueBones, "MhaTongueControl", "MhaTongueIk", F_TONGUE, rig, layers)
 
     #-------------------------------------------------------------
     #   Gaze Bones

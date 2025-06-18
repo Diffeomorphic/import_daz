@@ -106,9 +106,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         description = "Spine IK (experimental)",
         default = False)
 
-    useShaftWinder : BoolProperty(
-        name = "Shaft Winder",
-        description = "Add windoer for Dicktator/Futalicious shaft",
+    useShaftIk : BoolProperty(
+        name = "Shaft IK",
+        description = "Add winder and IK for Dicktator/Futalicious shaft",
         default = False)
 
     shaftName : StringProperty(
@@ -166,8 +166,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.drawMeta()
         self.layout.prop(self, "useSpineIk")
         self.layout.prop(self, "useTongueIk")
-        self.layout.prop(self, "useShaftWinder")
-        if self.useShaftWinder:
+        self.layout.prop(self, "useShaftIk")
+        if self.useShaftIk:
             self.layout.prop(self, "shaftName")
         self.layout.prop(self, "useAnkleIk")
         self.layout.prop(self, "driverRotationMode")
@@ -334,7 +334,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.addTweaks(rig)
         showProgress(12, 25, "  Add backbone")
         self.addBack(rig)
-        self.addShaftWinder(rig)
         showProgress(13, 25, "  Setup FK-IK")
         self.setupFkIk(rig)
         showProgress(14, 25, "  Add long fingers")
@@ -348,7 +347,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         showProgress(17, 25, "  Add gizmos")
         self.addGizmos(rig, context)
         showProgress(18, 25, "  Add tongue control")
-        self.addTongueControl(rig, [L_HEAD, L_FACE])
+        if self.useTongueIk:
+            self.addIkControl("tongue", self.tongueBones, "MhaTongueControl", "MhaTongueIk", F_TONGUE, rig, [L_HEAD, L_FACE])
+        print("SS", self.useShaftIk, self.shaftBones)
+        if self.useShaftIk:
+            influs = [1/(n+1)**2 for n in range(len(self.shaftBones))]
+            self.addIkControl("shaft", self.shaftBones, "MhaShaftControl", "MhaShaftIk", F_SHAFT, rig, [L_CUSTOM, L_CUSTOM2], influs)
+        #self.addShaftWinder(rig)
         showProgress(19, 25, "  Constrain bend and twist bones")
         self.constrainBendTwists(rig, bendTwistBones, self.useStretch)
         self.addCopyLocConstraints(rig)
@@ -453,7 +458,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             enableBoneNumLayer(pb.bone, rig, layer)
             if False and unlock:
                 pb.lock_location = FFalse
-        self.checkTongueIk(rig)
+        self.tongueBones = self.checkTongueIk(rig)
+        self.shaftBones = self.getShaftBones(rig)
         self.checkFingerIk(rig)
 
 
@@ -896,18 +902,21 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             nchars = len(shaft)
             return bname.lower()[0:nchars] == shaft and bname[nchars:].isdigit()
 
-        return [bone.name for bone in rig.data.bones if isShaft(bone.name)]
+        bnames = [bone.name for bone in rig.data.bones if isShaft(bone.name)]
+        bnames.sort()
+        return bnames
 
+    #-------------------------------------------------------------
+    #   Shaft
+    #-------------------------------------------------------------
 
     def addShaftWinder(self, rig):
-        if self.useShaftWinder:
+        if self.useShaftIk:
             from ..winder import addWinder
             setMhx(rig, "MhaShaftControl", True)
-            shaftbones = self.getShaftBones(rig)
-            shaftbones.sort()
             layers = [L_CUSTOM, L_CUSTOM2]
-            influs = [1/(n+1)**2 for n in range(len(shaftbones))]
-            addWinder(rig, "shaft", shaftbones, layers, "MhaShaftControl",
+            influs = [1/(n+1)**2 for n in range(len(self.shaftBones))]
+            addWinder(rig, "shaft", self.shaftBones, layers, "MhaShaftControl",
                 useBaseLocation=True,
                 useScale=True,
                 influs=influs)
@@ -1238,7 +1247,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
         self.addCombinedGazeBone(rig, L_HEAD, L_HELP2)
         if self.useTongueIk:
-            self.addTongueIkBones(rig, L_HEAD, L_DEF, L_HELP2)
+            self.addIkBones("tongue", self.tongueBones, rig, L_HEAD, L_DEF, L_HELP2, None)
+        if self.useShaftIk:
+            self.addIkBones("shaft", self.shaftBones, rig, L_CUSTOM, L_DEF, L_HELP, "master")
 
         from ..figure import copyBoneInfo
         setMode('OBJECT')
@@ -1445,8 +1456,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                     ignore += self.getFingerNames(rig, m, suffix)
         if self.useTongueIk:
             ignore += self.tongueBones
-        if self.useShaftWinder:
-            ignore += self.getShaftBones(rig)
+        if self.useShaftIk:
+            ignore += self.shaftBones
         ignore = []
         self.store.restoreAllConstraints(context, rig, ignore)
         if dazRna(rig).DazRig not in ["genesis3", "genesis8"]:
