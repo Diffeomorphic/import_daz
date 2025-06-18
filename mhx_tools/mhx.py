@@ -1238,7 +1238,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
         self.addCombinedGazeBone(rig, L_HEAD, L_HELP2)
         if self.useTongueIk:
-            self.addTongueIkBones(rig, L_HEAD, L_DEF)
+            self.addTongueIkBones(rig, L_HEAD, L_DEF, L_HELP2)
 
         from ..figure import copyBoneInfo
         setMode('OBJECT')

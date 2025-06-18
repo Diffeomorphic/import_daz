@@ -1046,7 +1046,7 @@ class Rigifier(RigifyCommon):
         self.checkTongueIk(rig)
         if self.useTongueIk:
             setMode('EDIT')
-            self.addTongueIkBones(gen, R_FACE, R_DEF)
+            self.addTongueIkBones(gen, R_FACE, R_DEF, R_HELP)
 
         setMode('OBJECT')
         # Add constraints to new bones

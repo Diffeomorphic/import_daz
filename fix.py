@@ -389,21 +389,27 @@ class Fixer(DriverUser):
     #   Tongue Control
     #-------------------------------------------------------------
 
-    def addTongueIkBones(self, rig, layer, deflayer):
+    def addTongueIkBones(self, rig, layer, deflayer, helplayer):
         from .rig_utils import makeBone
         if (len(self.tongueBones) == 0 or
             self.tongueBones[0] not in rig.data.edit_bones.keys()):
             print("Tongue bone %s not found." % self.tongueBones[0])
             return
         first = rig.data.edit_bones[self.tongueBones[0]]
-        for bname in self.tongueBones:
+        invb = None
+        revlist = self.tongueBones.copy()
+        revlist.reverse()
+        for bname in revlist:
             eb = rig.data.edit_bones[bname]
             eb.use_connect = False
-            trgb = makeBone("ik_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, eb.roll, layer, first.parent)
+            trgb = makeBone("ik_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, 0, layer, first.parent)
+            if invb is None:
+                invb = trgb
+            invb = makeBone("inv_%s" % bname, rig, trgb.tail, trgb.head, 0, helplayer, invb)
 
 
     def addTongueControl(self, rig, layers):
-        from .rig_utils import setMhx, mhxProp, stretchTo, copyTransform, addMuteDriver
+        from .rig_utils import setMhx, mhxProp, stretchTo, copyLocation, addMuteDriver
         from .winder import addWinder
         from .driver import addDriver
         if len(self.tongueBones) == 0:
@@ -419,10 +425,8 @@ class Fixer(DriverUser):
         self.addGizmo(winder, "GZM_Knuckle", 1.0)
         if self.useTongueIk:
             prop2 = "MhaTongueIk"
-            setMhx(rig, prop2, 0.0)
+            setMhx(rig, prop2, 1.0)
             rig.data["MhaFeatures"] |= F_TONGUE
-            gname = "ik_%s" % self.tongueBones[-1]
-            goal = rig.pose.bones[gname]
             nbones = len(self.tongueBones)
             for n,bname in enumerate(self.tongueBones):
                 pb = rig.pose.bones[bname]
@@ -432,10 +436,16 @@ class Fixer(DriverUser):
                         addDriver(cns, "influence", rig, mhxProp(prop2), "1-x")
                 trgb = rig.pose.bones["ik_%s" % bname]
                 trgb.bone.use_deform = False
-                self.addGizmo(trgb, "GZM_Ball", 0.2)
-                if n < nbones-1:
-                    cns = copyTransform(trgb, goal, rig, space='LOCAL')
-                    cns.influence = (n+1)/nbones
+                if n == nbones-1:
+                    self.addGizmo(trgb, "GZM_Cone", 0.4)
+                    trgb.lock_scale = TTrue
+                else:
+                    self.addGizmo(trgb, "GZM_Ball", 0.2)
+                    trgb.lock_rotation = trgb.lock_scale = TTrue
+                    invb = rig.pose.bones["inv_%s" % bname]
+                    cns = copyLocation(trgb, invb, rig, space='POSE')
+                    cns.head_tail = 1.0
+                    cns.influence = ((n+1)/nbones)**1.6
                 cns = stretchTo(pb, trgb, rig, prop2)
                 addMuteDriver(cns, rig, prop1)
 
