@@ -36,26 +36,41 @@ class DAZ_PT_DazRigifyProps(bpy.types.Panel):
 
     def draw(self, context):
         rig = context.object
-        self.layout.prop(rig, propRef("MhaGazeFollowsHead"), text="Gaze Follows Head")
-        row = self.layout.row()
+
+        box = self.layout.box()
+        box.label(text="Gaze")
+        box.prop(rig, propRef("MhaGazeFollowsHead"), text="Gaze Follows Head")
+        row = box.row()
         row.prop(rig, propRef("MhaGaze_L"), text="Left Gaze")
         row.prop(rig, propRef("MhaGaze_R"), text="Right Gaze")
+
         if "MhaTongueIk" in rig.keys():
-            row = self.layout.row()
-            row.prop(rig, propRef("MhaTongueControl"), text="Tongue FK/IK")
-            row.prop(rig, propRef("MhaTongueIk"), text="IK")
+            box = self.layout.box()
+            box.prop(rig, propRef("MhaTongueControl"), text="Tongue FK/IK")
+            box.prop(rig, propRef("MhaTongueIk"), text="IK")
+            parprops = [prop for prop in rig.keys() if prop.startswith("MhaTongue_")]
+            for parprop in parprops:
+                text = "%s Parent" % parprop[10:].capitalize()
+                box.prop(rig, propRef(parprop), text=text)
+
         if "MhaShaftIk" in rig.keys():
-            row = self.layout.row()
-            row.prop(rig, propRef("MhaShaftControl"), text="Shaft FK/IK")
-            row.prop(rig, propRef("MhaShaftIk"), text="IK")
-        self.layout.separator()
-        row = self.layout.row()
+            box = self.layout.box()
+            box.prop(rig, propRef("MhaShaftControl"), text="Shaft FK/IK")
+            box.prop(rig, propRef("MhaShaftIk"), text="IK")
+            parprops = [prop for prop in rig.keys() if prop.startswith("MhaShaft_")]
+            for parprop in parprops:
+                text = "%s Parent" % parprop[9:].capitalize()
+                box.prop(rig, propRef(parprop), text=text)
+
+        box = self.layout.box()
+        box.label(text="Arms And Legs")
+        row = box.row()
         row.operator("daz.rigify_set_fk_all")
         row.operator("daz.rigify_set_ik_all")
-        row = self.layout.row()
+        row = box.row()
         row.operator("daz.rigify_snap_fk_all")
         row.operator("daz.rigify_snap_ik_all")
-        row = self.layout.row()
+        row = box.row()
         row.operator("daz.rigify_fk_layers")
         row.operator("daz.rigify_ik_layers")
 

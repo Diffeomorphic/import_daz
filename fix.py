@@ -400,17 +400,19 @@ class Fixer(DriverUser):
     #   Tongue Control
     #-------------------------------------------------------------
 
-    def addIkBones(self, wname, bnames, rig, layer, deflayer, helplayer, parname):
-        from .rig_utils import makeBone
+    def addIkBones(self, wname, bnames, rig, layer, deflayer, helplayer, parnames):
+        from .rig_utils import makeBone, deriveBone
         if (len(bnames) == 0 or
             bnames[0] not in rig.data.edit_bones.keys()):
             print("%s bone %s not found." % (wname.capitalize(), self.tongueBones[0]))
             return
+        bname = bnames[0]
         first = rig.data.edit_bones[bnames[0]]
-        if parname is None:
-            parent = first.parent
-        else:
-            parent = rig.data.edit_bones[parname]
+        parent = deriveBone("%s_parent" % wname, first.parent, rig, helplayer, first.parent)
+        for parname in parnames:
+            par = rig.data.edit_bones[parname]
+            deriveBone("%s_%s" % (wname, parname), first.parent, rig, helplayer, par)
+
         revlist = bnames.copy()
         revlist.reverse()
         invb = None
@@ -424,13 +426,13 @@ class Fixer(DriverUser):
             invb = makeBone("inv_%s" % bname, rig, trgb.tail, trgb.head, 0, helplayer, invb)
 
 
-    def addIkControl(self, wname, bnames, prop1, prop2, flag, rig, layers, influs=None):
+    def addIkControl(self, wname, bnames, prop1, prop2, flag, rig, layers, parnames, influs=None):
         if len(bnames) == 0:
             return
         elif bnames[0] not in rig.pose.bones.keys():
             print("%s bone %s not found." % (wname.capitalize(), bnames[0]))
             return
-        from .rig_utils import setMhx, mhxProp, stretchTo, copyLocation, addMuteDriver
+        from .rig_utils import setMhx, mhxProp, stretchTo, copyLocation, copyTransform, addMuteDriver
         from .winder import addWinder
         from .driver import addDriver
         setMhx(rig, prop1, True)
@@ -462,6 +464,13 @@ class Fixer(DriverUser):
                 cns.influence = ((n+1)/nbones)**1.6
             cns = stretchTo(pb, trgb, rig, prop2)
             addMuteDriver(cns, rig, prop1)
+
+        pb = rig.pose.bones["%s_parent" % wname]
+        for parname in parnames:
+            parprop = "Mha%s_%s" % (wname.capitalize(), parname)
+            setMhx(rig, parprop, 0.0)
+            parent = rig.pose.bones["%s_%s" % (wname, parname)]
+            cns = copyTransform(pb, parent, rig, parprop, space='POSE')
 
     #-------------------------------------------------------------
     #   Sbaft Bones

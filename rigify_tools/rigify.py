@@ -1049,9 +1049,9 @@ class Rigifier(RigifyCommon):
         self.shaftBones = self.getShaftBones(rig)
         setMode('EDIT')
         if self.useTongueIk:
-            self.addIkBones("tongue", self.tongueBones, gen, R_FACE, R_DEF, R_HELP, None)
+            self.addIkBones("tongue", self.tongueBones, gen, R_FACE, R_DEF, R_HELP, ["root"])
         if self.useShaftIk:
-            self.addIkBones("shaft", self.shaftBones, gen, R_CUSTOM, R_DEF, R_HELP, None)
+            self.addIkBones("shaft", self.shaftBones, gen, R_CUSTOM, R_DEF, R_HELP, ["root"])
 
         setMode('OBJECT')
         # Add constraints to new bones
@@ -1200,10 +1200,10 @@ class Rigifier(RigifyCommon):
             self.addGazeConstraint(gen, suffix)
         self.addGazeFollowsHead(gen)
         if self.useTongueIk:
-            self.addIkControl("tongue", self.tongueBones, "MhaTongueControl", "MhaTongueIk", 0, gen, [R_FACE, R_DETAIL])
+            self.addIkControl("tongue", self.tongueBones, "MhaTongueControl", "MhaTongueIk", 0, gen, [R_FACE, R_DETAIL], ["root"])
         if self.useShaftIk:
             influs = [1/(n+1)**2 for n in range(len(self.shaftBones))]
-            self.addIkControl("shaft", self.shaftBones, "MhaShaftControl", "MhaShaftIk", 0, gen, [R_CUSTOM, R_TORSOTWEAK], influs)
+            self.addIkControl("shaft", self.shaftBones, "MhaShaftControl", "MhaShaftIk", 0, gen, [R_CUSTOM, R_TORSOTWEAK], ["root"], influs)
 
         # Finger IK
         if meta["DazFingerIk"]:

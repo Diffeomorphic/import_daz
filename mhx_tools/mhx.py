@@ -338,11 +338,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.addGizmos(rig, context)
         showProgress(18, 25, "  Add tongue control")
         if self.useTongueIk:
-            self.addIkControl("tongue", self.tongueBones, "MhaTongueControl", "MhaTongueIk", F_TONGUE, rig, [L_HEAD, L_FACE])
-        print("SS", self.useShaftIk, self.shaftBones)
+            self.addIkControl("tongue", self.tongueBones, "MhaTongueControl", "MhaTongueIk", F_TONGUE, rig, [L_HEAD, L_FACE], ["master"])
         if self.useShaftIk:
             influs = [1/(n+1)**2 for n in range(len(self.shaftBones))]
-            self.addIkControl("shaft", self.shaftBones, "MhaShaftControl", "MhaShaftIk", F_SHAFT, rig, [L_CUSTOM, L_CUSTOM2], influs)
+            self.addIkControl("shaft", self.shaftBones, "MhaShaftControl", "MhaShaftIk", F_SHAFT, rig, [L_CUSTOM, L_CUSTOM2], ["master"], influs)
         #self.addShaftWinder(rig)
         showProgress(19, 25, "  Constrain bend and twist bones")
         self.constrainBendTwists(rig, bendTwistBones, self.useStretch)
@@ -1211,9 +1210,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
         self.addCombinedGazeBone(rig, L_HEAD, L_HELP2)
         if self.useTongueIk:
-            self.addIkBones("tongue", self.tongueBones, rig, L_HEAD, L_DEF, L_HELP2, None)
+            self.addIkBones("tongue", self.tongueBones, rig, L_HEAD, L_DEF, L_HELP2, ["master"])
         if self.useShaftIk:
-            self.addIkBones("shaft", self.shaftBones, rig, L_CUSTOM, L_DEF, L_HELP, None)
+            self.addIkBones("shaft", self.shaftBones, rig, L_CUSTOM, L_DEF, L_HELP, ["master"])
 
         from ..figure import copyBoneInfo
         setMode('OBJECT')
