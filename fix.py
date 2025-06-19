@@ -46,6 +46,16 @@ class Fixer(DriverUser):
         description = "Generate IK controls for tongue",
         default = False)
 
+    useShaftIk : BoolProperty(
+        name = "Shaft IK",
+        description = "Add winder and IK for Dicktator/Futalicious shaft",
+        default = False)
+
+    shaftName : StringProperty(
+        name = "Shaft Name",
+        description = "Shaft bones start with this string (case insensitive)",
+        default = "Shaft")
+
     driverRotationMode : EnumProperty(
         items = DriverModeItems,
         name = "Rotation Mode",
@@ -397,19 +407,20 @@ class Fixer(DriverUser):
             print("%s bone %s not found." % (wname.capitalize(), self.tongueBones[0]))
             return
         first = rig.data.edit_bones[bnames[0]]
-        if parname:
-            parent = rig.data.edit_bones[parname]
-        else:
+        if parname is None:
             parent = first.parent
-        invb = None
+        else:
+            parent = rig.data.edit_bones[parname]
         revlist = bnames.copy()
         revlist.reverse()
+        invb = None
         for bname in revlist:
             eb = rig.data.edit_bones[bname]
             eb.use_connect = False
             trgb = makeBone("ik_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, 0, layer, parent)
             if invb is None:
                 invb = trgb
+                parent = first.parent
             invb = makeBone("inv_%s" % bname, rig, trgb.tail, trgb.head, 0, helplayer, invb)
 
 
@@ -427,30 +438,45 @@ class Fixer(DriverUser):
         if winder is None:
             return
         self.addGizmo(winder, "GZM_Knuckle", 1.0)
-        if True:    #self.useTongueIk:
-            setMhx(rig, prop2, 1.0)
-            rig.data["MhaFeatures"] |= flag
-            nbones = len(bnames)
-            for n,bname in enumerate(bnames):
-                pb = rig.pose.bones[bname]
-                pb.lock_location = TTrue
-                for cns in list(pb.constraints):
-                    if cns.type == 'LIMIT_ROTATION':
-                        addDriver(cns, "influence", rig, mhxProp(prop2), "1-x")
-                trgb = rig.pose.bones["ik_%s" % bname]
-                trgb.bone.use_deform = False
-                if n == nbones-1:
-                    self.addGizmo(trgb, "GZM_Cone", 0.4)
-                    trgb.lock_scale = TTrue
-                else:
-                    self.addGizmo(trgb, "GZM_Ball", 0.2)
-                    trgb.lock_rotation = trgb.lock_scale = TTrue
-                    invb = rig.pose.bones["inv_%s" % bname]
-                    cns = copyLocation(trgb, invb, rig, space='POSE')
-                    cns.head_tail = 1.0
-                    cns.influence = ((n+1)/nbones)**1.6
-                cns = stretchTo(pb, trgb, rig, prop2)
-                addMuteDriver(cns, rig, prop1)
+
+        setMhx(rig, prop2, 1.0)
+        rig.data["MhaFeatures"] |= flag
+        nbones = len(bnames)
+        for n,bname in enumerate(bnames):
+            pb = rig.pose.bones[bname]
+            pb.lock_location = TTrue
+            for cns in list(pb.constraints):
+                if cns.type == 'LIMIT_ROTATION':
+                    addDriver(cns, "influence", rig, mhxProp(prop2), "1-x")
+            trgb = rig.pose.bones["ik_%s" % bname]
+            trgb.bone.use_deform = False
+            if n == nbones-1:
+                self.addGizmo(trgb, "GZM_Cone", 0.4)
+                trgb.lock_scale = TTrue
+            else:
+                self.addGizmo(trgb, "GZM_Ball", 0.2)
+                trgb.lock_rotation = trgb.lock_scale = TTrue
+                invb = rig.pose.bones["inv_%s" % bname]
+                cns = copyLocation(trgb, invb, rig, space='POSE')
+                cns.head_tail = 1.0
+                cns.influence = ((n+1)/nbones)**1.6
+            cns = stretchTo(pb, trgb, rig, prop2)
+            addMuteDriver(cns, rig, prop1)
+
+    #-------------------------------------------------------------
+    #   Sbaft Bones
+    #-------------------------------------------------------------
+
+    def getShaftBones(self, rig):
+        def isShaft(bname):
+            shaft = self.shaftName.lower()
+            nchars = len(shaft)
+            return bname.lower()[0:nchars] == shaft and bname[nchars:].isdigit()
+
+        bnames = [bone.name for bone in rig.data.bones if isShaft(bone.name)]
+        bnames.sort()
+        print("Shaft bones: %s" % bnames)
+        return bnames
 
     #-------------------------------------------------------------
     #   Gaze Bones

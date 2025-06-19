@@ -106,16 +106,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         description = "Spine IK (experimental)",
         default = False)
 
-    useShaftIk : BoolProperty(
-        name = "Shaft IK",
-        description = "Add winder and IK for Dicktator/Futalicious shaft",
-        default = False)
-
-    shaftName : StringProperty(
-        name = "Shaft Name",
-        description = "Shaft bones start with this string (case insensitive)",
-        default = "Shaft")
-
     elbowParent : EnumProperty(
         items = [('HAND', "Hand", "Parent elbow pole target to IK hand"),
                  ('SHOULDER', "Shoulder", "Parent elbow pole target to shoulder"),
@@ -895,32 +885,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         neckbones = self.getExistingBones(rig, MHX.NeckBones)
         addWinder(rig, "neckhead", neckbones, layers, "MhaNeckControl")
 
-
-    def getShaftBones(self, rig):
-        def isShaft(bname):
-            shaft = self.shaftName.lower()
-            nchars = len(shaft)
-            return bname.lower()[0:nchars] == shaft and bname[nchars:].isdigit()
-
-        bnames = [bone.name for bone in rig.data.bones if isShaft(bone.name)]
-        bnames.sort()
-        return bnames
-
-    #-------------------------------------------------------------
-    #   Shaft
-    #-------------------------------------------------------------
-
-    def addShaftWinder(self, rig):
-        if self.useShaftIk:
-            from ..winder import addWinder
-            setMhx(rig, "MhaShaftControl", True)
-            layers = [L_CUSTOM, L_CUSTOM2]
-            influs = [1/(n+1)**2 for n in range(len(self.shaftBones))]
-            addWinder(rig, "shaft", self.shaftBones, layers, "MhaShaftControl",
-                useBaseLocation=True,
-                useScale=True,
-                influs=influs)
-
     #-------------------------------------------------------------
     #   Head-neck follows
     #-------------------------------------------------------------
@@ -1249,7 +1213,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         if self.useTongueIk:
             self.addIkBones("tongue", self.tongueBones, rig, L_HEAD, L_DEF, L_HELP2, None)
         if self.useShaftIk:
-            self.addIkBones("shaft", self.shaftBones, rig, L_CUSTOM, L_DEF, L_HELP, "master")
+            self.addIkBones("shaft", self.shaftBones, rig, L_CUSTOM, L_DEF, L_HELP, None)
 
         from ..figure import copyBoneInfo
         setMode('OBJECT')

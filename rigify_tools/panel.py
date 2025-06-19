@@ -41,7 +41,13 @@ class DAZ_PT_DazRigifyProps(bpy.types.Panel):
         row.prop(rig, propRef("MhaGaze_L"), text="Left Gaze")
         row.prop(rig, propRef("MhaGaze_R"), text="Right Gaze")
         if "MhaTongueIk" in rig.keys():
-            self.layout.prop(rig, propRef("MhaTongueIk"), text="Tongue IK")
+            row = self.layout.row()
+            row.prop(rig, propRef("MhaTongueControl"), text="Tongue FK/IK")
+            row.prop(rig, propRef("MhaTongueIk"), text="IK")
+        if "MhaShaftIk" in rig.keys():
+            row = self.layout.row()
+            row.prop(rig, propRef("MhaShaftControl"), text="Shaft FK/IK")
+            row.prop(rig, propRef("MhaShaftIk"), text="IK")
         self.layout.separator()
         row = self.layout.row()
         row.operator("daz.rigify_set_fk_all")
