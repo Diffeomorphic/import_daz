@@ -1203,7 +1203,7 @@ class Rigifier(RigifyCommon):
             self.addIkControl("tongue", self.tongueBones, "MhaTongueControl", "MhaTongueIk", 0, gen, [R_FACE, R_DETAIL])
         if self.useShaftIk:
             influs = [1/(n+1)**2 for n in range(len(self.shaftBones))]
-            self.addIkControl("shaft", self.shaftBones, "MhaShaftControl", "MhaShaftIk", 0, gen, [R_CUSTOM, R_DETAIL], influs)
+            self.addIkControl("shaft", self.shaftBones, "MhaShaftControl", "MhaShaftIk", 0, gen, [R_CUSTOM, R_TORSOTWEAK], influs)
 
         # Finger IK
         if meta["DazFingerIk"]:
