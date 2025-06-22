@@ -41,15 +41,22 @@ class Fixer(DriverUser):
         description = "Generate IK controls for fingers",
         default = False)
 
-    useTongueIk : BoolProperty(
-        name = "Tongue IK",
-        description = "Generate IK controls for tongue",
-        default = False)
+    enumControls = [('NONE', "None", "No controls"),
+                    ('WINDER', "Winder", "Winder"),
+                    ('IK', "IK", "IK controls"),
+                    ('BOTH', "Both", "Both winder and IK controls")]
 
-    useShaftIk : BoolProperty(
-        name = "Shaft IK",
-        description = "Add winder and IK for Dicktator/Futalicious shaft",
-        default = False)
+    tongueControl : EnumProperty(
+        items = enumControls,
+        name = "Tongue Control",
+        description = "Generate controls for tongue",
+        default = 'NONE')
+
+    shaftControl : EnumProperty(
+        items = enumControls,
+        name = "Shaft Control",
+        description = "Generate controls for Dicktator/Futalicious shaft",
+        default = 'NONE')
 
     shaftName : StringProperty(
         name = "Shaft Name",
@@ -378,12 +385,12 @@ class Fixer(DriverUser):
         bnames = [bone.name for bone in rig.data.bones if ("tongue" in bone.name and not isDrvBone(bone.name))]
         if len(bnames) < 3:
             print("Did not find tongue")
-            self.useTongueIk = False
+            self.tongueControl = 'NONE'
             return
         if not ES.easy:
             print("Tongue bones:", bnames)
         if self.checkDriven(rig, bnames, "Tongue IK"):
-            self.useTongueIk = False
+            self.tongueControl = 'NONE'
         return bnames
 
 
@@ -400,11 +407,13 @@ class Fixer(DriverUser):
     #   Tongue Control
     #-------------------------------------------------------------
 
-    def addIkBones(self, wname, bnames, rig, layer, deflayer, helplayer, parnames):
+    def addIkBones(self, wname, bnames, rig, ctrl, layer, deflayer, helplayer, parnames):
         from .rig_utils import makeBone, deriveBone
+        if ctrl not in ['IK', 'BOTH']:
+            return
         if (len(bnames) == 0 or
             bnames[0] not in rig.data.edit_bones.keys()):
-            print("%s bone %s not found." % (wname.capitalize(), self.tongueBones[0]))
+            print("%s bones not found." % wname.capitalize())
             return
         bname = bnames[0]
         first = rig.data.edit_bones[bnames[0]]
@@ -426,51 +435,53 @@ class Fixer(DriverUser):
             invb = makeBone("inv_%s" % bname, rig, trgb.tail, trgb.head, 0, helplayer, invb)
 
 
-    def addIkControl(self, wname, bnames, prop1, prop2, flag, rig, layers, parnames, influs=None):
+    def addIkControl(self, wname, bnames, ctrl, prop1, prop2, flag, rig, layers, parnames, influs=None):
         if len(bnames) == 0:
             return
         elif bnames[0] not in rig.pose.bones.keys():
             print("%s bone %s not found." % (wname.capitalize(), bnames[0]))
             return
         from .rig_utils import setMhx, mhxProp, stretchTo, copyLocation, copyTransform, addMuteDriver
-        from .winder import addWinder
         from .driver import addDriver
-        setMhx(rig, prop1, True)
-        winder,pbones = addWinder(rig, wname, bnames, layers, prop1, useLocation=True, useScale=True)
-        if winder is None:
-            return
-        self.addGizmo(winder, "GZM_Knuckle", 1.0)
 
-        setMhx(rig, prop2, 1.0)
         rig.data["MhaFeatures"] |= flag
-        nbones = len(bnames)
-        for n,bname in enumerate(bnames):
-            pb = rig.pose.bones[bname]
-            pb.lock_location = TTrue
-            for cns in list(pb.constraints):
-                if cns.type == 'LIMIT_ROTATION':
-                    addDriver(cns, "influence", rig, mhxProp(prop2), "1-x")
-            trgb = rig.pose.bones["ik_%s" % bname]
-            trgb.bone.use_deform = False
-            if n == nbones-1:
-                self.addGizmo(trgb, "GZM_Cone", 0.4)
-                trgb.lock_scale = TTrue
-            else:
-                self.addGizmo(trgb, "GZM_Ball", 0.2)
-                trgb.lock_rotation = trgb.lock_scale = TTrue
-                invb = rig.pose.bones["inv_%s" % bname]
-                cns = copyLocation(trgb, invb, rig, space='POSE')
-                cns.head_tail = 1.0
-                cns.influence = ((n+1)/nbones)**1.6
-            cns = stretchTo(pb, trgb, rig, prop2)
-            addMuteDriver(cns, rig, prop1)
+        setMhx(rig, prop1, True)
+        if ctrl in ['WINDER', 'BOTH']:
+            from .winder import addWinder
+            winder,pbones = addWinder(rig, wname, bnames, layers, prop1, useLocation=True, useScale=True)
+            if winder:
+                self.addGizmo(winder, "GZM_Knuckle", 1.0)
 
-        pb = rig.pose.bones["%s_parent" % wname]
-        for parname in parnames:
-            parprop = "Mha%s_%s" % (wname.capitalize(), parname)
-            setMhx(rig, parprop, 0.0)
-            parent = rig.pose.bones["%s_%s" % (wname, parname)]
-            cns = copyTransform(pb, parent, rig, parprop, space='POSE')
+        if ctrl in ['IK', 'BOTH']:
+            setMhx(rig, prop2, 1.0)
+            nbones = len(bnames)
+            for n,bname in enumerate(bnames):
+                pb = rig.pose.bones[bname]
+                pb.lock_location = TTrue
+                for cns in list(pb.constraints):
+                    if cns.type == 'LIMIT_ROTATION':
+                        addDriver(cns, "influence", rig, mhxProp(prop2), "1-x")
+                trgb = rig.pose.bones["ik_%s" % bname]
+                trgb.bone.use_deform = False
+                if n == nbones-1:
+                    self.addGizmo(trgb, "GZM_Cone", 0.4)
+                    trgb.lock_scale = TTrue
+                else:
+                    self.addGizmo(trgb, "GZM_Ball", 0.2)
+                    trgb.lock_rotation = trgb.lock_scale = TTrue
+                    invb = rig.pose.bones["inv_%s" % bname]
+                    cns = copyLocation(trgb, invb, rig, space='POSE')
+                    cns.head_tail = 1.0
+                    cns.influence = ((n+1)/nbones)**1.6
+                cns = stretchTo(pb, trgb, rig, prop2)
+                addMuteDriver(cns, rig, prop1)
+
+            pb = rig.pose.bones["%s_parent" % wname]
+            for parname in parnames:
+                parprop = "Mha%s_%s" % (wname.capitalize(), parname)
+                setMhx(rig, parprop, 0.0)
+                parent = rig.pose.bones["%s_%s" % (wname, parname)]
+                cns = copyTransform(pb, parent, rig, parprop, space='POSE')
 
     #-------------------------------------------------------------
     #   Sbaft Bones

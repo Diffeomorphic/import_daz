@@ -805,9 +805,9 @@ class MetaMaker(RigifyCommon):
 
 class Rigifier(RigifyCommon):
     def drawRigify(self):
-        self.layout.prop(self, "useTongueIk")
-        self.layout.prop(self, "useShaftIk")
-        if self.useShaftIk:
+        self.layout.prop(self, "tongueControl")
+        self.layout.prop(self, "shaftControl")
+        if self.shaftControl != 'NONE':
             self.layout.prop(self, "shaftName")
         self.layout.prop(self, "driverRotationMode")
         self.layout.prop(self, "addNondeformExtras")
@@ -1048,10 +1048,10 @@ class Rigifier(RigifyCommon):
         self.tongueBones = self.checkTongueIk(rig)
         self.shaftBones = self.getShaftBones(rig)
         setMode('EDIT')
-        if self.useTongueIk:
-            self.addIkBones("tongue", self.tongueBones, gen, R_FACE, R_DEF, R_HELP, ["root"])
-        if self.useShaftIk:
-            self.addIkBones("shaft", self.shaftBones, gen, R_CUSTOM, R_DEF, R_HELP, ["root"])
+        if self.tongueControl != 'NONE':
+            self.addIkBones("tongue", self.tongueBones, gen, self.tongueControl, R_FACE, R_DEF, R_HELP, ["root"])
+        if self.shaftControl != 'NONE':
+            self.addIkBones("shaft", self.shaftBones, gen, self.shaftControl, R_CUSTOM, R_DEF, R_HELP, ["root"])
 
         setMode('OBJECT')
         # Add constraints to new bones
@@ -1199,11 +1199,11 @@ class Rigifier(RigifyCommon):
         for suffix in ["L", "R"]:
             self.addGazeConstraint(gen, suffix)
         self.addGazeFollowsHead(gen)
-        if self.useTongueIk:
-            self.addIkControl("tongue", self.tongueBones, "MhaTongueControl", "MhaTongueIk", 0, gen, [R_FACE, R_DETAIL], ["root"])
-        if self.useShaftIk:
+        if self.tongueControl != 'NONE':
+            self.addIkControl("tongue", self.tongueBones, self.tongueControl, "MhaTongueControl", "MhaTongueIk", 0, gen, [R_FACE, R_DETAIL], ["root"])
+        if self.shaftControl != 'NONE':
             influs = [1/(n+1)**2 for n in range(len(self.shaftBones))]
-            self.addIkControl("shaft", self.shaftBones, "MhaShaftControl", "MhaShaftIk", 0, gen, [R_CUSTOM, R_TORSOTWEAK], ["root"], influs)
+            self.addIkControl("shaft", self.shaftBones, self.shaftControl, "MhaShaftControl", "MhaShaftIk", 0, gen, [R_CUSTOM, R_TORSOTWEAK], ["root"], influs)
 
         # Finger IK
         if meta["DazFingerIk"]:
