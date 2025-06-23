@@ -382,7 +382,9 @@ class Fixer(DriverUser):
     #-------------------------------------------------------------
 
     def checkTongueIk(self, rig):
-        bnames = [bone.name for bone in rig.data.bones if ("tongue" in bone.name and not isDrvBone(bone.name))]
+        bnames = [bone.name for bone in rig.data.bones
+                  if (bone.name.startswith(("tongue", "mtongue")) and
+                      not isDrvBone(bone.name))]
         if len(bnames) < 3:
             print("Did not find tongue")
             self.tongueControl = 'NONE'
@@ -444,7 +446,8 @@ class Fixer(DriverUser):
         from .rig_utils import setMhx, mhxProp, stretchTo, copyLocation, copyTransform, addMuteDriver
         from .driver import addDriver
 
-        rig.data["MhaFeatures"] |= flag
+        if flag:
+            rig.data["MhaFeatures"] |= flag
         setMhx(rig, prop1, True)
         if ctrl in ['WINDER', 'BOTH']:
             from .winder import addWinder

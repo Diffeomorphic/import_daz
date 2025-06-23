@@ -37,6 +37,7 @@ class DAZ_PT_Chains(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.connect_bone_chains")
         self.layout.operator("daz.add_ik_goals")
+        self.layout.operator("daz.add_ik_controls")
         self.layout.operator("daz.add_winders")
         self.layout.operator("daz.add_tails")
         self.layout.operator("daz.move_graft_bones")

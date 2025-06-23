@@ -598,6 +598,38 @@ class DAZ_OT_AddTails(DazPropsOperator, IsArmature):
             cns.target = empty
 
 #-------------------------------------------------------------
+#   Add IK control
+#-------------------------------------------------------------
+
+class DAZ_OT_AddIkControls(DazPropsOperator, Fixer, GizmoUser, IsArmature):
+    bl_idname = "daz.add_ik_controls"
+    bl_label = "Add IK Controls"
+    bl_description = "Add IK controls to selected bones, like MHX/Rigify tongue"
+    bl_options = {'UNDO'}
+
+    name : StringProperty(
+        name = "Name",
+        default = "IK")
+
+    def draw(self, context):
+        self.layout.prop(self, "name")
+
+    def run(self, context):
+        rig = context.object
+        bnames = [bone.name for bone in rig.data.bones if bone.select]
+        roots = [bone.name for bone in rig.data.bones if bone.parent is None]
+        print("BONES", bnames)
+        print("ROOTS", roots)
+        self.startGizmos(context, rig)
+        self.makeEmptyGizmo("GZM_Ball", 'SPHERE')
+        self.makeEmptyGizmo("GZM_Cone", 'CONE')
+        setMode('EDIT')
+        self.addIkBones(self.name, bnames, rig, 'IK', T_WIDGETS, T_BONES, T_HIDDEN, roots)
+        setMode('OBJECT')
+        self.addIkControl(self.name, bnames, 'IK', "Mha%sControl" % self.name, "Mha%sIk" % self.name, 0, rig, [T_WIDGETS, T_CUSTOM], roots)
+        enableRigNumLayer(rig, T_WIDGETS)
+
+#-------------------------------------------------------------
 #   Move Geograft bones
 #-------------------------------------------------------------
 
@@ -632,6 +664,7 @@ classes = [
     DAZ_OT_AddIkGoals,
     DAZ_OT_AddWinders,
     DAZ_OT_AddTails,
+    DAZ_OT_AddIkControls,
     DAZ_OT_SelectMatchingBones,
     DAZ_OT_MoveGraftBones,
 ]
