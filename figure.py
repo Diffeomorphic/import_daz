@@ -799,7 +799,22 @@ def finalizeArmature(rig):
                     if cns.type == 'COPY_TRANSFORMS' and cns.subtarget == drvname:
                         pb.constraints.remove(cns)
                         break
+
+    def fixLickalicious(rig):
+        for bone in list(rig.data.bones):
+            if bone.name.startswith("tongue"):
+                bone.name = bone.name.replace("tongue", "tgn")
+                enableBoneNumLayer(bone, rig, T_HIDDEN)
+        for ob in getMeshChildren(rig):
+            for vgrp in list(ob.vertex_groups):
+                if vgrp.name.startswith("tongue"):
+                    vgrp.name = vgrp.name.replace("tongue", "tgn")
+
+    if "mtongue07" in rig.data.bones.keys():
+        fixLickalicious(rig)
+
     dazRna(rig.data).DazFinalized = True
+
 
 
 class DAZ_OT_FinalizeArmature(DazOperator, IsArmature):
