@@ -269,7 +269,7 @@ class MetaMaker(RigifyCommon):
             dazrig = self.saveDazRig(context, rig)
         else:
             dazrig = None
-        finalizeArmature(rig)
+        finalizeArmature(context, rig)
 
         unhideAllObjects(context, rig)
         for bname in ["lEye", "rEye", "l_eye", "r_eye"]:

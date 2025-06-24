@@ -786,7 +786,7 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones,
 #   Finalize bones
 #-------------------------------------------------------------
 
-def finalizeArmature(rig):
+def finalizeArmature(context, rig):
     from .driver import getDrivenBoneFcurves
     extras = ExtraBones()
     drivers = getDrivenBoneFcurves(rig, useRigifySafe=True)
@@ -810,6 +810,18 @@ def finalizeArmature(rig):
                 if vgrp.name.startswith("tongue"):
                     vgrp.name = vgrp.name.replace("tongue", "tgn")
 
+        from .merge_rigs import mergeBones, mergeVertexGroups
+        setMode('EDIT')
+        eb1 = rig.data.edit_bones["lmtongue08"]
+        eb2 = rig.data.edit_bones["rtongue08"]
+        eb1.name = "mtongue08"
+        eb1.tail = (eb1.tail + eb2.tail)/2
+        setMode('OBJECT')
+        bones = {"mtongue08" : ["rtongue08"]}
+        mergeBones(rig, bones, {}, context)
+        mergeVertexGroups(rig, bones)
+
+
     if "mtongue07" in rig.data.bones.keys():
         fixLickalicious(rig)
 
@@ -825,7 +837,7 @@ class DAZ_OT_FinalizeArmature(DazOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        finalizeArmature(rig)
+        finalizeArmature(context, rig)
 
 #----------------------------------------------------------
 #   Toggle Inherit Scale

@@ -237,7 +237,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         else:
             nrig = None
         self.store.storeAllDrivers(rig, nrig, self.meshes)
-        finalizeArmature(rig)
+        finalizeArmature(context, rig)
         clearBoneCollections(rig, [T_BONES, T_HIDDEN])
         enableAllRigLayers(rig, False)
         makeBoneCollections(rig, MhxLayers)
