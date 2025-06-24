@@ -929,7 +929,8 @@ class DAZ_PT_ClothesVisibility(DAZ_PT_RuntimeTab, bpy.types.Panel):
                 row.operator("daz.show_all_vis")
                 row.operator("daz.hide_all_vis")
                 self.drawProps(rig, props, "Mhh")
-                self.drawProps(rig, props, "DzS")
+                self.layout.separator()
+                self.drawProps(rig, props, "Mhd")
 
     def drawProps(self, rig, props, prefix):
         for prop in props:
