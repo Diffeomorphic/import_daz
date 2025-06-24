@@ -441,6 +441,7 @@ class GlobalSettings:
 
 
     def checkAbsPaths(self):
+        return
         if self.caseSensitivePaths and not self.absPaths:
             from .error import DazError
             msg = ("The DAZ database must be scanned to work with case-sensitive file paths.\n" +
@@ -460,18 +461,29 @@ class GlobalSettings:
 
 
     def getAbsPaths(self, path):
+        def findAbsPaths(folder, files, abspaths):
+            while files and files[0] == "":
+                files = files[1:]
+            if files:
+                for file in os.listdir(folder):
+                    if file.lower() == files[0]:
+                        path = os.path.join(folder, file)
+                        if os.path.isfile(path):
+                            abspaths.append(path)
+                        else:
+                            findAbsPaths(path, files[1:], abspaths)
+
         if self.caseSensitivePaths:
-            lpath = os.path.dirname(path).lower()
-            if lpath[0] != "/":
-                lpath = "/%s" % lpath
-            abspaths = self.absPaths.get(lpath, [])
-            if path[-1] == "/":
-                abspaths = ["%s/" % abspath for abspath in abspaths]
+            abspaths = []
+            files = path.lower().replace("\\", "/").split("/")
+            for folder in self.getDazPaths():
+                findAbsPaths(folder, files, abspaths)
+            return abspaths
         else:
             abspaths = [
                 ("%s/%s" % (folder, path)).replace("//", "/")
                 for folder in self.getDazPaths()]
-        return [abspath for abspath in abspaths if os.path.exists(abspath)]
+            return [abspath for abspath in abspaths if os.path.exists(abspath)]
 
 
     def getBasePath(self, abspath):
@@ -487,16 +499,9 @@ class GlobalSettings:
             # Absolute path
             return path[1:]
         elif self.caseSensitivePaths:
-            lfolder = os.path.dirname(path).lower()
-            lfile = os.path.basename(path).lower()
-            folders = self.absPaths.get(lfolder, [])
-            for folder in folders:
-                files = dict([(file.lower(),file) for file in os.listdir(folder)])
-                file = files.get(lfile)
-                if file:
-                    abspath = "%s/%s" % (folder, file)
-                    if os.path.exists(abspath):
-                        return abspath
+            abspaths = self.getAbsPaths(path)
+            if abspaths:
+                return abspaths[0]
         elif os.path.exists(path):
             return path
         else:
@@ -517,11 +522,6 @@ class GlobalSettings:
                    '\nPath: "%s"' % path +
                    '\nRef: "%s"' % ref +
                    "\nCase-sensitive paths: %s" % self.caseSensitivePaths)
-            if self.caseSensitivePaths:
-                msg += ('\nFolder: "%s"' % lfolder +
-                        "\nFolders:")
-                for folder in folders:
-                    msg += "\n  %s" % folder
             reportError(msg, trigger=(3,5))
         return ""
 
