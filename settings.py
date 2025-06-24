@@ -414,20 +414,19 @@ class GlobalSettings:
 
     def getAbsPaths(self, path):
         def findAbsPaths(folder, files, abspaths):
-            while files and files[0] == "":
-                files = files[1:]
             if files:
                 for file in os.listdir(folder):
                     if file.lower() == files[0]:
                         path = os.path.join(folder, file)
-                        if os.path.isfile(path):
-                            abspaths.append(path)
-                        else:
+                        if files[1:]:
                             findAbsPaths(path, files[1:], abspaths)
+                        else:
+                            abspaths.append(path)
 
         if self.caseSensitivePaths:
             abspaths = []
             files = path.lower().replace("\\", "/").split("/")
+            files = [file for file in files if file]
             for folder in self.getDazPaths():
                 findAbsPaths(folder, files, abspaths)
             return abspaths
