@@ -425,7 +425,6 @@ def register():
 
     GS.getSettingsDir(bpy.context)
     GS.loadDefaults()
-    GS.loadAbsPaths()
 
 
 def unregister():

@@ -175,13 +175,11 @@ class DAZ_PT_Utils(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Utilities"
 
     def draw(self, context):
-        self.layout.operator("daz.scan_absolute_paths")
-        self.layout.operator("daz.add_content_dirs")
-        self.layout.separator()
         self.layout.operator("daz.decode_file")
         self.layout.operator("daz.quote_unquote")
         self.layout.operator("daz.print_statistics")
         self.layout.operator("daz.update_all")
+        self.layout.operator("daz.add_content_dirs")
 
 
 class PropRow:

@@ -251,7 +251,6 @@ class DAZ_OT_ImportShellsAsImages(DazOperator, MaterialLoader, DazImageFile, IsM
         for ob in meshes:
             getExistingShells(ob, self.existing)
 
-        GS.checkAbsPaths()
         filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")

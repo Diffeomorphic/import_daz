@@ -273,7 +273,6 @@ class ImportDAZManually(DazOperator, ColorOptions, FitOptions, MultiFile, DazLoa
         GS.contentDirs, GS.mdlDirs, GS.cloudDirs = self.rootPaths
 
     def run(self, context):
-        GS.checkAbsPaths()
         filepaths = self.getMultiFiles(["dbz", "duf", "dsf"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")
@@ -416,7 +415,6 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
 
     def run(self, context):
         from .cycles import CyclesMaterial
-        GS.checkAbsPaths()
         filepaths = self.getMultiFiles(["duf", "dsf"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")
@@ -792,7 +790,6 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
 
     def run(self, context):
         from .fileutils import getExistingFilePath
-        GS.checkAbsPaths()
         filepaths = self.getMultiFiles(["dbz", "duf", "dsf"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")

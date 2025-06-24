@@ -160,8 +160,8 @@ def printTraceBack(context, fp):
         fp.write('%d:   "%s"\n' % (n, path))
 
     fp.write("\nABSOLUTE PATHS:\n")
-    absPaths = GS.getAbsPaths()
-    for lpath,folders in absPaths.items():
+    abspaths = GS.getAbsPaths()
+    for lpath,folders in abspaths.items():
         fp.write('"%s":\n' % lpath)
         for folder in folders:
             fp.write('    "%s"\n' % folder)

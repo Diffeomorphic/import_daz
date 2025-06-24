@@ -23,19 +23,6 @@ class DAZ_OT_SetSilentMode(bpy.types.Operator):
         return {'FINISHED'}
 
 #-------------------------------------------------------------
-#   Scan absolute paths (for case-sensitive file systems)
-#-------------------------------------------------------------
-
-class DAZ_OT_ScanAbsolutePaths(bpy.types.Operator):
-    bl_idname = "daz.scan_absolute_paths"
-    bl_label = "Scan Absolute Paths"
-    bl_description = "Scan the entire DAZ database.\nFor case-sensitive file systems"
-
-    def execute(self, context):
-        GS.scanAbsPaths()
-        return {'FINISHED'}
-
-#-------------------------------------------------------------
 #   Settings popup
 #-------------------------------------------------------------
 
@@ -860,7 +847,6 @@ def drawEnum(self, box,  prop):
 
 classes = [
     DAZ_OT_SetSilentMode,
-    DAZ_OT_ScanAbsolutePaths,
     DAZ_OT_AddContentDir,
     DAZ_OT_AddMDLDir,
     DAZ_OT_AddCloudDir,

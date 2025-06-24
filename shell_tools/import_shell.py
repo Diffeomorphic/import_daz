@@ -23,7 +23,6 @@ class ImportShells(DazOperator, MaterialLoader, DazImageFile):
         from ..tree import pruneNodeTree
         from ..matsel import isShellNode
         from .shell import setShellInfluence
-        GS.checkAbsPaths()
         filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")

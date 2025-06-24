@@ -39,7 +39,6 @@ class GlobalSettings:
         self.cloudDirs = []
         self.oldPath = self.fixPath("~/import-daz-settings-28x.json")
         self.rootPaths = []
-        self.absPaths = {}
 
         self.onlyDbz = False
         self.scale = 0.01
@@ -411,53 +410,6 @@ class GlobalSettings:
                                 if numname.isdigit():
                                     subpath = "%s/%s" % (path, fname)
                                     self.rootPaths.append(subpath)
-
-
-    def scanAbsPaths(self):
-        def scanDazPath(folder, path):
-            lpath = path.lower()
-            if lpath not in self.absPaths.keys():
-                self.absPaths[lpath] = [folder]
-            else:
-                self.absPaths[lpath].append(folder)
-            for file in os.listdir(folder):
-                nfolder = "%s/%s" % (folder, file)
-                if os.path.isdir(nfolder):
-                    npath = "%s/%s" % (path, file)
-                    scanDazPath(nfolder, npath)
-
-        from .load_json import saveJson
-        self.absPaths = {}
-        for path in self.getDazPaths():
-            print("Scanning", path)
-            scanDazPath(path, "")
-        struct = {
-            "type" : "scanned_absolute_paths",
-            "absolute_paths" : self.absPaths,
-        }
-        absScanPath = self.getDazSettingsPath(self.absScanFile)
-        saveJson(struct, absScanPath, strict=False)
-        print("Scanned paths saved to %s" % absScanPath)
-
-
-    def checkAbsPaths(self):
-        return
-        if self.caseSensitivePaths and not self.absPaths:
-            from .error import DazError
-            msg = ("The DAZ database must be scanned to work with case-sensitive file paths.\n" +
-                   "Utilities > Scan Absolute Paths")
-            raise DazError(msg)
-
-
-    def loadAbsPaths(self):
-        self.absPaths = {}
-        absScanPath = self.getDazSettingsPath(self.absScanFile)
-        if os.path.exists(absScanPath):
-            from .load_json import loadJson
-            struct = loadJson(absScanPath)
-            if struct.get("type") == "scanned_absolute_paths":
-                self.absPaths = struct.get("absolute_paths", {})
-                print("Absolute paths loaded from %s" % absScanPath)
 
 
     def getAbsPaths(self, path):
