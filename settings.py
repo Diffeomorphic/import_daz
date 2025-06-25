@@ -27,7 +27,6 @@ class GlobalSettings:
         self.errorFile = "daz_importer_errors.txt"
         self.scanFile = "Scanned DAZ Database"
         self.settingsFile = "import_daz_settings.json"
-        self.absScanFile = "import_daz_scanned_absolute_paths.json"
 
         self.contentDirs = [
             self.fixPath("~/Documents/DAZ 3D/Studio/My Library"),
@@ -217,7 +216,7 @@ class GlobalSettings:
         for attr in dir(self):
             if (attr[0] != "_" and
                 hasattr(btn, attr) and
-                attr not in ["contentDirs", "cloudDirs", "mdlDirs", "errorFile", "scanFile", "absScanFile"]):
+                attr not in ["contentDirs", "cloudDirs", "mdlDirs", "errorFile", "scanFile"]):
                 setattr(self, attr, getattr(btn, attr))
         self.setSkinColor(btn.skinColor)
         self.setClothesColor(btn.clothesColor)
@@ -226,7 +225,6 @@ class GlobalSettings:
         self.cloudDirs = getPaths(btn.cloudDirs)
         self.errorFile = btn.errorFile
         self.scanFile = btn.scanFile
-        self.absScanFile = btn.absScanFile
         self.eliminateDuplicates()
 
 

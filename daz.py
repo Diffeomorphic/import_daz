@@ -273,10 +273,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Scanned Database Path",
         description = "Path to scanned database")
 
-    absScanFile : StringProperty(
-        name = "Absolute Paths File",
-        description = "File with scanned absolute paths")
-
     onlyDbz : BoolProperty(
         name = "Only DBZ Files",
         description = "Only import dbz files with baked morphs.\nIf disable duf/dsf files can be imported too")
@@ -709,7 +705,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Settings Directory: %s" % GS.settingsDir)
         box.prop(self, "errorFile")
         box.prop(self, "scanFile")
-        box.prop(self, "absScanFile")
 
         col = split.column()
         box = col.box()
