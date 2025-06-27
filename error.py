@@ -159,13 +159,6 @@ def printTraceBack(context, fp):
     for n, path in enumerate(GS.rootPaths):
         fp.write('%d:   "%s"\n' % (n, path))
 
-    fp.write("\nABSOLUTE PATHS:\n")
-    abspaths = GS.getAbsPaths()
-    for lpath,folders in abspaths.items():
-        fp.write('"%s":\n' % lpath)
-        for folder in folders:
-            fp.write('    "%s"\n' % folder)
-
     string = getMissingAssets()
     fp.write(string)
 
