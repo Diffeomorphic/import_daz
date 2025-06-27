@@ -487,8 +487,6 @@ class SkinBinding(Modifier):
                 transferVertexGroups(context, ob, [hdob], 1e-3, False)
 
 
-    Removes = {"genesis9" : ["l_upperarm", "r_upperarm"]}
-
     def addVertexGroups(self, ob, geonode, rig):
         for bone in rig.data.bones:
             bone.use_deform = False
@@ -543,7 +541,8 @@ class SkinBinding(Modifier):
                             if right and (bvalues.get("positive_right") or bvalues.get("negative_right")):
                                 buildVertexGroup(ob, "%s:right_%s" % (vgname,comp), right["values"])
 
-            if dazRna(rig).DazRig == "genesis9" and vgname in ["l_upperarm", "r_upperarm"]:
+            if (self.id == "/data/daz%203d/genesis%209/base/genesis9.dsf#SkinBinding" and
+                vgname in ["l_upperarm", "r_upperarm"]):
                 continue
             elif GS.ignoreG9TwistBones and vgname.endswith(("twist1", "twist2")):
                 bname = vgname[:-6]
@@ -562,7 +561,7 @@ class SkinBinding(Modifier):
 
         for bname,warr in twists.items():
             weights = [(idx,w) for idx,w in enumerate(warr) if w > 1e-4]
-            buildVertexGroup(ob, bname, weights)
+            buildVertexGroup(ob, bname, weights, force=True)
             if bname in rig.data.bones.keys():
                 rig.data.bones[bname].use_deform = True
 
@@ -773,12 +772,17 @@ class SkinBinding(Modifier):
         return twists
 
 
-def buildVertexGroup(ob, vgname, weights, default=None):
+def buildVertexGroup(ob, vgname, weights, default=None, force=False):
     if weights:
         if vgname in ob.vertex_groups.keys():
             if GS.verbosity >= 3:
                 print("Duplicate vertex group:\n  %s %s" % (ob.name, vgname))
-            return ob.vertex_groups[vgname]
+            vgrp = ob.vertex_groups[vgname]
+            if force:
+                ob.vertex_groups.remove(vgrp)
+                vgrp = ob.vertex_groups.new(name=vgname)
+            else:
+                return vgrp
         else:
             vgrp = ob.vertex_groups.new(name=vgname)
         if default is None:
