@@ -310,7 +310,7 @@ class LoadMorph(DriverUser):
         prop = rawProp(self.getUniqueName(asset.getName()))
         if self.isBaked(prop):
             return " B"
-        if asset.name != prop:
+        if asset.name != prop and self.obj:
             pgs = dazRna(self.obj).DazMorphNames
             pg = pgs.get(asset.name)
             if pg is None:
@@ -381,6 +381,8 @@ class LoadMorph(DriverUser):
 
 
     def setAlias(self, prop, alias):
+        if self.obj is None:
+            return
         pgs = dazRna(self.obj).DazAlias
         if alias in pgs.keys():
             pg = pgs[alias]
