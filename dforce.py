@@ -170,13 +170,14 @@ class Cloth:
         if cloth is None:
             cloth = ob.modifiers.new("Cloth", 'CLOTH')
         cset = cloth.settings
+        cset.quality = 16
         # Collision settings
         colset = cloth.collision_settings
         colset.collection = self.collection
         colset.distance_min = 0.1*GS.scale
         colset.self_distance_min = 0.1*GS.scale
         colset.collision_quality = 4
-        colset.use_self_collision = False
+        colset.use_self_collision = True
         # Pinning
         cset.vertex_group_mass = self.pinGroup
         cset.pin_stiffness = 1.0
