@@ -233,7 +233,7 @@ class FACSImporter(BoneHandler, IsMeshArmature):
                     aname = os.path.splitext(os.path.basename(self.filepath))[0]
                 if rna.animation_data is None:
                     rna.animation_data_create()
-                act = bpy.data.actions.new(name=aname)
+                act = addNewAction(aname, rna.id_type, rna.id_type)
                 rna.animation_data.action = act
 
             if meshes:

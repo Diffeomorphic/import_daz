@@ -22,14 +22,24 @@ DAZ_PROPS = True
 if bpy.app.version < (4,4,0):
     def getActionBag(act, id_type='OBJECT'):
         return act
+
+    def addNewAction(aname, lname, id_type='OBJECT'):
+        return bpy.data.actions.new(name=aname)
 else:
     def getActionBag(act, id_type='OBJECT'):
         strip = act.layers[0].strips[0]
         for slot in act.slots:
             if slot.target_id_type == id_type:
-                return strip.channelbag(slot)
+                return strip.channelbag(slot, ensure=True)
         slot = act.slots[0]
-        return strip.channelbag(slot)
+        return strip.channelbag(slot, ensure=True)
+
+    def addNewAction(aname, lname, id_type='OBJECT'):
+        act = bpy.data.actions.new(name=aname)
+        layer = act.layers.new(lname)
+        strip = layer.strips.new()
+        slot = act.slots.new(id_type, lname)
+        return act
 
 #-------------------------------------------------------------
 #   Bone layers

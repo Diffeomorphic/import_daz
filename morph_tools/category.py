@@ -1182,7 +1182,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMeshArma
                 nstruct[items[prop]] = fcu
         if skeys.animation_data is None:
             skeys.animation_data_create()
-        nact = bpy.data.actions.new(act.name)
+        nact = addNewAction(act.name, "Morphs", 'KEY')
         skeys.animation_data.action = nact
         nfcurves = getActionBag(nact, 'KEY').fcurves
         for key,fcu in nstruct.items():

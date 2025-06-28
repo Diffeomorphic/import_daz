@@ -49,9 +49,7 @@ class DAZ_OT_ConvertMorphsToAction(DazOperator, IsArmature):
                 for slot in act.slots:
                     strip.channelbag(slot).fcurves.clear()
             else:
-                act = bpy.data.actions.new(aname)
-                layer = act.layers.new("Morph")
-                strip = layer.strips.new()
+                act = addNewAction(aname, "Morphs")
             act.use_fake_user = True
             act["DazName"] = prop
             return act, act.layers[0].strips[0].channelbags
@@ -91,7 +89,6 @@ class DAZ_OT_ConvertMorphsToAction(DazOperator, IsArmature):
             #addFrame(pb.scale, "scale", bname, group)
             if not self.used:
                 bag.groups.remove(group)
-        print("RBAG", rig.name, slot, bag)
 
         for ob in getShapeChildren(rig):
             slot = act.slots.new('KEY', ob.name)
@@ -101,9 +98,7 @@ class DAZ_OT_ConvertMorphsToAction(DazOperator, IsArmature):
                 group = bag.groups.new(ob.name)
             skeys = ob.data.shape_keys
             for skey in skeys.key_blocks[1:]:
-                print("SS", ob.name, skey.name, skey.value)
                 addShapeFrame(skey.value, "value", skey.name, group, 1e-3)
-            print("OBAG", ob.name, slot, bag)
 
         print("*", act.name, act["DazName"])
 
