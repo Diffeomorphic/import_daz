@@ -363,8 +363,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         from .proxy import WidgetConverter
         for wrig in widgets:
             rig = wrig.parent
-            ob = getMeshChildren(wrig)[0]
-            if rig and ob and rig.type == 'ARMATURE':
+            meshes = getMeshChildren(wrig)
+            if rig and meshes and meshes[0] and rig.type == 'ARMATURE':
+                ob = meshes[0]
                 print("Convert %s to widgets for %s" % (ob.name, rig.name))
                 wc = WidgetConverter()
                 wc.convertWidgets(context, rig, ob, wrig)
