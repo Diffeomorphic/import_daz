@@ -949,7 +949,7 @@ class WidgetConverter:
         coll = context.scene.collection
         hidden = createHiddenCollection(context, rig)
         activateObject(context, ob)
-        bpy.ops.object.parent_clear(type='CLEAR')
+        bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
 
         vgnames,vgverts,vgfaces = self.getVertexGroupMesh(ob)
         euler = Euler((0,180*D,90*D))
@@ -1047,7 +1047,7 @@ class WidgetConverter:
 
 
     def transform(self, verts, mat, bone):
-        if bone:
+        if False and bone:
             center = Vector(bone.head_local)
         else:
             vsum = Vector((0,0,0))

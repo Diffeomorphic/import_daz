@@ -48,7 +48,7 @@ class BoneInfo:
         eb = ebones.new(bname)
         eb.head = self.head
         eb.tail = self.tail
-        if self.matrix_world and self.parentBone is None:
+        if self.matrix_world:
             eb.matrix = self.matrix_world @ self.matrix_local
         else:
             eb.matrix = self.matrix_local
