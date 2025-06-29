@@ -27,12 +27,12 @@ if bpy.app.version < (4,4,0):
         return bpy.data.actions.new(name=aname)
 else:
     def getActionBag(act, id_type='OBJECT'):
-        strip = act.layers[0].strips[0]
-        for slot in act.slots:
-            if slot.target_id_type == id_type:
-                return strip.channelbag(slot, ensure=True)
-        slot = act.slots[0]
-        return strip.channelbag(slot, ensure=True)
+        if act.layers:
+            strip = act.layers[0].strips[0]
+            for slot in act.slots:
+                if slot.target_id_type == id_type:
+                    return strip.channelbag(slot, ensure=True)
+        return act
 
     def addNewAction(aname, lname, id_type='OBJECT'):
         act = bpy.data.actions.new(name=aname)
