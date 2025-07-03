@@ -490,7 +490,12 @@ class Instance(Accessor, Channels, SimNode):
                 target = target.figure
 
         def addFollower(target):
-            mesh = target.geometries[0].rna
+            geonode = target.geometries[0]
+            mesh = geonode.rna
+            hdmesh = geonode.hdobject
+            if (hdmesh and
+                len(mesh.data.vertices) == len(hdmesh.data.vertices)):
+                mesh = hdmesh
             if mesh and mesh.type == 'MESH':
                 vcount = self.nodeExtra.get("vertex_count", -1)
                 if len(mesh.data.vertices) != vcount and vcount >= 0:

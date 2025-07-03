@@ -279,9 +279,11 @@ class GeoNode(Node, SimNode):
         nverts = len(verts)
         me = bpy.data.meshes.new(HDName(ob.data.name))
         setModernProps(me)
-        print("Build HD mesh for %s: %d verts, %d faces, %d edges" % (ob.name, nverts, len(faces), len(edges)))
+        if GS.verbosity >= 3:
+            print("Build HD mesh for %s: %d verts, %d faces, %d edges" % (ob.name, nverts, len(faces), len(edges)))
         me.from_pydata(verts, edges, faces)
-        print("HD mesh %s built" % me.name)
+        if GS.verbosity >= 3:
+            print("HD mesh %s built" % me.name)
         for f in me.polygons:
             f.material_index = mnums[f.index]
             f.use_smooth = True
@@ -303,7 +305,8 @@ class GeoNode(Node, SimNode):
                 return
             uvfaces = self.stripNegatives([f[1] for f in faces])
             uvlayer = makeNewUvLayer(hdob.data, uvname, setActive)
-            print("Add HD UV layer %s to %s" % (uvlayer.name, hdob.name))
+            if GS.verbosity >= 3:
+                print("Add HD UV layer %s to %s" % (uvlayer.name, hdob.name))
             m = 0
             for f in uvfaces:
                 for vn in f:
@@ -642,7 +645,8 @@ def addMultires(context, ob, hdob, strict, subdivlevel, geo):
     if ok:
         hdfinger = getFingerPrint(hdob)
         if hdfinger == finger or not strict:
-            print('Rebuilt %d subdiv levels for "%s"' % (nlevels, hdob.name))
+            if GS.verbosity >= 3:
+                print('Rebuilt %d subdiv levels for "%s"' % (nlevels, hdob.name))
             mod.levels = mod.sculpt_levels = 0
             if hdfinger == finger:
                 if geo:

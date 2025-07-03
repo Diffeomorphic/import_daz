@@ -390,8 +390,9 @@ def fitToFile(filepath, nodes):
                     highdef = dbz.getEntry("hdobjects", nname, inst)
                     if highdef:
                         hdshells = dbz.hdshells.get(len(highdef.verts), {})
-                        print("HD mesh", highdef)
-                        print("HD shells", list(hdshells.values()))
+                        if GS.verbosity >= 3:
+                            print("HD mesh", highdef)
+                            print("HD shells", list(hdshells.values()))
                 if base is None:
                     print("Cannot fit: %s" % inst)
                     unfitted.append(node)
