@@ -1722,9 +1722,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
         elif ".twist" in rb.name:
-            cns = copyRotation(pb, rb, gen, space='LOCAL', lock=self.keepLocks)
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
         else:
-            cns = copyRotation(pb, rb, gen, space='LOCAL', lock=self.keepLocks)
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
             porient = Vector(pb.bone.matrix_local.to_euler())
             rorient = Vector(rb.bone.matrix_local.to_euler())
             offset = (porient - rorient).length/D

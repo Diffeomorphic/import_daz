@@ -79,11 +79,6 @@ class Fixer(DriverUser):
         description = "Keep the original DAZ rig for deformation",
         default = False)
 
-    keepLocks : BoolProperty(
-        name = "Keep DAZ Locks",
-        description = "Keep rotation locks of the original DAZ rig",
-        default = True)
-
     ownerThreshold : FloatProperty(
         name = "Owner Threshold",
         description = "Use local space (owner orientation) if difference in orientation exceeds this",

@@ -133,7 +133,7 @@ def copyLocation(bone, target, rig, prop=None, expr="x", space='POSE'):
     return cns
 
 
-def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL', lock=False):
+def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL'):
     cns = bone.constraints.new('COPY_ROTATION')
     cns.name = "Copy Rotation %s" % target.name
     cns.target = rig
@@ -142,13 +142,6 @@ def copyRotation(bone, target, rig, prop=None, expr="x", space='LOCAL', lock=Fal
     cns.target_space = space
     if bone.rotation_mode != 'QUATERNION':
         cns.euler_order = bone.rotation_mode
-        if lock:
-            if bone.lock_rotation[0]:
-                cns.use_x = False
-            if bone.lock_rotation[1]:
-                cns.use_y = False
-            if bone.lock_rotation[2]:
-                cns.use_z = False
     elif target.rotation_mode != 'QUATERNION':
         cns.euler_order = target.rotation_mode
     if prop is not None:
