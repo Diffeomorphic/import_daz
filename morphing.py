@@ -2139,101 +2139,94 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
         self.missing = []
         used = []
 
+        def findFavoMorphs(ob):
+            from .scan import normKey
+            morphs = []
+            if len(dazRna(ob.data).DazFavorites) > 0:
+                for favo in dazRna(ob.data).DazFavorites.keys():
+                    favo = favo.split("/",1)[0]
+                    morphs.append(normKey(favo))
+            return morphs
+
+        def loadFavoMorphs(context, morphs, ob):
+            self.setupScanned(ob)
+            found = False
+            for morph in morphs:
+                if self.findMorphs(morph, ob):
+                    found = True
+                else:
+                    self.addNamePath(morph, dazRna(ob).DazScene, self.namepaths)
+            if found:
+                self.loadOwnMorphs(context, ob)
+                self.loadParentMorphs(context, ob)
+                return True
+            else:
+                return False
+
+        def getOldShapes(ob):
+            skeys = ob.data.shape_keys
+            if skeys:
+                return list(skeys.key_blocks.keys())
+            else:
+                return ["Basis"]
+
+        def getNewShapes(ob, oldshapes):
+            skeys = ob.data.shape_keys
+            if skeys:
+                return [skey.name for skey in skeys.key_blocks
+                        if skey.name not in oldshapes]
+            else:
+                return []
+
         # Import figure favorites
         if rig:
             self.obj = self.rig = rig
             self.onDrivers = 'RIG'
-            children = [ob for ob in getMeshChildren(rig) if not isHDMesh(ob)]
-            morphs = []
-            for ob in children:
-                self.findFavoMorphs(ob, morphs)
-            if morphs:
-                catname = "Favorites %s" % noMeshName(ob.name)
-                self.setCategory(catname)
-                self.adjuster = "Adjust Custom/%s" % catname
-                loaded = []
-                for ob in children:
-                    used.append(ob)
-                    oldshapes = self.getOldShapes(ob)
-                    if self.loadFavoMorphs(context, morphs, ob):
-                        newshapes = self.getNewShapes(ob, oldshapes)
-                        loaded.append((ob, newshapes))
-                if self.useTransferOthers and len(loaded) == 1:
-                    src,keynames = loaded[0]
-                    if activateObject(context, src):
-                        for ob in getMeshChildren(rig):
-                            ob.select_set(True)
-                        bpy.ops.daz.transfer_shapekeys(
-                            selection = [{"name" : key} for key in keynames],
-                            useNonConforming = self.useNonConforming,
-                            ignoreRigidity = self.ignoreRigidity)
-                self.makePosable(context, rig)
+            for ob in getMeshChildren(rig):
+                if isHDMesh(ob):
+                    continue
+                used.append(ob)
+                morphs = findFavoMorphs(ob)
+                if morphs:
+                    catname = "Favorites %s" % noMeshName(ob.name)
+                    self.setCategory(catname)
+                    self.adjuster = "Adjust Custom/%s" % catname
+                    oldshapes = getOldShapes(ob)
+                    if loadFavoMorphs(context, morphs, ob):
+                        newshapes = getNewShapes(ob, oldshapes)
+                        if self.useTransferOthers and len(newshapes) > 0:
+                            if activateObject(context, ob):
+                                for trg in getMeshChildren(rig):
+                                    trg.select_set(True)
+                                bpy.ops.daz.transfer_shapekeys(
+                                    selection = [{"name" : key} for key in newshapes],
+                                    useNonConforming = self.useNonConforming,
+                                    ignoreRigidity = self.ignoreRigidity)
+            self.makePosable(context, rig)
 
         # Import prop favorites
         self.rig = None
         self.onDrivers = 'MESH'
         for ob in meshes:
             if ob not in used and not isHDMesh(ob):
-                morphs = []
-                self.findFavoMorphs(ob, morphs)
+                morphs = findFavoMorphs(ob)
                 if morphs:
                     catname = "Favorites %s" % noMeshName(ob.name)
                     self.setCategory(catname)
                     self.adjuster = "Adjust Custom/%s" % catname
-                    oldshapes = self.getOldShapes(ob)
+                    oldshapes = getOldShapes(ob)
                     self.obj = self.mesh = ob
-                    self.loadFavoMorphs(context, morphs, ob)
-                    newshapes = self.getNewShapes(ob, oldshapes)
-                    if newshapes:
-                        addToCategories(ob, newshapes, None, self.category)
-                        dazRna(ob).DazMeshMorphs = True
-                        dazRna(ob).DazMeshDrivers = True
+                    if loadFavoMorphs(context, morphs, ob):
+                        newshapes = getNewShapes(ob, oldshapes)
+                        if newshapes:
+                            addToCategories(ob, newshapes, None, self.category)
+                            dazRna(ob).DazMeshMorphs = True
+                            dazRna(ob).DazMeshDrivers = True
 
         updateScrollbars(context)
         if self.missing:
             msg = "Favorites not found:\n  %s" % self.missing
             self.raiseWarning(msg)
-
-
-    def findFavoMorphs(self, ob, morphs):
-        from .scan import normKey
-        if len(dazRna(ob.data).DazFavorites) > 0:
-            for favo in dazRna(ob.data).DazFavorites.keys():
-                favo = favo.split("/",1)[0]
-                morphs.append(normKey(favo))
-
-
-    def loadFavoMorphs(self, context, morphs, ob):
-        self.setupScanned(ob)
-        found = False
-        for morph in morphs:
-            if self.findMorphs(morph, ob):
-                found = True
-            else:
-                self.addNamePath(morph, dazRna(ob).DazScene, self.namepaths)
-        if found:
-            self.loadOwnMorphs(context, ob)
-            self.loadParentMorphs(context, ob)
-            return True
-        else:
-            return False
-
-
-    def getOldShapes(self, ob):
-        skeys = ob.data.shape_keys
-        if skeys:
-            return list(skeys.key_blocks.keys())
-        else:
-            return ["Basis"]
-
-
-    def getNewShapes(self, ob, oldshapes):
-        skeys = ob.data.shape_keys
-        if skeys:
-            return [skey.name for skey in skeys.key_blocks
-                    if skey.name not in oldshapes]
-        else:
-            return []
 
 #-------------------------------------------------------------
 #   Register
