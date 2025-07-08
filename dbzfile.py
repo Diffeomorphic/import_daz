@@ -56,16 +56,17 @@ class DBZInfo:
             entry = getFromStruct(inst, struct)
         if entry:
             return entry
-        print('No DBZ data: %s "%s" "%s" "%s"' % (attr, key, inst.label, inst.name))
+        print('No DBZ data: %s "%s" "%s" "%s"' % (attr, quote(key), quote(inst.label), quote(inst.name)))
 
 
     def addEntry(self, attr, key, label, entry):
         entries = getattr(self, attr)
+        key = unquote(key)
         if key not in entries.keys():
             entries[key] = {}
         if label is None:
             label = len(entries[key])
-        entries[key][label] = entry
+        entries[key][unquote(label)] = entry
 
 
     def fitFigure(self, inst, dbzrig):

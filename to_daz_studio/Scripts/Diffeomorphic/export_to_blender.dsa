@@ -1,7 +1,7 @@
 // DAZ Studio Script
 
 var appName = "export_to_blender";
-var version = "\"4.4.0.2615\"";
+var version = "\"4.5.0.2668\"";
 var useExportHD = false;
 var useHDConvention = false;
 var useHDUVs = false;
@@ -81,7 +81,7 @@ function exportToBlender(filepath)
     fp.writeLine("    \"version\": " + version + ",");
 
     var origpath = Scene.getFilename();
-    fp.writeLine("    \"filepath\": \"" + origpath + "\",");
+    fp.writeLine("    \"filepath\": \"" + normString(origpath) + "\",");
     
     var cmgr = App.getContentMgr();
     fp.writeLine("    \"rootpaths\": {");
@@ -90,9 +90,9 @@ function exportToBlender(filepath)
     doDirs(fp, "import_dirs", cmgr.getNumImportDirectories(), cmgr.getImportDirectoryPath);
     doDirs(fp, "mdl_dirs", cmgr.getNumMDLDirectories(), cmgr.getMDLDirectoryPath);
     path = cmgr.getBuiltInContentDirectoryPath();
-    fp.writeLine("        \"builtin_content\" : \"" + path + "\",");            
+    fp.writeLine("        \"builtin_content\" : \"" + normString(path) + "\",");            
     path = cmgr.getCloudContentDirectoryPath();
-    fp.writeLine("        \"cloud_content\" : \"" + path + "\"");        
+    fp.writeLine("        \"cloud_content\" : \"" + normString(path) + "\"");        
     fp.writeLine("    },")
 
     fp.writeLine("    \"figures\": [");
@@ -136,7 +136,7 @@ function exportToBlender(filepath)
     var fp1 = new DzGZFile( filepath );
     var ok = fp1.zip(filepath0);
     fp1.close();
-    if (ok) {
+    if (ok) {        
         fp.remove()
     }
     else {
@@ -161,7 +161,7 @@ function doDirs(fp, key, ndirs, fcn)
     for (var n=0; n<ndirs; n++)
     {
     	if (n == ndirs-1) c = "";
-        fp.writeLine("            \"" + fcn(n) + "\"" + c);        
+        fp.writeLine("            \"" + normString(fcn(n)) + "\"" + c);        
     }
     fp.writeLine("        ],");
 }
@@ -173,7 +173,7 @@ function doDirs(fp, key, ndirs, fcn)
 function doFigure(fp, figure)
 {
     figure.finalize();
-    startObject(fp, figure, fixBackslash(figure.name), "", ",");
+    startObject(fp, figure, normString(figure.name), "", ",");
 
     var obj = figure.getObject();
     if (obj != null)
@@ -191,7 +191,7 @@ function doFigure(fp, figure)
     {
         bone = bones[i];
         bone.finalize();
-        startObject(fp, bone, fixBackslash(bone.name), "        ", ",")
+        startObject(fp, bone, normString(bone.name), "        ", ",")
         fp.writeLine("                \"origin\": " + bone.getOrigin());             
         if (i == n-1) c = "";
         fp.writeLine("            }" + c );
@@ -220,12 +220,12 @@ function startObject(fp, node, name, pad, endchar)
 
 function normString(string)
 {
-    return string.replace(/\n/g, " ");
+    return encodeURI(string).replace(/%20/g, " ");
 }
 
 function fixBackslash(string)
 {
-    return string.replace(/\\/g, "\\\\")
+    return encodeURI(string).replace(/\\/g, "\\\\")
 }
 
 
@@ -236,7 +236,7 @@ function doMesh(fp, obj, start, node, str1, str2)
         return false;
     var clname = node.className();
     if (start)
-        startObject(fp, node, fixBackslash(node.name), "", ",");
+        startObject(fp, node, normString(node.name), "", ",");
     fp.writeLine("        \"class\": \"" + clname + "\",");
     var useBase = true;
     var label = node.getLabel();
@@ -326,7 +326,7 @@ function endMesh(fp, str1, str2)
 function doProperties(fp, mat, pad)
 {
     var np = mat.getNumProperties();
-    var buf = (pad + "   \"name\": \"" + fixBackslash(mat.name) + "\",\n");
+    var buf = (pad + "   \"name\": \"" + normString(mat.name) + "\",\n");
     buf += (pad + "   \"properties\": {\n" );
 
     var c = ","
@@ -336,7 +336,7 @@ function doProperties(fp, mat, pad)
         var value = prop.getValue();
         if (i == np-1) c = "";
         if (prop.isNumeric())
-            buf += (pad + "      \"" + fixBackslash(prop.name) + "\": " + value + c + "\n");
+            buf += (pad + "      \"" + normString(prop.name) + "\": " + value + c + "\n");
     }
     buf += (pad + "   }");
     fp.writeLine(buf);
@@ -352,7 +352,7 @@ function doMaterialGroups(fp, geom, hd, endchar)
     {
         var mat = geom.getMaterialGroup(i);
         if (i == nm-1) c = "";
-        fp.writeLine("            \"" + fixBackslash(mat.name) + "\"" + c);
+        fp.writeLine("            \"" + normString(mat.name) + "\"" + c);
     }
     fp.writeLine("        ]" + endchar);
 }
