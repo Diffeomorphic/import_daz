@@ -1575,6 +1575,7 @@ class Rigifier(RigifyCommon):
             cns = copyTransform(pb, rb, gen, space='LOCAL')
         elif pb.name.endswith(("Collar", "ForeArm", "ForearmBend", "Hand", "Shin", "Foot")):
             cns = copyRotation(pb, rb, gen, space='LOCAL_WITH_PARENT')
+            cns = copyLocation(pb, rb, gen, space='POSE')
         else:
             cns = copyRotation(pb, rb, gen, space='LOCAL')
             porient = Vector(pb.bone.matrix_local.to_euler())
