@@ -1573,7 +1573,8 @@ class Rigifier(RigifyCommon):
             cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
-        elif pb.name.endswith(("Collar", "ForeArm", "ForearmBend", "Hand", "Shin", "Foot")):
+        elif (pb.name.endswith(("Collar", "ForeArm", "ForearmBend", "Hand", "Shin", "Foot")) or
+              rname.startswith("DEF-spine")):
             cns = copyRotation(pb, rb, gen, space='LOCAL_WITH_PARENT')
             cns = copyLocation(pb, rb, gen, space='POSE')
         else:
