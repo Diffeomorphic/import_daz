@@ -66,7 +66,9 @@ class DBZInfo:
             entries[key] = {}
         if label is None:
             label = len(entries[key])
-        entries[key][unquote(label)] = entry
+        else:
+            label = unquote(label)
+        entries[key][label] = entry
 
 
     def fitFigure(self, inst, dbzrig):

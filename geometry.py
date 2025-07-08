@@ -650,8 +650,11 @@ def addMultires(context, ob, hdob, strict, subdivlevel, geo):
             mod.levels = mod.sculpt_levels = 0
             if hdfinger == finger:
                 if geo:
-                    geo.addFaceMap(hdob, "DazPolygonGroup", geo.polygon_groups, geo.polygon_indices)
-                    geo.addFaceMap(hdob, "DazMaterialGroup", geo.polygon_material_groups, geo.material_indices)
+                    try:
+                        geo.addFaceMap(hdob, "DazPolygonGroup", geo.polygon_groups, geo.polygon_indices)
+                        geo.addFaceMap(hdob, "DazMaterialGroup", geo.polygon_material_groups, geo.material_indices)
+                    except IndexError:
+                        LS.hdMismatch.append(hdob.name)
             else:
                 LS.hdMismatch.append(hdob.name)
             return 'MULTIRES'
