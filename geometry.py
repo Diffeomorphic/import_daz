@@ -398,12 +398,12 @@ class GeoNode(Node, SimNode):
                     dmat.correctEmitArea(ob, mnum)
                     dsmooth = dmat.getValue(["Smooth On"], False)
                     dangle = dmat.getValue(["Smooth Angle"], 89.9)
-                    if not GS.useAutoSmooth:
+                    if not GS.useAutoSmooth or self.isSubdivided():
                         pass
-                    elif bpy.app.version < (4,1,0):
+                    elif hasattr(ob.data, "use_auto_smooth"):
                         smooth = (smooth or dsmooth)
                         angle = min(angle, dangle)
-                    elif dsmooth and dangle < 89.8:
+                    elif dsmooth:
                         setMode('EDIT')
                         bpy.ops.mesh.select_all(action='DESELECT')
                         setMode('OBJECT')
@@ -414,7 +414,9 @@ class GeoNode(Node, SimNode):
                         setMode('OBJECT')
                     if dmat.shader == 'TOON':
                         LS.toons.append(ob)
-            if GS.useAutoSmooth and hasattr(ob.data, "use_auto_smooth"):
+            if (not self.isSubdivided() and
+                GS.useAutoSmooth and
+                hasattr(ob.data, "use_auto_smooth")):
                 ob.data.use_auto_smooth = smooth
                 ob.data.auto_smooth_angle = angle*D
 
