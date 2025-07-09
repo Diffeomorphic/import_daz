@@ -393,12 +393,13 @@ class GeoNode(Node, SimNode):
             smooth = False
             angle = 89.9
             activateObject(context, ob)
+            useSmoothAngle = (GS.useAutoSmooth and not self.isSubdivided())
             for mnum,dmat in enumerate(self.materials.values()):
                 if dmat:
                     dmat.correctEmitArea(ob, mnum)
                     dsmooth = dmat.getValue(["Smooth On"], False)
                     dangle = dmat.getValue(["Smooth Angle"], 89.9)
-                    if not GS.useAutoSmooth or self.isSubdivided():
+                    if not useSmoothAngle:
                         pass
                     elif hasattr(ob.data, "use_auto_smooth"):
                         smooth = (smooth or dsmooth)
@@ -414,9 +415,7 @@ class GeoNode(Node, SimNode):
                         setMode('OBJECT')
                     if dmat.shader == 'TOON':
                         LS.toons.append(ob)
-            if (not self.isSubdivided() and
-                GS.useAutoSmooth and
-                hasattr(ob.data, "use_auto_smooth")):
+            if useSmoothAngle and hasattr(ob.data, "use_auto_smooth"):
                 ob.data.use_auto_smooth = smooth
                 ob.data.auto_smooth_angle = angle*D
 
