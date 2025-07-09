@@ -391,25 +391,32 @@ class GeoNode(Node, SimNode):
             if GS.usePruneNodes:
                 pruneUvMaps(ob)
             smooth = False
-            angle = 89.9*D
+            angle = 89.9
+            activateObject(context, ob)
             for mnum,dmat in enumerate(self.materials.values()):
                 if dmat:
                     dmat.correctEmitArea(ob, mnum)
-                    smooth = (smooth or dmat.getValue(["Smooth On"], False))
-                    angle = min(angle, dmat.getValue(["Smooth Angle"], 89.9)*D)
+                    dsmooth = dmat.getValue(["Smooth On"], False)
+                    dangle = dmat.getValue(["Smooth Angle"], 89.9)
+                    if not GS.useAutoSmooth:
+                        pass
+                    elif bpy.app.version < (4,1,0):
+                        smooth = (smooth or dsmooth)
+                        angle = min(angle, dangle)
+                    elif dsmooth and dangle < 89.8:
+                        setMode('EDIT')
+                        bpy.ops.mesh.select_all(action='DESELECT')
+                        setMode('OBJECT')
+                        for f in ob.data.polygons:
+                            f.select = (f.material_index == mnum)
+                        setMode('EDIT')
+                        bpy.ops.mesh.set_sharpness_by_angle(angle=dangle*D)
+                        setMode('OBJECT')
                     if dmat.shader == 'TOON':
                         LS.toons.append(ob)
-            if GS.useAutoSmooth:
-                if bpy.app.version >= (4,1,0):
-                    if smooth:
-                        activateObject(context, ob)
-                        if self.isSubdivided():
-                            bpy.ops.object.shade_smooth()
-                        else:
-                            bpy.ops.object.shade_smooth_by_angle(angle=angle, keep_sharp_edges=True)
-                elif hasattr(ob.data, "use_auto_smooth"):
-                    ob.data.use_auto_smooth = smooth
-                    ob.data.auto_smooth_angle = angle
+            if GS.useAutoSmooth and hasattr(ob.data, "use_auto_smooth"):
+                ob.data.use_auto_smooth = smooth
+                ob.data.auto_smooth_angle = angle*D
 
 
             self.scaleEyeMoisture(context, ob, dazRna(ob).DazMesh)
