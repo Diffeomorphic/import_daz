@@ -636,7 +636,7 @@ class CyclesTree(Tree):
                 self.normalval = strength
                 self.normaltex = tex
 
-        if GS.useHardEdges and self.getValue(["Smooth On"], False):
+        if GS.useSharpEdges and self.getValue(["Smooth On"], False):
             rad = self.getValue(["Round Corners Radius"], 0) * 100 * GS.scale
             if rad != 0:
                 node = self.addNode("ShaderNodeBevel")

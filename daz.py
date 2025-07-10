@@ -560,12 +560,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Add Multires",
         description = "Add multires modifier to HD meshes and rebuild lower subdivision levels")
 
-    useHardEdges : BoolProperty(
-        name = "Hard Edges",
-        description = (
-            "Set smooth angles if this is done in DAZ Studio.\n" +
-            "This is useful for objects with hard edges,\n" +
-            "but may lead to poor performance for organic meshes"))
+    useSharpEdges : BoolProperty(
+        name = "Sharp Edges",
+        description = "Set sharp edges if this is done In DAZ Studio")
 
     maxSubdivs : IntProperty(
         name = "Max Subdivision Level",
@@ -725,7 +722,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "keepBaseMesh")
         box.prop(self, "useHDArmature")
         box.prop(self, "useHairGuides")
-        box.prop(self, "useHardEdges")
+        box.prop(self, "useSharpEdges")
         box.prop(self, "maxSubdivs")
         box.prop(self, "useInstancing")
         box.prop(self, "useRigidityAttributes")
