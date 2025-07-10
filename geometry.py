@@ -391,34 +391,45 @@ class GeoNode(Node, SimNode):
             if GS.usePruneNodes:
                 pruneUvMaps(ob)
             smooth = False
-            angle = 89.9
-            activateObject(context, ob)
-            useSmoothAngle = (GS.useAutoSmooth and not self.isSubdivided())
-            for mnum,dmat in enumerate(self.materials.values()):
-                if dmat:
-                    dmat.correctEmitArea(ob, mnum)
-                    dsmooth = dmat.getValue(["Smooth On"], False)
-                    dangle = dmat.getValue(["Smooth Angle"], 89.9)
-                    if not useSmoothAngle:
-                        pass
-                    elif hasattr(ob.data, "use_auto_smooth"):
-                        smooth = (smooth or dsmooth)
-                        angle = min(angle, dangle)
-                    elif dsmooth:
-                        setMode('EDIT')
-                        bpy.ops.mesh.select_all(action='DESELECT')
-                        setMode('OBJECT')
-                        for f in ob.data.polygons:
-                            f.select = (f.material_index == mnum)
-                        setMode('EDIT')
-                        bpy.ops.mesh.set_sharpness_by_angle(angle=dangle*D)
-                        setMode('OBJECT')
-                    if dmat.shader == 'TOON':
-                        LS.toons.append(ob)
-            if useSmoothAngle and hasattr(ob.data, "use_auto_smooth"):
-                ob.data.use_auto_smooth = smooth
-                ob.data.auto_smooth_angle = angle*D
+            dmats = [(mnum,dmat) for mnum,dmat in enumerate(self.materials.values()) if dmat]
+            for mnum,dmat in dmats:
+                dmat.correctEmitArea(ob, mnum)
+                smooth = (smooth or dmat.getValue(["Smooth On"], False))
+                if dmat.shader == 'TOON':
+                    LS.toons.append(ob)
 
+            def selectMaterialPolys(me, mnum):
+                bpy.ops.mesh.select_all(action='DESELECT')
+                setMode('OBJECT')
+                for f in me.polygons:
+                    f.select = (f.material_index == mnum)
+                setMode('EDIT')
+
+            if smooth and GS.useHardEdges and not self.isSubdivided():
+                activateObject(context, ob)
+                if hasattr(ob.data, "use_auto_smooth"):
+                    setMode('EDIT')
+                    bpy.ops.mesh.reveal()
+                    bpy.ops.mesh.split_normals()
+                    bpy.ops.mesh.select_all(action='SELECT')
+                    bpy.ops.mesh.mark_sharp(clear=True)
+                    for mnum,dmat in dmats:
+                        angle = dmat.getValue(["Smooth Angle"], 89.9)
+                        selectMaterialPolys(ob.data, mnum)
+                        bpy.ops.mesh.hide(unselected=True)
+                        bpy.ops.mesh.select_all(action='DESELECT')
+                        bpy.ops.mesh.edges_select_sharp(sharpness=angle*D)
+                        bpy.ops.mesh.mark_sharp()
+                        bpy.ops.mesh.reveal()
+                    setMode('OBJECT')
+                    ob.data.use_auto_smooth = True
+                else:
+                    setMode('EDIT')
+                    for mnum,dmat in dmats:
+                        angle = dmat.getValue(["Smooth Angle"], 89.9)
+                        selectMaterialPolys(ob.data, mnum)
+                        bpy.ops.mesh.set_sharpness_by_angle(angle=angle*D)
+                    setMode('OBJECT')
 
             self.scaleEyeMoisture(context, ob, dazRna(ob).DazMesh)
             if GS.useMaterialsByName:

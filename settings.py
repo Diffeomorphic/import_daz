@@ -128,7 +128,7 @@ class GlobalSettings:
         self.useMultiShapes = True
         self.keepBaseMesh = True
         self.useHDArmature = True
-        self.useAutoSmooth = True
+        self.useHardEdges = True
         self.maxSubdivs = 4
         self.useSimulation = True
         self.onScaleEyeMoisture = 'APPLY'

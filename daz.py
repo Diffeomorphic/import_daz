@@ -560,10 +560,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Add Multires",
         description = "Add multires modifier to HD meshes and rebuild lower subdivision levels")
 
-    useAutoSmooth : BoolProperty(
-        name = "Auto Smooth",
+    useHardEdges : BoolProperty(
+        name = "Hard Edges",
         description = (
-            "Use auto smooth if this is done in DAZ Studio.\n" +
+            "Set smooth angles if this is done in DAZ Studio.\n" +
             "This is useful for objects with hard edges,\n" +
             "but may lead to poor performance for organic meshes"))
 
@@ -725,7 +725,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "keepBaseMesh")
         box.prop(self, "useHDArmature")
         box.prop(self, "useHairGuides")
-        box.prop(self, "useAutoSmooth")
+        box.prop(self, "useHardEdges")
         box.prop(self, "maxSubdivs")
         box.prop(self, "useInstancing")
         box.prop(self, "useRigidityAttributes")
