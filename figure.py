@@ -812,14 +812,15 @@ def finalizeArmature(context, rig):
 
         from .merge_rigs import mergeBones, mergeVertexGroups
         setMode('EDIT')
-        eb1 = rig.data.edit_bones["lmtongue08"]
-        eb2 = rig.data.edit_bones["rtongue08"]
-        eb1.name = "mtongue08"
-        eb1.tail = (eb1.tail + eb2.tail)/2
-        setMode('OBJECT')
-        bones = {"mtongue08" : ["rtongue08"]}
-        mergeBones(rig, bones, {}, context)
-        mergeVertexGroups(rig, bones)
+        eb1 = rig.data.edit_bones.get("lmtongue08")
+        eb2 = rig.data.edit_bones.get("rtongue08")
+        if eb1 and eb2:
+            eb1.name = "mtongue08"
+            eb1.tail = (eb1.tail + eb2.tail)/2
+            setMode('OBJECT')
+            bones = {"mtongue08" : ["rtongue08"]}
+            mergeBones(rig, bones, {}, context)
+            mergeVertexGroups(rig, bones)
 
 
     if "mtongue07" in rig.data.bones.keys():
