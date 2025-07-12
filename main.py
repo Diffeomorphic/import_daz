@@ -224,13 +224,14 @@ class DazLoader:
 
         def checkExist(paths):
             for path in paths:
-                if not os.path.exists(path):
+                if not os.path.exists(unquote(path)):
                     return False
             return True
 
         from .load_json import JL
+        filepath = unquote(filepath)
         struct = JL.load(filepath)
-        dufpath = struct.get("filepath")
+        dufpath = unquote(struct.get("filepath"))
         if dufpath is None:
             dufpath = "%s.duf" % os.path.splitext(filepath)[0]
             return checkedDufPath(dufpath)

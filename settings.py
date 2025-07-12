@@ -6,7 +6,7 @@ import os
 import sys
 from collections import OrderedDict
 import bpy
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 #-------------------------------------------------------------
 #   Global settings
@@ -159,7 +159,7 @@ class GlobalSettings:
 
 
     def fixPath(self, path):
-        filepath = os.path.expanduser(path).replace("\\", "/")
+        filepath = os.path.expanduser(unquote(path)).replace("\\", "/")
         return filepath.rstrip("/ ")
 
 
@@ -267,8 +267,10 @@ class GlobalSettings:
             settings = struct["daz-settings"]
             for attr,value in settings.items():
                 if hasattr(self, attr) and attr not in ["settingsDir"]:
-                    if isinstance(value, (float, int, bool, str)):
+                    if isinstance(value, (float, int, bool)):
                         setattr(self, attr, value)
+                    elif isinstance(value, str):
+                        setattr(self, attr, unquote(value))
                     elif attr.endswith("Color"):
                         setattr(self, attr, value)
             if "contentDirs" in settings.keys():
@@ -356,7 +358,7 @@ class GlobalSettings:
     def saveSettings(self, context, filepath=None):
         def saveDirs(paths, prefix, struct):
             for n,path in enumerate(paths):
-                struct["%s%03d" % (prefix, n+1)] = self.fixPath(path)
+                struct["%s%03d" % (prefix, n+1)] = quote(self.fixPath(path))
 
         from .load_json import saveJson
         self.getSettingsDir(context)
@@ -365,13 +367,16 @@ class GlobalSettings:
         struct = {}
         for attr in dir(self):
             value = getattr(self, attr)
-            if attr[0] != "_" and isinstance(value, (int, float, bool, str)):
-                struct[attr] = value
+            if attr[0] != "_":
+                if isinstance(value, (int, float, bool)):
+                    struct[attr] = value
+                elif isinstance(value, str):
+                    struct[attr] = quote(value)
         for attr in ["contentDirs", "mdlDirs", "cloudDirs"]:
             paths = []
             for path in getattr(self, attr):
                 if path:
-                    paths.append(self.fixPath(path))
+                    paths.append(quote(self.fixPath(path)))
             struct[attr] = paths
         filepath = os.path.expanduser(filepath)
         filepath = "%s.json" % os.path.splitext(filepath)[0]
