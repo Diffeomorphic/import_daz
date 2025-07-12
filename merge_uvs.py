@@ -64,6 +64,8 @@ class UVLayerMerger:
                     dazRna(mat).DazShellMap = uvname
                     shellmaps[uvname] = True
 
+        if len(uvmaps.keys()) == 1:
+            return list(uvmaps.keys())[0]
         for uvname in uvmaps.keys():
             if uvname in shellmaps.keys():
                 continue

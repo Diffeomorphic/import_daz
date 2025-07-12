@@ -560,6 +560,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
     def replaceTexco(self, ob, cuvname, force):
         from .geometry import getActiveUvLayer
+        from .tree import XSIZE
         uvname = getActiveUvLayer(ob).name
         if (self.useMergeUvs or uvname == cuvname) and not force:
             return
@@ -568,16 +569,21 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 continue
             texco = None
             tree = mat.node_tree
-            location = (0,0)
+            x,y = (0,0)
             for node in tree.nodes:
                 if node.type == 'TEX_COORD':
                     texco = node
-                    location = texco.location
+                    x,y = texco.location
+                    break
+                elif node.type == 'TEX_IMAGE':
+                    x1,y1 = node.location
+                    if x1 <= x:
+                        x = x1-XSIZE
             uvmap = tree.nodes.new(type="ShaderNodeUVMap")
             uvmap.uv_map = uvname
             uvmap.label = uvname
             uvmap.hide = True
-            uvmap.location = location
+            uvmap.location = (x,y)
             if texco:
                 for link in tree.links:
                     if link.from_node == texco:
