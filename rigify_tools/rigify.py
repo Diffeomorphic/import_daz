@@ -231,17 +231,11 @@ class MetaMaker(RigifyCommon):
         description = "Split the shin vertex groups into bend and twist parts",
         default = False)
 
-    useCustomLayers : BoolProperty(
-        name = "Custom Layers",
-        description = "Display layers for face and custom bones.\nNot for Rigify legacy",
-        default = True)
-
     def draw(self, context):
         self.layout.prop(self, "ikOptimization")
         #self.layout.prop(self, "useAutoAlign")
         #self.layout.prop(self, "useRecalcRoll")
         self.layout.prop(self, "useSplitShin")
-        #self.layout.prop(self, "useCustomLayers")
 
 
     def createMeta(self, context):
@@ -304,7 +298,6 @@ class MetaMaker(RigifyCommon):
         meta["DazSplitShin"] = self.useSplitShin
         meta["DazIkOptimization"]= self.ikOptimization
         meta["DazFingerIk"] = self.useFingerIk
-        meta["DazCustomLayers"] = self.useCustomLayers
 
         self.adjustMetaBones(meta)
 
@@ -394,13 +387,13 @@ class MetaMaker(RigifyCommon):
         setRigifyAttributes(rig.data, meta.data)
         if not BLENDER3:
             knownlayers = [T_BONES, T_CUSTOM, T_TWEAK, T_WIDGETS, T_HIDDEN]
-            for coll in rig.data.collections:
-                if coll.name in knownlayers:
+            for bcoll in rig.data.collections:
+                if bcoll.name in knownlayers:
                     continue
-                mcoll = meta.data.collections.get(coll.name)
+                mcoll = meta.data.collections.get(bcoll.name)
                 if mcoll is None:
-                    mcoll = meta.data.collections.new(coll.name)
-                setRigifyAttributes(coll, mcoll)
+                    mcoll = meta.data.collections.new(bcoll.name)
+                setRigifyAttributes(bcoll, mcoll)
 
         def getParams(attrs):
             return [(key, getattr(attrs, key)) for key in dir(attrs) if key[0] != "_"]
@@ -933,17 +926,19 @@ class Rigifier(RigifyCommon):
             coll.objects.link(rig)
         self.meshes = (getMeshChildren(dazrig) if dazrig else getMeshChildren(rig))
 
-        if not BLENDER3:
+        if not BLENDER3 and "Root" in gen.data.collections.keys():
             # Add rig UI
             makeBoneCollections(gen, RigifyLayers)
-            root = gen.data.collections.get("Root")
-            custom = gen.data.collections.get("Custom")
-            if root and custom:
-                row = root.rigify_ui_row
-                custom.rigify_ui_row = row - 1
-                custom.rigify_color_set_id = 3
-                custom.rigify_sel_set = False
-                custom.rigify_ui_title = "Custom"
+            root = gen.data.collections["Root"]
+            for bcoll in gen.data.collections:
+                if (bcoll.rigify_ui_row == 0 and
+                    bcoll.name not in ["DEF", "MCH", "ORG", "Help"]):
+                    row = root.rigify_ui_row
+                    bcoll.rigify_ui_row = row - 1
+                    bcoll.rigify_color_set_id = 3
+                    bcoll.rigify_sel_set = False
+                    bcoll.rigify_ui_title = bcoll.name
+                    root.rigify_ui_row = row+1
         if gen.name in scn.collection.objects:
             scn.collection.objects.unlink(gen)
         if gen.name not in coll.objects:
@@ -1069,8 +1064,9 @@ class Rigifier(RigifyCommon):
                 continue
             if rname in gen.pose.bones.keys():
                 pb = gen.pose.bones[rname]
+                db = rig.pose.bones.get(dname)
                 self.dazBones[dname].setPose(pb, gen)
-                layer,unlock = self.getBoneLayer(pb, gen, driven)
+                layer,unlock = self.getBoneLayer(pb, db, rig, gen, driven)
                 enableBoneNumLayer(pb.bone, gen, layer)
                 if unlock:
                     pb.lock_location = FFalse
@@ -1264,7 +1260,7 @@ class Rigifier(RigifyCommon):
         return gen
 
 
-    def getBoneLayer(self, pb, rig, driven):
+    def getBoneLayer(self, pb, db, rig, gen, driven):
         lname = pb.name.lower()
         if pb.name in BD.HeadBones:
             return R_FACE, False
@@ -1274,7 +1270,7 @@ class Rigifier(RigifyCommon):
             return R_HELP, False
         elif pb.name in BD.Teeth:
             return R_CUSTOM, False
-        elif isFinal(pb.name) or isInNumLayer(pb.bone, rig, R_HELP):
+        elif isFinal(pb.name) or isInNumLayer(pb.bone, gen, R_HELP):
             return R_HELP, False
         elif lname.startswith("tongue"):
             return R_DETAIL, False
@@ -1286,6 +1282,16 @@ class Rigifier(RigifyCommon):
                   par.parent and
                   par.parent.name in BD.FaceRigs):
                 return R_DETAIL, True
+
+        if db and not BLENDER3:
+            knownlayers = [T_BONES, T_CUSTOM, T_TWEAK, T_WIDGETS, T_HIDDEN]
+            for bcoll in getBoneLayers(db, rig):
+                if bcoll.name not in knownlayers:
+                    rcoll = gen.data.collections.get(bcoll.name)
+                    if rcoll is None:
+                        rcoll = gen.data.collections.new(bcoll.name)
+                    return rcoll.name, True
+
         return R_CUSTOM, True
 
 
