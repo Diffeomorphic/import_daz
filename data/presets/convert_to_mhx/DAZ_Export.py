@@ -5,7 +5,6 @@ op.useImproveIk = False
 op.useFingerIk = False
 op.useTongueIk = False
 op.driverRotationMode = 'NATIVE'
-op.addNondeformExtras = False
 op.useTweakBones = False
 op.showLinks = True
 op.usePoleTargets = True

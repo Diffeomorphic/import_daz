@@ -72,7 +72,7 @@ class Fixer(DriverUser):
     addNondeformExtras : BoolProperty(
         name = "Non-deform Extra Bones",
         description = "Add extra bones to the Rigify armature,\neven if they don't correspond to any vertex group",
-        default = False)
+        default = True)
 
     keepRig : BoolProperty(
         name = "Keep DAZ Rig",
