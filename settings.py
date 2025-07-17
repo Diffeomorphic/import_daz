@@ -356,9 +356,12 @@ class GlobalSettings:
 
 
     def saveSettings(self, context, filepath=None):
+        def quoteString(string):
+            return quote(string).replace("%20", " ").replace("%3A", ":")
+
         def saveDirs(paths, prefix, struct):
             for n,path in enumerate(paths):
-                struct["%s%03d" % (prefix, n+1)] = quote(self.fixPath(path))
+                struct["%s%03d" % (prefix, n+1)] = quoteString(self.fixPath(path))
 
         from .load_json import saveJson
         self.getSettingsDir(context)
@@ -371,12 +374,12 @@ class GlobalSettings:
                 if isinstance(value, (int, float, bool)):
                     struct[attr] = value
                 elif isinstance(value, str):
-                    struct[attr] = quote(value)
+                    struct[attr] = quoteString(value)
         for attr in ["contentDirs", "mdlDirs", "cloudDirs"]:
             paths = []
             for path in getattr(self, attr):
                 if path:
-                    paths.append(quote(self.fixPath(path)))
+                    paths.append(quoteString(self.fixPath(path)))
             struct[attr] = paths
         filepath = os.path.expanduser(filepath)
         filepath = "%s.json" % os.path.splitext(filepath)[0]
