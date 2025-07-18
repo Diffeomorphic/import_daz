@@ -154,6 +154,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.layout.prop(self, "useSplitShin")
         self.layout.prop(self, "useTweakBones")
         self.drawMeta()
+        self.layout.prop(self, "useSpineIk")
         self.layout.prop(self, "tongueControl")
         self.layout.prop(self, "shaftControl")
         if self.shaftControl != 'NONE':
