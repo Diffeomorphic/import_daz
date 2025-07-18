@@ -12,7 +12,8 @@ class BrickTree:
     def buildLayers(self):
         layers = self.findBrickLayers()
         if layers:
-            print("Building brick layers:", layers)
+            if GS.verbosity >= 3:
+                print("Building brick layers:", layers)
             node = self.addBrickLayer("Base", False)
             node.inputs["Fac"].default_value = 1
             self.cycles = node
