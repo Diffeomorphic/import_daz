@@ -1919,8 +1919,9 @@ class DAZ_OT_ImportAsset(HideOperator, ActionOptions, AnimatorBase, StandardAnim
 
 
     def getPreviewFile(self, filepath, name):
+        from .fileutils import theImageExtensions
         basename,ext = os.path.splitext(filepath)
-        for ext in ["png", "jpg", "jpeg"]:
+        for ext in theImageExtensions:
             for pathname in ["%s.tip" % basename, filepath, basename]:
                 path = "%s.%s" % (pathname, ext)
                 if os.path.exists(path):
