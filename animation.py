@@ -2056,6 +2056,8 @@ def clearPose(rig, frame, auto):
 
 
 def insertKeys(pb, isbone, frame, btn=None, tfm=None):
+    if (isDrvBone(pb.name) or pb.name.startswith(("DEF-", "MCH-", "ORG-"))):
+        return
     driven = []
     if btn:
         driven = btn.driven.get(pb.name, [])
