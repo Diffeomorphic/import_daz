@@ -382,21 +382,27 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
 
     def mergeDestructively(self, context, hum, grafts, body_pair_a_verts):
-        # Join meshes and remove doubles
+        # Join meshes
         names = [graft.name for graft in grafts]
         print("Merge %s to %s" % (names, hum.name))
         threshold = 0.001*GS.scale
         bpy.ops.object.join()
+
+        # Create graft vertex group
+        selected = [v.index for v in hum.data.vertices if v.select]
+        vgrp = hum.vertex_groups.new(name="Graft")
+        for vn in selected:
+            vgrp.add([vn], 1.0, 'REPLACE')
+
+        # Remove doubles
         setMode('EDIT')
         bpy.ops.mesh.remove_doubles(threshold=threshold)
         setMode('OBJECT')
-        selected = dict([(v.index,v.co.copy()) for v in hum.data.vertices if v.select])
+        vglocs = [[(v.index,v.co.copy()) for g in v.groups if g.group == vgrp.index]
+                    for v in hum.data.vertices]
+        sellocs = dict(flatten(vglocs))
         deselectAllVerts(hum)
 
-        # Create graft vertex group
-        vgrp = hum.vertex_groups.new(name="Graft")
-        for vn in selected.keys():
-            vgrp.add([vn], 1.0, 'REPLACE')
         mod = getModifier(hum, 'MULTIRES')
         if mod:
             smod = hum.modifiers.new("Smooth Graft", 'SMOOTH')
@@ -405,10 +411,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             smod.vertex_group = vgrp.name
 
         # Update hum graft group
-        if dazRna(hum.data).DazGraftGroup and selected:
+        if dazRna(hum.data).DazGraftGroup and sellocs:
             for pair in dazRna(hum.data).DazGraftGroup:
                 x = self.locations[pair.a]
-                dists = [((x-y).length, vn) for vn,y in selected.items()]
+                dists = [((x-y).length, vn) for vn,y in sellocs.items()]
                 dists.sort()
                 pair.a = dists[0][1]
 
