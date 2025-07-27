@@ -33,6 +33,11 @@ class MergeGeograftOptions(UVLayerMergerOptions):
         description = "Merge geografts using geometry nodes",
         default = False)
 
+    useBakeGrafts: BoolProperty(
+        name = "Bake Grafts",
+        description = "Add a bake node to the geometry node tree.\nThis must be baked in rest pose before posing",
+        default = False)
+
 
 class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerger, TileFixer, DriverUser, IsMesh):
     bl_idname = "daz.merge_geografts"
@@ -43,7 +48,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
     def draw(self, context):
         if bpy.app.version >= (3,4,0):
             self.layout.prop(self, "useGeoNodes")
-        if not self.useGeoNodes:
+        if self.useGeoNodes and bpy.app.version >= (4,4,0):
+            self.layout.prop(self, "useBakeGrafts")
+        else:
             self.layout.prop(self, "keepOriginal")
         self.layout.prop(self, "useSubDDisplacement")
         box = self.layout.box()
@@ -487,11 +494,11 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         graftgrp = GeograftsGroup()
         groupname = "Geografts:%s" % hum.name
         graftgrp.create(groupname)
-        graftgrp.addGrafts(grafts, hum.name)
+        graftgrp.addGrafts(grafts, hum.name, self.useBakeGrafts)
 
         # Create the modifier
         from .store import addModifierFirst
-        mod = addModifierFirst(hum, groupname, 'NODES')
+        mod = addModifierFirst(hum, groupname, 'NODES', second=(not self.useBakeGrafts))
         mod.node_group = graftgrp.group
 
         # Handle all the inputs generated from the geografts - Placed below the inputs that apply to the entire geonode group

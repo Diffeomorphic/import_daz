@@ -243,12 +243,12 @@ class ModStore:
                 pass
 
 
-def addModifierFirst(ob, modname, modtype):
+def addModifierFirst(ob, modname, modtype, second=True):
     n = len(ob.modifiers)
     mod = ob.modifiers.new(modname, modtype)
     if not hasattr(ob.modifiers, "move"):
         pass
-    elif getModifier(ob, 'ARMATURE'):
+    elif second and getModifier(ob, 'ARMATURE'):
         ob.modifiers.move(n, 1)
     else:
         ob.modifiers.move(n, 0)

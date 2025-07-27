@@ -132,12 +132,12 @@ class GeograftGroup(GeoTree):
 
 class GeograftsGroup(GeoTree):
     def create(self, name):
-        NodeGroup.make(self, name, 7)
+        NodeGroup.make(self, name, 8)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
         addGroupInput(self.group, "NodeSocketFloat", "Distance")
         addGroupOutput(self.group, "NodeSocketGeometry", "Geometry")
 
-    def addGrafts(self, grafts, hum_name = ""):
+    def addGrafts(self, grafts, hum_name, useBake):
         join = self.addNode("GeometryNodeJoinGeometry", 3)
         self.links.new(self.inputs.outputs["Geometry"], join.inputs["Geometry"])
         last = join
@@ -225,7 +225,12 @@ class GeograftsGroup(GeoTree):
 
         self.links.new(self.inputs.outputs["Distance"], merge.inputs["Distance"])
         self.links.new(last.outputs["Geometry"], merge.inputs["Geometry"])
-        self.links.new(merge.outputs["Geometry"], self.outputs.inputs["Geometry"])
+        if useBake:
+            bake = self.addNode("GeometryNodeBake", 7)
+            self.links.new(merge.outputs["Geometry"], bake.inputs["Geometry"])
+            self.links.new(bake.outputs["Geometry"], self.outputs.inputs["Geometry"])
+        else:
+            self.links.new(merge.outputs["Geometry"], self.outputs.inputs["Geometry"])
 
 # ---------------------------------------------------------------------
 #   Geoshell group
