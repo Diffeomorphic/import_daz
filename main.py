@@ -464,8 +464,18 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
                         self.matchFromIndex(ob, main, matches)
                     if matches:
                         self.assignMaterials(context, ob, matches)
+
         if LS.render:
             LS.render.build(context)
+
+        if GS.usePruneNodes:
+            from .tree import pruneNodeTree
+            from .geometry import getActiveUvLayer
+            for ob in meshes:
+                active = getActiveUvLayer(ob)
+                for mat in ob.data.materials:
+                    if mat:
+                        pruneNodeTree(mat.node_tree, active)
 
 
     def addMaterials(self, context, ob, main):
