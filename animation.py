@@ -698,6 +698,11 @@ class ActionOptions:
         description = "Finish import with this frame",
         default = 250)
 
+    usePruneAction : BoolProperty(
+        name = "Prune Action",
+        description = "Prune the imported action",
+        default = False)
+
     def draw(self, context):
         self.layout.separator()
         self.layout.prop(self, "makeNewAction")
@@ -708,6 +713,7 @@ class ActionOptions:
         self.layout.prop(self, "integerFrames")
         self.layout.prop(self, "firstFrame")
         self.layout.prop(self, "lastFrame")
+        self.layout.prop(self, "usePruneAction")
 
 
     def clearAnimation(self, ob):
@@ -1615,6 +1621,10 @@ class StandardAnimation:
             if prop:
                 props.append(prop)
 
+        if self.usePruneAction and self.useInsertKeys:
+            if rig and rig.animation_data and rig.animation_data.action:
+                pruneAction(rig.animation_data.action, rig, GS.scale)
+
         t2 = perf_counter()
         if self.snapError:
             print("MHX/Simple IK module not enabled")
@@ -1815,6 +1825,7 @@ class DAZ_OT_ImportAsset(HideOperator, ActionOptions, AnimatorBase, StandardAnim
     def draw(self, context):
         AnimatorBase.draw(self, context)
         self.layout.separator()
+        self.layout.prop(self, "usePruneAction")
         if self.useAssetBrowser:
             self.layout.prop(self, "usePreviewImages")
             self.layout.prop(self, "assetTags")
@@ -1943,6 +1954,7 @@ class PoseBase(AnimatorBase):
     atFrameOne = False
     firstFrame = -1000
     lastFrame = 1000
+    usePruneAction = False
 
     def draw(self, context):
         AnimatorBase.draw(self, context)
@@ -2065,7 +2077,7 @@ def insertKeys(pb, rig, frame, btn=None, tfm=None):
     if btn:
         driven = btn.driven.get(pb.name, [])
     if ((tfm is None or tfm.trans) and
-        (pb == rig or not isLocationLocked(pb)) and
+        (rig is None or not isLocationLocked(pb)) and
         "location" not in driven):
         pb.keyframe_insert("location", group=pb.name, frame=frame)
     if tfm is None or tfm.rot:
@@ -2146,6 +2158,7 @@ def pruneAction(act, ob, cm):
 
     for fcu in deletes:
         fcurves.remove(fcu)
+
 
 class DAZ_OT_PruneAction(DazOperator):
     bl_idname = "daz.prune_action"
