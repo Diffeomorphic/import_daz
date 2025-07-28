@@ -1110,7 +1110,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if self.useClearPose and self.affectObject:
             tfm.setObject(rig)
             if self.useInsertKeys:
-                insertKeys(rig, False, frame, self)
+                insertKeys(rig, None, frame, self)
         if self.useClearMorphs and self.useShapekeys and self.affectMorphs:
             clearShapes(rig)
         if rig.type != 'ARMATURE':
@@ -1123,7 +1123,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                     if not self.affectScale:
                         pb.scale = scale
                     if self.useInsertKeys:
-                        insertKeys(pb, True, frame, self)
+                        insertKeys(pb, rig, frame, self)
             setChildofInverses(rig)
         if self.useClearMorphs and self.affectMorphs:
             if self.useShapekeys:
@@ -1255,7 +1255,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             if rig.type in ['LIGHT', 'CAMERA'] and GS.zup:
                 rig.rotation_euler[0] += pi/2
             if self.useInsertKeys:
-                insertKeys(rig, False, n+offset, self, tfm)
+                insertKeys(rig, None, n+offset, self, tfm)
 
 
     def makeBoneFrame(self, bname, rig, bframe, tfm, n, offset, twists):
@@ -1452,7 +1452,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 setBoneTransform(tfm, pb, rig, bonemap=self.bonemap, oldStyle=oldStyle)
             imposeLocks(pb)
             if self.useInsertKeys:
-                insertKeys(pb, True, n+offset, self, tfm)
+                insertKeys(pb, rig, n+offset, self, tfm)
 
 
     def setBoneTwist(self, tfm, pb, rig):
@@ -1516,19 +1516,19 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 if twist and abs(twist.rotation_euler[1]) < 1e-4:
                     twist.rotation_euler = (0, euler[1], 0)
                     if self.useInsertKeys:
-                        insertKeys(twist, True, n+offset, self)
+                        insertKeys(twist, rig, n+offset, self)
                 euler[1] = 0
                 if bend.rotation_mode == 'QUATERNION':
                     bend.rotation_quaternion = euler.to_quaternion()
                 else:
                     bend.rotation_euler = euler
                 if self.useInsertKeys:
-                    insertKeys(bend, True, n+offset, self)
+                    insertKeys(bend, rig, n+offset, self)
             elif bname[-5:] == "Twist":
                 twist = rig.pose.bones[bname]
                 twist.rotation_euler[0] = twist.rotation_euler[2] = 0
                 if self.useInsertKeys:
-                    insertKeys(twist, True, n+offset, self)
+                    insertKeys(twist, rig, n+offset, self)
             else:
                 self.transformBone(rig, bname, tfm, n, offset, True)
 
@@ -2046,23 +2046,26 @@ def clearPose(rig, frame, auto):
     unit = Matrix()
     setWorldMatrix(rig, unit)
     if auto:
-        insertKeys(rig, False, frame)
+        insertKeys(rig, None, frame)
     if rig.pose:
         for pb in rig.pose.bones:
             pb.matrix_basis = unit
             if auto:
-                insertKeys(pb, True, frame)
+                insertKeys(pb, rig, frame)
         setChildofInverses(rig)
 
 
-def insertKeys(pb, isbone, frame, btn=None, tfm=None):
-    if (isDrvBone(pb.name) or pb.name.startswith(("DEF-", "MCH-", "ORG-"))):
-        return
+def insertKeys(pb, rig, frame, btn=None, tfm=None):
+    if rig:
+        if (isDrvBone(pb.name) or
+            pb.name.startswith(("DEF-", "MCH-", "ORG-")) or
+            isInNumLayer(pb, rig, ("Help", "Help 2", "Hidden"))):
+            return
     driven = []
     if btn:
         driven = btn.driven.get(pb.name, [])
     if ((tfm is None or tfm.trans) and
-        (not isbone or not isLocationLocked(pb)) and
+        (pb == rig or not isLocationLocked(pb)) and
         "location" not in driven):
         pb.keyframe_insert("location", group=pb.name, frame=frame)
     if tfm is None or tfm.rot:

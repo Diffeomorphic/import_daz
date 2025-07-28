@@ -47,7 +47,7 @@ class DAZ_OT_ObjectPoseToBones(FrameRange, IsArmature):
             for frame in range(self.startFrame, self.endFrame+1):
                 scn.frame_current = frame
                 rig.matrix_basis = Matrix()
-                insertKeys(rig, False, frame)
+                insertKeys(rig, None, frame)
                 updateScene(context)
                 wmat = wmats[frame]
                 for pb,mat in zip(parents, parmats[frame]):
@@ -55,12 +55,12 @@ class DAZ_OT_ObjectPoseToBones(FrameRange, IsArmature):
                         pb.matrix = Matrix()
                     else:
                         pb.matrix = wmat @ mat
-                    insertKeys(pb, True, frame)
+                    insertKeys(pb, rig, frame)
                 updateScene(context)
                 if self.useSkipRoots:
                     for pb,mat in zip(children, chmats[frame]):
                         pb.matrix = wmat @ mat
-                        insertKeys(pb, True, frame)
+                        insertKeys(pb, rig, frame)
         else:
             wmat = rig.matrix_world.copy()
             parmats = [pb.matrix.copy() for pb in parents]

@@ -85,7 +85,7 @@ class PoseCollector:
                 print("SKIP", ob.name, ob.type)
                 continue
             self.setupDriven(ob)
-            ostruct = self.saveTransform(ob, struct)
+            ostruct = self.saveTransform(ob, None, struct)
             dstruct = ostruct["data"] = {}
             if ob.type == 'ARMATURE':
                 rig = ob
@@ -97,7 +97,7 @@ class PoseCollector:
                     ostruct["collections"] = [coll.name for coll in amt.collections if coll.is_visible]
                 pstruct = ostruct["pose"] = {}
                 for pb in rig.pose.bones:
-                    self.saveTransform(pb, pstruct)
+                    self.saveTransform(pb, rig, pstruct)
                 morphs = self.getRelevantMorphs(scn, rig)
                 mstruct = ostruct["morphs"] = {}
                 for morph in morphs:
@@ -149,9 +149,13 @@ class PoseCollector:
         self.driven[bname][channel][idx] = True
 
 
-    def saveTransform(self, pb, struct):
-        if isDrvBone(pb.name) or isFinal(pb.name):
-            return
+    def saveTransform(self, pb, rig, struct):
+        if rig:
+            if (isDrvBone(pb.name) or
+                isFinal(pb.name) or
+                isInNumLayer(pb, rig, ("Help", "Help 2", "Hidden")) or
+                pb.name.startswith(("DEF-", "MCH-", "ORG-"))):
+                return
         ostruct = struct[pb.name] = {}
         if self.isFreeLoc(pb, "location"):
             ostruct["location"] = tuple(pb.location)

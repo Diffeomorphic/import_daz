@@ -65,6 +65,8 @@ if BLENDER3:
         trg.layers = list(src.layers)
 
     def isInNumLayer(bone, rig, layer):
+        if isinstance(layer, tuple):
+            return False
         return bone.layers[layer]
 
     def getRigLayers(rig):
@@ -135,6 +137,12 @@ else:
                 coll.assign(trg)
 
     def isInNumLayer(bone, rig, layer):
+        if isinstance(layer, tuple):
+            for cname in layer:
+                coll = rig.data.collections.get(cname)
+                if (coll and bone.name in coll.bones):
+                    return True
+            return False
         coll = rig.data.collections.get(layer)
         return (coll and bone.name in coll.bones)
 

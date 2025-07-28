@@ -126,12 +126,12 @@ class DAZ_OT_BakeToFkRig(FrameRange, IsArmature):
         for pb,bmats in mats:
             pb.matrix_basis = Matrix()
             if act:
-                insertKeys(pb, True, frame)
+                insertKeys(pb, None, frame)
             context.view_layer.update()
             for pb,mat in bmats:
                 pb.matrix = mat
                 if act:
-                    insertKeys(pb, True, frame)
+                    insertKeys(pb, None, frame)
                 context.view_layer.update()
                 if isLocationLocked(pb):
                     pb.location = Zero
