@@ -201,7 +201,11 @@ class PbrTree(CyclesTree):
         elif self.pbr and PBR.EmitColor in self.pbr.inputs.keys() and not self.postPBR:
             color = self.getColor("getChannelEmissionColor", BLACK)
             if not isBlack(color):
-                self.addEmitColor(self.pbr, PBR.EmitColor)
+                if LS.materialMethod == 'FBX_COMPATIBLE':
+                    color,tex,_ = self.getColorTex("getChannelEmissionColor", "COLOR", BLACK)
+                    self.linkColor(tex, self.pbr, color, PBR.EmitColor)
+                else:
+                    self.addEmitColor(self.pbr, PBR.EmitColor)
                 if "Emission Strength" in self.pbr.inputs.keys():
                     socket = self.pbr.inputs["Emission Strength"]
                     lum,lumtex = self.getLuminance(socket)

@@ -1629,6 +1629,7 @@ class CyclesTree(Tree):
             temp = 6500
         blackbody = self.addNode("ShaderNodeBlackbody", self.column-2)
         blackbody.inputs["Temperature"].default_value = temp
+        emit.inputs[slot].default_value[0:3] = color
         if isWhite(color) and tex is None:
             self.links.new(blackbody.outputs["Color"], emit.inputs[slot])
         else:
