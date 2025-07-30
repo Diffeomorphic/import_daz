@@ -505,14 +505,24 @@ def pruneNodeTree(tree,
                           useGroups)
             LS.protectedGroups.append(node.node_tree)
 
+    def isUvPrunable(node, active):
+        if node.type == 'TEX_COORD':
+            for key,socket in node.outputs.items():
+                if key != "UV" and len(socket.links) > 1:
+                    return False
+            return True
+        elif active is None:
+            return False
+        else:
+            return ((node.type == 'UVMAP' and node.uv_map == active.name) or
+                    (node.type == 'ATTRIBUTE' and node.attribute_name == active.name))
+
     if usePruneTexco:
         removes = []
         replaces = []
         links = []
         for node in tree.nodes:
-            if (node.type == 'TEX_COORD' or
-                (active and node.type == 'UVMAP' and node.uv_map == active.name) or
-                (active and node.type == 'ATTRIBUTE' and node.attribute_name == active.name)):
+            if isUvPrunable(node, active):
                 useRemove = True
                 replaceLinks = []
                 key = ("Vector" if node.type == 'ATTRIBUTE' else "UV")
