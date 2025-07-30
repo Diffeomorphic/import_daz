@@ -29,6 +29,8 @@ def setSimpleToFk(rig, layers, useInsertKeys, frame):
     from . import simple
     return simple.setSimpleToFk(rig, layers, useInsertKeys, frame)
 
+from .simple import SimpleIKSnapper
+
 #----------------------------------------------------------
 #   Register
 #----------------------------------------------------------

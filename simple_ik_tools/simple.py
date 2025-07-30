@@ -796,25 +796,36 @@ def setSimpleToFk(rig, layers, useInsertKeys, frame):
 #----------------------------------------------------------
 
 class SimpleFKSnapper(SimpleIK):
-    def snapSimpleFK(self, rig, prefix, type):
+
+    def snapAllSimpleFK(self, context, rig):
+        for prefix,type,on,off in [
+            ("l", "Arm", S_LARMFK, S_LARMIK),
+            ("r", "Arm", S_RARMFK, S_RARMIK),
+            ("l", "Leg", S_LLEGFK, S_LLEGIK),
+            ("r", "Leg", S_RLEGFK, S_RLEGIK)]:
+            self.snapSimpleFK(context, rig, prefix, type)
+            self.changeLayers(rig, on, off)
+
+
+    def snapSimpleFK(self, context, rig, prefix, type):
         bnames = self.getLimbBoneNames(rig, prefix, type)
         if bnames:
             prop = self.getIKProp(prefix, type)
-            self.snapBones(rig, bnames, prop)
+            self.snapBones(context, rig, bnames, prop)
             self.setProp(rig, prop, 0.0)
             self.linearizeFcurve(rig, prop)
 
 
-    def snapBones(self, rig, bnames, prop):
+    def snapBones(self, context, rig, bnames, prop):
         pbones,gmats = self.getSnapBones(rig, bnames)
         useGlobal = False
         self.setProp(rig, prop, 0.0)
         if useGlobal:
-            updatePose()
+            updateScene(context)
         for pb in pbones:
             if useGlobal:
                 pb.matrix = gmats[pb.name]
-                updatePose()
+                updateScene(context)
             else:
                 self.snapFkBone(pb, gmats)
 
@@ -864,7 +875,7 @@ class DAZ_OT_SnapSimpleFK(DazOperator):
         rig = context.object
         IK = SimpleFKSnapper()
         IK.initAuto(context)
-        IK.snapSimpleFK(rig, self.prefix, self.type)
+        IK.snapSimpleFK(context, rig, self.prefix, self.type)
         IK.changeLayers(rig, self.on, self.off)
 
 
@@ -878,13 +889,7 @@ class DAZ_OT_SnapAllSimpleFK(DazOperator):
         rig = context.object
         IK = SimpleFKSnapper()
         IK.initAuto(context)
-        for prefix,type,on,off in [
-            ("l", "Arm", S_LARMFK, S_LARMIK),
-            ("r", "Arm", S_RARMFK, S_RARMIK),
-            ("l", "Leg", S_LLEGFK, S_LLEGIK),
-            ("r", "Leg", S_RLEGFK, S_RLEGIK)]:
-            IK.snapSimpleFK(rig, prefix, type)
-            IK.changeLayers(rig, on, off)
+        IK.snapAllSimpleFK(context, rig)
 
 
 class DAZ_OT_SnapAnimationFK(FrameRange):
@@ -973,7 +978,17 @@ class DAZ_OT_SnapAnimationFK(FrameRange):
 class SimpleIKSnapper(SimpleIK):
     useReport = False
 
-    def snapSimpleIK(self, rig, prefix, type, pole):
+    def snapAllSimpleIK(self, context, rig):
+        for prefix,type,pole,on,off in [
+            ("l", "Arm", "lElbow", S_LARMIK, S_LARMFK),
+            ("r", "Arm", "rElbow", S_RARMIK, S_RARMFK),
+            ("l", "Leg", "lKnee", S_LLEGIK, S_LLEGFK),
+            ("r", "Leg", "rKnee", S_RLEGIK, S_RLEGFK)]:
+            self.snapSimpleIK(context, rig, prefix, type, pole)
+            self.changeLayers(rig, on, off)
+
+
+    def snapSimpleIK(self, context, rig, prefix, type, pole):
         bnames = self.getLimbBoneNames(rig, prefix, type)
         if type == "Leg":
             revbones = self.getRevBones(prefix, rig)
@@ -990,8 +1005,8 @@ class SimpleIKSnapper(SimpleIK):
         if bnames:
             prop = self.getIKProp(prefix, type)
             self.setProp(rig, prop, 0.0)
-            updatePose()
-            self.snapBones(rig, bnames, prop, pole, shldrik, revbones)
+            updateScene(context)
+            self.snapBones(context, rig, bnames, prop, pole, shldrik, revbones)
             self.setProp(rig, prop, 1.0)
             self.linearizeFcurve(rig, prop)
 
@@ -1017,7 +1032,7 @@ class SimpleIKSnapper(SimpleIK):
         return revbones
 
 
-    def snapBones(self, rig, bnames, prop, pole, shldrik, revbones):
+    def snapBones(self, context, rig, bnames, prop, pole, shldrik, revbones):
         from ..fix import getPreSufName
         hand = bnames[-1]
         handfk = rig.pose.bones.get(getPreSufName(hand, rig))
@@ -1051,16 +1066,16 @@ class SimpleIKSnapper(SimpleIK):
         self.setProp(rig, prop, 1.0)
         for pb,mat in revmats:
             pb.matrix = mat
-            updatePose()
+            updateScene(context)
             self.keyPose(pb)
         handik = rig.pose.bones.get(getPreSufName("%sIK" % hand, rig))
         if handik:
             handik.matrix = handmat
-            updatePose()
+            updateScene(context)
             self.keyPose(handik)
         if pole:
             poleik.matrix = polemat
-            updatePose()
+            updateScene(context)
             self.keyPose(poleik)
         elif shldrik:
             shldrik.rotation_euler = (0, shldrrot, 0)
@@ -1070,7 +1085,7 @@ class SimpleIKSnapper(SimpleIK):
             pb = rig.pose.bones.get(getPreSufName(bname, rig))
             if pb:
                 pb.matrix_basis = Matrix()
-                updatePose()
+                updateScene(context)
                 self.keyPose(pb)
 
 
@@ -1114,7 +1129,7 @@ class DAZ_OT_SnapSimpleIK(DazOperator):
         rig = context.object
         IK = SimpleIKSnapper()
         IK.initAuto(context)
-        IK.snapSimpleIK(rig, self.prefix, self.type, self.pole)
+        IK.snapSimpleIK(context, rig, self.prefix, self.type, self.pole)
         IK.changeLayers(rig, self.on, self.off)
 
 
@@ -1130,13 +1145,7 @@ class DAZ_OT_SnapAllSimpleIK(DazOperator):
         rig = context.object
         IK = SimpleIKSnapper()
         IK.initAuto(context)
-        for prefix,type,pole,on,off in [
-            ("l", "Arm", "lElbow", S_LARMIK, S_LARMFK),
-            ("r", "Arm", "rElbow", S_RARMIK, S_RARMFK),
-            ("l", "Leg", "lKnee", S_LLEGIK, S_LLEGFK),
-            ("r", "Leg", "rKnee", S_RLEGIK, S_RLEGFK)]:
-            IK.snapSimpleIK(rig, prefix, type, pole)
-            IK.changeLayers(rig, on, off)
+        IK.snapAllSimpleIK(context, rig)
 
 #----------------------------------------------------------
 #   Toggle FK/IK

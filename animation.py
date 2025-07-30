@@ -857,10 +857,12 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             except KeyError:    #AttributeError:
                 self.snapError = True
         elif rig.get("DazSimpleIK"):
-            from .simple_ik_tools import setSimpleToFk
+            from .simple_ik_tools import SimpleIKSnapper, setSimpleToFk
             try:
                 auto = setAuto(scn, self.useInsertKeys)
-                bpy.ops.daz.snap_all_simple_ik()
+                IK = SimpleIKSnapper()
+                IK.initAuto(context)
+                IK.snapAllSimpleIK(context, rig)
                 setAuto(scn, auto)
                 self.boneLayers = setSimpleToFk(rig, self.boneLayers, False, frame)
             except AttributeError:
