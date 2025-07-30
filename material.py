@@ -357,6 +357,13 @@ class Material(Asset, Channels):
             mat = self.rna = bpy.data.materials.new(self.name)
             setModernProps(mat)
             LS.materials[self.name] = mat
+
+        if GS.useStoreMaterialMapping:
+            mat["Horizonal Offset"] = self.getValue("getChannelHorizontalOffset", 0.0)
+            mat["Vertical Offset"] = self.getValue("getChannelVerticalOffset", 0.0)
+            mat["Horizonal Tiles"] = self.getValue("getChannelHorizontalTiles", 1)
+            mat["Vertical Tiles"] = self.getValue("getChannelVerticalTiles", 1)
+
         scn = self.scene = context.scene
         dazRna(mat).DazShader = self.shader
         if self.uv_set:
@@ -825,19 +832,7 @@ class Texture:
                  map.gamma != 1.0))
 
 
-    def getMapping(self, mat, map):
-        if self.images["COLOR"]:
-            img = self.images["COLOR"]
-            return self.getImageMapping(img, mat, map)
-        elif self.images["NONE"]:
-            img = self.images["NONE"]
-            return self.getImageMapping(img, mat, map)
-        else:
-            reportError("BUG: getMapping finds no image", trigger=(3,5))
-            return (0,0,1,1,0)
-
-
-    def getImageMapping(self, img, mat, map):
+    def getImageMapping(self, img, dmat, map):
         # mapping scale x = texture width / lie document size x * (lie x scale / 100)
         # mapping scale y = texture height / lie document size y * (lie y scale / 100)
         # mapping location x = udim place + lie x position * (lie y scale / 100) / lie document size x
@@ -847,10 +842,10 @@ class Texture:
             return (0,0,1,1,0)
 
         if map.size is None:
-            dx = mat.getValue("getChannelHorizontalOffset", 0.0)
-            dy = mat.getValue("getChannelVerticalOffset", 0.0)
-            sx = 1.0/mat.getValue("getChannelHorizontalTiles", 1)
-            sy = 1.0/mat.getValue("getChannelVerticalTiles", 1)
+            dx = dmat.getValue("getChannelHorizontalOffset", 0.0)
+            dy = dmat.getValue("getChannelVerticalOffset", 0.0)
+            sx = 1.0/dmat.getValue("getChannelHorizontalTiles", 1)
+            sy = 1.0/dmat.getValue("getChannelVerticalTiles", 1)
             rz = 0.0
             return (dx,dy,sx,sy,rz)
 
@@ -859,10 +854,10 @@ class Texture:
         kx,ky = tx/mx,ty/my
         ox,oy = map.xoffset/mx, map.yoffset/my
         rz = map.rotation
-        ox += mat.getValue("getChannelHorizontalOffset", 0.0)
-        oy += mat.getValue("getChannelVerticalOffset", 0.0)
-        kx *= mat.getValue("getChannelHorizontalTiles", 1)
-        ky *= mat.getValue("getChannelVerticalTiles", 1)
+        ox += dmat.getValue("getChannelHorizontalOffset", 0.0)
+        oy += dmat.getValue("getChannelVerticalOffset", 0.0)
+        kx *= dmat.getValue("getChannelHorizontalTiles", 1)
+        ky *= dmat.getValue("getChannelVerticalTiles", 1)
         sx = map.xscale*kx
         sy = map.yscale*ky
 

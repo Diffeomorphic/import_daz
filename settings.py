@@ -91,6 +91,7 @@ class GlobalSettings:
         self.useShellDrivers = True
         self.useLayeredInflu = False
         self.useLayeredShells = True
+        self.useStoreMaterialMapping = False
 
         self.onStrengthAdjusters = 'NONE'
         self.useDazLimits = True
