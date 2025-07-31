@@ -39,6 +39,7 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
 
 
     def run(self, context):
+        self.getBusyEmpties(context)
         roots = []
         if self.useAllEmpties:
             objects = getVisibleObjects(context)
@@ -53,6 +54,23 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
             else:
                 coll = None
             self.eliminateEmpties(root, context, False, coll)
+
+
+    def getBusyEmpties(self, context):
+        def getBusy(tree):
+            if tree:
+                for node in tree.nodes:
+                    if node.type == 'TEX_COORD':
+                        if node.object:
+                            self.busy.add(node.object)
+                    elif node.type == 'GROUP':
+                        getBusy(node.node_tree)
+
+        self.busy = set()
+        for me in bpy.data.meshes:
+            for mat in me.materials:
+                if mat:
+                    getBusy(mat.node_tree)
 
 
     def eliminateEmpties(self, empty, context, sub, coll):
@@ -119,7 +137,8 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
 
     def doEliminate(self, ob):
         if (ob.type != 'EMPTY' or
-            ob.instance_type != 'NONE'):
+            ob.instance_type != 'NONE' or
+            ob in self.busy):
             return False
         if getHideViewport(ob):
             if self.useHidden:
