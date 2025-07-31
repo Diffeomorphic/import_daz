@@ -240,7 +240,7 @@ def loadDbzFile(filepath):
                     matgroups = value
             dbzobj = DBZObject(name, label, verts, uvs, [], faces, polylines, matgroups, polymats, props, lod, center)
             if nverts == 0:
-                dbz.addEntry("hdshells", nhdverts, label, dbzobj)
+                dbz.addEntry("hdshells", str(nhdverts), label, dbzobj)
             else:
                 dbz.addEntry("hdobjects", name, label, dbzobj)
 
@@ -392,9 +392,9 @@ def fitToFile(filepath, nodes):
                 if dbz.hdobjects:
                     highdef = dbz.getEntry("hdobjects", nname, inst)
                     if highdef:
-                        hdshells = dbz.hdshells.get(len(highdef.verts), {})
+                        hdshells = dbz.hdshells.get(str(len(highdef.verts)), {})
                         if GS.verbosity >= 3:
-                            print("HD mesh", highdef)
+                            print("HD mesh", highdef, len(highdef.verts))
                             print("HD shells", list(hdshells.values()))
                 if base is None:
                     print("Cannot fit: %s" % inst)
