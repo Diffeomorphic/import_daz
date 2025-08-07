@@ -1861,6 +1861,8 @@ class CyclesTree(Tree):
         ty = imgmod.get("vertical_tiles", 1)
         dy = imgmod.get("vertical_tiling_offset", 0)
         data = (-dx/tx, dy/ty-1, 1/tx, 1/ty, 0)
+        if map and map.operation and map.operation.startswith("blend"):
+            texnode.extension = 'CLIP'
         innode, outnode, changed = self.modifyTexture(col, texnode, outnode, data, imgmod.get("invert"), map.gamma, False)
         if asset.hasMapping(map) and not changed:
             data = asset.getImageMapping(img, self.owner, map)
@@ -1967,32 +1969,38 @@ class CyclesTree(Tree):
             return newTexture(assets[0], maps[0]), texslot
 
         from .cgroup import LayeredGroup
+        node = None
         if "image" in channel.keys():
             name = unquote(channel["image"])
             if name[0] == "#":
                 name = name[1:]
             name = "LIE %s" % name
-            if name in self.layeredGroups.keys():
-                return self.layeredGroups[name], texslot
+            node = self.layeredGroups.get(name)
         else:
             name = "LIE Layered"
-        node = self.addNode("ShaderNodeGroup", col)
-        tree = LS.layeredGroups.get(name)
-        if tree:
-            node.node_tree = tree
-            node.name = name
-        else:
-            group = LayeredGroup()
-            group.create(node, name, self)
-            group.addTextureNodes(assets, maps, imgmod, colorSpace, isMask)
-            if name != "LIE Layered":
-                LS.layeredGroups[name] = node.node_tree
-        node.width = 240
-        node.label = name
-        self.linkVector(self.texco, node)
-        if "Influence" in node.inputs.keys():
-            node.inputs["Influence"].default_value = 1.0
-        self.layeredGroups[name] = node
+
+        if node is None:
+            node = self.addNode("ShaderNodeGroup", col)
+            tree = LS.layeredGroups.get(name)
+            if tree:
+                node.node_tree = tree
+                node.name = name
+            else:
+                group = LayeredGroup()
+                group.create(node, name, self)
+                group.addTextureNodes(assets, maps, imgmod, colorSpace, isMask)
+                if name != "LIE Layered":
+                    LS.layeredGroups[name] = node.node_tree
+            node.width = 240
+            node.label = name
+            self.linkVector(self.texco, node)
+            if "Influence" in node.inputs.keys():
+                node.inputs["Influence"].default_value = 1.0
+            self.layeredGroups[name] = node
+
+        if self.inShell:
+            pass
+
         return node, texslot
 
 
