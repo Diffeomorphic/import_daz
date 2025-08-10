@@ -424,7 +424,10 @@ class GeoNode(Node, SimNode):
                         bpy.ops.mesh.mark_sharp()
                         bpy.ops.mesh.reveal()
                     setMode('OBJECT')
-                    bpy.ops.object.shade_smooth(use_auto_smooth=True)
+                    try:
+                        bpy.ops.object.shade_smooth(use_auto_smooth=True)
+                    except TypeError:
+                        bpy.ops.object.shade_smooth()
                 else:
                     setMode('EDIT')
                     for mnum,dmat in dmats:
