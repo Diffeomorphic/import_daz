@@ -77,6 +77,8 @@ class GlobalSettings:
         self.onRenderSettings = "UPDATE"
         self.onLightSettings = "WARN"
         self.useVolume = True
+        self.useBump = True
+        self.useNormalMap = True
         self.useDisplacement = True
         self.useEmission = True
         self.bumpMultiplier = 1.0

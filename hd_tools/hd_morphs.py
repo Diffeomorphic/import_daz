@@ -296,7 +296,7 @@ class NormalAdder:
         from ..cycles import findTree
         from ..material import NORMAL
 
-        if not self.checkTileUsed(mat, args):
+        if not self.checkTileUsed(mat, args) or not GS.useNormalMap:
             return
         tree = findTree(mat)
         if self.useCompact:

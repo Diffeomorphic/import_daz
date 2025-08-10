@@ -629,7 +629,7 @@ class CyclesTree(Tree):
     #-------------------------------------------------------------
 
     def buildNormal(self, uvname):
-        if self.isEnabled("Normal"):
+        if self.isEnabled("Normal") and GS.useNormalMap:
             strength,tex,_ = self.getColorTex("getChannelNormal", "NONE", 1.0, useFactor=False)
             if strength>0 and tex:
                 self.normal = self.buildNormalMap(strength, tex, uvname)
@@ -678,12 +678,12 @@ class CyclesTree(Tree):
         if not self.isEnabled("Bump"):
             return
         bumpmode = self.owner.getLayeredValue(["Bump Mode"], 0)
-        if bumpmode == 0:
+        if bumpmode == 0 and GS.useBump:
             self.bumpval,self.bumptex,_ = self.getColorTex("getChannelBump", "NONE", 0, False)
             if self.bumpval and self.bumptex:
                 self.bump = self.buildBumpMap(self.bumpval, self.bumptex)
                 self.linkNormal(self.bump)
-        elif bumpmode == 1:
+        elif bumpmode == 1 and GS.useNormalMap:
             strength,tex,_ = self.getColorTex("getChannelBump", "NONE", 0, False)
             if strength>0 and tex:
                 self.normal = self.buildNormalMap(strength, tex, uvname)
@@ -736,7 +736,7 @@ class CyclesTree(Tree):
         mode = self.getValue(["Detail Normal Map Mode"], 0)
         if weight == 0 or tex is None:
             pass
-        elif mode == 0:
+        elif mode == 0 and GS.useBump:
             # Height Map
             if self.bump:
                 link = getLinkTo(self, self.bump, "Height")
@@ -751,7 +751,7 @@ class CyclesTree(Tree):
                 tex = self.multiplyTexs(tex, wttex)
                 self.bump = self.buildBumpMap(weight, tex)
                 self.linkNormal(self.bump)
-        elif mode == 1:
+        elif mode == 1 and GS.useNormalMap:
             # Normal Map
             if self.normal:
                 link = getLinkTo(self, self.normal, "Color")
@@ -1266,13 +1266,13 @@ class CyclesTree(Tree):
             bumpval,bumptex,_ = self.getColorTex(["Top Coat Bump"], "NONE", 0, useFactor=False)
             if bumptex is None:
                 pass
-            elif bumpmode == 0:   # Height map
+            elif bumpmode == 0 and GS.useBump:   # Height map
                 bump = self.mixBump(bumpmode, bumpval, bumptex)
             elif bumpmode == 1:   # Normal map
                 normal = self.mixNormal(bumpmode, bumpval, bumptex, uvname)
         else:
             bumpval = self.getValue(["Top Coat Bump Weight"], 0)
-            if self.bumptex:
+            if self.bumptex and GS.useBump:
                 bump = self.buildBumpMap(bumpval*self.bumpval, self.bumptex)
                 self.linkNormal(bump)
         return bump, normal
@@ -1309,12 +1309,14 @@ class CyclesTree(Tree):
             self.links.new(colorOutput(bumptex), b)
             bumptex = mix
         normal = self.buildNormalMap(bumpval, bumptex, uvname)
-        if self.bumptex:
+        if self.bumptex and GS.useBump:
             bump = self.buildBumpMap(self.bumpval, self.bumptex)
             self.links.new(normal.outputs["Normal"], bump.inputs["Normal"])
             return bump
-        else:
+        elif GS.useNormalMap:
             return normal
+        else:
+            return None
 
     #-------------------------------------------------------------
     #   Translucency
@@ -1333,13 +1335,13 @@ class CyclesTree(Tree):
         node.width = 200
         if self.getValue(["Invert Transmission Normal"], 0):
             normal = bump = None
-            if self.normalval and self.normaltex:
+            if self.normalval and self.normaltex and GS.useNormalMap:
                 from .cgroup import InvertNormalMapGroup
                 inv = self.addGroup(InvertNormalMapGroup, "DAZ Invert NMap", col=self.column-1)
                 self.links.new(colorOutput(self.normaltex), inv.inputs["Color"])
                 normal = self.buildNormalMap(self.normalval, inv, uvname, col=self.column-1)
                 self.links.new(inv.outputs["Color"], normal.inputs["Color"])
-            if self.bumpval and self.bumptex:
+            if self.bumpval and self.bumptex and GS.useBump:
                 inv = self.addNode("ShaderNodeInvert", col=self.column-1)
                 inv.inputs["Fac"].default_value = 1.0
                 self.links.new(colorOutput(self.bumptex), inv.inputs["Color"])

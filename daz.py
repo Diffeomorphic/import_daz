@@ -609,6 +609,14 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Fake Caustics",
         description = "Use fake caustics")
 
+    useBump : BoolProperty(
+        name = "Bump",
+        description = "Use bump maps")
+
+    useNormalMap : BoolProperty(
+        name = "Normal Map",
+        description = "Use normal maps")
+
     useDisplacement : BoolProperty(
         name = "Displacement",
         description = "Use displacement maps")
@@ -810,6 +818,8 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         drawEnum(self, box, "onRenderSettings")
         drawEnum(self, box, "onLightSettings")
         box.separator()
+        box.prop(self, "useBump")
+        box.prop(self, "useNormalMap")
         box.prop(self, "useDisplacement")
         box.prop(self, "useEmission")
         box.prop(self, "useVolume")
