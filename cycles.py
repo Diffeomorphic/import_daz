@@ -202,7 +202,6 @@ def setRenderMethod(mat, blended, clipped):
     else:
         if clipped:
             mat.blend_method = 'CLIP'
-            print("CLI", mat.name)
         elif blended:
             mat.blend_method = 'BLEND'
             mat.show_transparent_back = False
@@ -1864,7 +1863,7 @@ class CyclesTree(Tree):
         ty = imgmod.get("vertical_tiles", 1)
         dy = imgmod.get("vertical_tiling_offset", 0)
         data = (-dx/tx, dy/ty-1, 1/tx, 1/ty, 0)
-        innode, outnode, changed = self.modifyTexture(col, texnode, outnode, data, imgmod.get("invert"), map.gamma, self.isDecal)
+        innode, outnode, changed = self.modifyTexture(col, texnode, outnode, data, imgmod.get("invert"), map.gamma, False)
         if asset.hasMapping(map) and not changed:
             data = asset.getImageMapping(img, self.owner, map)
             innode, outnode, changed = self.modifyTexture(col, texnode, outnode, data, map.invert, map.gamma, True)
