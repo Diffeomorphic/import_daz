@@ -1055,6 +1055,10 @@ class Geometry(Asset, Channels):
                     self.uvs = dict(extra["material_uvs"])
         if GS.shellMethod in ['MATERIAL', 'GEONODES']:
             if inst.shellNode:
+                vis = inst.channels.get("Visible")
+                if vis and not vis.get("current_value", True):
+                    print("Ignoring hidden shell %s" % inst.name)
+                    return
                 missing = self.addShells(inst.shellNode, inst)
                 for mname,shmat,uv in missing:
                     msg = ("Missing shell material\n" +

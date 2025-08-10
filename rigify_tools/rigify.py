@@ -1392,6 +1392,10 @@ class Rigifier(RigifyCommon):
             if ob.data.shape_keys and ob.data.shape_keys.animation_data:
                 for fcu in ob.data.shape_keys.animation_data.drivers:
                     self.setId(fcu, rig, newrig)
+            for mat in ob.data.materials:
+                if mat and mat.node_tree and mat.node_tree.animation_data:
+                    for fcu in mat.node_tree.animation_data.drivers:
+                        self.setId(fcu, rig, newrig)
             for mod in ob.modifiers:
                 if mod.type == 'ARMATURE' and mod.object == rig:
                     mod.object = newrig
