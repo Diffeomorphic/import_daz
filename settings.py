@@ -98,12 +98,11 @@ class GlobalSettings:
         self.sliderMultiplier = 1.0
         self.showFinalProps = False
         self.showInTerminal = True
-        self.useMuteDrivers = False
         self.driverRotationMode = 'NATIVE'
         self.ercMethod = 'NONE'
         self.useStripCategory = False
         self.useDefaultDrivers = True
-        self.useOptimizeJcms = False
+        self.onShapekeyDrivers = 'REGULAR'
         self.useRigidityAttributes = True
         self.useFaceGroupMasks = False
 

@@ -327,10 +327,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Show In Terminal",
         description = "Display full morph names when loading and transferring morphs")
 
-    useMuteDrivers : BoolProperty(
-        name = "Shapekey Mute Drivers",
-        description = "Add drivers that mute shapekeys if shapekey value = 0.\nAffects JCMs, flexions and custom morphs")
-
     ercMethod : EnumProperty(
         items = [('NONE', "None", "ERC morphs are ignored"),
                  ('TRANSLATION', "Translation", "ERC morphs are translations"),
@@ -347,9 +343,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Default Drivers",
         description = "Create default drivers defined in the scene file")
 
-    useOptimizeJcms : BoolProperty(
-        name = "Optimize JCM Drivers",
-        description = "Optimize drivers when loading JCMs and flexions. Experimental")
+    onShapekeyDrivers : EnumProperty(
+        items = [('REGULAR', "Regular", "Make regular, non-optimized drivers"),
+                 ('OPTIMIZE_JCMS', "Optimize JCMs", "Optimize drivers when loading JCMs and flexions"),
+                 ('MUTE_DRIVERS', "Mute Drivers", "Add drivers that mute shapekeys if shapekey value = 0.\nAffects JCMs, flexions and custom morphs")],
+        name = "Shapekey Drivers",
+        description = "Optimization method for shapekey drivers")
 
     useMakeHiddenSliders : BoolProperty(
         name = "Make Hidden Sliders",
@@ -767,11 +766,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "sliderMultiplier")
         box.prop(self, "showFinalProps")
         box.prop(self, "showInTerminal")
-        box.prop(self, "useMuteDrivers")
+        drawEnum(self, box, "onShapekeyDrivers")
         drawEnum(self, box, "ercMethod")
         box.prop(self, "useStripCategory")
         box.prop(self, "useDefaultDrivers")
-        box.prop(self, "useOptimizeJcms")
         box.prop(self, "useFaceGroupMasks")
 
         box = col.box()

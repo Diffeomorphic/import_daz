@@ -230,7 +230,7 @@ class LoadMorph(DriverUser):
                 self.buildDrivers()
                 self.buildSumDrivers()
                 self.buildRestDrivers()
-                if self.isJcm and not GS.useMuteDrivers:
+                if self.isJcm and GS.onShapekeyDrivers == 'OPTIMIZE_JCMS':
                     self.optimizeJcmDrivers()
                 self.correctScaleParents()
             finally:
@@ -562,7 +562,7 @@ class LoadMorph(DriverUser):
         from .driver import makePropDriver
         path = propRef(final)
         makePropDriver(path, skey, "value", self.amt, "x")
-        if GS.useMuteDrivers:
+        if GS.onShapekeyDrivers == 'MUTE_DRIVERS':
             makePropDriver(path, skey, "mute", self.amt, "abs(x)<0.0001")
 
 
@@ -1779,7 +1779,7 @@ class LoadMorph(DriverUser):
 
 
     def optimizeJcmDrivers(self):
-        if (not GS.useOptimizeJcms or
+        if (GS.onShapekeyDrivers != 'OPTIMIZE_JCMS' or
             GS.useMakeHiddenSliders or
             self.useMakeHiddenSliders or
             self.rig is None or

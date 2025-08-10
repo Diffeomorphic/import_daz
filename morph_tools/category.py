@@ -859,7 +859,7 @@ class DAZ_OT_AddShapekeyDrivers(DazOperator, AddRemoveDriver, Selector, Category
         setFloatProp(rig.data, final, skey.value, skey.slider_min, skey.slider_max, False)
         makePropDriver(propRef(sname), rig.data, propRef(final), rig, "x")
         makePropDriver(propRef(final), skey, "value", rig.data, "x")
-        if GS.useMuteDrivers:
+        if GS.onShapekeyDrivers == 'MUTE_DRIVERS':
             makePropDriver(propRef(final), skey, "mute", rig.data, "abs(x)<0.0001")
         addToCategories(rig, [sname], None, self.category)
         dazRna(rig).DazCustomMorphs = True
