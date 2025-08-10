@@ -1941,6 +1941,7 @@ class LayeredGroup(CyclesGroup):
             self.setMinMax("Influence", 0.0, 0.0, 10)
         addGroupOutput(self.group, "NodeSocketColor", "Color")
         addGroupOutput(self.group, "NodeSocketFloat", "Alpha")
+        self.isDecal = parent.isDecal
 
 
     def addTextureNodes(self, assets, maps, imgmod, colorSpace, isMask):
