@@ -2000,9 +2000,7 @@ class CyclesTree(Tree):
                 node.inputs["Influence"].default_value = 1.0
             self.layeredGroups[name] = node
 
-        if self.inShell:
-            pass
-
+        self.clipsocket = node.outputs.get("Alpha")
         return node, texslot
 
 
