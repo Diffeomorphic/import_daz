@@ -788,6 +788,7 @@ def makeDazImages(tree):
             outsocket = getVectorSocket(cnode.outputs)
         ctex = copyNode(tex, ctree)
         ctex.hide = False
+        ctex.extension = 'REPEAT'
         ctree.links.new(outsocket, getVectorSocket(ctex.inputs))
 
         last = (after[0] if after else tex)
