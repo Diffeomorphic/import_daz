@@ -555,7 +555,7 @@ class LocalSettings:
         self.materials = OrderedDict()
         self.images = {}
         self.protectedImages = {}
-        self.protectedGroups = []
+        self.protectedGroups = set()
         self.gammas = {}
         self.customShapes = []
         self.toons = []

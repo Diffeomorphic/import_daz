@@ -1973,6 +1973,7 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
 
     def run(self, context):
         from .tree import pruneMaterials
+        LS.__init__()
         for ob in getSelectedMeshes(context):
             pruneMaterials(ob,
                            self.useDeleteUnusedNodes,

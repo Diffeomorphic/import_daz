@@ -500,10 +500,10 @@ def pruneNodeTree(tree,
                           useHideOutputs,
                           keepUnusedTextures,
                           useFixColorSpace,
-                          (not isLie),
+                          (useDazImages and not isLie),
                           useBeautify,
                           useGroups)
-            LS.protectedGroups.append(node.node_tree)
+            LS.protectedGroups.add(node.node_tree)
 
     def isUvPrunable(node, active):
         if node.type == 'TEX_COORD':
