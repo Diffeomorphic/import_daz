@@ -1001,7 +1001,6 @@ class Node(Asset, Formula, Channels):
         obname = self.getObjectName(inst)
         if isinstance(self.data, UnGeometry):
             ob = bpy.data.objects.new(obname, None)
-            #self.data.fixDecalMaps(inst)
         elif isinstance(self.data, Asset):
             if self.data.isShell and GS.shellMethod == 'MATERIAL':
                 return

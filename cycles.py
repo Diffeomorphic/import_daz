@@ -390,10 +390,6 @@ class CyclesTree(Tree):
 
     def addMappingGroup(self, empty, col=None):
         from .cgroup import DazDecalMapGroup
-        if empty:
-            ename = empty.name
-        else:
-            ename = "NONE"
         texco = self.addNode("ShaderNodeTexCoord", col)
         texco.object = empty
         mapping = self.addGroup(DazDecalMapGroup, "DAZ Decal Map", col=col)

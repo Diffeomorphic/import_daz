@@ -169,7 +169,6 @@ class Tree:
         tree = bpy.data.node_groups.get(name)
         if tree and not force:
             node.node_tree = tree
-            LS.fixTree = tree
             return node
         group.create(node, name, self)
         group.addNodes(args)

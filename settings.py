@@ -557,7 +557,6 @@ class LocalSettings:
         self.protectedImages = {}
         self.protectedGroups = set()
         self.gammas = {}
-        self.fixTree = None
         self.customShapes = []
         self.toons = []
         self.rimtoons = []
