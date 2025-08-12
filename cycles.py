@@ -358,7 +358,6 @@ class CyclesTree(Tree):
             return
         if self.owner.isShellMat:
             raise RuntimeError("BUG buildDecals: %s" % self)
-        from .cgroup import MappingGroup
         decals = [(inst.getValue(["Priority"],0), n, inst) for n,inst in enumerate(self.owner.decals)]
         decals.sort()
         for _,_,inst in decals:
@@ -369,13 +368,8 @@ class CyclesTree(Tree):
             if csys == 0:
                 mapping = texco
             elif csys == 2:
-                if inst.mappingNode:
-                    mapping = self.addNode("ShaderNodeGroup")
-                    mapping.name = mapping.label = inst.name
-                    mapping.node_tree = inst.mappingNode
-                else:
-                    mapping = self.addGroup(MappingGroup, inst.name, args=[inst.rna], force=True)
-                    inst.mappingNode = mapping.node_tree
+                texco,mapping = self.addMappingGroup(inst.rna)
+                inst.texcos.append(texco)
             self.addColumn()
             for geonode in inst.geometries:
                 for dmat,grp in zip(geonode.materials.values(), geonode.data.polygon_material_groups):
@@ -392,6 +386,19 @@ class CyclesTree(Tree):
                         self.links.new(mapping.outputs["Depth Mask"], node.inputs["Influence"])
                     self.links.new(mapping.outputs["Vector"], node.inputs["UV"])
                     self.cycles = node
+
+
+    def addMappingGroup(self, empty, col=None):
+        from .cgroup import DazDecalMapGroup
+        if empty:
+            ename = empty.name
+        else:
+            ename = "NONE"
+        texco = self.addNode("ShaderNodeTexCoord", col)
+        texco.object = empty
+        mapping = self.addGroup(DazDecalMapGroup, "DAZ Decal Map", col=col)
+        self.links.new(texco.outputs["Object"], mapping.inputs["Vector"])
+        return texco,mapping
 
 
     def addDecalGroup(self, dmat):

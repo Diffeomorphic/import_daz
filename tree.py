@@ -166,11 +166,11 @@ class Tree:
         size = GroupSize.get(name, 10)
         node = self.addNode(self.nodeGroupType, col, size=size)
         node.name = node.label = name
-        if name in bpy.data.node_groups.keys() and not force:
-            tree = bpy.data.node_groups[name]
-            if group.checkSockets(tree):
-                node.node_tree = tree
-                return node
+        tree = bpy.data.node_groups.get(name)
+        if tree and not force:
+            node.node_tree = tree
+            LS.fixTree = tree
+            return node
         group.create(node, name, self)
         group.addNodes(args)
         tree = node.node_tree
@@ -508,7 +508,7 @@ def pruneNodeTree(tree,
     def isUvPrunable(node, active):
         if node.type == 'TEX_COORD':
             for key,socket in node.outputs.items():
-                if key != "UV" and len(socket.links) > 1:
+                if key != "UV" and len(socket.links) > 0:
                     return False
             return True
         elif active is None:

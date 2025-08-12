@@ -149,6 +149,7 @@ class Instance(Accessor, Channels, SimNode):
         self.attributes = copyElements(node.attributes)
         self.restdata = None
         self.mappingNode = None
+        self.texcos = []
         self.wsmat = self.U3
         self.lsmat = None
         self.rigtype = node.rigtype
@@ -336,16 +337,17 @@ class Instance(Accessor, Channels, SimNode):
             geonode.postbuild(context, self)
         if GS.useInstancing:
             self.buildNodeInstance(context)
-        if self.mappingNode:
+        if self.texcos:
             x = self.getValue(["ClippingWidth"], 50)
             y = self.getValue(["ClippingDepth"], 50)
             z = self.getValue(["ClippingHeight"], 50)
             diag = 2*GS.scale*Matrix.Diagonal((x,y,z))
-            texco = findTexco(self.mappingNode)
-            empty = texco.object = self.rna
+            empty = self.rna
             empty.empty_display_type = 'CUBE'
             empty.empty_display_size = 0.25
             empty.scale = diag@empty.scale
+            for texco in self.texcos:
+                texco.object = empty
 
 
     def getRefColl(self, context):
@@ -999,7 +1001,7 @@ class Node(Asset, Formula, Channels):
         obname = self.getObjectName(inst)
         if isinstance(self.data, UnGeometry):
             ob = bpy.data.objects.new(obname, None)
-            self.data.fixMappingNodes(inst)
+            #self.data.fixDecalMaps(inst)
         elif isinstance(self.data, Asset):
             if self.data.isShell and GS.shellMethod == 'MATERIAL':
                 return

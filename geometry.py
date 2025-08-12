@@ -826,20 +826,6 @@ class UnGeometry(Asset, Channels):
         if self.etype == "studio_geometry_channels":
             self.polygon_material_groups = struct["polygon_material_groups"]["values"]
 
-    def fixMappingNodes(self, inst):
-        # Lost the correct location somewhere
-        if self.etype == "studio_geometry_channels" and inst.mappingNode:
-            mtree = inst.mappingNode
-            map1,map2 = [mnode for mnode in mtree.nodes if mnode.type == 'MAPPING']
-            if GS.verbosity >= 3:
-                print("Fix maps",  map1.inputs["Location"].default_value,  map2.inputs["Location"].default_value)
-            map1.inputs["Location"].default_value = (0, 0, 0)
-            map1.inputs["Rotation"].default_value = (0, 0, 0)
-            map1.inputs["Scale"].default_value = (0.1, 1.0, 0.1)
-            map2.inputs["Location"].default_value = (0.5, 0.5, 0)
-            map2.inputs["Rotation"].default_value = (-90*D, 0, 0)
-            map2.inputs["Scale"].default_value = (2, 2 ,2)
-
 #-------------------------------------------------------------
 #   Geometry
 #-------------------------------------------------------------

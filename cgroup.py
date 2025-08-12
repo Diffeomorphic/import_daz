@@ -1813,29 +1813,27 @@ class DisplacementGroup(CyclesGroup):
 #   Mapping Group
 # ---------------------------------------------------------------------
 
-class MappingGroup(CyclesGroup):
+class DazDecalMapGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
+        self.insockets += ["Vector"]
         self.outsockets += ["Depth Mask", "Vector"]
 
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
+        addGroupInput(self.group, "NodeSocketVector", "Vector")
         addGroupOutput(self.group, "NodeSocketFloat", "Depth Mask")
         addGroupOutput(self.group, "NodeSocketVector", "Vector")
 
 
     def addNodes(self, args):
-        empty = args[0]
-        texco = self.addNode("ShaderNodeTexCoord", 0)
-        texco.object = empty
-
         mapping1 = self.addNode("ShaderNodeMapping", 1)
         mapping1.vector_type = 'POINT'
         mapping1.inputs["Location"].default_value = (0, 0, 0)
         mapping1.inputs["Rotation"].default_value = (0, 0, 0)
         mapping1.inputs["Scale"].default_value = (0.1, 1.0, 0.1)
-        self.links.new(texco.outputs["Object"], mapping1.inputs["Vector"])
+        self.links.new(self.inputs.outputs["Vector"], mapping1.inputs["Vector"])
 
         grad = self.addNode("ShaderNodeTexGradient", 2)
         grad.gradient_type = 'SPHERICAL'
@@ -1852,8 +1850,23 @@ class MappingGroup(CyclesGroup):
         mapping2.inputs["Location"].default_value = (0.5, 0.5, 0)
         mapping2.inputs["Rotation"].default_value = (-90*D, 0, 0)
         mapping2.inputs["Scale"].default_value = (2, 2 ,2)
-        self.links.new(texco.outputs["Object"], mapping2.inputs["Vector"])
+        self.links.new(self.inputs.outputs["Vector"], mapping2.inputs["Vector"])
         self.links.new(mapping2.outputs["Vector"], self.outputs.inputs["Vector"])
+
+
+def fixDecalMaps():
+    # Lost the correct location somewhere
+    mtree = bpy.data.node_groups.get("DAZ Decal Map")
+    if mtree:
+        map1,map2 = [mnode for mnode in mtree.nodes if mnode.type == 'MAPPING']
+        if GS.verbosity >= 3:
+            print("Fix maps",  map1.inputs["Location"].default_value,  map2.inputs["Location"].default_value)
+        map1.inputs["Location"].default_value = (0, 0, 0)
+        map1.inputs["Rotation"].default_value = (0, 0, 0)
+        map1.inputs["Scale"].default_value = (0.1, 1.0, 0.1)
+        map2.inputs["Location"].default_value = (0.5, 0.5, 0)
+        map2.inputs["Rotation"].default_value = (-90*D, 0, 0)
+        map2.inputs["Scale"].default_value = (2, 2 ,2)
 
 # ---------------------------------------------------------------------
 #   Decal Group
@@ -1879,11 +1892,7 @@ class DecalGroup(CyclesGroup):
 
     def addNodes(self, args):
         empty,img,mask,blendType = args
-        if empty:
-            ename = empty.name
-        else:
-            ename = "NONE"
-        mapping = self.addGroup(MappingGroup, ename, args=[empty], col=1)
+        texco,mapping = self.addMappingGroup(empty, col=1)
 
         tex = self.addNode("ShaderNodeTexImage", 2)
         tex.image = img
@@ -2053,6 +2062,7 @@ ShaderGroups = {
         "useNormal" : (NormalGroup, "DAZ Normal", ["uvname"]),
         "useDisplacement" : (DisplacementGroup, "DAZ Displacement", []),
         "useDecal" : (DecalGroup, "DAZ Decal", [None, None, None, 'MIX']),
+        "useDecalMap" : (DazDecalMapGroup, "DAZ Decal Map", []),
         "useToonDiffuse" : (ToonDiffuseGroup, "DAZ Toon Diffuse", []),
         "useToonGlossy" : (ToonGlossyGroup, "DAZ Toon Glossy", []),
         "useToonRim" : (ToonRimGroup, "DAZ Toon Rim", []),
@@ -2095,6 +2105,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useNormal : BoolProperty(name="Normal", default=False)
     useDisplacement : BoolProperty(name="Displacement", default=False)
     useDecal : BoolProperty(name="Decal", default=False)
+    useDecalMap : BoolProperty(name="Decal Map", default=False)
     useToonDiffuse : BoolProperty(name="Toon Diffuse", default=False)
     useToonGlossy : BoolProperty(name="Toon Glossy", default=False)
     useToonRim : BoolProperty(name="Toon Rim", default=False)
