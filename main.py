@@ -186,6 +186,8 @@ class DazLoader:
 
         from .node import finishNodeInstances
         finishNodeInstances(context)
+        from .cgroup import fixDecalMaps
+        fixDecalMaps()
 
         if LS.onLoadBaked:
             from .baked import postloadMorphs

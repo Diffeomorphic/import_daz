@@ -80,7 +80,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         scn = context.scene
         if dazRna(scn).DazUsedPropsOnly:    # and isinstance(data, bpy.types.Object):
             rna = self.getRnaFromData(context, data)
-            flt_flags = [flag * (rna.get(finalProp(morph.name), 0.0) > 1e-4)
+            flt_flags = [flag * (abs(rna.get(finalProp(morph.name), 0.0)) > 1e-4)
                          for flag,morph in zip(flt_flags, morphs)]
 
         flt_neworder = helper_funcs.sort_items_by_name(morphs, "text")
