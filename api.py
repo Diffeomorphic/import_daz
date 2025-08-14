@@ -77,7 +77,7 @@ def get_canonical_filepath(filepath):
     Arguments:
     ?filepath: String which represents a filepath
     """
-    from .load_morph import getCanonicalFilePath
+    from .fileutils import getCanonicalFilePath
     from urllib.parse import unquote
     return getCanonicalFilePath(unquote(filepath))
 

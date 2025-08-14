@@ -432,6 +432,21 @@ class MultiFile(ImportHelper):
 #   Copy presets
 #-------------------------------------------------------------
 
+def getCanonicalFilePath(filepath):
+    from sys import platform
+    filepath = normalizePath(filepath).lower()
+    words = filepath.rsplit("/data/",1)
+    if len(words) == 2:
+        return "/data/%s" % words[1]
+    elif filepath[1:3] == ":/" and platform == 'win32':
+        return filepath
+    else:
+        return None
+
+#-------------------------------------------------------------
+#   Copy presets
+#-------------------------------------------------------------
+
 def copyPresets(srcop, trgop):
     import shutil
     x,y,z = bpy.app.version

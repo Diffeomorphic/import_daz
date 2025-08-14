@@ -567,6 +567,7 @@ class LoadMorph(DriverUser):
 
 
     def getFileRef(self, filepath):
+        from .fileutils import getCanonicalFilePath
         fileref = getCanonicalFilePath(filepath)
         if fileref:
             return fileref
@@ -2096,17 +2097,6 @@ def newLine():
         pass
     elif not ES.easy or GS.showInTerminal:
         print("")
-
-
-def getCanonicalFilePath(filepath):
-    filepath = normalizePath(filepath).lower()
-    words = filepath.rsplit("/data/",1)
-    if len(words) == 2:
-        return "/data/%s" % words[1]
-    elif filepath[1:3] == ":/":
-        return filepath
-    else:
-        return None
 
 
 def isPath(path):
