@@ -438,7 +438,7 @@ def getCanonicalFilePath(filepath):
     words = filepath.rsplit("/data/",1)
     if len(words) == 2:
         return "/data/%s" % words[1]
-    elif filepath[1:3] == ":/" and platform == 'win32':
+    elif platform != 'win32' or filepath[1:3] == ":/":
         return filepath
     else:
         return None
