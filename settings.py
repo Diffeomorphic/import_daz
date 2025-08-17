@@ -563,6 +563,7 @@ class LocalSettings:
         self.distantLight = None
         self.shellUvs = {}
         self.singleUser = False
+        self.mappingNodes = []
         self.scene = ""
         self.render = None
         self.hiddenMaterial = None

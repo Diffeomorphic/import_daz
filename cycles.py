@@ -363,13 +363,28 @@ class CyclesTree(Tree):
         for _,_,inst in decals:
             fmode = inst.getValue(["Face Mode"], 2)
             # [ "Front", "Back", "Front And Back" ]
-            csys = self.getValue(["Texture Coordinate System"], 2)
+            csys = inst.getValue(["Texture Coordinate System"], 2)
             # [ "UVW", "World", "Object" ]
-            if csys == 0:
-                mapping = texco
+            clipmode = inst.getValue(["Clip Mode"], 0)
+            # [ "Position", "UVW", "Position And UVW", "None" ]
+            if csys == 0 and clipmode == 1:
+                umin = inst.getValue(["UMinimum"], 0)
+                umax = inst.getValue(["UMaximum"], 1)
+                vmin = inst.getValue(["VMinimum"], 0)
+                vmax = inst.getValue(["VMaximum"], 1)
+                dx = int(min(umin, umax)+0.5)
+                dy = int(min(vmin, vmax)+0.5)
+                mapping = self.addNode("ShaderNodeMapping", 1)
+                mapping.vector_type = 'TEXTURE'
+                mapping.inputs['Location'].default_value = (dx,dy,0)
+                self.links.new(self.texco, mapping.inputs["Vector"])
+                LS.mappingNodes.append((mapping, (dx,dy,0), Zero, One))
             elif csys == 2:
-                texco,mapping = self.addMappingGroup(inst.rna)
+                texco,mapping = self.addDecalMapGroup(inst.rna)
                 inst.texcos.append(texco)
+            else:
+                print("Decal with csys = %d and clipmode = %d" % (csys, clipmode))
+                return
             self.addColumn()
             for geonode in inst.geometries:
                 for dmat,grp in zip(geonode.materials.values(), geonode.data.polygon_material_groups):
@@ -388,7 +403,7 @@ class CyclesTree(Tree):
                     self.cycles = node
 
 
-    def addMappingGroup(self, empty, col=None):
+    def addDecalMapGroup(self, empty, col=None):
         from .cgroup import DazDecalMapGroup
         texco = self.addNode("ShaderNodeTexCoord", col)
         texco.object = empty

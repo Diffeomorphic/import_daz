@@ -1867,6 +1867,11 @@ def fixDecalMaps():
         map2.inputs["Location"].default_value = (0.5, 0.5, 0)
         map2.inputs["Rotation"].default_value = (-90*D, 0, 0)
         map2.inputs["Scale"].default_value = (2, 2 ,2)
+    for map, loc, rot, scale in LS.mappingNodes:
+        map.inputs["Location"].default_value = loc
+        map.inputs["Rotation"].default_value = rot
+        map.inputs["Scale"].default_value = scale
+
 
 # ---------------------------------------------------------------------
 #   Decal Group
@@ -1892,7 +1897,7 @@ class DecalGroup(CyclesGroup):
 
     def addNodes(self, args):
         empty,img,mask,blendType = args
-        texco,mapping = self.addMappingGroup(empty, col=1)
+        texco,mapping = self.addDecalMapGroup(empty, col=1)
 
         tex = self.addNode("ShaderNodeTexImage", 2)
         tex.image = img
