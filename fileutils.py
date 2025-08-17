@@ -248,36 +248,29 @@ def getReldirFromObject(ob, usePeople):
 
 
 def findPathRecursive(pattern, relpath, subpath, library="modifier_library", useCheck=True, extensions=[".dsf", ".duf"]):
-    def findFilesRecursive(folder):
-        for file in os.listdir(folder):
-            path = "%s/%s" % (folder, file)
-            words = os.path.splitext(file.lower())
-            if lpattern == words[0] and words[-1] in extensions:
-                paths.append(path)
-            elif os.path.isdir(path):
-                findFilesRecursive(path)
+    from pathlib import Path
+    from .load_json import JL
+
+    extensions = {ext.lower() for ext in extensions}
 
     def checkContent(path):
-        from .load_json import JL
         struct = JL.load(path, silent=True)
-        for lib in struct.get(library, []):
-            if lib.get("name") == pattern:
-                return True
-        return False
+        libs = struct.get(library, [])
+        return any(lib.get("name") == pattern for lib in libs)
 
     folders = getFolders(relpath, subpath, match81=True)
-    lpattern = pattern.lower()
-    paths = []
     for folder in folders:
-        folder = folder.rstrip("/")
-        findFilesRecursive(folder)
-        if len(paths) == 1:
-            return paths[0]
-        elif len(paths) > 1:
-            for path in paths:
+        folder_paths = [path for path in Path(folder).glob("**/*")
+                       if path.suffix.lower() in extensions]
+
+        if len(folder_paths) == 1:
+            return str(folder_paths[0]).lower()
+        elif len(folder_paths) > 1:
+            for path in folder_paths:
                 if not useCheck or checkContent(path):
-                    return path
-            return paths[0]
+                    return str(path).lower()
+            return str(folder_paths[0]).lower()
+
     return None
 
 
