@@ -377,7 +377,7 @@ class MultiFile(ImportHelper):
         if not dirs:
             dirs = getFoldersFromObject(rig, folders, usePeople=usePeople)
         if dirs:
-            self.properties.filepath = dirs[0]
+            self.properties.filepath = os.path.join(dirs[0], "")
 
 
     def getMultiFiles(self, extensions):
