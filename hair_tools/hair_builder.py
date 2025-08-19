@@ -305,7 +305,7 @@ class HairBuilder(Pinner, Collision, Cloth):
             uvlayer = hum.data.uv_layers.active
             mod["%s_2" % socket] = uvlayer.name
             if self.onInvalid == 'REMOVE':
-                bpy.ops.object.modifier_apply(modifier=mod.name)
+                applyModifier(mod.name)
         modname = "DAZ Deform Curves"
         mod = hair.modifiers.new(modname, 'NODES')
         mod.node_group = addNodeGroup(DeformCurvesGroup, modname)

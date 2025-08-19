@@ -357,7 +357,7 @@ class DAZ_OT_AddShrinkwrap(DazPropsOperator, IsMesh):
             mod.invert_vertex_group = True
 
         elif self.useApply and not ob.data.shape_keys:
-            bpy.ops.object.modifier_apply(modifier=mod.name)
+            applyModifier(mod.name)
 
 
     def makeSolidify(self, ob):
@@ -369,7 +369,7 @@ class DAZ_OT_AddShrinkwrap(DazPropsOperator, IsMesh):
         mod.thickness = 0.1*GS.scale*self.thickness
         mod.offset = 0.0
         if self.useApply and not ob.data.shape_keys:
-            bpy.ops.object.modifier_apply(modifier=mod.name)
+            applyModifier(mod.name)
 
 #------------------------------------------------------------------------
 #   Add invisible material

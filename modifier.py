@@ -728,7 +728,7 @@ class SkinBinding(Modifier):
                 if GS.useTriaxApply:
                     try:
                         zgroups.append(vgrp3.name)
-                        bpy.ops.object.modifier_apply(modifier=mod.name)
+                        applyModifier(mod.name)
                     except RuntimeError:
                         pass
 
@@ -737,7 +737,7 @@ class SkinBinding(Modifier):
             mod = addWeightMix(ob, bname, "%s.twist" % bname, data[2])
             if GS.useTriaxApply:
                 try:
-                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                    applyModifier(mod.name)
                 except RuntimeError:
                     pass
 
@@ -752,7 +752,7 @@ class SkinBinding(Modifier):
             mod.normalize = False
             if GS.useTriaxApply:
                 try:
-                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                    applyModifier(mod.name)
                 except RuntimeError:
                     pass
 

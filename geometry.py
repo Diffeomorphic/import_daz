@@ -503,7 +503,7 @@ class GeoNode(Node, SimNode):
                 mod.vertex_group = vgrp.name
             if GS.onScaleEyeMoisture == 'APPLY':
                 context.view_layer.objects.active = ob
-                bpy.ops.object.modifier_apply(modifier=mod.name)
+                applyModifier(mod.name)
                 vgrp = ob.vertex_groups.get("Displace")
                 if vgrp:
                     ob.vertex_groups.remove(vgrp)

@@ -34,6 +34,7 @@ class SubsurfApplier:
         startProgress("Apply %s Modifier" % self.modifierType)
         nob = copyObject(ob, "XXX")
         applyShape(nob, 0)
+        activateObject(context, nob)
         applyModifier(context, nob, mod.name)
         drivers = []
         skeys = ob.data.shape_keys
@@ -43,6 +44,7 @@ class SubsurfApplier:
                     drivers.append(Driver(fcu))
             for idx,skey in enumerate(skeys.key_blocks):
                 tmp = copyObject(ob, skey.name)
+                activateObject(context, tmp)
                 applyShape(tmp, idx)
                 applyModifier(context, tmp, mod.name)
                 copyShape(tmp, nob, skey.name)
@@ -117,11 +119,6 @@ def applyShape(ob, idx):
             if n != idx:
                 ob.shape_key_remove(skey)
         ob.shape_key_remove(skeys.key_blocks[0])
-
-
-def applyModifier(context, ob, modname):
-    activateObject(context, ob)
-    bpy.ops.object.modifier_apply(modifier=modname)
 
 
 def copyShape(src, trg, sname):

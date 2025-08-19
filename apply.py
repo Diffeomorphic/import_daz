@@ -280,14 +280,11 @@ def applyArmatureModifier(ob):
         if mod.type == 'ARMATURE':
             mname = mod.name
             if ob.data.shape_keys:
-                if bpy.app.version < (2,90,0):
-                    bpy.ops.object.modifier_apply(apply_as='SHAPE', modifier=mname)
-                else:
-                    bpy.ops.object.modifier_apply_as_shapekey(modifier=mname)
+                applyModifierAsShape(mname)
                 skey = ob.data.shape_keys.key_blocks[mname]
                 skey.value = 1.0
             else:
-                bpy.ops.object.modifier_apply(modifier=mname)
+                applyModifier(mname)
 
 #----------------------------------------------------------
 #   Apply shapekeys
