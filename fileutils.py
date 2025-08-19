@@ -252,6 +252,7 @@ def findPathRecursive(pattern, relpath, subpath, library="modifier_library", use
     from .load_json import JL
 
     extensions = {ext.lower() for ext in extensions}
+    pattern = pattern.lower()
 
     def checkContent(path):
         struct = JL.load(path, silent=True)
@@ -261,8 +262,8 @@ def findPathRecursive(pattern, relpath, subpath, library="modifier_library", use
     folders = getFolders(relpath, subpath, match81=True)
     for folder in folders:
         folder_paths = [path for path in Path(folder).glob("**/*")
-                       if path.suffix.lower() in extensions]
-
+                       if (path.stem.lower() == pattern and
+                           path.suffix.lower() in extensions)]
         if len(folder_paths) == 1:
             return str(folder_paths[0]).lower()
         elif len(folder_paths) > 1:
