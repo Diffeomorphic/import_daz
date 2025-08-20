@@ -261,16 +261,16 @@ def findPathRecursive(pattern, relpath, subpath, library="modifier_library", use
 
     folders = getFolders(relpath, subpath, match81=True)
     for folder in folders:
-        folder_paths = [path for path in Path(folder).glob("**/*")
+        folder_paths = [str(path) for path in Path(folder).glob("**/*")
                        if (path.stem.lower() == pattern and
                            path.suffix.lower() in extensions)]
         if len(folder_paths) == 1:
-            return str(folder_paths[0]).lower()
+            return folder_paths[0].lower()
         elif len(folder_paths) > 1:
             for path in folder_paths:
                 if not useCheck or checkContent(path):
-                    return str(path).lower()
-            return str(folder_paths[0]).lower()
+                    return path.lower()
+            return folder_paths[0].lower()
 
     return None
 
