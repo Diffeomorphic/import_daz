@@ -493,7 +493,9 @@ class BoneInstance(Instance):
                     if maxd-mind > 359:
                         if GS.verbosity >= 3:
                             print("Unlimited rotation %s %.3f %.3f %.3f" % (pb.name, mind, maxd, maxd-mind))
-                        continue
+                        limited = False
+                    else:
+                        limited = True
                     minr = mind*D
                     if abs(minr) < 1e-4:
                         minr = 0
@@ -504,7 +506,7 @@ class BoneInstance(Instance):
                         tmp = minr
                         minr = -maxr
                         maxr = -tmp
-                    setattr(cns, "use_limit_%s" % xyz, True)
+                    setattr(cns, "use_limit_%s" % xyz, limited)
                     setattr(cns, "min_%s" % xyz, minr)
                     setattr(cns, "max_%s" % xyz, maxr)
                     if GS.displayLimitRot:
