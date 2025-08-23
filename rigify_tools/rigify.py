@@ -231,11 +231,17 @@ class MetaMaker(RigifyCommon):
         description = "Split the shin vertex groups into bend and twist parts",
         default = False)
 
+    useCustomLayers : BoolProperty(
+        name = "Custom Layers",
+        description = "Display layers for face and custom bones.\nNot for Rigify legacy",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "ikOptimization")
         #self.layout.prop(self, "useAutoAlign")
         #self.layout.prop(self, "useRecalcRoll")
         self.layout.prop(self, "useSplitShin")
+        self.layout.prop(self, "useCustomLayers")
 
 
     def createMeta(self, context):
@@ -298,6 +304,7 @@ class MetaMaker(RigifyCommon):
         meta["DazSplitShin"] = self.useSplitShin
         meta["DazIkOptimization"]= self.ikOptimization
         meta["DazFingerIk"] = self.useFingerIk
+        meta["DazCustomLayers"] = self.useCustomLayers
 
         self.adjustMetaBones(meta)
 
