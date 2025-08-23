@@ -252,6 +252,7 @@ def findPathRecursive(pattern, relpath, subpath, library="modifier_library", use
     from .load_json import JL
 
     extensions = {ext.lower() for ext in extensions}
+    pattern = pattern.lower()
 
     def checkContent(path):
         struct = JL.load(path, silent=True)
@@ -260,16 +261,16 @@ def findPathRecursive(pattern, relpath, subpath, library="modifier_library", use
 
     folders = getFolders(relpath, subpath, match81=True)
     for folder in folders:
-        folder_paths = [path for path in Path(folder).glob("**/*")
-                       if path.suffix.lower() in extensions]
-
+        folder_paths = [str(path) for path in Path(folder).glob("**/*")
+                       if (path.stem.lower() == pattern and
+                           path.suffix.lower() in extensions)]
         if len(folder_paths) == 1:
-            return str(folder_paths[0]).lower()
+            return folder_paths[0].lower()
         elif len(folder_paths) > 1:
             for path in folder_paths:
                 if not useCheck or checkContent(path):
-                    return str(path).lower()
-            return str(folder_paths[0]).lower()
+                    return path.lower()
+            return folder_paths[0].lower()
 
     return None
 
@@ -376,7 +377,7 @@ class MultiFile(ImportHelper):
         if not dirs:
             dirs = getFoldersFromObject(rig, folders, usePeople=usePeople)
         if dirs:
-            self.properties.filepath = dirs[0]
+            self.properties.filepath = os.path.join(dirs[0], "")
 
 
     def getMultiFiles(self, extensions):

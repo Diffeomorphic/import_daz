@@ -749,6 +749,22 @@ def someMatch(keys, string):
 def canonicalPath(path):
     return path.replace("//", "/")
 
+
+def applyModifier(mname):
+    try:
+        bpy.ops.object.modifier_apply(modifier=mname)
+    except RuntimeError as err:
+        print(err)
+
+
+def applyModifierAsShape(mname):
+    try:
+        bpy.ops.object.modifier_apply_as_shapekey(modifier=mname)
+    except RuntimeError as err:
+        print(err)
+
+
+
 #-------------------------------------------------------------
 #   DAZ props
 #-------------------------------------------------------------

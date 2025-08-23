@@ -389,6 +389,7 @@ class CyclesTree(Tree):
             for geonode in inst.geometries:
                 for dmat,grp in zip(geonode.materials.values(), geonode.data.polygon_material_groups):
                     dmat.isShellMat = True
+                    dmat.name = inst.label
                     if grp == "Front":
                         pass
                     elif grp == "Reverse":

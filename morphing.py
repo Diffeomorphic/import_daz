@@ -1128,7 +1128,7 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
             mod.mid_level = 0
             mod.vertex_group = vgrp.name
             mod.show_viewport = False
-            bpy.ops.object.modifier_apply_as_shapekey(modifier=mod.name)
+            applyModifierAsShape(mod.name)
             skey = ob.data.shape_keys.key_blocks[-1]
             skey.slider_min = -5
             skey.slider_max = 5

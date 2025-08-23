@@ -1208,7 +1208,7 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMeshArma
         if mod is None:
             return
         mod.name = mname
-        bpy.ops.object.modifier_apply_as_shapekey(modifier=mname)
+        applyModifierAsShape(mname)
         skeys = ob.data.shape_keys
         skey = skeys.key_blocks[mname]
         skey.value = 0.0

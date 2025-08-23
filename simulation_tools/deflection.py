@@ -103,14 +103,14 @@ class DAZ_OT_MakeDeflection(DazPropsOperator, Collision, IsMesh):
         if self.useSubsurf:
             mod = nob.modifiers.new("Subsurf", 'SUBSURF')
             mod.levels = 1
-            bpy.ops.object.modifier_apply(modifier="Subsurf")
+            applyModifier("Subsurf")
 
         if self.useShrinkwrap:
             mod = nob.modifiers.new("Shrinkwrap", 'SHRINKWRAP')
             mod.wrap_method = 'NEAREST_SURFACEPOINT'
             mod.wrap_mode = 'ON_SURFACE'
             mod.target = ob
-            bpy.ops.object.modifier_apply(modifier="Shrinkwrap")
+            applyModifier("Shrinkwrap")
 
         for mod in ob.modifiers:
             if mod.type == 'SURFACE_DEFORM':
