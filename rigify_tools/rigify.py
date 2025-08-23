@@ -241,7 +241,8 @@ class MetaMaker(RigifyCommon):
         #self.layout.prop(self, "useAutoAlign")
         #self.layout.prop(self, "useRecalcRoll")
         self.layout.prop(self, "useSplitShin")
-        self.layout.prop(self, "useCustomLayers")
+        if BLENDER3:
+            self.layout.prop(self, "useCustomLayers")
 
 
     def createMeta(self, context):
