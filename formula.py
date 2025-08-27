@@ -302,11 +302,6 @@ def buildBakedMorph(inst, ref, value):
                 item.f = value
                 if GS.verbosity > 2 and not ES.easy:
                     print("Baked morph file (%s): %s" % (rig.name, file))
-            fcu = rig.data.driver_add(propRef(final))
-            fcu.driver.type = 'SCRIPTED'
-            removeModifiers(fcu)
-            fcu.driver.expression = "a"
-            addDriverVar(fcu, "a",  propRef(raw), rig)
 
 #-------------------------------------------------------------
 #   Formula
