@@ -117,16 +117,23 @@ class DAZ_OT_FindMissingTextures(DazOperator, IsMesh):
             if img:
                 node.image = img
 
-        for ob in getSelectedMeshes(context):
-            found = {}
-            for mat in ob.data.materials:
-                for node in mat.node_tree.nodes:
+        def findMissingNodes(tree):
+            if tree:
+                for node in tree.nodes:
                     if node.type == 'TEX_IMAGE':
                         if node.image:
                             updateImage(node.image)
                             found[node.label] = node.image
                         else:
                             findImage(node, found)
+                    elif node.type == 'GROUP':
+                        findMissingNodes(node.node_tree)
+
+        for ob in getSelectedMeshes(context):
+            found = {}
+            for mat in ob.data.materials:
+                if mat:
+                    findMissingNodes(mat.node_tree)
 
 #----------------------------------------------------------
 #   Activate diffuse texture
