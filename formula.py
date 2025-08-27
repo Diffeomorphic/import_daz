@@ -286,26 +286,27 @@ def buildBakedMorph(inst, ref, value):
         file,raw = ref.rsplit("#",1)
         file = unquote(file)
         raw = rawProp(unquote(raw))
-        rig[raw] = value
         final = finalProp(raw)
         rig.data[final] = value
-        if GS.verbosity > 2 and not ES.easy:
-            print("Baked morph (%s): %s = %f" % (rig.name, unquote(raw), value))
-        setActivated(rig, raw, False)
-        item = dazRna(rig).DazBaked.add()
-        item.name = raw
-        item.text = raw
-        if file not in dazRna(rig).DazBakedFiles.keys():
-            item = dazRna(rig).DazBakedFiles.add()
-            item.name = file
-            item.f = value
+        if GS.useBakedMorphs:
+            rig[raw] = value
             if GS.verbosity > 2 and not ES.easy:
-                print("Baked morph file (%s): %s" % (rig.name, file))
-        fcu = rig.data.driver_add(propRef(final))
-        fcu.driver.type = 'SCRIPTED'
-        removeModifiers(fcu)
-        fcu.driver.expression = "a"
-        addDriverVar(fcu, "a",  propRef(raw), rig)
+                print("Baked morph (%s): %s = %f" % (rig.name, unquote(raw), value))
+            setActivated(rig, raw, False)
+            item = dazRna(rig).DazBaked.add()
+            item.name = raw
+            item.text = raw
+            if file not in dazRna(rig).DazBakedFiles.keys():
+                item = dazRna(rig).DazBakedFiles.add()
+                item.name = file
+                item.f = value
+                if GS.verbosity > 2 and not ES.easy:
+                    print("Baked morph file (%s): %s" % (rig.name, file))
+            fcu = rig.data.driver_add(propRef(final))
+            fcu.driver.type = 'SCRIPTED'
+            removeModifiers(fcu)
+            fcu.driver.expression = "a"
+            addDriverVar(fcu, "a",  propRef(raw), rig)
 
 #-------------------------------------------------------------
 #   Formula

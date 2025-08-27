@@ -881,7 +881,7 @@ class FormulaAsset(Formula, ChannelAsset):
     def postbuild(self, context, inst):
         if LS.useMorphOnly:
             Formula.postbuild(self, context, inst)
-        elif GS.useBakedMorphs and (LS.fitFile or LS.useMorph) and inst:
+        elif LS.fitFile or LS.useMorph and inst:
             self.buildBakedFormulas(context, inst)
 
 
@@ -1023,7 +1023,7 @@ class Morph(FormulaAsset):
             return
         elif LS.useMorphOnly:
             Formula.postbuild(self, context, inst)
-        elif GS.useBakedMorphs and (LS.fitFile or LS.useMorph):
+        elif LS.fitFile or LS.useMorph:
             from .formula import buildBakedMorph
             buildBakedMorph(inst, self.id, self.value)
             self.buildBakedFormulas(context, inst)
