@@ -761,20 +761,19 @@ class CustomDrawItems:
         row.operator("daz.update_scrollbars")
         self.layout.separator()
         for cat in dazRna(ob).DazMorphCats:
-            box = self.layout.box()
-            if not cat.active:
-                box.prop(cat, "active", text=cat.name, icon="RIGHTARROW", emboss=False)
-                continue
-            box.prop(cat, "active", text=cat.name, icon="DOWNARROW_HLT", emboss=False)
-            self.drawCustomBox(box, cat, scn, ob)
+            if len(cat.morphs) > 0:
+                box = self.layout.box()
+                if not cat.active:
+                    box.prop(cat, "active", text=cat.name, icon="RIGHTARROW", emboss=False)
+                    continue
+                box.prop(cat, "active", text=cat.name, icon="DOWNARROW_HLT", emboss=False)
+                self.drawCustomBox(box, cat, scn, ob)
 
 
     def drawCustomBox(self, box, cat, scn, rig):
         adj = self.getCatAdjuster(cat)
         if adj in rig.keys():
             box.prop(rig, propRef(adj))
-        if len(cat.morphs) == 0:
-            return
         ftype = self.getCatFtype(cat)
         self.activateLayout(box, cat.name, ftype, rig)
         self.keyLayout(box, cat.name, ftype, rig)
