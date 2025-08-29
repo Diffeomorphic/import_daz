@@ -761,13 +761,17 @@ class CustomDrawItems:
         row.operator("daz.update_scrollbars")
         self.layout.separator()
         for cat in dazRna(ob).DazMorphCats:
-            if len(cat.morphs) > 0:
+            if self.hasCatMorphs(cat, ob):
                 box = self.layout.box()
                 if not cat.active:
                     box.prop(cat, "active", text=cat.name, icon="RIGHTARROW", emboss=False)
                     continue
                 box.prop(cat, "active", text=cat.name, icon="DOWNARROW_HLT", emboss=False)
                 self.drawCustomBox(box, cat, scn, ob)
+
+
+    def hasCatMorphs(self, cat, ob):
+        return (len(cat.morphs) > 0)
 
 
     def drawCustomBox(self, box, cat, scn, rig):
@@ -882,12 +886,16 @@ class DAZ_PT_CustomMeshMorphs(CustomDrawItems, DAZ_PT_Morphs, bpy.types.Panel):
         op.ftype = ftype
 
 
+    def hasCatMorphs(self, cat, ob):
+        if dazRna(ob).DazMeshDrivers:
+            return (len(cat.morphs) > 0)
+        else:
+            return (ob.data.shape_keys is not None)
+
+
     def drawCustomBox(self, box, cat, scn, ob):
         if dazRna(ob).DazMeshDrivers:
             CustomDrawItems.drawCustomBox(self, box, cat, scn, ob)
-            return
-        skeys = ob.data.shape_keys
-        if skeys is None:
             return
         ftype = self.getCatFtype(cat)
         self.activateLayout(box, cat.name, ftype, ob)
