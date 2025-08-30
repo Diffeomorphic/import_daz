@@ -733,7 +733,7 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
     uilist = "DAZ_UL_Baked"
 
     def hasTheseMorphs(self, rig):
-        return dazRna(rig).DazBaked #and GS.useBakedMorphs)
+        return dazRna(rig).DazBaked
 
     def draw(self, context):
         scn = context.scene
@@ -741,7 +741,7 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
         if not self.hasTheseMorphs(rig):
             return
         for item in dazRna(rig).DazBaked.values():
-            value = rig.get(item.name)
+            value = rig.data.get(finalProp(item.name))
             if value is not None:
                 self.layout.label(text = "%s : %.3f" % (item.text, value))
 

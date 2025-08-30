@@ -48,7 +48,6 @@ class GlobalSettings:
         self.zup = True
         self.unflipped = False
         self.useMakeHiddenSliders = False
-        self.useBakedMorphs = False
         self.showHiddenObjects = False
         self.ignoreHiddenObjects = False
 

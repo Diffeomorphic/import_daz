@@ -150,8 +150,6 @@ class LoadMorph(DriverUser):
 
 
     def isBaked(self, prop):
-        if GS.useBakedMorphs:
-            return False
         return (self.bakedName(prop) in self.baked)
 
 

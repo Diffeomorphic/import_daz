@@ -354,10 +354,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Make Hidden Sliders",
         description = "Create properties for hidden morphs,\nso they can be displayed in the UI")
 
-    useBakedMorphs : BoolProperty(
-        name = "Baked Morphs",
-        description = "Allow that baked morphs are imported")
-
     showHiddenObjects : BoolProperty(
         name = "Show Hidden Objects",
         description = "Don't hide objects which are hidden in DAZ Studio")
@@ -769,7 +765,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Morphs")
         drawEnum(self, box, "onStrengthAdjusters")
         box.prop(self, "useMakeHiddenSliders")
-        box.prop(self, "useBakedMorphs")
         box.prop(self, "useDazLimits")
         box.prop(self, "sliderMultiplier")
         box.prop(self, "showFinalProps")
