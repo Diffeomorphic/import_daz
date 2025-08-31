@@ -1306,7 +1306,7 @@ class SubsurfaceGroup(FacMixGroup):
         self.links.new(self.inputs.outputs["Color"], sss.inputs["Color"])
         self.links.new(self.inputs.outputs["Scale"], sss.inputs["Scale"])
         self.links.new(self.inputs.outputs["Radius"], sss.inputs["Radius"])
-        if sss.falloff != 'BURLEY' and bpy.app.version >= (3,0,0):
+        if sss.falloff != 'BURLEY':
             self.links.new(self.inputs.outputs["IOR"], sss.inputs["IOR"])
             self.links.new(self.inputs.outputs["Anisotropy"], sss.inputs["Anisotropy"])
         self.links.new(self.inputs.outputs["Normal"], sss.inputs["Normal"])

@@ -465,45 +465,28 @@ def removeModifiers(fcu):
 #   Property UI
 #-------------------------------------------------------------
 
-if bpy.app.version < (3,0,0):
-    def getRnaUi(rna):
-        rna_ui = rna.get('_RNA_UI')
-        if rna_ui is None:
-            rna_ui = rna['_RNA_UI'] = {}
-        return rna_ui
+def setPropMinMax(rna, prop, default, min, max, ovr, soft=None):
+    if soft is None:
+        soft = ovr
+    if prop not in rna.keys():
+        rna[prop] = default
+    ui = rna.id_properties_ui(prop)
+    if isinstance(default, bool):
+        ui.update(default=default)
+    elif isinstance(default, (int, float)):
+        if soft:
+            ui.update(default=default, soft_min=min, soft_max=max)
+        else:
+            ui.update(default=default, min=min, max=max)
+    rna.property_overridable_library_set(propRef(prop), ovr)
 
-    def setPropMinMax(rna, prop, default, min, max, ovr, soft=None):
-        rna_ui = getRnaUi(rna)
-        struct = { "min": min, "max": max, "soft_min": min, "soft_max": max}
-        rna_ui[prop] = struct
 
-    def getPropUi(rna, prop):
-        rna_ui = getRnaUi(rna)
-        return rna_ui.get(prop, {})
-
-else:
-    def setPropMinMax(rna, prop, default, min, max, ovr, soft=None):
-        if soft is None:
-            soft = ovr
-        if prop not in rna.keys():
-            rna[prop] = default
+def getPropUi(rna, prop):
+    try:
         ui = rna.id_properties_ui(prop)
-        if isinstance(default, bool):
-            ui.update(default=default)
-        elif isinstance(default, (int, float)):
-            if soft:
-                ui.update(default=default, soft_min=min, soft_max=max)
-            else:
-                ui.update(default=default, min=min, max=max)
-        rna.property_overridable_library_set(propRef(prop), ovr)
-
-
-    def getPropUi(rna, prop):
-        try:
-            ui = rna.id_properties_ui(prop)
-            return ui.as_dict()
-        except (KeyError, TypeError):
-            return {}
+        return ui.as_dict()
+    except (KeyError, TypeError):
+        return {}
 
 #-------------------------------------------------------------
 #   Properties
@@ -584,9 +567,6 @@ def setFloatProp(rna, prop, value, min, max, ovr, soft=None):
 def setBoolProp(rna, prop, value, ovr, desc=""):
     prop = truncateProp(prop)
     setPropMinMax(rna, prop, value, 0, 1, ovr, False)
-    if False and ovr and bpy.app.version < (3,0,0):
-        setOverridable(rna, prop)
-        setPropMinMax(rna, prop, value, 0, 1, ovr, False)
     rna[prop] = value
 
 #-------------------------------------------------------------

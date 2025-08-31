@@ -1485,9 +1485,7 @@ class CyclesTree(Tree):
 
 
     def fixSSSRadius(self, radius):
-        if bpy.app.version < (3,0,0):
-            return radius, 0, 0
-        elif GS.sssMethod == 'BURLEY':
+        if GS.sssMethod == 'BURLEY':
             return 0.25*radius, 0, 0
         elif GS.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
             return 0.5*radius, 1.4, 0

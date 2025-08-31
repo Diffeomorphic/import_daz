@@ -1304,22 +1304,21 @@ class Geometry(Asset, Channels):
         if hasShells:
             dazRna(ob).DazVisibilityDrivers = True
 
-        if USE_ATTRIBUTES:
-            geonodes = list(self.nodes.values())
-            if me.vertices and geonodes and self.id:
-                pgs = dazRna(ob.data).DazGraftData
-                pg = pgs.add()
-                pg.name = geonodes[0].getName()
-                pg.s = self.id.rsplit("/",1)[0]
-                pg.i = len(ob.data.vertices)
-                vattr = ob.data.attributes.new("DazVertex", 'INT', 'POINT')
-                gattr = ob.data.attributes.new("DazGraft", 'INT', 'POINT')
-                for vn in range(len(me.vertices)):
-                    vattr.data[vn].value = vn
-                    gattr.data[vn].value = 0
-            if me.polygons:
-                self.addFaceMap(ob, "DazPolygonGroup", self.polygon_groups, self.polygon_indices)
-                self.addFaceMap(ob, "DazMaterialGroup", self.polygon_material_groups, self.material_indices)
+        geonodes = list(self.nodes.values())
+        if me.vertices and geonodes and self.id:
+            pgs = dazRna(ob.data).DazGraftData
+            pg = pgs.add()
+            pg.name = geonodes[0].getName()
+            pg.s = self.id.rsplit("/",1)[0]
+            pg.i = len(ob.data.vertices)
+            vattr = ob.data.attributes.new("DazVertex", 'INT', 'POINT')
+            gattr = ob.data.attributes.new("DazGraft", 'INT', 'POINT')
+            for vn in range(len(me.vertices)):
+                vattr.data[vn].value = vn
+                gattr.data[vn].value = 0
+        if me.polygons:
+            self.addFaceMap(ob, "DazPolygonGroup", self.polygon_groups, self.polygon_indices)
+            self.addFaceMap(ob, "DazMaterialGroup", self.polygon_material_groups, self.material_indices)
 
         self.validateMesh(me, obname)
         guideOb = None
@@ -1832,21 +1831,21 @@ def clearMeshProps(ob, keepVertex=False):
     dazRna(ob).DazMorphUrls.clear()
     dazRna(me).DazMaterialGroup.clear()
     dazRna(me).DazPolygonGroup.clear()
-    if USE_ATTRIBUTES:
-        def clearAttribute(key):
-            attr = me.attributes.get(key)
-            if attr:
-                me.attributes.remove(attr)
 
-        clearAttribute("DazMaterialGroup")
-        clearAttribute("DazPolygonGroup")
-        if not keepVertex:
-            clearAttribute("DazVertex")
-            clearAttribute("DazGraft")
-            dazRna(me).DazGraftData.clear()
-        for key in me.attributes.keys():
-            if key.startswith("paired_body_vert_"):
-                clearAttribute(key)
+    def clearAttribute(key):
+        attr = me.attributes.get(key)
+        if attr:
+            me.attributes.remove(attr)
+
+    clearAttribute("DazMaterialGroup")
+    clearAttribute("DazPolygonGroup")
+    if not keepVertex:
+        clearAttribute("DazVertex")
+        clearAttribute("DazGraft")
+        dazRna(me).DazGraftData.clear()
+    for key in me.attributes.keys():
+        if key.startswith("paired_body_vert_"):
+            clearAttribute(key)
 
 
 

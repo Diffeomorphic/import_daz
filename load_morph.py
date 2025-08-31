@@ -176,7 +176,7 @@ class LoadMorph(DriverUser):
             self.graftdirs = [normalizeRef(url)]
             self.vassocs = [{}]
             self.graftnames = [""]
-            if USE_ATTRIBUTES and dazRna(me).DazFingerPrint and "DazVertex" in me.attributes:
+            if dazRna(me).DazFingerPrint and "DazVertex" in me.attributes:
                 def findDuplicates(a):
                     taken = set()
                     return [x for x in a if x in taken or taken.add(x)]
