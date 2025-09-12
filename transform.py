@@ -138,9 +138,11 @@ class Transform:
     def setObject(self, ob):
         ob.location = d2b(self.evalTrans() + Vector(dazRna(ob).DazCenter))
         rot = d2bu(self.evalRot())
+        mid = ord(dazRna(ob).DazRotMode[1]) - ord('X')
+        if abs(abs(rot[mid]) - pi/2) < 0.01:
+            quat = Euler(rot, 'ZXY').to_quaternion()
+            rot = quat.to_euler(ob.rotation_mode)
         ob.rotation_euler = rot
-        if hasattr(ob, "rotation_quaternion"):
-            ob.rotation_quaternion = Euler(rot).to_quaternion()
         ob.scale = d2bs(self.evalScale())
 
 
