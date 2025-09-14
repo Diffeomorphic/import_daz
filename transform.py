@@ -136,14 +136,26 @@ class Transform:
 
 
     def setObject(self, ob):
-        ob.location = d2b(self.evalTrans() + Vector(dazRna(ob).DazCenter))
-        rot = d2bu(self.evalRot())
-        mid = ord(ob.rotation_mode[1]) - ord('X')
-        if abs(abs(rot[mid]) - pi/2) < 0.01:
-            quat = Euler(rot, 'ZXY').to_quaternion()
-            rot = quat.to_euler(ob.rotation_mode)
-        ob.rotation_euler = rot
-        ob.scale = d2bs(self.evalScale())
+        # See calcMatrices in node.py
+        trans = self.evalTrans() + Vector(dazRna(ob).DazCenter)
+        euler = Euler(self.evalRot(), dazRna(ob).DazRotMode)
+        scale = self.evalScale()
+        orient = Euler(dazRna(ob).DazOrient)
+
+        # DAZ world matrix
+        T = Matrix.Translation(GS.scale * trans)
+        R = euler.to_matrix().to_4x4()
+        S = Matrix.Diagonal(scale).to_4x4()
+        O = orient.to_matrix().to_4x4()
+        M = T @ O @ R @ S @ O.inverted()
+
+        # Blender world matrix
+        if GS.zup:
+            X = Matrix.Rotation(pi/2, 4, 'X')
+            wmat = X @ M @ X.inverted()
+        else:
+            wmat = M
+        setWorldMatrix(ob, wmat)
 
 
     def clearRna(self, rna):
