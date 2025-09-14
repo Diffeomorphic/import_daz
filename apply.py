@@ -38,6 +38,7 @@ def applyTransforms(objects):
     print("Apply transforms")
     bpy.ops.object.select_all(action='DESELECT')
     wmats = []
+    vpmats = []
     status = []
     for ob in objects:
         try:
@@ -47,7 +48,7 @@ def applyTransforms(objects):
             if ob.parent and ob.parent_type == 'BONE':
                 wmats.append((ob, ob.matrix_world.copy()))
             elif ob.parent and ob.parent_type.startswith('VERTEX'):
-                pass
+                vpmats.append((ob, ob.parent.matrix_basis.copy()))
             elif ob.type in ['MESH', 'ARMATURE']:
                 selectSet(ob, True)
         except ReferenceError:
@@ -57,6 +58,8 @@ def applyTransforms(objects):
     safeTransformApply()
     for ob,wmat in wmats:
         setWorldMatrix(ob, wmat)
+    for ob,vpmat in vpmats:
+        ob.matrix_basis = vpmat.inverted() @ ob.matrix_basis
     for ob,hide,select in status:
         ob.hide_set(hide)
         ob.hide_select = select
@@ -244,6 +247,9 @@ def removeObjectDrivers(objects):
 
 
 def safeTransformApply(useLocRot=True):
+    for ob in bpy.context.selected_objects:
+        if ob.data and ob.data.users > 1:
+            ob.select_set(False)
     try:
         bpy.ops.object.transform_apply(location=useLocRot, rotation=useLocRot, scale=True)
     except RuntimeError as err:
