@@ -1037,10 +1037,10 @@ class Node(Asset, Formula, Channels):
                 'ZXY' : 'YXZ',
                 'ZYX' : 'YZX',
             }
-            ob.rotation_mode = blenderRotMode[self.rotation_order]
+            ob.rotation_mode = blenderRotMode[inst.rotation_order]
         else:
-            ob.rotation_mode = self.rotation_order
-        dazRna(ob).DazRotMode = self.rotation_order
+            ob.rotation_mode = inst.rotation_order
+        dazRna(ob).DazRotMode = inst.rotation_order
         LS.collection.objects.link(ob)
         if LS.hdcollection and ob.type != 'MESH':
             LS.hdcollection.link(ob)
