@@ -577,39 +577,42 @@ class Instance(Accessor, Channels, SimNode):
 
         RXP = Matrix.Rotation(pi/2, 4, 'X')
         RXN = Matrix.Rotation(-pi/2, 4, 'X')
-
-        from .bone import BoneInstance
-        if self.rigidFollow and self.restdata:
-            trans = d2b00(self.restdata.head)
-        else:
-            trans = d2b00(attributes["translation"])
-        cpoint = d2b00(attributes["center_point"])
-        rot = Vector(attributes["rotation"])*D
-        gen = attributes["general_scale"]
-        scale = Vector(attributes["scale"]) * gen
         orient = Vector(attributes["orientation"])*D
-
-        lrot = Euler(rot, self.rotation_order).to_matrix().to_4x4()
-        self.lscale = Matrix.Diagonal(scale).to_4x4()
         ormat = Euler(orient).to_matrix().to_4x4()
+        cpoint = d2b00(attributes["center_point"])
 
-        if parent:
-            coffset = cpoint - parent.cpoint
-            wtrans = parent.wmat @ (coffset + trans)
-            wrot = parent.wrot @ ormat @ lrot @ ormat.inverted()
-            oscale = ormat @ self.lscale @ ormat.inverted()
-            if self.inherits_scale:
-                wscale = parent.wscale @ oscale
-            else:
-                try:
-                    pscaleinv = parent.lscale.inverted()
-                except ValueError:
-                    pscaleinv = Matrix()
-                wscale = parent.wscale @ pscaleinv @ oscale
+        if self.restdata:
+            wsmat = self.restdata.wsmat
+            wtrans = d2b00(self.restdata.head)
+            wrot = wsmat.to_quaternion().to_matrix().to_4x4()
+            wscale = Matrix.Diagonal(wsmat.to_scale()).to_4x4()
         else:
-            wtrans = cpoint + trans
-            wrot = ormat @ lrot @ ormat.inverted()
-            wscale = ormat @ self.lscale @ ormat.inverted()
+            from .bone import BoneInstance
+            trans = d2b00(attributes["translation"])
+            rot = Vector(attributes["rotation"])*D
+            gen = attributes["general_scale"]
+            scale = Vector(attributes["scale"]) * gen
+
+            lrot = Euler(rot, self.rotation_order).to_matrix().to_4x4()
+            self.lscale = Matrix.Diagonal(scale).to_4x4()
+
+            if parent:
+                coffset = cpoint - parent.cpoint
+                wtrans = parent.wmat @ (coffset + trans)
+                wrot = parent.wrot @ ormat @ lrot @ ormat.inverted()
+                oscale = ormat @ self.lscale @ ormat.inverted()
+                if self.inherits_scale:
+                    wscale = parent.wscale @ oscale
+                else:
+                    try:
+                        pscaleinv = parent.lscale.inverted()
+                    except ValueError:
+                        pscaleinv = Matrix()
+                    wscale = parent.wscale @ pscaleinv @ oscale
+            else:
+                wtrans = cpoint + trans
+                wrot = ormat @ lrot @ ormat.inverted()
+                wscale = ormat @ self.lscale @ ormat.inverted()
 
         transmat = Matrix.Translation(wtrans)
         wmat = transmat @ wrot @ wscale
@@ -617,7 +620,6 @@ class Instance(Accessor, Channels, SimNode):
             worldmat = RXP @ wmat @ RXN
         else:
             worldmat = wmat
-
         return worldmat, wtrans, wrot, wscale, wmat, cpoint
 
 
