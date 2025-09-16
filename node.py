@@ -581,7 +581,7 @@ class Instance(Accessor, Channels, SimNode):
         ormat = Euler(orient).to_matrix().to_4x4()
         cpoint = d2b00(attributes["center_point"])
 
-        if self.restdata:
+        if self.restdata and GS.useBakedTransforms:
             wsmat = self.restdata.wsmat
             wtrans = d2b00(self.restdata.head)
             wrot = wsmat.to_quaternion().to_matrix().to_4x4()
@@ -794,10 +794,9 @@ def finishNodeInstances(context):
             if child.name not in refcoll.objects:
                 child.parent = empty
 
-    unit = Matrix()
     for inst,empty,refcoll in LS.refObjects.values():
         ob = inst.rna
-        setWorldMatrix(ob, unit)
+        setWorldMatrix(ob, Matrix())
         setWorldMatrix(empty, wmats[empty.name])
         for child in empty.children:
             if (child.name not in refcoll.objects and
