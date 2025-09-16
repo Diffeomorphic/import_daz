@@ -223,6 +223,11 @@ class DAZ_PT_ActiveObject(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
             self.layout.prop(dazRna(ob), "DazScale")
             if ob.parent and ob.parent_type.startswith('VERTEX'):
                 self.propRow(self.layout, ob, "parent_vertices", "ParVerts")
+
+            trans,quat,scale = ob.matrix_world.decompose()
+            self.vecRow(self.layout, trans, "Translation")
+            self.vecRow(self.layout, Vector(quat.to_euler(ob.rotation_mode))/D, "Rotation")
+            self.vecRow(self.layout, scale, "Scale")
         else:
             self.layout.label(text = "No active object")
 
