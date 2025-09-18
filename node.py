@@ -584,7 +584,7 @@ class Instance(Accessor, Channels, SimNode):
         if self.restdata:
             wsmat = self.restdata.wsmat
             wtrans = d2b00(self.restdata.head)
-            wrot = wsmat.to_quaternion().to_matrix().to_4x4()
+            wrot = wsmat.to_quaternion().to_matrix().to_4x4().inverted()
             wscale = Matrix.Diagonal(wsmat.to_scale()).to_4x4()
         else:
             from .bone import BoneInstance
