@@ -502,10 +502,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Unflipped Bones",
         description = "Don't flip bone axes.\nEnable for debugging only")
 
-    useBakedTransforms : BoolProperty(
-        name = "Baked Transforms",
-        description = "Use transform baked in dbz file.\nCan give problems with instances")
-
     useTriaxImprove : BoolProperty(
         name = "Improve Triax Weights",
         description = "Improve vertex groups for triax weights (Genesis/Genesis 2 only)")
@@ -719,7 +715,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "General")
         box.prop(self, "onlyDbz")
         box.prop(self, "scale")
-        box.prop(self, "useBakedTransforms")
         box.prop(self, "verbosity")
         box.prop(self, "caseSensitivePaths")
         box.prop(self, "rememberLastFolder")

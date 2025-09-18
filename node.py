@@ -581,7 +581,7 @@ class Instance(Accessor, Channels, SimNode):
         ormat = Euler(orient).to_matrix().to_4x4()
         cpoint = d2b00(attributes["center_point"])
 
-        if self.restdata and GS.useBakedTransforms:
+        if self.restdata:
             wsmat = self.restdata.wsmat
             wtrans = d2b00(self.restdata.head)
             wrot = wsmat.to_quaternion().to_matrix().to_4x4()

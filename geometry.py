@@ -161,7 +161,7 @@ class GeoNode(Node, SimNode):
 
 
     def subtractCenter(self, ob, inst, center):
-        if not LS.fitFile:
+        if not LS.fitFile or inst.instances:
             ob.location = -center
         inst.center = center
 
@@ -465,7 +465,7 @@ class GeoNode(Node, SimNode):
                 for v in ob.data.vertices:
                     v.co = mat @ v.co
 
-        if LS.fitFile and ob.type == 'MESH':
+        if LS.fitFile and ob.type == 'MESH' and not inst.instances:
             shiftMesh(ob, inst)
             if hdob and hdob.data != ob.data:
                 shiftMesh(hdob, inst)
@@ -1233,7 +1233,7 @@ class Geometry(Asset, Channels):
         edges = []
         polymats = guideVerts = guideEdges = guidePolymats = []
         faces = self.faces
-        if isinstance(geonode, GeoNode) and geonode.verts:
+        if isinstance(geonode, GeoNode) and geonode.verts and not inst.instances:
             if geonode.edges:
                 verts = geonode.verts
                 edges = geonode.edges
@@ -1257,7 +1257,7 @@ class Geometry(Asset, Channels):
             for pline in self.polylines:
                 edges += [(pline[i-1],pline[i]) for i in range(3,len(pline))]
 
-        if LS.fitFile:
+        if LS.fitFile and not inst.instances:
             me.from_pydata(verts, edges, faces)
         else:
             me.from_pydata([Vector(vco)-center for vco in verts], edges, faces)
