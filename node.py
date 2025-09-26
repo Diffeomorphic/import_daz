@@ -142,6 +142,7 @@ class Instance(Accessor, Channels, SimNode):
         self.isStrandHair = False
         self.ignore = False
         self.instanceTarget = None
+        self.instanceMode = 0   # "Node and Children"
         self.instances = []
         self.shellNode = None
         self.hdobject = None
@@ -269,8 +270,9 @@ class Instance(Accessor, Channels, SimNode):
             elif key == "Cast Shadows":
                 pass
             elif key == "Instance Mode":
-                #print("InstMode", ob.name, value)
-                pass
+                self.instanceMode = value
+                if self.instanceTarget:
+                    self.instanceTarget.instanceMode = value
             elif key == "Instance Target":
                 #print("InstTarg", ob.name)
                 pass
@@ -389,6 +391,8 @@ class Instance(Accessor, Channels, SimNode):
                 wmats[ob.name] = ob.matrix_world.copy()
             else:
                 print("Ref Child not an object:\nP:%s\nS:%s\nC:%s" % (self.parent, self, child))
+                continue
+            if self.instanceMode == 1:  # [ "Node and Children", "Single Node" ]
                 continue
             if child.instanceTarget:
                 coll = child.instanceTarget.getRefColl(context)
@@ -824,6 +828,7 @@ class Node(Asset, Formula, Channels):
         Channels.__init__(self)
         self.instances = {}
         self.ninstances = 0
+        self.instanceMode = 0
         self.count = 0
         self.data = None
         self.center = None
