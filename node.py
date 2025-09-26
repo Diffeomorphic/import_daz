@@ -399,14 +399,15 @@ class Instance(Accessor, Channels, SimNode):
                 child.linkRefChildren(coll, ob, context, wmats)
             elif ob:
                 if ob.name in LS.refObjects.keys():
-                    empty0 = LS.refObjects[ob.name][1]
+                    inst,empty0,_refcoll = LS.refObjects[ob.name]
                     empty = bpy.data.objects.new(empty0.name, None)
                     empty.instance_type = 'COLLECTION'
                     empty.instance_collection = empty0.instance_collection
                     refcoll.objects.link(empty)
-                    wmats[empty.name] = ob.matrix_world.copy()
+                    wmats[empty.name] = child.worldmat.copy()
                     empty.parent = ob.parent
                     empty.parent_type = ob.parent_type
+                    empty.matrix_basis = ob.parent.matrix_basis.inverted() @ ob.matrix_basis
                 elif child.hasInstanceChildren(refcoll):
                     if GS.verbosity >= 3:
                         print('Warning: "%s" has instance children' % ob.name)
