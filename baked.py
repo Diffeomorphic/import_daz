@@ -59,9 +59,12 @@ def postloadMorphs(context, filepath):
     def addProps(props, lm, factor):
         ob = lm.obj
         for prop,data in props.items():
-            label,value = data
+            label,type,value = data
             if isinstance(value, (float, int)):
-                ob[prop] = value*factor
+                if type == 'int':
+                    ob[prop] = (int)(value*factor)
+                else:
+                    ob[prop] = (float)(value*factor)
                 setActivated(ob, prop, False)
                 if prop not in dazRna(ob).DazBaked.keys():
                     item = dazRna(ob).DazBaked.add()
@@ -114,7 +117,7 @@ def postloadMorphs(context, filepath):
                 parents[key] = parent
             path = getPath(asset)
             namepathss[key].append((asset.name, path, 'BAKED'))
-            props[key][asset.name] = (asset.label, asset.value)
+            props[key][asset.name] = (asset.label, asset.type, asset.value)
 
     taken = []
     for key,namepaths in namepathss.items():
@@ -127,7 +130,7 @@ def postloadMorphs(context, filepath):
             continue
         if LS.useLoadBaked:
             lm.getAllMorphs(namepaths, context)
-        addProps(props[key], lm, 1.0)
+        addProps(props[key], lm, 1)
         addFormFormulas(forms[key], ob, lm)
 
         inst = parents.get(key)
@@ -151,5 +154,5 @@ def postloadMorphs(context, filepath):
                 if lm2 is not None:
                     if LS.useLoadBaked:
                         lm2.getAllMorphs(namepaths, ob2)
-                    addProps(props[key], lm2, 0.0)
+                    addProps(props[key], lm2, 0)
                 addNodeFormulas(node, ob2, lm2)
