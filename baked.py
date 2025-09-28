@@ -116,6 +116,7 @@ def postloadMorphs(context, filepath):
             namepathss[key].append((asset.name, path, 'BAKED'))
             props[key][asset.name] = (asset.label, asset.value)
 
+    taken = []
     for key,namepaths in namepathss.items():
         ob = objects[key]
         print("Load baked morphs to %s" % ob.name)
@@ -130,7 +131,6 @@ def postloadMorphs(context, filepath):
         addFormFormulas(forms[key], ob, lm)
 
         inst = parents.get(key)
-        taken = []
         if isinstance(inst, Instance):
             taken.append(inst)
             node = inst.node
