@@ -522,7 +522,7 @@ class LocalSettings:
         self.useMaterials = False
         self.useModifiers = False
         self.useMorph = False
-        self.onLoadBaked = None
+        self.useLoadBaked = False
         self.useMorphOnly = False
         self.useFormulas = False
         self.useHDObjects = False
@@ -667,8 +667,8 @@ class LocalSettings:
             self.singleUser = False
         elif btn.fitMeshes == 'UNIQUE':
             pass
-        elif btn.fitMeshes in ['TRANSFORMED', 'MORPHED']:
-            self.onLoadBaked = btn.fitMeshes
+        elif btn.fitMeshes == 'MORPHED':
+            self.useLoadBaked = True
         elif btn.fitMeshes == 'DBZFILE':
             self.fitFile = True
 
