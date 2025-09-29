@@ -271,7 +271,7 @@ class DAZ_OT_LoadVectorDisp(DazOperator, LoadMaps, DispAdder):
     bl_description = "Load vector displacement map to selected materials"
     bl_options = {'UNDO'}
 
-    type = "VDISP"
+    type = "VECTOR_DISPLACEMENT"
     shaderNode = "ShaderNodeVectorDisplacement"
     heightInput = "Vector"
 
@@ -381,9 +381,17 @@ class DAZ_OT_LoadNormalMap(DazOperator, LoadMaps, NormalAdder):
 #----------------------------------------------------------
 
 class Baker:
+    if bpy.app.version >= (5,0,0):
+        enums = [('NORMALS', "Normals", "Bake normal maps"),
+                 ('DISPLACEMENT', "Displacement", "Bake scalar displacement maps"),
+                 ('VECTOR_DISPLACEMENT', "Vector Displacement", "Bake vector displacement maps"),
+                 ]
+    else:
+        enums = [('NORMALS', "Normals", "Bake normal maps"),
+                 ('DISPLACEMENT', "Displacement", "Bake scalar displacement maps")]
+
     bakeType : EnumProperty(
-        items = [('NORMALS', "Normals", "Bake normal maps"),
-                 ('DISPLACEMENT', "Displacement", "Bake scalar displacement maps")],
+        items = enums,
         name = "Bake Type",
         description = "Bake Type",
         default = 'NORMALS')
@@ -448,6 +456,8 @@ class Baker:
             return ("%s_NM_%s_%d.png" % (basename, self.imageSize, tile))
         elif self.bakeType == 'DISPLACEMENT':
             return ("%s_DISP_%s_%d.png" % (basename, self.imageSize, tile))
+        elif self.bakeType == 'VECTOR_DISPLACEMENT':
+            return ("%s_VDISP_%s_%d.png" % (basename, self.imageSize, tile))
 
 
     def getImagePath(self, imgname, create):
@@ -515,13 +525,22 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
         scn = context.scene
         self.engine = scn.render.engine
         scn.render.engine = 'CYCLES'
-        self.bake_type = scn.render.bake_type
-        self.use_bake_multires = scn.render.use_bake_multires
+        if hasattr(scn.render, "bake_type"):
+            self.bake_type = scn.render.bake_type
+            self.use_bake_multires = scn.render.use_bake_multires
+        else:
+            self.bake_type = scn.render.bake.type
+            self.use_multires = scn.render.bake.use_multires
         self.samples = scn.cycles.samples
         self.simplify = scn.render.use_simplify
-        scn.render.bake_type = self.bakeType
-        scn.render.use_bake_multires = True
-        scn.render.bake_margin = 2
+        if hasattr(scn.render, "bake_type"):
+            scn.render.bake_type = self.bakeType
+            scn.render.use_bake_multires = True
+            scn.render.bake_margin = 2
+        else:
+            scn.render.bake.type = self.bakeType
+            scn.render.bake.use_multires = True
+            scn.render.bake.margin = 2
         scn.cycles.samples = 512
         scn.render.use_simplify = False
         self.object = context.view_layer.objects.active
@@ -529,8 +548,12 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
 
     def restoreState(self, context):
         scn = context.scene
-        scn.render.use_bake_multires = self.use_bake_multires
-        scn.render.bake_type = self.bake_type
+        if hasattr(scn.render, "bake_type"):
+            scn.render.use_bake_multires = self.use_bake_multires
+            scn.render.bake_type = self.bake_type
+        else:
+            scn.render.bake.use_multires = self.use_multires
+            scn.render.bake.type = self.bake_type
         scn.render.engine = self.engine
         scn.cycles.samples = self.samples
         scn.render.use_simplify = self.simplify
@@ -678,7 +701,7 @@ class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, DispAdder, Layo
 
     def draw(self, context):
         Baker.draw(self, context)
-        if self.bakeType == 'DISPLACEMENT':
+        if self.bakeType in ['DISPLACEMENT', 'VECTOR_DISPLACEMENT']:
             self.layout.prop(self, "dispScale")
         Layouter.draw(self, context)
 
@@ -727,7 +750,14 @@ class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, DispAdder, Layo
         elif self.bakeType == 'NORMALS':
             self.loadNormalMaps(mat, args, 0)
         elif self.bakeType == 'DISPLACEMENT':
+            self.shaderNode = "ShaderNodeDisplacement"
+            self.heightInput = "Height"
             self.loadDispMaps(mat, args)
+        elif self.bakeType == 'VECTOR_DISPLACEMENT':
+            self.shaderNode = "ShaderNodeVectorDisplacement"
+            self.heightInput = "Vector"
+            self.loadDispMaps(mat, args)
+
 
 #----------------------------------------------------------
 #

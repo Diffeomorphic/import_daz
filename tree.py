@@ -321,6 +321,7 @@ NodeSize = {
     "VOLUME_ABSORPTION" : 7,
     "VOLUME_SCATTER" : 7,
     "DISPLACEMENT" : 10,
+    "VECTOR_DISPLACEMENT" : 10,
     "LIGHT_PATH" : 10,
 
     "BLACKBODY" : 5,
