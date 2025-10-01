@@ -271,7 +271,7 @@ class DAZ_OT_LoadVectorDisp(DazOperator, LoadMaps, DispAdder):
     bl_description = "Load vector displacement map to selected materials"
     bl_options = {'UNDO'}
 
-    type = "VECTOR_DISPLACEMENT"
+    type = "VDISP"
     shaderNode = "ShaderNodeVectorDisplacement"
     heightInput = "Vector"
 
