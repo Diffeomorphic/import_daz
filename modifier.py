@@ -127,9 +127,10 @@ class Modifier(Asset):
             if inst.geometries:
                 geonode = inst.geometries[0]
                 ob = geonode.rna
+                hdob = geonode.hdobject
             else:
-                ob = geonode = None
-            return ob, geonode.hdobject, rig, geonode
+                ob = geonode = hdob = None
+            return ob, hdob, rig, geonode
         else:
             msg = ("Expected geonode or figure but got:\n  %s" % inst)
             reportError(msg)
