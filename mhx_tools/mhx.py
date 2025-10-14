@@ -1112,8 +1112,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 elbowFac = upper_arm.length/(upper_arm.length + forearm.length)
                 elbowVec = forearm.tail - upper_arm.head
                 elbowHead = upper_arm.head + elbowFac*elbowVec
-                elbowPoleA = makeBone("elbowPoleA.%s" % suffix, rig, armSocket.head, armSocket.head + 0.2*elbowVec, 0, armIkLayer, armSocket)
-                elbowPoleP = makeBone("elbowPoleP.%s" % suffix, rig, elbowHead, elbowHead + 0.2*elbowVec, 0, L_HELP2, armParent)
+                if self.elbowParent == 'HAND':
+                    elbowPoleA = makeBone("elbowPoleA.%s" % suffix, rig, armSocket.head, armSocket.head + 0.2*elbowVec, 0, armIkLayer, armSocket)
+                    elbowPoleP = makeBone("elbowPoleP.%s" % suffix, rig, elbowHead, elbowHead + 0.2*elbowVec, 0, L_HELP2, armParent)
                 parent = self.getElbowParent(rig, suffix)
                 elbowPt = makeBone("elbow.pt.ik.%s" % suffix, rig, locElbowPt, locElbowPt+ez, 0, armIkLayer, parent)
                 elbowLink = makeBone("elbow.link.%s" % suffix, rig, forearm.head, locElbowPt, 0, armIkLayer, upper_armIk)
@@ -1184,9 +1185,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 kneeFac = thigh.length/(thigh.length + shin.length)
                 kneeVec = shin.tail - thigh.head
                 kneeHead = thigh.head + kneeFac*kneeVec
-                kneePoleA = makeBone("kneePoleA.%s" % suffix, rig, legSocket.head, legSocket.head + 0.2*kneeVec, 0, legIkLayer, legSocket)
-                kneePoleP = makeBone("kneePoleP.%s" % suffix, rig, kneeHead, kneeHead + 0.2*kneeVec, 0, L_HELP2, hip)
-                setBoneNumLayer(kneePoleA, rig, leg2Layer)
+                if self.kneeParent == 'FOOT':
+                    kneePoleA = makeBone("kneePoleA.%s" % suffix, rig, legSocket.head, legSocket.head + 0.2*kneeVec, 0, legIkLayer, legSocket)
+                    kneePoleP = makeBone("kneePoleP.%s" % suffix, rig, kneeHead, kneeHead + 0.2*kneeVec, 0, L_HELP2, hip)
+                    setBoneNumLayer(kneePoleA, rig, leg2Layer)
                 parent = self.getKneeParent(rig, suffix)
                 kneePt = makeBone("knee.pt.ik.%s" % suffix, rig, locKneePt, locKneePt+ez, 0, legIkLayer, parent)
                 setBoneNumLayer(kneePt, rig, leg2Layer)
@@ -1290,14 +1292,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 elbowPt = rpbs["elbow.pt.ik.%s" % suffix]
                 elbowLink = rpbs["elbow.link.%s" % suffix]
                 elbowLink.lock_location = TTrue
-                elbowPoleA = rpbs["elbowPoleA.%s" % suffix]
-                elbowPoleP = rpbs["elbowPoleP.%s" % suffix]
-                elbowPoleA.lock_location = TTrue
-                elbowPoleA.lock_rotation = (True,False,True)
-                dampedTrack(elbowPoleA, handIk, rig)
-                cns = copyLocation(elbowPoleA, handIk, rig)
-                cns.influence = elbowFac
-                copyTransform(elbowPoleP, elbowPoleA, rig)
+                if self.elbowParent == 'HAND':
+                    elbowPoleA = rpbs["elbowPoleA.%s" % suffix]
+                    elbowPoleP = rpbs["elbowPoleP.%s" % suffix]
+                    elbowPoleA.lock_location = TTrue
+                    elbowPoleA.lock_rotation = (True,False,True)
+                    dampedTrack(elbowPoleA, handIk, rig)
+                    cns = copyLocation(elbowPoleA, handIk, rig)
+                    cns.influence = elbowFac
+                    copyTransform(elbowPoleP, elbowPoleA, rig)
                 setMhx(rig, "MhaElbowParent_%s" % suffix, self.elbowParent)
                 ikConstraint(forearmIk, handIk, elbowPt, -90, 2, rig)
                 stretchTo(elbowLink, elbowPt, rig)
@@ -1367,14 +1370,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 kneePt = rpbs["knee.pt.ik.%s" % suffix]
                 kneeLink = rpbs["knee.link.%s" % suffix]
                 kneeLink.lock_location = TTrue
-                kneePoleA = rpbs["kneePoleA.%s" % suffix]
-                kneePoleP = rpbs["kneePoleP.%s" % suffix]
-                kneePoleA.lock_location = TTrue
-                kneePoleA.lock_rotation = (True,False,True)
-                dampedTrack(kneePoleA, ankleIk, rig)
-                cns = copyLocation(kneePoleA, ankleIk, rig)
-                cns.influence = kneeFac
-                copyTransform(kneePoleP, kneePoleA, rig)
+                if self.kneeParent == 'FOOT':
+                    kneePoleA = rpbs["kneePoleA.%s" % suffix]
+                    kneePoleP = rpbs["kneePoleP.%s" % suffix]
+                    kneePoleA.lock_location = TTrue
+                    kneePoleA.lock_rotation = (True,False,True)
+                    dampedTrack(kneePoleA, ankleIk, rig)
+                    cns = copyLocation(kneePoleA, ankleIk, rig)
+                    cns.influence = kneeFac
+                    copyTransform(kneePoleP, kneePoleA, rig)
                 setMhx(rig, "MhaKneeParent_%s" % suffix, self.kneeParent)
 
                 ikConstraint(shinIk, ankleIk, kneePt, -90, 2, rig)
@@ -1728,10 +1732,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             cns = copyRotation(pb, rb, gen, space='LOCAL')
             porient = Vector(pb.bone.matrix_local.to_euler())
             rorient = Vector(rb.bone.matrix_local.to_euler())
-            offset = (porient - rorient).length/D
-            if offset > self.ownerThreshold:
+            offset = (porient - rorient).length
+            if offset > 1.0*D:
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
-                print("Owner orientation: %s %.2f" % (pb.name, offset))
+                print("Owner orientation: %s %.2f" % (pb.name, offset/D))
 
     #-------------------------------------------------------------
     #   Error on missing bone

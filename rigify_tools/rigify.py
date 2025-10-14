@@ -1605,10 +1605,10 @@ class Rigifier(RigifyCommon):
             cns = copyRotation(pb, rb, gen, space='LOCAL')
             porient = Vector(pb.bone.matrix_local.to_euler())
             rorient = Vector(rb.bone.matrix_local.to_euler())
-            offset = (porient - rorient).length/D
-            if offset > self.ownerThreshold:
+            offset = (porient - rorient).length
+            if offset > 89*D:
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
-                print("Owner orientation: %s %.2f" % (pb.name, offset))
+                print("Owner orientation: %s %.2f" % (pb.name, offset/D))
 
 #-------------------------------------------------------------
 #  Buttons

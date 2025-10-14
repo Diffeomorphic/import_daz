@@ -79,12 +79,6 @@ class Fixer(DriverUser):
         description = "Keep the original DAZ rig for deformation",
         default = False)
 
-    ownerThreshold : FloatProperty(
-        name = "Owner Threshold",
-        description = "Use local space (owner orientation) if difference in orientation exceeds this",
-        min = 0, max = 89,
-        default = 89)
-
     def drawMeta(self):
         self.layout.prop(self, "keepRig")
         self.layout.prop(self, "useFingerIk")
