@@ -96,6 +96,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         description = "Enable stretchiness for arms and legs",
         default = True)
 
+    keepStretch : BoolProperty(
+        name = "Keep Stretch",
+        description = "Deform rig keeps stretchness for arms, legs and spine",
+        default = True)
+
     useSplitShin : BoolProperty(
         name = "Split Shin Vertex Group",
         description = "Split the shin vertex groups into bend and twist parts",
@@ -153,7 +158,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.layout.prop(self, "useStretch")
         self.layout.prop(self, "useSplitShin")
         self.layout.prop(self, "useTweakBones")
-        self.drawMeta()
+        self.layout.prop(self, "keepRig")
+        if self.keepRig and self.useStretch:
+            self.layout.prop(self, "keepStretch")
+        self.layout.prop(self, "useFingerIk")
         self.layout.prop(self, "useSpineIk")
         self.layout.prop(self, "tongueControl")
         self.layout.prop(self, "shaftControl")
@@ -1720,22 +1728,31 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         if rb is None:
             print('Cannot tie "%s" to "%s"' % (pb.name, rname))
             return
-        if pb.parent is None:
+        elif pb.parent is None:
             cns = copyTransform(pb, rb, gen, space='POSE')
-        elif rb.name.startswith("hand0."):
-            cns = copyRotation(pb, rb, gen, space='POSE')
-        elif pb.name in facebones:
-            cns = copyTransform(pb, rb, gen, space='LOCAL')
-        elif ".twist" in rb.name:
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
-        else:
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
-            porient = Vector(pb.bone.matrix_local.to_euler())
-            rorient = Vector(rb.bone.matrix_local.to_euler())
-            offset = (porient - rorient).length
-            if offset > 1.0*D:
+        if self.keepStretch and self.useStretch:
+            if rname.startswith(("chest", "spine")):
+                cns = copyTransform(pb, rb, gen, space='POSE')
+            elif rname.startswith(("hand0.", "foot.")):
+                cns = copyTransform(pb, rb, gen, space='POSE')
+            elif rname.startswith("shin."):
+                twname = "%s.twist.%s" % (rb.name[:-2], rb.name[-1])
+                tb = gen.pose.bones[twname]
+                cns = stretchTo(pb, tb, gen)
+                cns.head_tail = 1.0
+                cns = copyRotation(pb, rb, gen, space='LOCAL')
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
-                print("Owner orientation: %s %.2f" % (pb.name, offset/D))
+            else:
+                cns = copyTransform(pb, rb, gen, space='LOCAL')
+                cns.target_space = 'LOCAL_OWNER_ORIENT'
+        else:
+            if rb.name.startswith("hand0."):
+                cns = copyRotation(pb, rb, gen, space='POSE')
+            elif pb.name in facebones:
+                cns = copyTransform(pb, rb, gen, space='LOCAL')
+            else:
+                cns = copyRotation(pb, rb, gen, space='LOCAL')
+                cns.target_space = 'LOCAL_OWNER_ORIENT'
 
     #-------------------------------------------------------------
     #   Error on missing bone
