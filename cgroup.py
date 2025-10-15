@@ -98,7 +98,13 @@ class ShellGroup(NodeGroup):
             scale.operation = 'SCALE'
             self.links.new(self.displacement, scale.inputs[0])
             self.links.new(mult.outputs[0], scale.inputs["Scale"])
-            self.links.new(scale.outputs[0], self.outputs.inputs["Displacement"])
+
+            add = self.addNode("ShaderNodeVectorMath", 8)
+            add.label = "Add"
+            add.operation = 'ADD'
+            self.links.new(self.inputs.outputs["Displacement"], add.inputs[0])
+            self.links.new(scale.outputs[0], add.inputs[1])
+            self.links.new(add.outputs[0], self.outputs.inputs["Displacement"])
         else:
             self.links.new(self.inputs.outputs["Displacement"], self.outputs.inputs["Displacement"])
 
