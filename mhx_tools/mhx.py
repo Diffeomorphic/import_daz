@@ -96,11 +96,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         description = "Enable stretchiness for arms and legs",
         default = True)
 
-    keepStretch : BoolProperty(
-        name = "Keep Stretch",
-        description = "Deform rig keeps stretchness for arms, legs and spine",
-        default = True)
-
     useSplitShin : BoolProperty(
         name = "Split Shin Vertex Group",
         description = "Split the shin vertex groups into bend and twist parts",
@@ -159,8 +154,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.layout.prop(self, "useSplitShin")
         self.layout.prop(self, "useTweakBones")
         self.layout.prop(self, "keepRig")
-        if self.keepRig and self.useStretch:
-            self.layout.prop(self, "keepStretch")
         self.layout.prop(self, "useFingerIk")
         self.layout.prop(self, "useSpineIk")
         self.layout.prop(self, "tongueControl")
@@ -1730,12 +1723,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             return
         elif pb.parent is None:
             cns = copyTransform(pb, rb, gen, space='POSE')
-        if self.keepStretch and self.useStretch:
-            if rname.startswith(("chest", "spine")):
+        if rname.startswith(("chest", "spine")) and self.useSpineIk:
+            cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
+        elif pb.name in facebones:
+            cns = copyTransform(pb, rb, gen, space='LOCAL')
+        elif self.useStretch:
+            if rname.startswith(("hand0.", "foot.")):
                 cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
-            elif rname.startswith(("hand0.", "foot.")):
-                cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
-            elif rname.startswith("shin."):
+            elif rname.startswith("shin.") and self.useStretch:
                 twname = "%s.twist.%s" % (rb.name[:-2], rb.name[-1])
                 tb = gen.pose.bones[twname]
                 cns = stretchTo(pb, tb, gen)
@@ -1746,10 +1741,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 cns = copyTransform(pb, rb, gen, space='LOCAL')
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
         else:
-            if rb.name.startswith("hand0."):
+            if rname.startswith(("hand0.", "foot.")):
                 cns = copyRotation(pb, rb, gen, space='LOCAL_WITH_PARENT')
-            elif pb.name in facebones:
-                cns = copyTransform(pb, rb, gen, space='LOCAL')
             else:
                 cns = copyRotation(pb, rb, gen, space='LOCAL')
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
