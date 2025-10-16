@@ -1732,9 +1732,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             cns = copyTransform(pb, rb, gen, space='POSE')
         if self.keepStretch and self.useStretch:
             if rname.startswith(("chest", "spine")):
-                cns = copyTransform(pb, rb, gen, space='POSE')
+                cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
             elif rname.startswith(("hand0.", "foot.")):
-                cns = copyTransform(pb, rb, gen, space='POSE')
+                cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
             elif rname.startswith("shin."):
                 twname = "%s.twist.%s" % (rb.name[:-2], rb.name[-1])
                 tb = gen.pose.bones[twname]
@@ -1747,7 +1747,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
         else:
             if rb.name.startswith("hand0."):
-                cns = copyRotation(pb, rb, gen, space='POSE')
+                cns = copyRotation(pb, rb, gen, space='LOCAL_WITH_PARENT')
             elif pb.name in facebones:
                 cns = copyTransform(pb, rb, gen, space='LOCAL')
             else:
