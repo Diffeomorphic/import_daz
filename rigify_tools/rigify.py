@@ -1573,7 +1573,7 @@ class Rigifier(RigifyCommon):
     def tieBone(self, pb, gen, assoc, facebones, rigtype):
         if pb.name.endswith(("twist1", "twist2", "metatarsal", "hand_anchor")):
             return
-        from ..rig_utils import copyLocation, copyRotation, copyTransform
+        from ..rig_utils import copyLocation, copyRotation, copyTransform, stretchTo
         rname = self.getRigifyBone(pb.name, gen.data.bones)
         if rname is None:
             return
@@ -1587,28 +1587,26 @@ class Rigifier(RigifyCommon):
             cns.head_tail = 1.0
         elif pb.name == "pelvis":
             pass
-        elif "twist" in pb.name.lower():
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
-        elif pb.name in facebones:
-            cns = copyTransform(pb, rb, gen, space='LOCAL')
         elif (pb.name[1:] in (
                 "Collar", "_shoulder",
+                "Shldr", "ShldrBend", "_upperarm",
                 "ForeArm", "ForearmBend", "_forearm",
                 "Hand", "_hand",
-                "Shin", "_shin",
+                "Thigh", "ThighBend", "_thigh",
                 "Foot", "_foot",
                 ) or
               rname.startswith("DEF-spine")):
-            cns = copyRotation(pb, rb, gen, space='LOCAL_WITH_PARENT')
-            cns = copyLocation(pb, rb, gen, space='POSE')
-        else:
+            cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
+        elif pb.name[1:] in ("Shin", "_shin"):
+            twname = "DEF-shin.%s.001" % rb.name[-1]
+            tb = gen.pose.bones[twname]
+            cns = stretchTo(pb, tb, gen)
+            cns.head_tail = 1.0
             cns = copyRotation(pb, rb, gen, space='LOCAL')
-            porient = Vector(pb.bone.matrix_local.to_euler())
-            rorient = Vector(rb.bone.matrix_local.to_euler())
-            offset = (porient - rorient).length
-            if offset > 89*D:
-                cns.target_space = 'LOCAL_OWNER_ORIENT'
-                print("Owner orientation: %s %.2f" % (pb.name, offset/D))
+            cns.target_space = 'LOCAL_OWNER_ORIENT'
+        else:
+            cns = copyTransform(pb, rb, gen, space='LOCAL')
+            cns.target_space = 'LOCAL_OWNER_ORIENT'
 
 #-------------------------------------------------------------
 #  Buttons
