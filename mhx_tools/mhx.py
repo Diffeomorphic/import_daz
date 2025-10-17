@@ -1743,6 +1743,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         else:
             if rname.startswith(("hand0.", "foot.")):
                 cns = copyRotation(pb, rb, gen, space='LOCAL_WITH_PARENT')
+                cns = copyLocation(pb, rb, gen, space='POSE')
             else:
                 cns = copyRotation(pb, rb, gen, space='LOCAL')
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
