@@ -1730,6 +1730,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         elif self.useStretch:
             if rname.startswith(("hand0.", "foot.")):
                 cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
+                cns = copyLocation(pb, rb, gen, space='POSE')
             elif rname.startswith("shin.") and self.useStretch:
                 twname = "%s.twist.%s" % (rb.name[:-2], rb.name[-1])
                 tb = gen.pose.bones[twname]
