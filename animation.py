@@ -2277,7 +2277,7 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
             self.getLimits(self.limits["scale"], pb, 'LIMIT_SCALE', -1e10, 1e10)
 
         if rig.animation_data and rig.animation_data.action:
-            fcurves = getActionBag(self.rig.animation_data.action).fcurves
+            fcurves = getActionBag(rig.animation_data.action).fcurves
             deletes = []
             for fcu in fcurves:
                 bname,channel,cnsname = getBoneChannel(fcu)
