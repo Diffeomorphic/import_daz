@@ -353,12 +353,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         deletes = self.fixConstraints(rig)
         self.store.restoreAllDrivers(rig, nrig, self.meshes, self.renamedBones)
         self.fixDrivers(rig.data)
-        self.fixBendTwistDrivers(rig)
-        self.fixBendTwistDrivers(rig.data)
-        for ob in self.meshes:
-            self.fixBendTwistDrivers(ob)
-            if ob.data.shape_keys:
-                self.fixBendTwistDrivers(ob.data.shape_keys)
+        if useBendTwist:
+            self.fixBendTwistDrivers(rig)
+            self.fixBendTwistDrivers(rig.data)
+            for ob in self.meshes:
+                self.fixBendTwistDrivers(ob)
+                if ob.data.shape_keys:
+                    self.fixBendTwistDrivers(ob.data.shape_keys)
         if self.driverRotationMode:
             from ..fix import setDriverModes
             setDriverModes(rig, self.driverRotationMode, False)
