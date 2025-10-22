@@ -253,7 +253,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         #-------------------------------------------------------------
 
         showProgress(1, 25, "  Fix DAZ rig")
-        useBendTwist = True
+        self.useBendTwist = True
         self.bendTwistGenesis = []
         bendTwistBones = list(MHX.BendTwistBones)
         bendTwistChildren = {}
@@ -281,7 +281,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             if self.keepG9Twist:
                 showProgress(4, 25, "  Rename bones")
                 self.rename2Mhx(rig)
-                useBendTwist = False
+                self.useBendTwist = False
             else:
                 self.bendTwistGenesis = MHX.BendTwistGenesis9
                 showProgress(2, 25, "  Connect to parent")
@@ -309,7 +309,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.fixHands(rig)
         showProgress(8, 25, "  Store all constraints")
         self.store.storeAllConstraints(rig)
-        if useBendTwist:
+        if self.useBendTwist:
             showProgress(9, 25, "  Create bend and twist bones")
             self.createBendTwists(rig, bendTwistBones, bendTwistChildren)
         #showProgress(10, 25, "  Fix bone drivers")
@@ -353,7 +353,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         deletes = self.fixConstraints(rig)
         self.store.restoreAllDrivers(rig, nrig, self.meshes, self.renamedBones)
         self.fixDrivers(rig.data)
-        if useBendTwist:
+        if self.useBendTwist:
             self.fixBendTwistDrivers(rig)
             self.fixBendTwistDrivers(rig.data)
             for ob in self.meshes:
@@ -1724,7 +1724,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             return
         elif pb.parent is None:
             cns = copyTransform(pb, rb, gen, space='POSE')
-        if rname.startswith(("chest", "spine")) and self.useSpineIk:
+        elif isDrvBone(pb.name):
+            return
+        elif rname.startswith(("chest", "spine")) and self.useSpineIk:
             cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
@@ -1732,7 +1734,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             if rname.startswith(("hand0.", "foot.")):
                 cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
                 cns = copyLocation(pb, rb, gen, space='POSE')
-            elif rname.startswith("shin.") and self.useStretch:
+            elif rname.startswith("shin.") and self.useStretch and self.useBendTwist:
                 twname = "%s.twist.%s" % (rb.name[:-2], rb.name[-1])
                 tb = gen.pose.bones[twname]
                 cns = stretchTo(pb, tb, gen)
