@@ -131,6 +131,7 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
 
     def run(self, context):
         rig = context.object
+        activateObject(context, rig)
         gen = self.getControlRig(rig)
         act = getCurrentAction(gen)
         if act:
@@ -138,12 +139,13 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
         else:
             actname = "Action"
         meshes = getShapeChildren(rig)
+        yrotss = self.getTwistRotations(context, rig)
         bpy.ops.nla.bake(frame_start=self.frame_start,
                          frame_end=self.frame_end,
                          only_selected=False,
                          visual_keying=True,
                          bake_types={'OBJECT', 'POSE'})
-        self.undoDrivenBones(context, rig)
+        self.setTwistRotations(context, rig, yrotss)
 
         act = getCurrentAction(rig)
         shared = dict([(pb.name, pb) for pb in rig.pose.bones
@@ -202,22 +204,34 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
             fcu2.keyframe_points.insert(frame, value, options={'FAST'})
 
 
-    def undoDrivenBones(self, context, rig):
+    def getTwistRotations(self, context, rig):
         scn = context.scene
-        pairs = []
-        for pb in rig.pose.bones:
-            drvb = rig.pose.bones.get(drvBone(pb.name))
-            if drvb and not isDrvBone(pb.name):
-                pairs.append((pb, drvb))
-        if pairs:
-            for frame in range(self.frame_start, self.frame_end+1):
-                scn.frame_current = frame
-                updateScene(context)
-                for pb,drvb in pairs:
-                    if pb.rotation_mode != 'QUATERNION':
-                        pb.rotation_euler = Vector(pb.rotation_euler) - Vector(drvb.rotation_euler)
-                        if self.useBake:
-                            pb.keyframe_insert("rotation_euler", frame=frame)
+        yrotss = []
+        for frame in range(self.frame_start, self.frame_end+1):
+            yrots = {}
+            yrotss.append((frame, yrots))
+            scn.frame_current = frame
+            updateScene(context)
+            for pb in rig.pose.bones:
+                drvb = rig.pose.bones.get(drvBone(pb.name))
+                if drvb and not isDrvBone(pb.name):
+                    yrots[pb.name] = (drvb, drvb.rotation_euler.y)
+        return yrotss
+
+
+    def setTwistRotations(self, context, rig, yrotss):
+        scn = context.scene
+        for frame,yrots in yrotss:
+            scn.frame_current = frame
+            updateScene(context)
+            for bname,data in yrots.items():
+                drvb,yrot = data
+                pb = rig.pose.bones[bname]
+                pb.rotation_euler.y -= yrot
+                pb.keyframe_insert("rotation_euler", frame=frame)
+                drvb.keyframe_delete("location", frame=frame)
+                drvb.keyframe_delete("rotation_euler", frame=frame)
+                drvb.keyframe_delete("scale", frame=frame)
 
 #-------------------------------------------------------------
 #   Unmute control rig
