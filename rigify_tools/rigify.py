@@ -1570,7 +1570,7 @@ class Rigifier(RigifyCommon):
                     pb.constraints.move(n, 0)
 
 
-    def tieBone(self, pb, gen, assoc, facebones, rigtype):
+    def tieBone(self, pb, rig, gen, assoc, facebones, rigtype):
         if pb.name.endswith(("twist1", "twist2", "metatarsal", "hand_anchor")):
             return
         from ..rig_utils import copyLocation, copyRotation, copyTransform, stretchTo

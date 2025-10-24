@@ -1716,7 +1716,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     #   Tie bone
     #-------------------------------------------------------------
 
-    def tieBone(self, pb, gen, assoc, facebones, rigtype):
+    def tieBone(self, pb, rig, gen, assoc, facebones, rigtype):
         rname = assoc.get(pb.name, pb.name)
         rb = gen.pose.bones.get(rname)
         if rb is None:
@@ -1724,9 +1724,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             return
         elif pb.parent is None:
             cns = copyTransform(pb, rb, gen, space='POSE')
+            return
         elif isDrvBone(pb.name):
             return
-        elif rname.startswith(("chest", "spine")) and self.useSpineIk:
+        else:
+            drvb = rig.pose.bones.get(drvBone(pb.name))
+            if drvb:
+                cns = copyTransform(pb, drvb, rig, space='LOCAL')
+                cns.mix_mode = 'AFTER'
+                cns.mute = True
+        if rname.startswith(("chest", "spine")) and self.useSpineIk:
             cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')

@@ -83,7 +83,10 @@ class ControlRigMuter(Framer):
                 continue
             for cns in pb.constraints:
                 if self.useMuteAll or cns.type.startswith("COPY"):
-                    cns.mute = mute
+                    if cns.target == rig:
+                        cns.mute = not mute
+                    else:
+                        cns.mute = mute
         cns = getConstraint(rig, 'COPY_TRANSFORMS')
         if cns:
             cns.mute = mute

@@ -600,7 +600,7 @@ class Fixer(DriverUser):
         for pb in rig.pose.bones:
             for cns in list(pb.constraints):
                 pb.constraints.remove(cns)
-            self.tieBone(pb, gen, assoc, facebones, dazRna(rig).DazRig)
+            self.tieBone(pb, rig, gen, assoc, facebones, dazRna(rig).DazRig)
         cns = rig.constraints.new('COPY_TRANSFORMS')
         cns.name = "Copy Transform %s" % gen.name
         cns.target = gen
