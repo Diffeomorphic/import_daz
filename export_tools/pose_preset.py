@@ -367,9 +367,6 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                     if mat is None:
                         print("NOMAT", pb.name, bname)
                         continue
-                    drvb = rig.pose.bones.get(drvBone(pb.name))
-                    if drvb:
-                        mat = mat @ drvb.matrix_basis.inverted()
                     bname = self.getDazBone(bname, pb)
                     L[bname] = self.Finv[bname] @ mat @ self.F[bname]
 

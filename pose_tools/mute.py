@@ -128,7 +128,6 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
 
     def run(self, context):
         rig = context.object
-        scn = context.scene
         gen = self.getControlRig(rig)
         act = getCurrentAction(gen)
         if act:
@@ -136,7 +135,12 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
         else:
             actname = "Action"
         meshes = getShapeChildren(rig)
-        bpy.ops.nla.bake(frame_start=self.frame_start, frame_end=self.frame_end, only_selected=False, visual_keying=True, bake_types={'OBJECT', 'POSE'})
+        bpy.ops.nla.bake(frame_start=self.frame_start,
+                         frame_end=self.frame_end,
+                         only_selected=False,
+                         visual_keying=True,
+                         bake_types={'OBJECT', 'POSE'})
+        self.undoDrivenBones(context, rig)
 
         act = getCurrentAction(rig)
         shared = dict([(pb.name, pb) for pb in rig.pose.bones
@@ -184,6 +188,7 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
                     fstruct[prop] = fcu
         return fstruct
 
+
     def setFcurve(self, rna, path, fcu):
         rna.keyframe_insert(path)
         fcurves = getActionBag(rna.animation_data.action, rna.id_type).fcurves
@@ -192,6 +197,24 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
         for frame in range(self.frame_start, self.frame_end+1):
             value = fcu.evaluate(frame)
             fcu2.keyframe_points.insert(frame, value, options={'FAST'})
+
+
+    def undoDrivenBones(self, context, rig):
+        scn = context.scene
+        pairs = []
+        for pb in rig.pose.bones:
+            drvb = rig.pose.bones.get(drvBone(pb.name))
+            if drvb and not isDrvBone(pb.name):
+                pairs.append((pb, drvb))
+        if pairs:
+            for frame in range(self.frame_start, self.frame_end+1):
+                scn.frame_current = frame
+                updateScene(context)
+                for pb,drvb in pairs:
+                    if pb.rotation_mode != 'QUATERNION':
+                        pb.rotation_euler = Vector(pb.rotation_euler) - Vector(drvb.rotation_euler)
+                        if self.useBake:
+                            pb.keyframe_insert("rotation_euler", frame=frame)
 
 #-------------------------------------------------------------
 #   Unmute control rig
