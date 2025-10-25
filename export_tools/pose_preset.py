@@ -813,10 +813,11 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         else:
             twname,twidx = self.getTwistBone(pb.name)
             for idx,x in enumerate(["x","y","z"]):
-                if ((not self.includeLocks and
-                     pb.name in self.rotlocks.keys() and
-                     self.rotlocks[pb.name][idx]) or
-                    (twname and idx == twidx)):
+                if (not self.includeLocks and
+                    pb.name in self.rotlocks.keys() and
+                    self.rotlocks[pb.name][idx]):
+                    continue
+                elif bname.endswith("Bend") and twname and idx == twidx:
                     continue
                 anim = {}
                 anim["url"] = "%s:?rotation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
