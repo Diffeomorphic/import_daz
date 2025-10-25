@@ -1009,7 +1009,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                     continue
                 fingers = rig.pose.bones[fingname]
                 cns = copyRotation(fkwind, fingers, rig, space='LOCAL')
-                cns.use_offset = True
+                cns.mix_mode = 'AFTER'
                 cns.influence = (0.5 if m==0 else 1.0)
                 addMuteDriver(cns, rig, prop1)
                 if self.useFingerIk:

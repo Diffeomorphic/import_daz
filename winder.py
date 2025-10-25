@@ -136,7 +136,7 @@ def addWinder(rig, windname, bnames, layers,
     windedLayer = layers[1]
     cns = copyRotation(pb, winder, rig)
     setLocks(pb.lock_rotation, cns)
-    cns.use_offset = True
+    cns.mix_mode = 'AFTER'
     infl = 2*pb.bone.length/winder.length
     if not influs:
         influs = len(bnames)*[infl]
@@ -157,20 +157,20 @@ def addWinder(rig, windname, bnames, layers,
         pbones.append(pb)
         cns = copyRotation(pb, winder, rig)
         setLocks(pb.lock_rotation, cns)
-        cns.use_offset = True
+        cns.mix_mode = 'AFTER'
         cns.influence = infl
         addMuteDriver(cns, rig, prop)
         infl = 2*pb.bone.length/winder.length
         if useScale:
             cns = copyScale(pb, winder, rig, space='LOCAL')
             setLocks(pb.lock_scale, cns)
-            cns.use_offset = True
+            cns.mix_mode = 'AFTER'
             if pb.bone.inherit_scale != "NONE":
                 cns.influence = infl
             addMuteDriver(cns, rig, prop)
         if useLocation:
             cns = copyLocation(pb, winder, rig, space='LOCAL')
-            cns.use_offset = True
+            cns.mix_mode = 'AFTER'
             cns.influence = infl
             addMuteDriver(cns, rig, prop)
         enableBoneNumLayer(pb.bone, rig, windedLayer)
