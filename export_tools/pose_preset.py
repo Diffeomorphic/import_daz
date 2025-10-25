@@ -31,6 +31,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
     bl_options = {'UNDO', 'PRESET'}
 
     useConvert = False
+    useConvertMerged = False
     trgRig = "genesis"
     affectBones = True
     affectMorphs = False
@@ -838,8 +839,6 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 anims.append(anim)
             if twname is None:
                 return
-
-            print("GG", bname, twname, twidx, vecs)
 
             def addTwistAnim(bname, x, rots, anims):
                 anim = {}

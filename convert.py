@@ -110,7 +110,7 @@ def optimizePose(context, useApplyRestPose):
 #   Bone conversion
 #-------------------------------------------------------------
 
-def getConverter(srctype, trg):
+def getConverter(srctype, trg, useConvertMerged=False):
     if srctype == "genesis8":
         srctype = "genesis3"
     elif srctype == "genesis":
@@ -134,9 +134,12 @@ def getConverter(srctype, trg):
     if srctype == trgtype:
         return {},twists
     if trgtype.startswith(("mhx", "rigify")):
-        if srctype == "genesis2":
-            srctype = "genesis1"
-        file = "%s-%s" % (srctype, trgtype)
+        if useConvertMerged:
+            file = "genesis-%s" % trgtype
+        else:
+            if srctype == "genesis2":
+                srctype = "genesis1"
+            file = "%s-%s" % (srctype, trgtype)
     elif trgtype == "genesis9":
         file = "genesis1238-genesis9"
     else:

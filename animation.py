@@ -20,6 +20,7 @@ from .bone_data import BD
 
 class FrameConverter:
     trgRig = None
+    useConvertMerged = True
 
     def getConv(self, banims, rig):
         from .figure import getRigType
@@ -32,10 +33,10 @@ class FrameConverter:
             srctype = getRigType(banims, False)
         if srctype:
             print("Auto-detected %s character in duf/dsf file" % srctype)
-            return getConverter(srctype, rig)
+            return getConverter(srctype, rig, self.useConvertMerged)
         elif dazRna(rig).DazRig.startswith(("mhx", "rigify")):
             print("Convert to %s" % dazRna(rig).DazRig)
-            return getConverter("genesis3", rig)
+            return getConverter("genesis3", rig, self.useConvertMerged)
         else:
             print("Could not auto-detect character in duf/dsf file")
             return {}, {}
