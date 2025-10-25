@@ -139,13 +139,13 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
         else:
             actname = "Action"
         meshes = getShapeChildren(rig)
-        yrotss = self.getTwistRotations(context, rig)
+        drvmatss = self.getDrivenMatrices(context, rig)
         bpy.ops.nla.bake(frame_start=self.frame_start,
                          frame_end=self.frame_end,
                          only_selected=False,
                          visual_keying=True,
                          bake_types={'OBJECT', 'POSE'})
-        self.setTwistRotations(context, rig, yrotss)
+        self.setDrivenMatrices(context, rig, drvmatss)
 
         act = getCurrentAction(rig)
         shared = dict([(pb.name, pb) for pb in rig.pose.bones
@@ -204,34 +204,44 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
             fcu2.keyframe_points.insert(frame, value, options={'FAST'})
 
 
-    def getTwistRotations(self, context, rig):
+    def getDrivenMatrices(self, context, rig):
         scn = context.scene
-        yrotss = []
+        drvmatss = []
         for frame in range(self.frame_start, self.frame_end+1):
-            yrots = {}
-            yrotss.append((frame, yrots))
+            drvmats = []
+            drvmatss.append((frame, drvmats))
             scn.frame_current = frame
             updateScene(context)
             for pb in rig.pose.bones:
-                drvb = rig.pose.bones.get(drvBone(pb.name))
-                if drvb and not isDrvBone(pb.name):
-                    yrots[pb.name] = (drvb, drvb.rotation_euler.y)
-        return yrotss
+                drvb = rig.pose.bones.get(drvBone(pb.name, True))
+                if drvb:
+                    drvmats.append((pb, drvb, drvb.matrix_basis.copy()))
+        return drvmatss
 
 
-    def setTwistRotations(self, context, rig, yrotss):
+    def setDrivenMatrices(self, context, rig, drvmatss):
         scn = context.scene
-        for frame,yrots in yrotss:
+        for frame,drvmats in drvmatss:
             scn.frame_current = frame
             updateScene(context)
-            for bname,data in yrots.items():
-                drvb,yrot = data
-                pb = rig.pose.bones[bname]
-                pb.rotation_euler.y -= yrot
-                pb.keyframe_insert("rotation_euler", frame=frame)
+            for pb,drvb,drvmat in drvmats:
+                pb.matrix_basis = drvmat.inverted() @ pb.matrix_basis
+                trunc2Default(pb, "location", 0, GS.scale*1e-4)
+                pb.keyframe_insert("location", frame=frame)
                 drvb.keyframe_delete("location", frame=frame)
-                drvb.keyframe_delete("rotation_euler", frame=frame)
+                trunc2Default(drvb, "location", 0, GS.scale*1e-4)
+                if pb.rotation_mode == 'QUATERNION':
+                    pb.keyframe_insert("rotation_quaternion", frame=frame)
+                    drvb.keyframe_delete("rotation_quaternion", frame=frame)
+                else:
+                    trunc2Default(pb, "rotation_euler", 0, 1e-4)
+                    pb.keyframe_insert("rotation_euler", frame=frame)
+                    drvb.keyframe_delete("rotation_euler", frame=frame)
+                    trunc2Default(drvb, "rotation_euler", 0, 1e-4)
+                trunc2Default(pb, "scale", 1, 1e-4)
+                pb.keyframe_insert("scale", frame=frame)
                 drvb.keyframe_delete("scale", frame=frame)
+                trunc2Default(drvb, "scale", 1, 1e-4)
 
 #-------------------------------------------------------------
 #   Unmute control rig

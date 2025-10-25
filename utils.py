@@ -403,12 +403,14 @@ def setWorldMatrix(ob, wmat):
         else:
             ob.matrix_parent_inverse = ob.parent.matrix_world.inverted()
     ob.matrix_world = wmat
-    if Vector(ob.location).length < 1e-6:
-        ob.location = Zero
-    if Vector(ob.rotation_euler).length < 1e-6:
-        ob.rotation_euler = Zero
-    if (Vector(ob.scale) - One).length < 1e-6:
-        ob.scale = One
+    trunc2Default(ob, "location", 0, GS.scale*1e-4)
+    trunc2Default(ob, "rotation_euler", 0, 1e-4)
+    trunc2Default(ob, "scale", 1, 1e-4)
+
+
+def trunc2Default(ob, attr, default, eps):
+    vec = [(x if abs(x - default) > eps else default) for x in getattr(ob, attr)]
+    setattr(ob, attr, vec)
 
 
 def nonzero(vec):
@@ -583,10 +585,10 @@ def isFinal(string):
 def isRest(string):
     return (string[-5:] == "(rst)")
 
-def drvBone(string):
-    if isDrvBone(string):
+def drvBone(string, strict=False):
+    if isDrvBone(string) and not strict:
         return string
-    return string + "(drv)"
+    return "%s(drv)" % string
 
 def nextLetter(char):
     return ("f" if char == "d" else chr(ord(char) + 1))
