@@ -134,13 +134,17 @@ def getConverter(srctype, trg):
     if srctype == trgtype:
         return {},twists
     if trgtype.startswith(("mhx", "rigify")):
-        file = "genesis-%s" % trgtype
+        if srctype == "genesis2":
+            srctype = "genesis1"
+        file = "%s-%s" % (srctype, trgtype)
     elif trgtype == "genesis9":
         file = "genesis1238-genesis9"
     else:
         file = "%s-%s" % (srctype, trgtype)
     conv = DF.loadEntry(file, "converters")
-    if not conv:
+    if conv:
+        print("Using converter", file)
+    else:
         print("No converter", srctype, dazRna(trg).DazRig)
     return conv, twists
 

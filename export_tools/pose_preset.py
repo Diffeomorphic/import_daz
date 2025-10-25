@@ -46,6 +46,14 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         description = "Preset type",
         default = 'POSE')
 
+    trgRig : EnumProperty(
+        items = [("genesis1", "Genesis 1/2", "Genesis 1/2"),
+                 ("genesis3", "Genesis 3/8", "Genesis 3/8"),
+                 ("genesis9", "Genesis 9", "Genesis 9")],
+        name = "Target Character",
+        description = "Make pose preset for this character",
+        default = "genesis9")
+
     useAction : BoolProperty(
         name = "Use Action",
         description = "Save action instead of single pose",
@@ -90,6 +98,9 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         Preset.draw(self, context)
         self.layout.separator()
         self.layout.prop(self, "type")
+        rig = context.object
+        if dazRna(rig).DazRig.startswith(("mhx", "rigify")):
+            self.layout.prop(self, "trgRig")
         self.useBones = self.type in ['POSE', 'POSE_MORPH', 'HIERARCHICAL']
         self.useHierarchical = self.type == 'HIERARCHICAL'
         self.useMorphs = self.type in ['MORPH', 'POSE_MORPH']
