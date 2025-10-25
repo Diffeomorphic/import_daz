@@ -838,15 +838,25 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 anims.append(anim)
             if twname is None:
                 return
-            for idx,x in enumerate(["x","y","z"]):
-                if idx != twidx:
-                    continue
+
+            print("GG", bname, twname, twidx, vecs)
+
+            def addTwistAnim(bname, x, rots, anims):
                 anim = {}
-                anim["url"] = "%s:?rotation/%s/value" % (self.getBoneUrl(twname, pb, rig), x)
-                rots = [vec[idx]*factor for vec in vecs]
-                rots = self.correct180(rots)
+                anim["url"] = "%s:?rotation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 self.addKeys(rots, anim, 0.02)
                 anims.append(anim)
+
+            for idx,x in enumerate(["x","y","z"]):
+                if idx != twidx:
+                    rots = [0.0]*len(vecs)
+                    addTwistAnim(twname, x, rots, anims)
+                else:
+                    rots = [vec[idx]*factor for vec in vecs]
+                    rots = self.correct180(rots)
+                    addTwistAnim(twname, x, rots, anims)
+                    rots = [0.0]*len(vecs)
+                    addTwistAnim(bname, x, rots, anims)
 
 
     def getScale(self, bname, pb, rig, vecs, anims):

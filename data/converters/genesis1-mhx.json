@@ -35,14 +35,12 @@
     "lThigh" : "thigh.fk.L",
     "lShin" : "shin.fk.L",
     "lFoot" : "foot.fk.L",
-    "lMetatarsals" : "",
     "lToe" : "toe.fk.L",
     "lHeel" : "heel.L",
 
     "rThigh" : "thigh.fk.R",
     "rShin" : "shin.fk.R",
     "rFoot" : "foot.fk.R",
-    "rMetatarsals" : "",
     "rToe" : "toe.fk.R",
     "rHeel" : "heel.R",
 
