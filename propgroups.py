@@ -405,7 +405,7 @@ if DAZ_PROPS:
         def run(self, context):
             for rig in getSelectedArmatures(context):
                 for pb in rig.pose.bones:
-                    pb.bone.select = (pb.daz_importer.legacy or pb.bone.daz_importer.legacy)
+                    P2B(pb).select = (pb.daz_importer.legacy or pb.bone.daz_importer.legacy)
 
 
     propsclasses = [

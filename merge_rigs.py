@@ -472,7 +472,7 @@ class DAZ_OT_CopyPose(DazPropsOperator, IsArmature):
             setWorldMatrix(subrig, rig.matrix_world)
             pbones = [pb for pb in subrig.pose.bones if pb.name in rig.pose.bones.keys()]
             if self.useSelectedOnly:
-                pbones = [pb for pb in pbones if pb.bone.select]
+                pbones = [pb for pb in pbones if P2B(pb).select]
             for pb in pbones:
                 snapBone(pb, gmats)
                 if self.useImposeLocks:

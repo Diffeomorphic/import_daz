@@ -1076,7 +1076,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if pb.name == self.getMasterBone(rig):
             return False
         elif self.affectSelectedOnly:
-            if pb.bone.select:
+            if P2B(pb).select:
                 if BLENDER3:
                     for rlayer,blayer in zip(self.boneLayers, pb.bone.layers):
                         if rlayer and blayer:
@@ -1643,13 +1643,13 @@ class StandardAnimation:
         if rig.type != 'ARMATURE':
             return
         selected = []
-        for bone in rig.data.bones:
-            if bone.select:
-                selected.append(bone.name)
+        for pb in rig.pose.bones:
+            if P2B(pb).select:
+                selected.append(pb.name)
             if select == True:
-                bone.select = True
+                P2B(pb).select = True
             else:
-                bone.select = (bone.name in select)
+                P2B(pb).select = (pb.name in selected)
         return selected
 
 

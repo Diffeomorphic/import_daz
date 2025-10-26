@@ -379,7 +379,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         dazRna(rig).DazRig = "mhx"
 
         for pb in rig.pose.bones:
-            pb.bone.select = False
+            P2B(pb).select = False
             if pb.custom_shape:
                 pb.bone.show_wire = True
 
@@ -1738,7 +1738,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
         elif self.useStretch:
-            if rname.startswith(("hand0.", "foot.")):
+            if rname.startswith("hand0."):
                 cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
                 cns = copyLocation(pb, rb, gen, space='POSE')
             elif rname.startswith("shin.") and self.useStretch and self.useBendTwist:
@@ -1752,7 +1752,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 cns = copyTransform(pb, rb, gen, space='LOCAL')
                 cns.target_space = 'LOCAL_OWNER_ORIENT'
         else:
-            if rname.startswith(("hand0.", "foot.")):
+            if rname.startswith("hand0."):
                 cns = copyRotation(pb, rb, gen, space='LOCAL_WITH_PARENT')
                 cns = copyLocation(pb, rb, gen, space='POSE')
             else:

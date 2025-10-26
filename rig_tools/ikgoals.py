@@ -28,8 +28,8 @@ class DAZ_OT_SelectMatchingBones(DazPropsOperator, IsArmature):
     def run(self, context):
         match = self.match.lower()
         for rig in getSelectedArmatures(context):
-            for bone in rig.data.bones:
-                bone.select = (match in bone.name.lower())
+            for pb in rig.pose.bones:
+                P2B(pb).select = (match in pb.name.lower())
 
 #-------------------------------------------------------------
 #   Lock channels
@@ -169,11 +169,11 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
     def ikGoalsFromSelected(self, rig):
         ikgoals = []
         for pb in rig.pose.bones:
-            if pb.bone.select and not pb.children:
+            if P2B(pb).select and not pb.children:
                 clen = 0
                 par = pb
                 pbones = []
-                while par and par.bone.select:
+                while par and P2B(par).select:
                     pbones.append(par)
                     clen += 1
                     par = par.parent
@@ -196,7 +196,7 @@ class DAZ_OT_AddIkGoals(DazPropsOperator, GizmoUser, IsArmature):
         ikgoals = []
         deletes = []
         for root in rig.pose.bones:
-            if root.bone.select:
+            if P2B(root).select:
                 clen = 0
                 pbones = []
                 pb = root
@@ -442,7 +442,7 @@ class DAZ_OT_AddWinders(Pinner, DazPropsOperator, GizmoUser, IsArmature):
     def findPoseRoots(self, rig):
         proots = {}
         for pb in rig.pose.bones:
-            if pb.bone.select and len(pb.children) == 1:
+            if P2B(pb).select and len(pb.children) == 1:
                 proots[pb.name] = pb
         removes = {}
         for proot in proots.values():
@@ -475,7 +475,7 @@ class DAZ_OT_AddTails(DazPropsOperator, IsArmature):
     def run(self, context):
         for rig in getSelectedArmatures(context):
             for pb in rig.pose.bones:
-                if pb.bone.select:
+                if P2B(pb).select:
                     self.addTail(context, rig, pb)
 
 
@@ -616,8 +616,8 @@ class DAZ_OT_AddIkControls(DazPropsOperator, Fixer, GizmoUser, IsArmature):
 
     def run(self, context):
         rig = context.object
-        bnames = [bone.name for bone in rig.data.bones if bone.select]
-        roots = [bone.name for bone in rig.data.bones if bone.parent is None]
+        bnames = [pb.name for pb in rig.pose.bones if P2B(pb).select]
+        roots = [pb.name for pb in rig.pose.bones if pb.parent is None]
         print("BONES", bnames)
         print("ROOTS", roots)
         self.startGizmos(context, rig)

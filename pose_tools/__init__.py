@@ -76,7 +76,7 @@ class DAZ_PT_DazMatrix(DAZ_PT_RuntimeTab, bpy.types.Panel):
         from ..utils import D, getSelectedArmatures
         for rig in getSelectedArmatures(context):
             for pb in rig.pose.bones:
-                if pb.bone.select:
+                if P2B(pb).select:
                     box = self.layout.box()
                     box.label(text = "%s : %s" % (rig.name, pb.name))
                     mat = rig.matrix_world @ pb.matrix

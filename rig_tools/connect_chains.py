@@ -27,25 +27,25 @@ class DAZ_OT_SelectChains(DazPropsOperator, IsArmature):
 
 
     def run(self, context):
-        def selectSubRoots(bone):
-            if len(bone.children) > 1:
-                for child in bone.children:
+        def selectSubRoots(pb):
+            if len(pb.children) > 1:
+                for child in pb.children:
                     if self.useRootsOnly:
-                        child.select = True
+                        P2B(child).select = True
                     else:
                         selectChain(child)
-            elif len(bone.children) == 1:
-                selectSubRoots(bone.children[0])
+            elif len(pb.children) == 1:
+                selectSubRoots(pb.children[0])
 
-        def selectChain(bone):
-            bone.select = True
-            if len(bone.children) == 1:
-                selectChain(bone.children[0])
+        def selectChain(pb):
+            P2B(pb).select = True
+            if len(pb.children) == 1:
+                selectChain(pb.children[0])
 
         rig = context.object
-        for bone in rig.data.bones:
-            bone.select = False
-        roots = [bone for bone in rig.data.bones if bone.parent is None]
+        for pb in rig.pose.bones:
+            P2B(pb).select = False
+        roots = [pb for pb in rig.pose.bones if pb.parent is None]
         for root in roots:
             selectSubRoots(root)
 
@@ -180,7 +180,7 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, BoneChains, IsArmature):
 
     def getBoneNames(self, rig):
         if self.useSelected:
-            roots = [bone for bone in rig.data.bones if bone.parent is None]
+            roots = [bone for bone in rig.pose.bones if bone.parent is None]
             for root in roots:
                 self.getChildNames(root)
             return
@@ -220,20 +220,20 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, BoneChains, IsArmature):
                 self.chains.append(chain)
 
 
-    def getChildNames(self, bone):
-        if bone.select:
+    def getChildNames(self, pb):
+        if P2B(pb).select:
             chain = []
-            self.getChainNames(bone, chain)
+            self.getChainNames(pb, chain)
             self.chains.append(chain)
         else:
-            for child in bone.children:
+            for child in pb.children:
                 self.getChildNames(child)
 
 
-    def getChainNames(self, bone, chain):
-        if bone.select:
-            chain.append(bone.name)
-            for child in bone.children:
+    def getChainNames(self, pb, chain):
+        if P2B(pb).select:
+            chain.append(pb.name)
+            for child in pb.children:
                 self.getChainNames(child, chain)
 
 #----------------------------------------------------------

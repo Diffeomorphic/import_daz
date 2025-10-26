@@ -100,7 +100,7 @@ class DAZ_OT_BatchSetCustomShape(DazPropsOperator, IsArmature):
         rig = context.object
         if self.useClear:
             for pb in rig.pose.bones:
-                if pb.bone.select:
+                if P2B(pb).select:
                     pb.custom_shape = None
         else:
             ob = None
@@ -111,7 +111,7 @@ class DAZ_OT_BatchSetCustomShape(DazPropsOperator, IsArmature):
             if ob is None:
                 raise DazError("No custom shape object selected")
             for pb in rig.pose.bones:
-                if pb.bone.select:
+                if P2B(pb).select:
                     pb.custom_shape = ob
                     setCustomShapeTransform(pb, self.scale, self.translation, Vector(self.rotation)*D)
 

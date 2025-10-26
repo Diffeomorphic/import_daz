@@ -118,7 +118,7 @@ class DAZ_OT_RotateBones(DazPropsOperator, IsArmature):
         rot = Vector((self.X, self.Y, self.Z))*D
         quat = Euler(rot).to_quaternion()
         for pb in rig.pose.bones:
-            if pb.bone.select:
+            if P2B(pb).select:
                 if pb.rotation_mode == 'QUATERNION':
                     pb.rotation_quaternion = quat
                 else:
