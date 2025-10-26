@@ -568,7 +568,11 @@ def pruneNodeTree(tree,
                 img2 = img.copy()
                 setColorSpaceSRGB(img2)
                 LS.protectedImages[img.name] = img2
-            node.image = img2
+            try:
+                node.image = img2
+            except ReferenceError:
+                print("Image has been removed", img)
+                node.image = img
 
     for node in list(tree.nodes):
         if node.type == 'TEX_IMAGE':

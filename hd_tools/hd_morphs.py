@@ -261,6 +261,7 @@ class DAZ_OT_LoadScalarDisp(DazOperator, LoadMaps, DispAdder):
     def run(self, context):
         ob = context.object
         args = self.getArgs(ob)
+        LS.__init__()
         for mat in self.getMaterials(ob):
             self.loadDispMaps(mat, args)
 
@@ -282,6 +283,7 @@ class DAZ_OT_LoadVectorDisp(DazOperator, LoadMaps, DispAdder):
     def run(self, context):
         ob = context.object
         args = self.getArgs(ob)
+        LS.__init__()
         for mat in self.getMaterials(ob):
             self.loadDispMaps(mat, args)
 
@@ -373,6 +375,7 @@ class DAZ_OT_LoadNormalMap(DazOperator, LoadMaps, NormalAdder):
     def run(self, context):
         ob = context.object
         args = self.getArgs(ob)
+        LS.__init__()
         for mat in self.getMaterials(ob):
             self.loadNormalMaps(mat, args, 1)
 
@@ -567,6 +570,7 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
 
     def run(self, context):
         self.storeDefaultNames(context)
+        LS.__init__()
         objects = [ob for ob in getSelectedMeshes(context) if getModifier(ob, 'MULTIRES')]
         for ob in objects:
             activateObject(context, ob)
@@ -711,6 +715,7 @@ class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, DispAdder, Layo
 
     def run(self, context):
         self.storeDefaultNames(context)
+        LS.__init__()
         for ob in getSelectedMeshes(context):
             activateObject(context, ob)
             self.loadObjectMaps(ob)
