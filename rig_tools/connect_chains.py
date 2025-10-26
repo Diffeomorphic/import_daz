@@ -180,7 +180,7 @@ class DAZ_OT_ConnectBoneChains(DazPropsOperator, BoneChains, IsArmature):
 
     def getBoneNames(self, rig):
         if self.useSelected:
-            roots = [bone for bone in rig.pose.bones if bone.parent is None]
+            roots = [pb for pb in rig.pose.bones if pb.parent is None]
             for root in roots:
                 self.getChildNames(root)
             return

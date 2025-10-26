@@ -1587,6 +1587,13 @@ class Rigifier(RigifyCommon):
             cns.head_tail = 1.0
         elif pb.name == "pelvis":
             pass
+        elif pb.name in ("spine1", "abdomen", "abdomenLower", "head"):
+            cns = copyTransform(pb, rb, gen, space='LOCAL')
+            cns.target_space = 'LOCAL_OWNER_ORIENT'
+        elif pb.name in facebones:
+            cns = copyTransform(pb, rb, gen, space='LOCAL')
+        elif "twist" in pb.name.lower():
+            cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif (pb.name[1:] in (
                 "Collar", "_shoulder",
                 "Shldr", "ShldrBend", "_upperarm",
@@ -1597,13 +1604,13 @@ class Rigifier(RigifyCommon):
                 ) or
               rname.startswith("DEF-spine")):
             cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
+            cns = copyLocation(pb, rb, gen, space='POSE')
         elif pb.name[1:] in ("Shin", "_shin"):
             twname = "DEF-shin.%s.001" % rb.name[-1]
             tb = gen.pose.bones[twname]
             cns = stretchTo(pb, tb, gen)
             cns.head_tail = 1.0
-            cns = copyRotation(pb, rb, gen, space='LOCAL')
-            cns.target_space = 'LOCAL_OWNER_ORIENT'
+            cns = copyRotation(pb, rb, gen, space='POSE')
         else:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
             cns.target_space = 'LOCAL_OWNER_ORIENT'
