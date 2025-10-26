@@ -164,13 +164,13 @@ def addWinder(rig, windname, bnames, layers,
         if useScale:
             cns = copyScale(pb, winder, rig, space='LOCAL')
             setLocks(pb.lock_scale, cns)
-            cns.mix_mode = 'AFTER'
+            cns.use_offset = True
             if pb.bone.inherit_scale != "NONE":
                 cns.influence = infl
             addMuteDriver(cns, rig, prop)
         if useLocation:
             cns = copyLocation(pb, winder, rig, space='LOCAL')
-            cns.mix_mode = 'AFTER'
+            cns.use_offset = True
             cns.influence = infl
             addMuteDriver(cns, rig, prop)
         enableBoneNumLayer(pb.bone, rig, windedLayer)
