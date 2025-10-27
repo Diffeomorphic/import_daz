@@ -579,41 +579,44 @@ class MetaMaker(RigifyCommon):
         disconnect = []
         connect = []
         for pb in meta.pose.bones:
-            if "rigify_type" in pb.keys():
-                if pb["rigify_type"] == "":
-                    pass
-                elif pb["rigify_type"] == "spines.super_head":
-                    disconnect.append(pb.name)
-                elif pb["rigify_type"] in [
-                        "limbs.super_finger",
-                        "limbs.front_paw",
-                        "limbs.rear_paw"]:
-                    connect += self.getChildren(pb)
-                    pb.rigify_parameters.primary_rotation_axis = 'X'
-                    pb.rigify_parameters.make_extra_ik_control = self.useFingerIk
-                elif pb["rigify_type"] == "limbs.super_limb":
-                    pb.rigify_parameters.rotation_axis = 'x'
-                    pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
-                elif pb["rigify_type"] == "limbs.leg":
-                    pb.rigify_parameters.extra_ik_toe = (bpy.app.version >= (3,3,0))
-                    pb.rigify_parameters.rotation_axis = 'x'
-                    pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
-                elif pb["rigify_type"] == "limbs.arm":
-                    pb.rigify_parameters.rotation_axis = 'x'
-                    pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
-                elif pb["rigify_type"] == "spines.basic_tail":
-                    connect += self.getChildren(pb)
-                elif pb["rigify_type"] in [
-                    "basic.raw_copy",
-                    "spines.super_spine",
-                    "spines.basic_spine",
-                    "basic.super_copy",
-                    "limbs.super_palm",
-                    "limbs.simple_tentacle"]:
-                    pass
-                else:
-                    pass
-                    print("RIGIFYTYPE %s: %s" % (pb.name, pb["rigify_type"]))
+            if hasattr(pb, "rigify_type"):
+                rigify_type = pb.rigify_type
+            else:
+                rigify_type = pb.get("rigify_type")
+            if rigify_type == "":
+                pass
+            elif rigify_type == "spines.super_head":
+                disconnect.append(pb.name)
+            elif rigify_type in [
+                    "limbs.super_finger",
+                    "limbs.front_paw",
+                    "limbs.rear_paw"]:
+                connect += self.getChildren(pb)
+                pb.rigify_parameters.primary_rotation_axis = 'X'
+                pb.rigify_parameters.make_extra_ik_control = self.useFingerIk
+            elif rigify_type == "limbs.super_limb":
+                pb.rigify_parameters.rotation_axis = 'x'
+                pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
+            elif rigify_type == "limbs.leg":
+                pb.rigify_parameters.extra_ik_toe = (bpy.app.version >= (3,3,0))
+                pb.rigify_parameters.rotation_axis = 'x'
+                pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
+            elif rigify_type == "limbs.arm":
+                pb.rigify_parameters.rotation_axis = 'x'
+                pb.rigify_parameters.auto_align_extremity = self.useAutoAlign
+            elif rigify_type == "spines.basic_tail":
+                connect += self.getChildren(pb)
+            elif rigify_type in [
+                "basic.raw_copy",
+                "spines.super_spine",
+                "spines.basic_spine",
+                "basic.super_copy",
+                "limbs.super_palm",
+                "limbs.simple_tentacle"]:
+                pass
+            else:
+                pass
+                print("RIGIFYTYPE %s: %s" % (pb.name, rigify_type))
             if hasattr (pb.rigify_parameters, "roll_alignment"):
                 pb.rigify_parameters.roll_alignment = "manual"
         for rname,prop,value in self.meta.parameters:
@@ -657,6 +660,7 @@ class MetaMaker(RigifyCommon):
 
     def setConnected(self, meta, connect, disconnect):
         # Connect and disconnect bones that have to be so
+        print("DD", disconnect)
         for rname in disconnect:
             eb = meta.data.edit_bones[rname]
             eb.use_connect = False
