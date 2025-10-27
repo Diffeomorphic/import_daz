@@ -375,15 +375,6 @@ def setOverridable(rna, attr):
 #   Utility functions
 #-------------------------------------------------------------
 
-def deselectAllVerts(ob):
-    for f in ob.data.polygons:
-        f.select = False
-    for e in ob.data.edges:
-        e.select = False
-    for v in ob.data.vertices:
-        v.select = False
-
-
 def deleteObjects(context, objects):
     bpy.ops.object.select_all(action='DESELECT')
     for ob in objects:

@@ -236,7 +236,6 @@ class DAZ_OT_MergeUvLayers(DazPropsOperator, IsMesh):
             raise DazError("No active UV layer found")
         mergeIdx = int(self.layer)
         mergeUvLayers(ob.data, self.keepIdx, mergeIdx, self.allowOverlap)
-        deselectAllVerts(ob)
 
 #-------------------------------------------------------------
 #   Merge Meshes
@@ -264,7 +263,6 @@ class DAZ_OT_MergeMeshes(DazPropsOperator, UVLayerMergerOptions, UVLayerMerger, 
         nlayers = len(hum.data.uv_layers)
         bpy.ops.object.join()
         self.mergeUvs(hum)
-        deselectAllVerts(hum)
         for mod in hum.modifiers:
             if mod.type == 'SURFACE_DEFORM':
                 bpy.ops.object.surfacedeform_bind(modifier=mod.name)

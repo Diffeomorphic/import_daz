@@ -214,7 +214,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         else:
             body_pair_a_verts = []
 
-        deselectAllVerts(hum)
+        setMode('EDIT')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        setMode('OBJECT')
 
         # Select body verts to delete
         self.vdeleted = dict([(vn,False) for vn in range(nverts)])
@@ -261,16 +263,17 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         # Delete the masked verts
         self.deleteSelectedVerts()
 
-        # Select nothing
+        # Select all grafts
         for graft in grafts:
-            deselectAllVerts(graft)
-        deselectAllVerts(hum)
+            graft.select_set(True)
+        setMode('EDIT')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        setMode('OBJECT')
 
         # Select verts on common boundary
         self.humedges = {}
         self.graftedges = {}
         for graft in grafts:
-            selectSet(graft, True)
             ngraftverts = len(graft.data.vertices)
             graftedge = self.graftedges[graft.name] = dict([(vn,False) for vn in range(ngraftverts)])
             humedge = self.humedges[graft.name] = dict([(vn,False) for vn in range(nverts)])
@@ -307,7 +310,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
             # Set the attribute values for all the vertices
             if attribute:
-                attribute.data.foreach_set("value", list(paired_vert_list.values()))
+                try:
+                    attribute.data.foreach_set("value", list(paired_vert_list.values()))
+                except TypeError:
+                    print("Attribute mismatch:", graft.name, attribute.name)
 
         # Also select hum graft group. These will not be removed.
         if dazRna(hum.data).DazGraftGroup:
@@ -404,11 +410,11 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         # Remove doubles
         setMode('EDIT')
         bpy.ops.mesh.remove_doubles(threshold=threshold)
+        bpy.ops.mesh.select_all(action='DESELECT')
         setMode('OBJECT')
         vglocs = [[(v.index,v.co.copy()) for g in v.groups if g.group == vgrp.index]
                     for v in hum.data.vertices]
         sellocs = dict(flatten(vglocs))
-        deselectAllVerts(hum)
 
         mod = getModifier(hum, 'MULTIRES')
         if mod:
