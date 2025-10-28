@@ -355,7 +355,7 @@ class MhxData:
     ]
 
     ConnectOther = [
-        "abdomenUpper", "chestLower", "chestUpper", "neckLower", "neckUpper",
+        "abdomenUpper", "chestLower", "chestUpper", "neckLower", "neckUpper", "head",
         "lThumb2", "lThumb3",
         "lIndex1", "lIndex2", "lIndex3",
         "lMid1", "lMid2", "lMid3",
@@ -367,7 +367,7 @@ class MhxData:
         "rRing1", "rRing2", "rRing3",
         "rPinky1", "rPinky2", "rPinky3",
 
-        "spine2", "spine3", "spine4", "neck1", "neck2",
+        "spine2", "spine3", "spine4", "neck1", "neck2", "head",
         "l_thumb2", "l_thumb3",
         "l_index1", "l_index2", "l_index3",
         "l_mid1", "l_mid2", "l_mid3",
