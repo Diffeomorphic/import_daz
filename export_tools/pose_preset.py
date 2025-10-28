@@ -229,7 +229,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                     if self.isLocUnlocked(pb, bname):
                         self.locs[bname] = 3*[None]
 
-        fcurves = getActionBag(act).fcurves
+        fcurves = getActionFcurves(act)
         for fcu in fcurves:
             channel = fcu.data_path.rsplit(".",1)[-1]
             words = fcu.data_path.split('"')

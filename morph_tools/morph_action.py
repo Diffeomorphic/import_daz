@@ -41,19 +41,6 @@ class DAZ_OT_ConvertMorphsToAction(DazOperator, IsArmature):
 
 
     def morphToAction(self, rig, label, prop):
-        def makeNewAction(ob, label, prop):
-            aname = "%s:%s" % (ob.name, label)
-            act = bpy.data.actions.get(aname)
-            if act:
-                strip = act.layers[0].strips[0]
-                for slot in act.slots:
-                    strip.channelbag(slot).fcurves.clear()
-            else:
-                act = addNewAction(aname, "Morphs")
-            act.use_fake_user = True
-            act["DazName"] = prop
-            return act, act.layers[0].strips[0].channelbags
-
         def addFrame(value, path, idx, group, threshold):
             if abs(value) > threshold:
                 self.used = True
@@ -72,9 +59,8 @@ class DAZ_OT_ConvertMorphsToAction(DazOperator, IsArmature):
             path = 'key_blocks["%s"].value' % sname
             addFrame(value, path, -1, group, threshold)
 
-        act, bags = makeNewAction(rig, label, prop)
-        slot = act.slots.new('OBJECT', rig.name)
-        bag = bags.new(slot)
+        act = setNewAction(rig, "%s:%s" % (rig.name, label))
+        bag = getActionBag(act)
         for pb in rig.pose.bones:
             bname = baseBone(pb.name)
             group = bag.groups.get(bname)
@@ -91,12 +77,12 @@ class DAZ_OT_ConvertMorphsToAction(DazOperator, IsArmature):
                 bag.groups.remove(group)
 
         for ob in getShapeChildren(rig):
-            slot = act.slots.new('KEY', ob.name)
-            bag = bags.new(slot)
+            skeys = ob.data.shape_keys
+            act = setNewAction(skeys, ob.name)
+            bag = getActionBag(act)
             group = bag.groups.get(ob.name)
             if group is None:
                 group = bag.groups.new(ob.name)
-            skeys = ob.data.shape_keys
             for skey in skeys.key_blocks[1:]:
                 addShapeFrame(skey.value, "value", skey.name, group, 1e-3)
 

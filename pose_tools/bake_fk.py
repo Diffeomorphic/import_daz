@@ -110,7 +110,7 @@ class DAZ_OT_BakeToFkRig(FrameRange, IsArmature):
 
     def removeFromAction(self, act, rig):
         used = {}
-        fcurves = getActionBag(act).fcurves
+        fcurves = getActionFcurves(act)
         for fcu in fcurves:
             bname,channel,cnsname = getBoneChannel(fcu)
             if bname:

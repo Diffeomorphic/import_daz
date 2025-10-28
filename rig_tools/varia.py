@@ -99,7 +99,7 @@ class DAZ_OT_MakeEulers(DazOperator, IsArmature):
 
 
     def convertAction(self, act, rig, bnames):
-        fcurves = getActionBag(act).fcurves
+        fcurves = getActionFcurves(act)
         for fcu in list(fcurves):
             bname,channel,cnsname = getBoneChannel(fcu)
             if bname in bnames and channel == "rotation_euler":

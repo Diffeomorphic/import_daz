@@ -145,7 +145,7 @@ class FACSImporter(BoneHandler, IsMeshArmature):
         maxlen=1024,
         default="")
 
-    makeNewAction : BoolProperty(
+    useNewAction : BoolProperty(
         name = "New Action",
         description = "Unlink current action and make a new one",
         default = True)
@@ -163,8 +163,8 @@ class FACSImporter(BoneHandler, IsMeshArmature):
 
     def draw(self, context):
         self.layout.prop(self, "fps")
-        self.layout.prop(self, "makeNewAction")
-        if self.makeNewAction:
+        self.layout.prop(self, "useNewAction")
+        if self.useNewAction:
             self.layout.prop(self, "actionName")
         self.layout.prop(self, "useShapekeys")
         #self.layout.prop(self, "useEyes")
@@ -225,16 +225,13 @@ class FACSImporter(BoneHandler, IsMeshArmature):
             print("Keys: %d" % len(first))
         else:
             raise DazError("No FACS animation found")
-        if self.makeNewAction:
+        if self.useNewAction:
             def addAction(rna):
                 if self.actionName:
                     aname = self.actionName
                 else:
                     aname = os.path.splitext(os.path.basename(self.filepath))[0]
-                if rna.animation_data is None:
-                    rna.animation_data_create()
-                act = addNewAction(aname, rna.id_type, rna.id_type)
-                rna.animation_data.action = act
+                setNewAction(rna, aname)
 
             if meshes:
                 for ob in meshes:

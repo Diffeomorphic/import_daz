@@ -68,8 +68,8 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
             self.layout.prop(self, "useUpdateLimits")
         self.layout.prop(self, "useShapekeys")
         self.layout.separator()
-        self.layout.prop(self, "makeNewAction")
-        if self.makeNewAction:
+        self.layout.prop(self, "useNewAction")
+        if self.useNewAction:
             self.layout.prop(self, "actionName")
         self.layout.prop(self, "atFrameOne")
 
@@ -133,7 +133,7 @@ class DAZ_OT_ImportMoho(DazOperator, ActionOptions, SingleFile, IsMeshArmature):
                 raise DazError(msg)
             self.visemes = dict([(pg.text, pg.name) for pg in pgs.values() if pg.name in rig.keys()])
 
-        if self.atFrameOne and self.makeNewAction:
+        if self.atFrameOne and self.useNewAction:
             frame0 = 0
         else:
             frame0 = scn.frame_current-1

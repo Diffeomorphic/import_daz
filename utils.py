@@ -30,25 +30,47 @@ else:
 #-------------------------------------------------------------
 
 if bpy.app.version < (4,4,0):
+
     def getActionBag(act, id_type='OBJECT'):
         return act
 
-    def addNewAction(aname, lname, id_type='OBJECT'):
-        return bpy.data.actions.new(name=aname)
+    def getActionFcurves(act, id_type='OBJECT'):
+        return act.fcurves
+
+    def setNewAction(rna, aname):
+        if rna.animation_data is None:
+            rna.animation_data_create()
+        act = bpy.data.actions.new(name=aname)
+        rna.animation_data.action = act
+        return act
+
 else:
+
     def getActionBag(act, id_type='OBJECT'):
         if act.layers:
             strip = act.layers[0].strips[0]
             for slot in act.slots:
                 if slot.target_id_type == id_type:
                     return strip.channelbag(slot, ensure=True)
-        return act
 
-    def addNewAction(aname, lname, id_type='OBJECT'):
+    def getActionFcurves(act, id_type='OBJECT'):
+        bag = getActionBag(act, id_type)
+        if bag:
+            return bag.fcurves
+        else:
+            return []
+
+    def setNewAction(rna, aname):
+        if rna.animation_data is None:
+            rna.animation_data_create()
         act = bpy.data.actions.new(name=aname)
-        layer = act.layers.new(lname)
-        strip = layer.strips.new()
-        slot = act.slots.new(id_type, lname)
+        rna.animation_data.action = act
+        if rna.id_type == 'OBJECT':
+            path = "location"
+        elif rna.id_type == 'KEY':
+            path = 'key_blocks[0].value'
+        rna.keyframe_insert(path)
+        rna.keyframe_delete(path)
         return act
 
 #-------------------------------------------------------------

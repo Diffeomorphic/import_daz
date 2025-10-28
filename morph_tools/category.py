@@ -1174,17 +1174,14 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMeshArma
     def convertFcurves(self, skeys, act, items):
         if act is None or skeys is None:
             return
-        fcurves = getActionBag(act, 'KEY').fcurves
+        fcurves = getActionFcurves(act, 'KEY')
         nstruct = {}
         for fcu in fcurves:
             prop = getProp(fcu.data_path)
             if prop and prop in items.keys():
                 nstruct[items[prop]] = fcu
-        if skeys.animation_data is None:
-            skeys.animation_data_create()
-        nact = addNewAction(act.name, "Morphs", 'KEY')
-        skeys.animation_data.action = nact
-        nfcurves = getActionBag(nact, 'KEY').fcurves
+        nact = setNewAction(skeys, act.name)
+        nfcurves = getActionFcurves(nact, 'KEY')
         for key,fcu in nstruct.items():
             nfcu = nfcurves.new('key_blocks["%s"].value' % key)
             for kp in fcu.keyframe_points:

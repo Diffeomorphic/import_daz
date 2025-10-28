@@ -664,7 +664,7 @@ theMorphTables = {}
 #-------------------------------------------------------------
 
 class ActionOptions:
-    makeNewAction : BoolProperty(
+    useNewAction : BoolProperty(
         name = "New Action",
         description = "Unlink current action and make a new one",
         default = True)
@@ -706,8 +706,8 @@ class ActionOptions:
 
     def draw(self, context):
         self.layout.separator()
-        self.layout.prop(self, "makeNewAction")
-        if self.makeNewAction:
+        self.layout.prop(self, "useNewAction")
+        if self.useNewAction:
             self.layout.prop(self, "actionName")
             self.layout.prop(self, "atFrameOne")
         self.layout.prop(self, "fps")
@@ -718,12 +718,12 @@ class ActionOptions:
 
 
     def clearAnimation(self, ob):
-        if self.makeNewAction and ob.animation_data:
+        if self.useNewAction and ob.animation_data:
             ob.animation_data.action = None
 
 
     def nameAnimation(self, ob, dazfiles):
-        if self.makeNewAction and ob.animation_data:
+        if self.useNewAction and ob.animation_data:
             act = ob.animation_data.action
             if act is None:
                 pass
@@ -1617,7 +1617,7 @@ class StandardAnimation:
         print("\n--------------------")
 
         for filepath in dazfiles:
-            if self.atFrameOne and self.makeNewAction and len(dazfiles) == 1:
+            if self.atFrameOne and self.useNewAction and len(dazfiles) == 1:
                 offset = 1
             print("*", os.path.basename(filepath), offset)
             offset,prop = self.getSingleAnimation(filepath, context, offset)
@@ -1886,7 +1886,7 @@ class DAZ_OT_ImportAsset(HideOperator, ActionOptions, AnimatorBase, StandardAnim
         keep = ["location", "rotation_euler", "rotation_quaternion"]
         if self.affectScale:
             keep.append("scale")
-        fcurves = getActionBag(act).fcurves
+        fcurves = getActionFcurves(act)
         for fcu in list(fcurves):
             if not isPropRef(fcu.data_path):
                 words = fcu.data_path.rsplit(".", 1)
@@ -2134,7 +2134,7 @@ def pruneAction(act, ob, cm):
         return True
 
     deletes = []
-    fcurves = getActionBag(act).fcurves
+    fcurves = getActionFcurves(act)
     for fcu in fcurves:
         kpts = fcu.keyframe_points
         channel = fcu.data_path.rsplit(".", 1)[-1]
