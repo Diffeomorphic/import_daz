@@ -268,7 +268,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 if pb.name.endswith(("Bend", "Twist")):
                     self.store.storeConstraints(pb.name, pb)
             showProgress(2, 25, "  Connect to parent")
-            connectToParent(rig, connectAll=False)
+            connectToParent(rig, MHX.ConnectBendTwist)
             showProgress(3, 25, "  Delete bend-twist bones")
             self.deleteBendTwistDrvBones(rig)
             showProgress(4, 25, "  Rename bones")
@@ -285,7 +285,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             else:
                 self.bendTwistGenesis = MHX.BendTwistGenesis9
                 showProgress(2, 25, "  Connect to parent")
-                connectToParent(rig, connectAll=False)
+                connectToParent(rig, MHX.ConnectBendTwist)
                 showProgress(3, 25, "  Delete bend-twist bones")
                 self.deleteBendTwistDrvBones(rig)
                 showProgress(4, 25, "  Rename bones")
@@ -297,7 +297,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         elif dazRna(rig).DazRig in ["genesis", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
-            connectToParent(rig, connectAll=False)
+            connectToParent(rig, MHX.ConnectBendTwist)
             self.rename2Mhx(rig)
             self.fixGenesis2Problems(rig)
         elif dazRna(rig).DazRig.endswith(".suffix"):

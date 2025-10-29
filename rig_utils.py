@@ -47,25 +47,11 @@ def unhideAllObjects(context, rig):
             rig[key] = True
     updateScene(context)
 
-#-------------------------------------------------------------
-#   connectToParent used by Rigify
-#-------------------------------------------------------------
 
-def connectToParent(rig, connectAll=False, useSplitShin=False):
-    from .mhx_tools.mhx_data import MHX
-    setMode('EDIT')
-    if useSplitShin:
-        shinBones = MHX.ConnectShin
-        otherBones = MHX.ConnectOther
-    else:
-        shinBones = []
-        otherBones = MHX.ConnectOther + MHX.ConnectShin
-    if connectAll:
-        allBones = MHX.ConnectBendTwist + shinBones + otherBones
-    else:
-        allBones = MHX.ConnectBendTwist + shinBones
-    for eb in rig.data.edit_bones:
-        if eb.name in allBones:
+def connectToParent(rig, bnames):
+    for bname in bnames:
+        eb = rig.data.edit_bones.get(bname)
+        if eb:
             eb.parent.tail = eb.head
             eb.use_connect = True
 

@@ -348,7 +348,12 @@ class MetaMaker(RigifyCommon):
             mergeVertexGroups(rig, self.daz.mergers)
 
         print("  Connect to parent")
-        connectToParent(rig, connectAll=True, useSplitShin=self.useSplitShin)
+        entry = DF.loadEntry("connect", "rigify")
+        print("EE", entry)
+        bnames = entry["connect_bend_twist"] + entry["connect_other"]
+        if self.useSplitShin:
+            bnames += entry["connect_shin"]
+        connectToParent(rig, bnames)
         print("  Setup DAZ bones")
         self.setupDazBones(rig)
 

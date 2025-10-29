@@ -354,33 +354,5 @@ class MhxData:
         "r_foot", "r_toes",
     ]
 
-    ConnectOther = [
-        "abdomenUpper", "chestLower", "chestUpper", "neckLower", "neckUpper", "head",
-        "lThumb2", "lThumb3",
-        "lIndex1", "lIndex2", "lIndex3",
-        "lMid1", "lMid2", "lMid3",
-        "lRing1", "lRing2", "lRing3",
-        "lPinky1", "lPinky2", "lPinky3",
-        "rThumb2", "rThumb3",
-        "rIndex1", "rIndex2", "rIndex3",
-        "rMid1", "rMid2", "rMid3",
-        "rRing1", "rRing2", "rRing3",
-        "rPinky1", "rPinky2", "rPinky3",
-
-        "spine2", "spine3", "spine4", "neck1", "neck2", "head",
-        "l_thumb2", "l_thumb3",
-        "l_index1", "l_index2", "l_index3",
-        "l_mid1", "l_mid2", "l_mid3",
-        "l_ring1", "l_ring2", "l_ring3",
-        "l_pinky1", "l_pinky2", "l_pinky3",
-        "r_thumb2", "r_thumb3",
-        "r_index1", "r_index2", "r_index3",
-        "r_mid1", "r_mid2", "r_mid3",
-        "r_ring1", "r_ring2", "r_ring3",
-        "r_pinky1", "r_pinky2", "r_pinky3",
-    ]
-
-    ConnectShin = ["lShin", "rShin", "l_shin", "r_shin"]
-
 
 MHX = MhxData()
