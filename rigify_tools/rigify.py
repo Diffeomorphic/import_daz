@@ -349,10 +349,7 @@ class MetaMaker(RigifyCommon):
 
         print("  Connect to parent")
         entry = DF.loadEntry("connect", "rigify")
-        print("EE", entry)
-        bnames = entry["connect_bend_twist"] + entry["connect_other"]
-        if self.useSplitShin:
-            bnames += entry["connect_shin"]
+        bnames = entry["limbs"] + entry["spine"] + entry["fingers"]
         connectToParent(rig, bnames)
         print("  Setup DAZ bones")
         self.setupDazBones(rig)
@@ -587,11 +584,14 @@ class MetaMaker(RigifyCommon):
             if hasattr(pb, "rigify_type"):
                 rigify_type = pb.rigify_type
             else:
-                rigify_type = pb.get("rigify_type")
+                rigify_type = pb.get("rigify_type", "")
+            if rigify_type != "":
+                print("DIS", pb.name, pb.bone.use_connect, rigify_type)
+                disconnect.append(pb.name)
             if rigify_type == "":
                 pass
             elif rigify_type == "spines.super_head":
-                disconnect.append(pb.name)
+                pass
             elif rigify_type in [
                     "limbs.super_finger",
                     "limbs.front_paw",
@@ -665,7 +665,6 @@ class MetaMaker(RigifyCommon):
 
     def setConnected(self, meta, connect, disconnect):
         # Connect and disconnect bones that have to be so
-        print("DD", disconnect)
         for rname in disconnect:
             eb = meta.data.edit_bones[rname]
             eb.use_connect = False
@@ -819,7 +818,6 @@ class Rigifier(RigifyCommon):
         self.layout.prop(self, "shaftControl")
         if self.shaftControl != 'NONE':
             self.layout.prop(self, "shaftName")
-        self.layout.prop(self, "driverRotationMode")
         self.layout.prop(self, "addNondeformExtras")
 
 
@@ -1221,10 +1219,6 @@ class Rigifier(RigifyCommon):
         # Finger IK
         if meta["DazFingerIk"]:
             self.fixFingerIk(rig, gen)
-
-        if self.driverRotationMode:
-            from ..fix import setDriverModes
-            setDriverModes(gen, self.driverRotationMode, True)
 
         if meta["DazIkOptimization"] == 'HINT':
             self.fixPoles(meta, gen, True)

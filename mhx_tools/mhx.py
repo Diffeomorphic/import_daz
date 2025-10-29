@@ -161,7 +161,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         if self.shaftControl != 'NONE':
             self.layout.prop(self, "shaftName")
         self.layout.prop(self, "useAnkleIk")
-        self.layout.prop(self, "driverRotationMode")
         self.layout.prop(self, "keepG9Twist")
         self.layout.prop(self, "useRaiseError")
 
@@ -360,9 +359,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 self.fixBendTwistDrivers(ob)
                 if ob.data.shape_keys:
                     self.fixBendTwistDrivers(ob.data.shape_keys)
-        if self.driverRotationMode:
-            from ..fix import setDriverModes
-            setDriverModes(rig, self.driverRotationMode, False)
         if dazRna(rig).DazRig in ["genesis3", "genesis8"]:
             self.fixCustomShape(rig, "head", 4)
         showProgress(22, 25, "  Collect deform bones")

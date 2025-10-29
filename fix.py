@@ -7,7 +7,6 @@ from mathutils import *
 from .error import *
 from .utils import *
 from .driver import DriverUser, addDriver
-from .daz import DriverModeItems
 
 #-------------------------------------------------------------
 #   Mha features
@@ -62,12 +61,6 @@ class Fixer(DriverUser):
         name = "Shaft Name",
         description = "Shaft bones start with this string (case insensitive)",
         default = "Shaft")
-
-    driverRotationMode : EnumProperty(
-        items = DriverModeItems,
-        name = "Rotation Mode",
-        description = "Use this rotation mode for drivers.\nNon-native modes avoids some popping during animation at the cost of JCMs accuracy",
-        default = 'AUTO')
 
     addNondeformExtras : BoolProperty(
         name = "Non-deform Extra Bones",
@@ -931,27 +924,6 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                     eb.parent = rig.data.edit_bones[pname]
                 eb.matrix = mat
             setMode('OBJECT')
-
-#-------------------------------------------------------------
-#   Auto Eulers
-#-------------------------------------------------------------
-
-def setDriverModes(rig, rotmode, useAll):
-    def setModes(rna):
-        if rna.animation_data:
-            for fcu in rna.animation_data.drivers:
-                for var in fcu.driver.variables:
-                    for trg in var.targets:
-                        if useAll or trg.bone_target in quats:
-                            trg.rotation_mode = rotmode
-
-    if rotmode == 'NATIVE':
-        return
-    quats = [pb.name for pb in rig.pose.bones if pb.rotation_mode == 'QUATERNION']
-    setModes(rig)
-    setModes(rig.data)
-    for ob in getShapeChildren(rig):
-        setModes(ob.data.shape_keys)
 
 #----------------------------------------------------------
 #   Initialize

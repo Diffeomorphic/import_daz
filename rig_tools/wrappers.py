@@ -56,8 +56,25 @@ class DAZ_OT_SetDriverModes(DazPropsOperator, IsArmature):
         self.layout.prop(self, "rotMode")
 
     def run(self, context):
-        from ..fix import setDriverModes
         setDriverModes(context.object, self.rotMode, (not self.useQuatsOnly))
+
+
+def setDriverModes(rig, rotmode, useAll):
+    def setModes(rna):
+        if rna.animation_data:
+            for fcu in rna.animation_data.drivers:
+                for var in fcu.driver.variables:
+                    for trg in var.targets:
+                        if useAll or trg.bone_target in quats:
+                            trg.rotation_mode = rotmode
+
+    if rotmode == 'NATIVE':
+        return
+    quats = [pb.name for pb in rig.pose.bones if pb.rotation_mode == 'QUATERNION']
+    setModes(rig)
+    setModes(rig.data)
+    for ob in getShapeChildren(rig):
+        setModes(ob.data.shape_keys)
 
 
 #----------------------------------------------------------

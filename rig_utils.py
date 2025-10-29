@@ -49,9 +49,9 @@ def unhideAllObjects(context, rig):
 
 
 def connectToParent(rig, bnames):
-    for bname in bnames:
-        eb = rig.data.edit_bones.get(bname)
-        if eb:
+    setMode('EDIT')
+    for eb in rig.data.edit_bones:
+        if eb.name in bnames:
             eb.parent.tail = eb.head
             eb.use_connect = True
 
