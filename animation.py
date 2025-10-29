@@ -1201,7 +1201,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                         self.addFrames(bname, channel, 3, key, frames, default=default)
                     elif key == "general_scale":
                         self.addFrames(bname, channel, 1, key, frames)
-
             for vname, channels in vanim.items():
                 self.addFrames(vname, {0: channels}, 1, "value", frames)
             for xname, channels in xanim.items():
@@ -1218,29 +1217,16 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 twists = {}
                 self.addTwists(frame)
                 for bname,bframe in frame.items():
-                    tfm = Transform()
-                    value = 0.0
-                    for key in bframe.keys():
-                        if key == "translation":
-                            tfm.setTrans(bframe["translation"], prop)
-                        elif key == "rotation":
-                            tfm.setRot(bframe["rotation"], prop)
-                        elif key == "scale":
-                            if self.affectScale or self.isObject(bname, rig):
-                                tfm.setScale(bframe["scale"], False, prop)
-                        elif key == "general_scale":
-                            if self.affectScale or self.isObject(bname, rig):
-                                tfm.setGeneral(bframe["general_scale"], False, prop)
-                        elif key == "value" and self.affectMorphs:
-                            value = bframe["value"][0]
-                            self.makeValueFrame(bname, rig, bframe, value, n, offset)
-                        elif bname != "_XTRA_":
-                            print("Unknown key:", bname, key)
+                    tfm = self.getBframeTransform(rig, bname, bframe, prop, self.affectMorphs)
                     if self.isObject(bname, rig):
                         self.makeObjectFrame(bname, rig, bframe, tfm, n, offset)
                     elif bname == "_XTRA_":
                         self.makeDataFrame(rig, bframe, n, offset)
                     elif rig.type == 'ARMATURE':
+                        bname2 = "SECOND-%s" % bname
+                        if bname2 in frame.keys():
+                            rot2 = frame[bname2].get("rotation", Zero)
+                            tfm.rot += rot2
                         self.makeBoneFrame(bname, rig, bframe, tfm, n, offset, twists)
                 self.correctTwists(twists, rig, n, offset)
                 self.saveScales(rig, n+offset)
@@ -1254,6 +1240,28 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if self.useSnapIk:
             self.enableIk(rig)
         return offset,prop
+
+
+    def getBframeTransform(self, rig, bname, bframe, prop, affectMorphs):
+        tfm = Transform()
+        value = 0.0
+        for key in bframe.keys():
+            if key == "translation":
+                tfm.setTrans(bframe["translation"], prop)
+            elif key == "rotation":
+                tfm.setRot(bframe["rotation"], prop)
+            elif key == "scale":
+                if self.affectScale or self.isObject(bname, rig):
+                    tfm.setScale(bframe["scale"], False, prop)
+            elif key == "general_scale":
+                if self.affectScale or self.isObject(bname, rig):
+                    tfm.setGeneral(bframe["general_scale"], False, prop)
+            elif key == "value" and affectMorphs:
+                value = bframe["value"][0]
+                self.makeValueFrame(bname, rig, bframe, value, n, offset)
+            elif bname != "_XTRA_":
+                print("Unknown key:", bname, key)
+        return tfm
 
 
     def makeObjectFrame(self, bname, rig, bframe, tfm, n, offset):
@@ -1273,6 +1281,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             if bname.endswith(("Bend", "Twist")):
                 twists[bname] = tfm
         elif bname[0:6] == "TWIST-":
+            print("TT", bname)
             twists[bname[6:]] = tfm
 
 
