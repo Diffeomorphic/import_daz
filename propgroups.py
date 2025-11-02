@@ -146,6 +146,28 @@ if DAZ_PROPS:
     class DazImporterGroup(bpy.types.PropertyGroup):
         legacy : BoolProperty(default=True)
 
+        def copy(self, trg):
+            for attr in dir(self):
+                if attr.startswith("Daz"):
+                    data = getattr(self, attr)
+                    if isinstance(data, (int, float, bool, str)):
+                        setattr(trg, attr, data)
+                    elif len(data) == 0:
+                        pass
+                    elif hasattr(data[0], "name"):
+                        ndata = getattr(trg, attr)
+                        if len(ndata) == 0:
+                            for pg in data:
+                                npg = ndata.add()
+                                for key in dir(pg):
+                                    value = getattr(pg, key)
+                                    if (isinstance(value, (int, float, bool, str)) and
+                                        key[0] != "_"):
+                                        setattr(npg, key, value)
+                    else:
+                        setattr(trg, attr, data)
+
+
     class DazImporterBone(DazImporterGroup):
         DazHead : FloatVectorProperty(size=3, default=(0,0,0))
         DazOrient : FloatVectorProperty(size=3, default=(0,0,0))

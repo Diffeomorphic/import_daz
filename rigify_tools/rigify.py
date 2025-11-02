@@ -586,7 +586,6 @@ class MetaMaker(RigifyCommon):
             else:
                 rigify_type = pb.get("rigify_type", "")
             if rigify_type != "":
-                print("DIS", pb.name, pb.bone.use_connect, rigify_type)
                 disconnect.append(pb.name)
             if rigify_type == "":
                 pass
@@ -1064,6 +1063,7 @@ class Rigifier(RigifyCommon):
             self.addIkBones("shaft", self.shaftBones, gen, self.shaftControl, R_CUSTOM, R_DEF, R_HELP, ["root"])
 
         setMode('OBJECT')
+
         # Add constraints to new bones
         print("  Add contraints to custom bones")
         from ..rig_utils import copyTransform
@@ -1100,6 +1100,8 @@ class Rigifier(RigifyCommon):
             copyProp(key, rig, gen, True)
         for key in rig.data.keys():
             copyProp(key, rig.data, gen.data, False)
+        setModernProps(gen)
+        setModernProps(gen.data)
 
         # Some more bones
         conv = DF.loadEntry("genesis-%s" % meta.get("DazRigifyType", ""), "converters")

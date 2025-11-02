@@ -514,17 +514,23 @@ def getPropMinMax(rna, prop, ovr=False):
 
 
 def copyProp(prop, src, trg, ovr):
+    from .propgroups import DazImporterGroup
     if (prop[0] == "_" or
         prop in trg.keys()):
         return
     if hasattr(src, prop):
-        try:
-            setattr(trg, prop, getattr(src, prop))
-            ok = True
-        except AttributeError:
-            ok = False
-        if not ok:
-            trg[prop] = src[prop]
+        value = getattr(src, prop)
+        if isinstance(value, (int, float, bool, str)):
+            try:
+                setattr(trg, prop, value)
+                ok = True
+            except AttributeError:
+                ok = False
+            if not ok:
+                print("FAIL", prop)
+                trg[prop] = src[prop]
+        elif isinstance(value, DazImporterGroup):
+            value.copy(getattr(trg, prop))
         return
     value = src[prop]
     if isinstance(value,float):
