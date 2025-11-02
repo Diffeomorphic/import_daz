@@ -533,9 +533,8 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
     def getTwistBone(self, bname):
         if "TWIST-" + bname in self.conv.keys():
             twname = self.conv["TWIST-" + bname][0]
-            if twname in BD.TwistDxs.keys():
-                return twname, BD.TwistDxs[twname]
-        return None, 0
+            return twname, BD.TwistDxs.get(twname)
+        return None, None
 
 
     def getDazObject(self, rig):
@@ -823,21 +822,32 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 self.addKeys(rots, anim, 0.01)
                 anims.append(anim)
         else:
+            def addBoneAnim(burl, x, rots, anims):
+                anim = {}
+                anim["url"] = "%s:?rotation/%s/value" % (burl, x)
+                self.addKeys(rots, anim, 0.01)
+                anims.append(anim)
+
             twname,twidx = self.getTwistBone(pb.name)
             for idx,x in enumerate(["x","y","z"]):
                 if (not self.includeLocks and
                     pb.name in self.rotlocks.keys() and
                     self.rotlocks[pb.name][idx]):
                     continue
-                elif bname.endswith("Bend") and twname and idx == twidx:
+                elif twname and idx == twidx:
                     continue
-                anim = {}
-                anim["url"] = "%s:?rotation/%s/value" % (self.getBoneUrl(bname, pb, rig), x)
                 rots = [vec[idx]*factor for vec in vecs]
                 rots = self.correct180(rots)
-                self.addKeys(rots, anim, 0.01)
-                anims.append(anim)
-            if twname is None:
+                if twname and twidx is None:
+                    rots2 = [rot/2 for rot in rots]
+                    burl = self.getBoneUrl(bname, pb, rig)
+                    addBoneAnim(burl, x, rots2, anims)
+                    twurl = self.getBoneUrl(twname, pb, rig)
+                    addBoneAnim(twurl, x, rots2, anims)
+                else:
+                    burl = self.getBoneUrl(bname, pb, rig)
+                    addBoneAnim(burl, x, rots, anims)
+            if twname is None or twidx is None:
                 return
 
             def addTwistAnim(bname, x, rots, anims):

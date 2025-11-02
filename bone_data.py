@@ -280,13 +280,6 @@ class BoneData:
         "rShldrTwist" : 0,
         "rForearmTwist" : 0,
         "rThighTwist" : 1,
-
-        "l_upperarmtwist1" : 0,
-        "l_forearmtwist1" : 0,
-        "l_thightwist1" : 1,
-        "r_upperarmtwist1" : 0,
-        "r_forearmtwist1" : 0,
-        "r_thightwist1" : 1,
     }
 
     def getDefaultMode(self, pb):
