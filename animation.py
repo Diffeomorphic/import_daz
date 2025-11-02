@@ -818,7 +818,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             from .rigify_tools import setRigifyFkIk, setRigifyLayers, clearOtherRigify
             setRigifyFkIk(rig, 1.0, self.useInsertKeys, frame)
             setRigifyLayers(rig, True, self.boneLayers)
-            clearOtherRigify(rig, True, frame)
+            clearOtherRigify(rig, self.useInsertKeys, frame)
         elif rig.get("MhxRig") or dazRna(rig).DazRig == "mhx":
             from .mhx_tools import setMhxToFk
             self.boneLayers = setMhxToFk(rig, self.boneLayers, self.useInsertKeys, frame)
@@ -1223,10 +1223,10 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                     elif bname == "_XTRA_":
                         self.makeDataFrame(rig, bframe, n, offset)
                     elif rig.type == 'ARMATURE':
-                        bname2 = "SECOND-%s" % bname
-                        if bname2 in frame.keys():
-                            rot2 = frame[bname2].get("rotation", Zero)
-                            tfm.rot += rot2
+                        #bname2 = "SECOND-%s" % bname
+                        #if bname2 in frame.keys():
+                        #    rot2 = frame[bname2].get("rotation", Zero)
+                        #    tfm.rot += rot2
                         self.makeBoneFrame(bname, rig, bframe, tfm, n, offset, twists)
                 self.correctTwists(twists, rig, n, offset)
                 self.saveScales(rig, n+offset)
