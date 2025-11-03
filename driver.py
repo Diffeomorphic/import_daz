@@ -529,8 +529,6 @@ def copyProp(prop, src, trg, ovr):
             if not ok:
                 print("FAIL", prop)
                 trg[prop] = src[prop]
-        elif isinstance(value, DazImporterGroup):
-            value.copy(getattr(trg, prop))
         return
     value = src[prop]
     if isinstance(value,float):

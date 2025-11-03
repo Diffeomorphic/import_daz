@@ -1100,8 +1100,11 @@ class Rigifier(RigifyCommon):
             copyProp(key, rig, gen, True)
         for key in rig.data.keys():
             copyProp(key, rig.data, gen.data, False)
-        setModernProps(gen)
-        setModernProps(gen.data)
+        if DAZ_PROPS:
+            rig.daz_importer.copy(gen.daz_importer)
+            rig.data.daz_importer.copy(gen.data.daz_importer)
+            setModernProps(gen)
+            setModernProps(gen.data)
 
         # Some more bones
         conv = DF.loadEntry("genesis-%s" % meta.get("DazRigifyType", ""), "converters")
