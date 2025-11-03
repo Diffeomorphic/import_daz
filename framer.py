@@ -11,7 +11,7 @@ from .utils import *
 #   Framer class
 #----------------------------------------------------------
 
-class Framer(DazPropsOperator):
+class Framer:
     frame_start : IntProperty(
         name = "Start",
         default = 1)

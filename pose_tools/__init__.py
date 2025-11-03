@@ -44,6 +44,7 @@ class DAZ_PT_DazMhxRigify(DAZ_PT_RuntimeTab, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.mute_control_rig")
         self.layout.operator("daz.unmute_control_rig")
+        self.layout.operator("daz.toggle_control_rig")
         self.layout.separator()
         self.layout.operator("daz.transfer_to_gaze")
         self.layout.operator("daz.transfer_from_gaze")

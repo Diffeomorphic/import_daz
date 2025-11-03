@@ -12,7 +12,7 @@ from ..framer import Framer
 #   Bake shapekeys
 #-------------------------------------------------------------
 
-class DAZ_OT_BakeShapekeys(Framer, IsMesh):
+class DAZ_OT_BakeShapekeys(Framer, DazPropsOperator, IsMesh):
     bl_idname = "daz.bake_shapekeys"
     bl_label = "Bake Shapekeys"
     bl_description = "Bake shapekey values to current action.\nMute control rig afterwards"
@@ -26,7 +26,7 @@ class DAZ_OT_BakeShapekeys(Framer, IsMesh):
 #   Bake deform rig
 #-------------------------------------------------------------
 
-class ControlRigMuter(Framer):
+class ControlRigMuter:
     useShapekeys : BoolProperty(
         name = "Shapekeys",
         description = "Mute/unmute shapekeys too",
@@ -109,10 +109,30 @@ def getCurrentAction(rna):
     return None
 
 #-------------------------------------------------------------
+#   Toggle control rig
+#-------------------------------------------------------------
+
+class DAZ_OT_ToggleControlRig(ControlRigMuter, DazOperator):
+    bl_idname = "daz.toggle_control_rig"
+    bl_label = "Toggle Control Rig"
+    bl_description = "Disable drivers and copy location/rotation constraints"
+    bl_options = {'UNDO'}
+
+    toggle : BoolProperty(default=True)
+
+    def run(self, context):
+        print("Toggle control rig %s" % self.toggle)
+        rig = context.object
+        activateObject(context, rig)
+        gen = self.getControlRig(rig)
+        self.muteConstraints(rig, self.toggle)
+        self.toggle = (not self.toggle)
+
+#-------------------------------------------------------------
 #   Mute control rig
 #-------------------------------------------------------------
 
-class DAZ_OT_MuteControlRig(ControlRigMuter):
+class DAZ_OT_MuteControlRig(ControlRigMuter, Framer, DazPropsOperator):
     bl_idname = "daz.mute_control_rig"
     bl_label = "Mute Control Rig"
     bl_description = "Disable drivers and copy location/rotation constraints"
@@ -247,7 +267,7 @@ class DAZ_OT_MuteControlRig(ControlRigMuter):
 #   Unmute control rig
 #-------------------------------------------------------------
 
-class DAZ_OT_UnmuteControlRig(ControlRigMuter):
+class DAZ_OT_UnmuteControlRig(ControlRigMuter, Framer, DazPropsOperator):
     bl_idname = "daz.unmute_control_rig"
     bl_label = "Unmute Control Rig"
     bl_description = "Enable drivers and copy location/rotation constraints"
@@ -297,6 +317,7 @@ class DAZ_OT_UnmuteControlRig(ControlRigMuter):
 
 classes = [
     DAZ_OT_BakeShapekeys,
+    DAZ_OT_ToggleControlRig,
     DAZ_OT_MuteControlRig,
     DAZ_OT_UnmuteControlRig,
 ]
