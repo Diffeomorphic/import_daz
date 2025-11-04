@@ -958,7 +958,7 @@ class DAZ_OT_RemoveZeroShapekeys(DazOperator, IsShape):
         ob = context.object
         skeys = ob.data.shape_keys
         deletes = dict([(skey.name, skey) for skey in skeys.key_blocks[1:] if skey.value == 0.0])
-        fcurves = getRnaFcurves(skeys, 'KEY')
+        fcurves = getRnaFcurves(skeys)
         for fcu in list(fcurves):
             words = fcu.data_path.split('"')
             if words[0] == "key_blocks[" and words[1] in deletes.keys():

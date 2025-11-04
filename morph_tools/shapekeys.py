@@ -22,10 +22,10 @@ class DAZ_OT_TransferAnimationToShapekeys(DazOperator, IsMeshArmature):
 
     def run(self, context):
         rig = getRigFromContext(context)
-        if not (rig and rig.animation_data and rig.animation_data.action):
-            raise DazError("No action found")
+        fcurves_rig = getRnaFcurves(rig)
+        if not fcurves_rig:
+            raise DazError("No animation found")
         actrig = rig.animation_data.action
-        fcurves_rig = getActionFcurves(actrig)
         meshes = getShapeChildren(rig)
         if not meshes:
             raise DazError("No meshes with shapekeys selected")
