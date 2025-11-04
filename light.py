@@ -144,10 +144,10 @@ class LightInstance(Instance):
     def buildChannels(self, context):
         Instance.buildChannels(self, context)
         light = self.rna.data
-        if self.getValue(["Cast Shadows"], 0):
-            light.cycles.cast_shadow = True
+        if hasattr(light, "use_shadow"):
+            light.use_shadow = self.getValue(["Cast Shadows"], 0)
         else:
-            light.cycles.cast_shadow = False
+            light.cycles.cast_shadow = self.getValue(["Cast Shadows"], 0)
 
         from .material import srgbToLinearCorrect
         color = self.getValue(["Color"], WHITE)
