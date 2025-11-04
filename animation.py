@@ -873,10 +873,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def enableIk(self, rig):
         if self.snapError:
             return
-        if rig.animation_data and rig.animation_data.action:
-            fcurves = getActionBag(rig.animation_data.action).fcurves
-        else:
-            fcurves = []
+        fcurves = getRnaFcurves(rig)
 
         def removeFcurves(paths):
             for fcu in list(fcurves):
@@ -1217,7 +1214,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 twists = {}
                 self.addTwists(frame)
                 for bname,bframe in frame.items():
-                    tfm = self.getBframeTransform(rig, bname, bframe, prop, self.affectMorphs)
+                    tfm = self.getBframeTransform(rig, bname, bframe, prop, n, offset, self.affectMorphs)
                     if self.isObject(bname, rig):
                         self.makeObjectFrame(bname, rig, bframe, tfm, n, offset)
                     elif bname == "_XTRA_":
@@ -1242,7 +1239,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         return offset,prop
 
 
-    def getBframeTransform(self, rig, bname, bframe, prop, affectMorphs):
+    def getBframeTransform(self, rig, bname, bframe, prop, n, offset, affectMorphs):
         tfm = Transform()
         value = 0.0
         for key in bframe.keys():
@@ -1345,15 +1342,14 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def fixInterpolation(self, ob, anims):
-        def fixFcurves(rna, id_type, interps):
-            if rna.animation_data and rna.animation_data.action:
-                fcurves = getActionBag(rna.animation_data.action, id_type).fcurves
-                for fcu in fcurves:
-                    path = dazkeys.get(fcu.data_path, fcu.data_path)
-                    interp = interps.get(path)
-                    if interp:
-                        for kp in fcu.keyframe_points:
-                            kp.interpolation = interp
+        def fixFcurves(rna, interps):
+            fcurves = getRnaFcurves(rna)
+            for fcu in fcurves:
+                path = dazkeys.get(fcu.data_path, fcu.data_path)
+                interp = interps.get(path)
+                if interp:
+                    for kp in fcu.keyframe_points:
+                        kp.interpolation = interp
 
         if self.assetType == "preset_camera":
             from .camera import getDazKeys
@@ -1364,9 +1360,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         else:
             dazkeys = {}
         for banim,vanim,xanim,interps in anims:
-            fixFcurves(ob, 'OBJECT', interps)
+            fixFcurves(ob, interps)
             for rna,id_type in self.dataRnas:
-                fixFcurves(rna, id_type, interps)
+                fixFcurves(rna, interps)
 
 
     def addToAsset(self, rig, filepath):
@@ -2213,9 +2209,7 @@ class FrameRange(DazPropsOperator):
     def getActiveFrames(self):
         def getActiveFrames0(rig):
             active = {}
-            if rig.animation_data is None or rig.animation_data.action is None:
-                return active
-            fcurves = getActionBag(rig.animation_data.action).fcurves
+            fcurves = getRnaFcurves(rig)
             for fcu in fcurves:
                 for kp in fcu.keyframe_points:
                     active[kp.co[0]] = True
@@ -2238,8 +2232,8 @@ class FrameRange(DazPropsOperator):
     def invoke(self, context, event):
         rig = context.object
         scn = context.scene
-        if rig.animation_data and rig.animation_data.action:
-            fcurves = getActionBag(rig.animation_data.action).fcurves
+        fcurves = getRnaFcurves(rig)
+        if fcurves:
             self.auto = True
             tmin = tmax = 1
             for fcu in fcurves:
@@ -2256,12 +2250,11 @@ class FrameRange(DazPropsOperator):
 
 
     def setInterpolation(self):
-        if self.rig.animation_data and self.rig.animation_data.action:
-            fcurves = getActionBag(self.rig.animation_data.action).fcurves
-            for fcu in fcurves:
-                for pt in fcu.keyframe_points:
-                    pt.interpolation = 'LINEAR'
-                fcu.extrapolation = 'CONSTANT'
+        fcurves = getRnaFcurves(self.rig)
+        for fcu in fcurves:
+            for pt in fcu.keyframe_points:
+                pt.interpolation = 'LINEAR'
+            fcu.extrapolation = 'CONSTANT'
 
 #----------------------------------------------------------
 #   Import locks and limits
@@ -2286,24 +2279,23 @@ class DAZ_OT_ImposeLocksLimits(DazOperator, IsArmature):
             self.getLimits(self.limits["rotation_euler"], pb, 'LIMIT_ROTATION', -pi, pi)
             self.getLimits(self.limits["scale"], pb, 'LIMIT_SCALE', -1e10, 1e10)
 
-        if rig.animation_data and rig.animation_data.action:
-            fcurves = getActionBag(rig.animation_data.action).fcurves
-            deletes = []
-            for fcu in fcurves:
-                bname,channel,cnsname = getBoneChannel(fcu)
-                if bname:
-                    if (channel in self.locks.keys() and
-                        bname in self.locks[channel].keys()):
-                        lock = self.locks[channel][bname]
-                        if lock[fcu.array_index]:
-                            deletes.append(fcu)
-                            continue
-                    if (channel in self.limits.keys() and
-                        bname in self.limits[channel].keys()):
-                        limit = self.limits[channel][bname]
-                        self.limitFcurve(fcu, limit[fcu.array_index])
-            for fcu in deletes:
-                fcurves.remove(fcu)
+        fcurves = getRnaFcurves(rig)
+        deletes = []
+        for fcu in fcurves:
+            bname,channel,cnsname = getBoneChannel(fcu)
+            if bname:
+                if (channel in self.locks.keys() and
+                    bname in self.locks[channel].keys()):
+                    lock = self.locks[channel][bname]
+                    if lock[fcu.array_index]:
+                        deletes.append(fcu)
+                        continue
+                if (channel in self.limits.keys() and
+                    bname in self.limits[channel].keys()):
+                    limit = self.limits[channel][bname]
+                    self.limitFcurve(fcu, limit[fcu.array_index])
+        for fcu in deletes:
+            fcurves.remove(fcu)
 
         defaults = {
             "location" : (0,0,0),

@@ -56,13 +56,12 @@ class SimpleIK(BoneChains):
 
 
     def linearizeFcurve(self, rna, prop):
-        if rna.animation_data and rna.animation_data.action:
-            fcurves = getActionBag(rna.animation_data.action, rna.id_type).fcurves
-            for fcu in fcurves:
-                if fcu.data_path == prop:
-                    for pt in fcu.keyframe_points:
-                        pt.interpolation = 'LINEAR'
-                    fcu.extrapolation = 'CONSTANT'
+        fcurves = getRnaFcurves(rna)
+        for fcu in fcurves:
+            if fcu.data_path == prop:
+                for pt in fcu.keyframe_points:
+                    pt.interpolation = 'LINEAR'
+                fcu.extrapolation = 'CONSTANT'
 
 
     def changeLayers(self, rig, on, off):

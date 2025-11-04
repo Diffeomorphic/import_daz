@@ -26,10 +26,9 @@ class Framer:
 
 
     def setActiveRange(self, context, rig):
-        adata = rig.animation_data
-        if adata and adata.action:
+        fcurves = getRnaFcurves(rig)
+        if fcurves:
             tmin = tmax = 1
-            fcurves = getActionBag(adata.action).fcurves
             for fcu in fcurves:
                 times = [kp.co[0] for kp in fcu.keyframe_points]
                 tmin = min(int(min(times)), tmin)

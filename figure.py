@@ -705,14 +705,13 @@ class ExtraBones(DriverUser):
                             self.correctDriver(fcu, rig)
                     updateDrivers(ob)
 
-        if rig.animation_data and rig.animation_data.action:
-            fcurves = getActionBag(rig.animation_data.action).fcurves
-            for fcu in fcurves:
-                if fcu.group and "(drv)" in fcu.group.name:
-                    fcu.group.name = fcu.group.name.replace("(drv)", "")
-                if (fcu.data_path.startswith("pose.bones[") and
-                    "(drv)" in fcu.data_path):
-                    fcu.data_path = fcu.data_path.replace("(drv)", "")
+        fcurves = getRnaFcurves(rig)
+        for fcu in fcurves:
+            if fcu.group and "(drv)" in fcu.group.name:
+                fcu.group.name = fcu.group.name.replace("(drv)", "")
+            if (fcu.data_path.startswith("pose.bones[") and
+                "(drv)" in fcu.data_path):
+                fcu.data_path = fcu.data_path.replace("(drv)", "")
 
         for pb in rig.pose.bones:
             if isDrvBone(pb.name):

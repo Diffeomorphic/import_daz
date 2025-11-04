@@ -266,7 +266,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         if len(skeys.key_blocks) == 0:
             return
         basename = skeys.key_blocks[0].name
-        fcurves = getActionBag(act, 'KEY').fcurves
+        fcurves = getActionFcurves(act, 'KEY')
         for fcu in fcurves:
             sname,channel = getShapeChannel(fcu)
             if sname and sname != basename:

@@ -39,6 +39,12 @@ if bpy.app.version < (4,4,0):
     def getActionFcurves(act, id_type='OBJECT'):
         return act.fcurves
 
+    def getRnaFcurves(rna, id_type='OBJECT'):
+        if rna.animation_data and rna.animation_data.action:
+            return rna.animation_data.action.fcurves
+        else:
+            return []
+
     def setNewAction(rna, aname):
         if rna.animation_data is None:
             rna.animation_data_create()
@@ -59,6 +65,12 @@ else:
         bag = getActionBag(act, id_type)
         if bag:
             return bag.fcurves
+        else:
+            return []
+
+    def getRnaFcurves(rna):
+        if rna.animation_data and rna.animation_data.action:
+            return getActionFcurves(rna.animation_data.action, rna.id_type)
         else:
             return []
 

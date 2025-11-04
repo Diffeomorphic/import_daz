@@ -53,14 +53,13 @@ class GazeTransferer:
 
     def getFrames(self, rig, scn, bnames):
         fcustruct = {}
-        if rig.animation_data and rig.animation_data.action:
-            fcurves = getActionBag(rig.animation_data.action).fcurves
-            for fcu in fcurves:
-                bname,channel,cnsname = getBoneChannel(fcu)
-                if bname and bname in bnames:
-                    for kp in fcu.keyframe_points:
-                        t = kp.co[0]
-                        fcustruct[t] = True
+        fcurves = getActionFcurves(rig)
+        for fcu in fcurves:
+            bname,channel,cnsname = getBoneChannel(fcu)
+            if bname and bname in bnames:
+                for kp in fcu.keyframe_points:
+                    t = kp.co[0]
+                    fcustruct[t] = True
         if len(fcustruct) > 0:
             try:
                 scn.frame_current = fcustruct.keys()[0]

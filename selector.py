@@ -719,11 +719,9 @@ def unkeyShape(skeys, key, frame):
 
 
 def getPropFCurves(rig, key):
-    if rig.animation_data and rig.animation_data.action:
-        path = propRef(key)
-        fcurves = getActionBag(rig.animation_data.action).fcurves
-        return [fcu for fcu in fcurves if path == fcu.data_path]
-    return []
+    fcurves = getRnaFcurves(rig)
+    path = propRef(key)
+    return [fcu for fcu in fcurves if path == fcu.data_path]
 
 
 def autoKeyProp(rig, key, scn, frame, force):

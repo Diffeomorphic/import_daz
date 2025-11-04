@@ -361,7 +361,7 @@ class FACSCopier:
         fcus = {}
         tmin = 99999
         tmax = -99999
-        fcurves = getActionBag(act, 'KEY').fcurves
+        fcurves = getActionFcurves(act, 'KEY')
         for fcu in fcurves:
             sname,channel = getShapeChannel(fcu)
             if sname and channel == "value":
