@@ -267,7 +267,7 @@ class ChannelSetter:
         from ..cycles import isTexImage
         nodeType, slot, ncomps = getTweakableChannel(key)
         mat = ob.active_material
-        if BLENDER4 and not mat.use_nodes:
+        if BLENDER5 and not mat.use_nodes:
             return None,0
         for node in mat.node_tree.nodes.values():
             if (self.matchingNode(node, nodeType, mat) and

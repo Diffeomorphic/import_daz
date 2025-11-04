@@ -283,6 +283,8 @@ NodeSize = {
     "GAMMA" : 6,
     "SEPRGB" : 7,
     "COMBRGB" : 7,
+    "SEPARATE_COLOR" : 7,
+    "COMBINE_COLOR" : 7,
     "SEPXYZ" : 7,
     "COMBXYZ" : 7,
     "RGBTOBW" : 7,

@@ -354,7 +354,7 @@ def getInvisibleMaterial(mname="Invisio", color=(0.8,0.8,0.8,0)):
     setRenderMethod(mat, False, True)
     setShadowMethod(mat, False)
     mat.diffuse_color = color
-    if BLENDER4:
+    if BLENDER5:
         mat.use_nodes = True
     tree = mat.node_tree
     tree.nodes.clear()

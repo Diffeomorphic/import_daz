@@ -121,7 +121,7 @@ class WorldMaterial(CyclesMaterial):
         self.tree = WorldTree(self)
 
         world = self.rna = bpy.data.worlds.new(self.name)
-        if BLENDER4:
+        if BLENDER5:
             world.use_nodes = True
         self.tree.build()
         scn.world = world

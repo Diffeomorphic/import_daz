@@ -363,25 +363,30 @@ class LogColorGroup(CyclesGroup):
 
     def addNodes(self, args=None):
         if BLENDER4:
-            sep = self.addNode("ShaderNodeSeparateRGB", 1)
-            self.links.new(self.inputs.outputs["Color"], sep.inputs["Image"])
+            sepname = "ShaderNodeSeparateRGB"
+            combname = "ShaderNodeCombineRGB"
+            slot = "Image"
+            red,green,blue = "R", "G", "B"
         else:
-            sep = self.addNode("ShaderNodeSeparateColor", 1)
+            sepname = "ShaderNodeSeparateColor"
+            combname = "ShaderNodeCombineColor"
+            slot = "Color"
+            red,green,blue = "Red", "Green", "Blue"
+
+        sep = self.addNode(sepname, 1)
+        self.links.new(self.inputs.outputs["Color"], sep.inputs[slot])
+        absRed = self.addLog(sep.outputs[red])
+        absGreen = self.addLog(sep.outputs[green])
+        absBlue = self.addLog(sep.outputs[blue])
+
+        comb = self.addNode(combname, 5)
+        if not BLENDER4:
             sep.mode = 'RGB'
-            self.links.new(self.inputs.outputs["Color"], sep.inputs["Color"])
-        abs0 = self.addLog(sep.outputs[0])
-        abs1 = self.addLog(sep.outputs[1])
-        abs2 = self.addLog(sep.outputs[2])
-        if BLENDER4:
-            comb = self.addNode("ShaderNodeCombineRGB", 5)
-            self.links.new(comb.outputs["Image"], self.outputs.inputs["Color"])
-        else:
-            comb = self.addNode("ShaderNodeCombineColor", 5)
             comb.mode = 'RGB'
-            self.links.new(comb.outputs["Color"], self.outputs.inputs["Color"])
-        self.links.new(abs0.outputs[0], comb.inputs[0])
-        self.links.new(abs1.outputs[0], comb.inputs[1])
-        self.links.new(abs2.outputs[0], comb.inputs[2])
+        self.links.new(absRed.outputs[0], comb.inputs[red])
+        self.links.new(absGreen.outputs[0], comb.inputs[green])
+        self.links.new(absBlue.outputs[0], comb.inputs[blue])
+        self.links.new(comb.outputs[slot], self.outputs.inputs["Color"])
 
 
     def addLog(self, socket):
@@ -645,36 +650,34 @@ class InvertNormalMapGroup(CyclesGroup):
 
     def addNodes(self, args=None):
         if BLENDER4:
-            sep = self.addNode("ShaderNodeSeparateRGB", 1)
-            self.links.new(self.inputs.outputs["Color"], sep.inputs["Image"])
-            red = "R"
-            green = "G"
-            blue = "B"
+            sepname = "ShaderNodeSeparateRGB"
+            combname = "ShaderNodeCombineRGB"
+            slot = "Image"
+            red,green,blue = "R", "G", "B"
         else:
-            sep = self.addNode("ShaderNodeSeparateColor", 1)
+            sepname = "ShaderNodeSeparateColor"
+            combname = "ShaderNodeCombineColor"
+            slot = "Color"
+            red,green,blue = "Red", "Green", "Blue"
+
+        sep = self.addNode(sepname, 1)
+        self.links.new(self.inputs.outputs["Color"], sep.inputs[slot])
+
+        invRed = self.addNode("ShaderNodeInvert", 2)
+        invRed.inputs["Fac"].default_value = 1.0
+        self.links.new(sep.outputs[red], invRed.inputs["Color"])
+
+        invGreen = self.addNode("ShaderNodeInvert", 2)
+        invGreen.inputs["Fac"].default_value = 1.0
+        self.links.new(sep.outputs[green], invGreen.inputs["Color"])
+
+        comb = self.addNode(combname, 3)
+        if not BLENDER4:
             sep.mode = 'RGB'
-            self.links.new(self.inputs.outputs["Color"], sep.inputs["Color"])
-            red = "Red"
-            green = "Green"
-            blue = "Blue"
-
-        inv1 = self.addNode("ShaderNodeInvert", 2)
-        inv1.inputs["Fac"].default_value = 1.0
-        self.links.new(sep.outputs[red], inv1.inputs["Color"])
-
-        inv2 = self.addNode("ShaderNodeInvert", 2)
-        inv2.inputs["Fac"].default_value = 1.0
-        self.links.new(sep.outputs[green], inv2.inputs["Color"])
-
-        if BLENDER4:
-            comb = self.addNode("ShaderNodeCombineRGB", 3)
-            self.links.new(comb.outputs["Image"], self.outputs.inputs["Color"])
-        else:
-            comb = self.addNode("ShaderNodeCombineColor", 3)
             comb.mode = 'RGB'
-            self.links.new(comb.outputs["Color"], self.outputs.inputs["Color"])
-        self.links.new(inv1.outputs[0], comb.inputs[red])
-        self.links.new(inv2.outputs[0], comb.inputs[green])
+        self.links.new(comb.outputs[slot], self.outputs.inputs["Color"])
+        self.links.new(invRed.outputs[0], comb.inputs[red])
+        self.links.new(invGreen.outputs[0], comb.inputs[green])
         self.links.new(sep.outputs[blue], comb.inputs[blue])
 
 # ---------------------------------------------------------------------

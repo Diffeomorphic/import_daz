@@ -491,7 +491,7 @@ class CyclesTree(Tree):
 
     def makeTree(self, slot="UV"):
         mat = self.owner.rna
-        if BLENDER4:
+        if BLENDER5:
             mat.use_nodes = True
         mat.node_tree.nodes.clear()
         self.nodes = mat.node_tree.nodes
