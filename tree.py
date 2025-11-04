@@ -287,7 +287,7 @@ NodeSize = {
     "COMBXYZ" : 7,
     "RGBTOBW" : 7,
     "VALTORGB" : 10,
-    "CLAMP" : 5,
+    "CLAMP" : 8,
     "MIX_RGB" : 8,
     "SHADERTORGB" : 8,
     "MIX" : 12,

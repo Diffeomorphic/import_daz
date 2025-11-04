@@ -169,7 +169,7 @@ class LightInstance(Instance):
 
 def getBlenderData(light, dazdata, btn, frame):
     def getNode(ntype):
-        if light.use_nodes:
+        if not BLENDER4 or light.use_nodes:
             btn.dataRnas.add((light.node_tree, 'NODETREE'))
             for node in light.node_tree.nodes:
                 if node.type == ntype:

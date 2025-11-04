@@ -644,7 +644,8 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
         setModernProps(mat)
         ob.data.materials.append(mat)
         ob.active_material = mat
-        mat.use_nodes = True
+        if BLENDER4:
+            mat.use_nodes = True
         tree = mat.node_tree
         tree.nodes.clear()
         texco = tree.nodes.new(type = "ShaderNodeTexCoord")

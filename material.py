@@ -1010,7 +1010,7 @@ class LocalTextureSaver(HiddenTextureUser):
         for ob in self.getMeshes(context):
             for mat in ob.data.materials:
                 if mat:
-                    if mat.use_nodes:
+                    if not BLENDER4 or mat.use_nodes:
                         self.saveNodesInTree(mat.node_tree)
             for psys in ob.particle_systems:
                 self.saveTextureSlots(psys.settings)
@@ -1211,7 +1211,7 @@ class MaterialCombiner:
         matProps = self.getRelevantProps(mat1, deadMatProps)
         if not self.haveSameAttrs(mat1, mat2, matProps, mname1, mname2):
             return False
-        if mat1.use_nodes and mat2.use_nodes:
+        if not BLENDER4 or (mat1.use_nodes and mat2.use_nodes):
             if self.areSameCycles(mat1.node_tree, mat2.node_tree, mname1, mname2):
                 if not ES.easy:
                     print("%s = %s" % (mat1.name, mat2.name))

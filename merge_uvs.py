@@ -423,7 +423,7 @@ def mergeUvLayers(me, keepIdx, mergeIdx, allowOverlap):
         if data.uv.length > 1e-6:
             keepLayer.data[n].uv = data.uv
     for mat in me.materials:
-        if mat and mat.use_nodes:
+        if mat and (not BLENDER4 or mat.use_nodes):
             replaceNodeNames(mat, mergeLayer.name, keepLayer.name)
     me.uv_layers.active_index = keepIdx
     me.uv_layers.remove(mergeLayer)

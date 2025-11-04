@@ -362,16 +362,26 @@ class LogColorGroup(CyclesGroup):
 
 
     def addNodes(self, args=None):
-        sep = self.addNode("ShaderNodeSeparateRGB", 1)
-        self.links.new(self.inputs.outputs["Color"], sep.inputs["Image"])
+        if BLENDER4:
+            sep = self.addNode("ShaderNodeSeparateRGB", 1)
+            self.links.new(self.inputs.outputs["Color"], sep.inputs["Image"])
+        else:
+            sep = self.addNode("ShaderNodeSeparateColor", 1)
+            sep.mode = 'RGB'
+            self.links.new(self.inputs.outputs["Color"], sep.inputs["Color"])
         abs0 = self.addLog(sep.outputs[0])
         abs1 = self.addLog(sep.outputs[1])
         abs2 = self.addLog(sep.outputs[2])
-        comb = self.addNode("ShaderNodeCombineRGB", 5)
+        if BLENDER4:
+            comb = self.addNode("ShaderNodeCombineRGB", 5)
+            self.links.new(comb.outputs["Image"], self.outputs.inputs["Color"])
+        else:
+            comb = self.addNode("ShaderNodeCombineColor", 5)
+            comb.mode = 'RGB'
+            self.links.new(comb.outputs["Color"], self.outputs.inputs["Color"])
         self.links.new(abs0.outputs[0], comb.inputs[0])
         self.links.new(abs1.outputs[0], comb.inputs[1])
         self.links.new(abs2.outputs[0], comb.inputs[2])
-        self.links.new(comb.outputs["Image"], self.outputs.inputs["Color"])
 
 
     def addLog(self, socket):
@@ -634,19 +644,38 @@ class InvertNormalMapGroup(CyclesGroup):
 
 
     def addNodes(self, args=None):
-        sep = self.addNode("ShaderNodeSeparateRGB", 1)
-        self.links.new(self.inputs.outputs["Color"], sep.inputs["Image"])
+        if BLENDER4:
+            sep = self.addNode("ShaderNodeSeparateRGB", 1)
+            self.links.new(self.inputs.outputs["Color"], sep.inputs["Image"])
+            red = "R"
+            green = "G"
+            blue = "B"
+        else:
+            sep = self.addNode("ShaderNodeSeparateColor", 1)
+            sep.mode = 'RGB'
+            self.links.new(self.inputs.outputs["Color"], sep.inputs["Color"])
+            red = "Red"
+            green = "Green"
+            blue = "Blue"
+
         inv1 = self.addNode("ShaderNodeInvert", 2)
         inv1.inputs["Fac"].default_value = 1.0
-        self.links.new(sep.outputs["R"], inv1.inputs["Color"])
+        self.links.new(sep.outputs[red], inv1.inputs["Color"])
+
         inv2 = self.addNode("ShaderNodeInvert", 2)
         inv2.inputs["Fac"].default_value = 1.0
-        self.links.new(sep.outputs["G"], inv2.inputs["Color"])
-        comb = self.addNode("ShaderNodeCombineRGB", 3)
-        self.links.new(inv1.outputs[0], comb.inputs["R"])
-        self.links.new(inv2.outputs[0], comb.inputs["G"])
-        self.links.new(sep.outputs["B"], comb.inputs["B"])
-        self.links.new(comb.outputs["Image"], self.outputs.inputs["Color"])
+        self.links.new(sep.outputs[green], inv2.inputs["Color"])
+
+        if BLENDER4:
+            comb = self.addNode("ShaderNodeCombineRGB", 3)
+            self.links.new(comb.outputs["Image"], self.outputs.inputs["Color"])
+        else:
+            comb = self.addNode("ShaderNodeCombineColor", 3)
+            comb.mode = 'RGB'
+            self.links.new(comb.outputs["Color"], self.outputs.inputs["Color"])
+        self.links.new(inv1.outputs[0], comb.inputs[red])
+        self.links.new(inv2.outputs[0], comb.inputs[green])
+        self.links.new(sep.outputs[blue], comb.inputs[blue])
 
 # ---------------------------------------------------------------------
 #   Weighted Group. For weighted mode

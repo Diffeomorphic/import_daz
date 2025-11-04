@@ -12,6 +12,7 @@ from bpy.props import *
 from .settings import GS, LS, ES
 
 BLENDER3 = (bpy.app.version < (4,0,0))
+BLENDER4 = (bpy.app.version < (5,0,0))
 DAZ_PROPS = True
 
 #-------------------------------------------------------------

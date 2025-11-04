@@ -1012,7 +1012,8 @@ class Geometry(Asset, Channels):
         mat = LS.hiddenMaterial = bpy.data.materials.new("HIDDEN")
         setModernProps(mat)
         mat.diffuse_color[3] = 0
-        mat.use_nodes = True
+        if BLENDER4:
+            mat.use_nodes = True
         setRenderMethod(mat, False, True)
         setShadowMethod(mat, False)
         tree = mat.node_tree
