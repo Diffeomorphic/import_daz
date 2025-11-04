@@ -2,16 +2,16 @@ import bpy
 op = bpy.context.active_operator
 
 op.useImproveIk = False
+op.useLimitConstraints = True
 op.useFingerIk = False
 op.tongueControl = 'NONE'
 op.shaftControl = 'NONE'
+op.shaftName = 'Shaft'
 op.addNondeformExtras = True
 op.keepRig = True
-op.useTweakBones = False
-op.showLinks = True
-op.usePoleTargets = True
-op.useStretch = False
+op.ikOptimization = 'POLE'
+op.useAutoAlign = True
+op.useRecalcRoll = False
 op.useSplitShin = False
-op.useSpineIk = False
-op.useAnkleIk = False
-op.keepG9Twist = True
+op.useCustomLayers = True
+op.useDeleteMeta = True
