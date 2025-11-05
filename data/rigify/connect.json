@@ -12,8 +12,8 @@
     ],
 
     "spine" : [
-        "abdomenUpper", "chestLower", "chestUpper", "neckUpper",
-        "spine2", "spine3", "spine4", "neck2",
+        "abdomenUpper", "chestLower", "chestUpper", "neckLower", "neckUpper",
+        "spine2", "spine3", "spine4", "neck1", "neck2",
         "head"
 	],
 

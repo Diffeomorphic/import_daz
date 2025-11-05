@@ -293,6 +293,8 @@ class MetaMaker(RigifyCommon):
 
         print("  Fix metarig")
         meta = context.object
+        meta.show_in_front = True
+        meta.display_type = 'WIRE'
         meta["DazRigifyType"] = self.meta.rigify_type
         makeBoneCollections(meta, RigifyLayers)
         cns = meta.constraints.new('COPY_SCALE')
