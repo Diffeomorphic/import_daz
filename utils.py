@@ -20,7 +20,7 @@ DAZ_PROPS = True
 #   Blender 5
 #-------------------------------------------------------------
 
-if bpy.app.version < (5,0,0):
+if BLENDER4:
     def P2B(pb):
         return pb.bone
 else:
@@ -37,7 +37,10 @@ if bpy.app.version < (4,4,0):
         return act
 
     def getActionFcurves(act, id_type='OBJECT'):
-        return act.fcurves
+        if act:
+            return act.fcurves
+        else:
+            return []
 
     def getRnaFcurves(rna, id_type='OBJECT'):
         if rna.animation_data and rna.animation_data.action:
@@ -55,7 +58,7 @@ if bpy.app.version < (4,4,0):
 else:
 
     def getActionBag(act, id_type='OBJECT'):
-        if act.layers:
+        if act and act.layers:
             strip = act.layers[0].strips[0]
             for slot in act.slots:
                 if slot.target_id_type == id_type:
