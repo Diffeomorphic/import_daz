@@ -78,7 +78,7 @@
     "cuts" : {
         "spine.003" : 1
     },
-    
+
     "cutbase" : {
         "spine" : ["spine", 1]
     },
@@ -99,7 +99,7 @@
         "rShin" : "rThighBend",
         "rToe" : "rFoot"
     },
-    
+
     "extra_parents" : {
         "lPectoral" : "DEF-spine.004",
         "rPectoral" : "DEF-spine.004"
@@ -160,7 +160,7 @@
         "lFoot" : ["lMetatarsals"],
         "rFoot" : ["rMetatarsals"]
     },
-    
+
     "reuse" : [
     	"lShldrBend", "lForearmBend", "lThighBend",
     	"rShldrBend", "rForearmBend", "rThighBend"
@@ -168,5 +168,12 @@
 
     "custom_shape_fix" : {
         "head" : [4.0, 0]
-    }
+    },
+
+    "owner_orient" : ["abdomenLower"],
+
+    "local_with_parent" : [
+    	"lCollar", "lShldrBend", "lForearmBend", "lHand", "lThighBend", "lFoot",
+    	"rCollar", "rShldrBend", "rForearmBend", "rHand", "rThighBend", "rFoot"
+  	]
 }

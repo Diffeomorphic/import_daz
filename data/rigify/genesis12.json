@@ -84,7 +84,7 @@
     "cuts" : {
         "spine.003" : 1
     },
-    
+
     "cutbase" : {
         "spine" : ["spine", 1]
     },
@@ -144,5 +144,12 @@
 
     "custom_shape_fix" : {
         "spine_fk.007" : [4.0, 0]
-    }
+    },
+
+    "owner_orient" : ["abdomen"],
+
+    "local_with_parent" : [
+    	"lCollar", "lShldr", "lForeArm", "lHand", "lThigh", "lFoot",
+    	"rCollar", "rShldr", "rForeArm", "rHand", "rThigh", "rFoot"
+  	]
 }

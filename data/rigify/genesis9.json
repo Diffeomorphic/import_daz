@@ -82,11 +82,11 @@
     "cuts" : {
         "spine.003" : 1
     },
-    
+
     "cutbase" : {
         "spine" : ["spine", 1]
     },
-    
+
     "parents" : {
     	"head" : "neck2",
     	"neck2" : "neck1",
@@ -103,7 +103,7 @@
         "r_shin" : "r_thigh",
         "r_toes" : "r_foot"
     },
-     
+
     "extra_parents" : {
         "l_pectoral" : "DEF-spine.004",
         "r_pectoral" : "DEF-spine.004"
@@ -138,5 +138,19 @@
     "custom_shape_fix" : {
         "head" : [4.0, 0],
         "neck" : [0.6, 0]
-    }
+    },
+
+    "owner_orient" : ["spine1"],
+
+    "local_with_parent" : [
+    	"l_shoulder", "l_upperarm", "l_forearm", "l_hand", "l_thigh", "l_foot",
+    	"r_shoulder", "r_upperarm", "r_forearm", "r_hand", "r_thigh", "r_foot"
+  	],
+
+  	"twist_bones" : [
+  		"l_thightwist1", "l_upperarmtwist1", "l_forearmtwist1",
+  		"l_thightwist2", "l_upperarmtwist2", "l_forearmtwist2",
+  		"r_thightwist1", "r_upperarmtwist1", "r_forearmtwist1",
+  		"r_thightwist2", "r_upperarmtwist2", "r_forearmtwist2"
+  	]
 }

@@ -141,6 +141,10 @@ class DazData:
         self.predelete = entry.get("predelete", [])
         self.custom_shape_fix = entry.get("custom_shape_fix", {})
         self.face_bones = entry.get("face_bones", [])
+        self.owner_orient = entry.get("owner_orient", [])
+        self.local_with_parent = entry.get("local_with_parent", [])
+        self.twist_bones = entry.get("twist_bones", [])
+        self.drv_twist_bones = [drvBone(bname) for bname in self.twist_bones]
 
         self.rigifybones = dict(
             [(dbone, rbone) for rbone, dbone in self.dazbones.items()])
@@ -1581,7 +1585,9 @@ class Rigifier(RigifyCommon):
 
 
     def tieBone(self, pb, rig, gen, assoc, facebones, rigtype):
-        if pb.name.endswith(("twist1", "twist2", "metatarsal", "hand_anchor")):
+        if pb.name in self.daz.drv_twist_bones:
+            return
+        if pb.name.endswith(("metatarsal", "hand_anchor")):
             return
         from ..rig_utils import copyLocation, copyRotation, copyTransform, stretchTo
         rname = self.getRigifyBone(pb.name, gen.data.bones)
@@ -1597,21 +1603,18 @@ class Rigifier(RigifyCommon):
             cns.head_tail = 1.0
         elif pb.name == "pelvis":
             pass
-        elif pb.name in ("spine1", "abdomen", "abdomenLower", "head"):
+        elif pb.name in self.daz.owner_orient:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
             cns.target_space = 'LOCAL_OWNER_ORIENT'
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
+        elif pb.name in self.daz.twist_bones:
+            db = rig.pose.bones.get(drvBone(pb.name))
+            cns = copyRotation(pb, db, rig, space='LOCAL')
+            cns.mix_mode = 'AFTER'
         elif "twist" in pb.name.lower():
             cns = copyRotation(pb, rb, gen, space='LOCAL')
-        elif (pb.name[1:] in (
-                "Collar", "_shoulder",
-                "Shldr", "ShldrBend", "_upperarm",
-                "ForeArm", "ForearmBend", "_forearm",
-                "Hand", "_hand",
-                "Thigh", "ThighBend", "_thigh",
-                "Foot", "_foot",
-                ) or
+        elif (pb.name in self.daz.local_with_parent or
               rname.startswith("DEF-spine")):
             cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
             cns = copyLocation(pb, rb, gen, space='POSE')
