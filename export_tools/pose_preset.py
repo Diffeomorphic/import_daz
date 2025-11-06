@@ -32,7 +32,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
     useConvert = False
     useConvertMerged = False
-    trgRig = "genesis"
+    trgRig = ""
     affectBones = True
     affectMorphs = False
 
@@ -46,14 +46,6 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         name = "Preset Type",
         description = "Preset type",
         default = 'POSE')
-
-    trgRig : EnumProperty(
-        items = [("genesis1", "Genesis 1/2", "Genesis 1/2"),
-                 ("genesis3", "Genesis 3/8", "Genesis 3/8"),
-                 ("genesis9", "Genesis 9", "Genesis 9")],
-        name = "Target Character",
-        description = "Make pose preset for this character",
-        default = "genesis9")
 
     useAction : BoolProperty(
         name = "Use Action",
@@ -100,8 +92,6 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         self.layout.separator()
         self.layout.prop(self, "type")
         rig = context.object
-        if dazRna(rig).DazRig.startswith(("mhx", "rigify")):
-            self.layout.prop(self, "trgRig")
         self.useBones = self.type in ['POSE', 'POSE_MORPH', 'HIERARCHICAL']
         self.useHierarchical = self.type == 'HIERARCHICAL'
         self.useMorphs = self.type in ['MORPH', 'POSE_MORPH']
@@ -148,6 +138,8 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
     def run(self, context):
         self.Z = Matrix.Rotation(pi/2, 4, 'X')
         rig = getRigFromContext(context, strict=False, activate=True)
+        if dazRna(rig).DazRig.startswith(("mhx", "rigify")):
+            self.trgRig = dazRna(rig).DazOriginalRig
         if self.useHierarchical:
             if (dazRna(rig).DazRig.startswith(("mhx", "rigify")) or
                 not dazRna(rig).DazUrl):
@@ -656,6 +648,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         return (isDrvBone(pb.name) or
                 isFinal(pb.name) or
                 pb.name.endswith(".twist") or
+                pb.name.startswith("DEF-") or
                 pb.name in ["Root"])
 
 
