@@ -655,6 +655,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
     def skipBone(self, pb):
         return (isDrvBone(pb.name) or
                 isFinal(pb.name) or
+                pb.name.endswith(".twist") or
                 pb.name in ["Root"])
 
 
