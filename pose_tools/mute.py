@@ -141,7 +141,7 @@ class DAZ_OT_MuteControlRig(ControlRigMuter, Framer, DazPropsOperator):
     useBake : BoolProperty(
         name = "Bake action",
         description = "Bake visual transform to an action",
-        default = True)
+        default = False)
 
     def draw(self, context):
         ControlRigMuter.draw(self, context)

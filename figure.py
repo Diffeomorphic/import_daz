@@ -294,7 +294,8 @@ class Figure(Node):
             self.pointBones(rig)
         setMode('OBJECT')
         modernizeBones(rig)
-        dazRna(rig).DazRig = self.rigtype = getRigType1(inst.bones.keys(), False)
+        self.rigtype = getRigType1(inst.bones.keys(), False)
+        dazRna(rig).DazRig = dazRna(rig).DazOriginalRig = self.rigtype
         for child in inst.children.values():
             if isinstance(child, BoneInstance):
                 child.buildBoneProps(rig, center)

@@ -217,6 +217,7 @@ class DAZ_PT_ActiveObject(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
             self.layout.prop(dazRna(ob), "DazFigure")
             self.layout.prop(dazRna(ob), "DazScene")
             self.layout.prop(dazRna(ob), "DazRig")
+            self.layout.prop(dazRna(ob), "DazOriginalRig")
             self.layout.prop(dazRna(ob), "DazMesh")
             if ob.type == 'MESH':
                 self.layout.prop(dazRna(ob.data), "DazFingerPrint")

@@ -1278,7 +1278,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             if bname.endswith(("Bend", "Twist")):
                 twists[bname] = tfm
         elif bname[0:6] == "TWIST-":
-            print("TT", bname)
             twists[bname[6:]] = tfm
 
 
