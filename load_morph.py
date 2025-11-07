@@ -40,6 +40,7 @@ class LoadMorph(DriverUser):
     defaultMultiplier = 1.0
     useMulti = False
     useVisible = False
+    ignoreBakedMorphs = True
     disableErc = False
     useMakePosable = False
     # Previously defined in __init__ function
@@ -164,7 +165,7 @@ class LoadMorph(DriverUser):
     def loadAllMorphs(self, namepaths):
         self.initAll()
         name = namepaths[0][0]
-        if self.rig:
+        if self.rig and self.ignoreBakedMorphs:
             self.baked = [self.bakedName(key) for key in dazRna(self.rig).DazBaked.keys()]
 
         if self.mesh:

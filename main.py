@@ -686,6 +686,11 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
         description = "Import DAZ favorite morphs",
         default = False)
 
+    ignoreBakedMorphs : BoolProperty(
+        name = "Ignore Baked Morphs",
+        description = "Ignore morphs baked in the dbz file",
+        default = True)
+
     useTransferClothes : BoolProperty(
         name = "Transfer To Clothes",
         description = "Transfer shapekeys from character to clothes",
@@ -763,6 +768,8 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
         MorphTypeOptions.draw(self, context)
         self.layout.prop(self, "useBakedCorrectives")
         self.layout.prop(self, "useDazFavorites")
+        if self.useDazFavorites:
+            self.subprop("ignoreBakedMorphs")
         self.layout.separator()
         self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "onMorphSuffix")
@@ -1027,6 +1034,7 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
             for ob in meshes[1:]:
                 selectSet(ob, True)
             bpy.ops.daz.import_daz_favorites(
+                ignoreBakedMorphs = self.ignoreBakedMorphs,
                 useTransferOthers=False,
                 useAdjusters = self.useAdjusters,
                 useMakePosable=False)

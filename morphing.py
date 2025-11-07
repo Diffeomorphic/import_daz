@@ -2125,9 +2125,15 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
     bl_label = "Import DAZ Favorites"
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"
 
+    ignoreBakedMorphs : BoolProperty(
+        name = "Ignore Baked Morphs",
+        description = "Ignore morphs baked in the dbz file",
+        default = True)
+
     def draw(self, context):
         MorphSuffix.draw(self, context)
         self.layout.prop(self, "useAdjusters")
+        self.layout.prop(self, "ignoreBakedMorphs")
         RigidTransfer.draw(self, context)
         PosableMaker.draw(self, context)
 
