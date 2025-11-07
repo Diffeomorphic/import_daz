@@ -41,7 +41,6 @@ class DAZ_PT_Shapekeys(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.visualize_shapekey")
         self.layout.operator("daz.mute_shapekeys")
         self.layout.separator()
-        self.layout.operator("daz.update_slider_limits")
         self.layout.operator("daz.update_morph_paths")
 
 

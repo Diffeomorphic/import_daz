@@ -58,7 +58,7 @@ if fail:
 Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "uilist",
            "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
            "bone_data", "transform", "node", "figure", "bone", "geometry",
-           "store", "fix", "modifier", "load_morph", "morphing", "baked",
+           "store", "fix", "modifier", "load_morph", "morphing", "slider", "baked",
            "animation", "rig_utils", "dbzfile", "panel",
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "hair_material",
            "render", "camera", "light", "visibility",
@@ -351,7 +351,7 @@ class DAZ_OT_DisableAllFeatures(bpy.types.Operator):
 
 Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "figure", "geometry", "dbzfile",
-            "fix", "animation", "morphing", "panel",
+            "fix", "animation", "morphing", "slider", "panel",
             "material", "cgroup", "render", "visibility",
             "guess", "main", "finger", "locks",
             "matsel", "proxy",

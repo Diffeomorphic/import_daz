@@ -108,6 +108,8 @@ class DAZ_PT_SetupMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
             self.layout.separator()
         self.layout.operator("daz.transfer_shapekeys")
         self.layout.separator()
+        self.layout.operator("daz.update_slider_limits")
+        self.layout.separator()
         self.layout.operator("daz.scan_morph_database")
         self.layout.operator("daz.scan_morph_directory")
         self.layout.operator("daz.check_database")
