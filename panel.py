@@ -749,7 +749,11 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
         if not self.hasTheseMorphs(rig):
             return
         for item in dazRna(rig).DazBaked.values():
-            value = rig.data.get(finalProp(item.name))
+            pg = dazRna(rig).DazBakedValue.get(item.name)
+            if pg:
+                value = pg.f
+            else:
+                value = rig.data.get(finalProp(item.name))
             if value is not None:
                 self.layout.label(text = "%s : %.3f" % (item.text, value))
 

@@ -297,6 +297,9 @@ def buildBakedMorph(inst, ref, value):
         item = dazRna(rig).DazBaked.add()
         item.name = raw
         item.text = raw
+        item = dazRna(rig).DazBakedValue.add()
+        item.name = raw
+        item.f = value
 
 #-------------------------------------------------------------
 #   Formula

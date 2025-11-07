@@ -70,6 +70,9 @@ def postloadMorphs(context, filepath):
                     item = dazRna(ob).DazBaked.add()
                     item.name = prop
                     item.text = label
+                    item = dazRna(ob).DazBakedValue.add()
+                    item.name = prop
+                    item.f = (float)(value*factor)
 
     def addFormFormulas(forms, ob, lm):
         edict = {}
