@@ -40,7 +40,6 @@ class LoadMorph(DriverUser):
     defaultMultiplier = 1.0
     useMulti = False
     useVisible = False
-    ignoreBakedMorphs = True
     disableErc = False
     useMakePosable = False
     # Previously defined in __init__ function
@@ -151,7 +150,7 @@ class LoadMorph(DriverUser):
 
 
     def isBaked(self, prop):
-        return (self.bakedName(prop) in self.baked)
+        return (self.bakedName(prop) in self.baked and not GS.useBakedMorphs)
 
 
     def bakedName(self, prop):
@@ -165,7 +164,7 @@ class LoadMorph(DriverUser):
     def loadAllMorphs(self, namepaths):
         self.initAll()
         name = namepaths[0][0]
-        if self.rig and self.ignoreBakedMorphs:
+        if self.rig:
             self.baked = [self.bakedName(key) for key in dazRna(self.rig).DazBaked.keys()]
 
         if self.mesh:
@@ -638,7 +637,8 @@ class LoadMorph(DriverUser):
         if ((self.obj and baseprop in dazRna(self.obj).DazBaked.keys()) or
             baseprop in ALWAYS_BAKED):
             value = 0
-            print("Baked %s = 0" % baseprop)
+            if GS.verbosity >= 3:
+                print("Baked %s = 0" % baseprop)
         if not GS.useDazLimits:
             min = max = None
         elif (not ovr and

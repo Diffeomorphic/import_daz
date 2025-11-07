@@ -101,6 +101,7 @@ class GlobalSettings:
         self.showInTerminal = True
         self.driverRotationMode = 'NATIVE'
         self.ercMethod = 'NONE'
+        self.useBakedMorphs = False
         self.useStripCategory = False
         self.useDefaultDrivers = True
         self.onShapekeyDrivers = 'REGULAR'

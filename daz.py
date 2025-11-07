@@ -335,6 +335,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "ERC Method",
         description = "Support for ERC morphs that change the rest pose")
 
+    useBakedMorphs : BoolProperty(
+        name = "Baked Morphs",
+        description = "Also load morphs that have been baked into the dbz file")
+
     useStripCategory : BoolProperty(
         name = "Strip Category",
         description = "Strip the category name from the beginning of the morph name if they are the same")
@@ -771,6 +775,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "showInTerminal")
         drawEnum(self, box, "onShapekeyDrivers")
         drawEnum(self, box, "ercMethod")
+        box.prop(self, "useBakedMorphs")
         box.prop(self, "useStripCategory")
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useFaceGroupMasks")
