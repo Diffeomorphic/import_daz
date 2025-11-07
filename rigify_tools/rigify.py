@@ -1608,10 +1608,10 @@ class Rigifier(RigifyCommon):
             cns.target_space = 'LOCAL_OWNER_ORIENT'
         elif pb.name in facebones:
             cns = copyTransform(pb, rb, gen, space='LOCAL')
-        elif pb.name in self.daz.twist_bones:
-            db = rig.pose.bones.get(drvBone(pb.name))
-            cns = copyRotation(pb, db, rig, space='LOCAL')
-            cns.mix_mode = 'AFTER'
+        elif pb.name in self.daz.twist_bones.keys():
+            twname = self.daz.twist_bones[pb.name]
+            twb = gen.pose.bones[twname]
+            cns = copyRotation(pb, twb, gen, space='POSE')
         elif "twist" in pb.name.lower():
             cns = copyRotation(pb, rb, gen, space='LOCAL')
         elif (pb.name in self.daz.local_with_parent or

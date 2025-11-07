@@ -147,10 +147,18 @@
     	"r_shoulder", "r_upperarm", "r_forearm", "r_hand", "r_thigh", "r_foot"
   	],
 
-  	"twist_bones" : [
-  		"l_thightwist1", "l_upperarmtwist1", "l_forearmtwist1",
-  		"l_thightwist2", "l_upperarmtwist2", "l_forearmtwist2",
-  		"r_thightwist1", "r_upperarmtwist1", "r_forearmtwist1",
-  		"r_thightwist2", "r_upperarmtwist2", "r_forearmtwist2"
-  	]
+  	"twist_bones" : {
+  		"l_thightwist1": "DEF-thigh.L",
+  		"l_upperarmtwist1": "DEF-upper_arm.L",
+  		"l_forearmtwist1": "DEF-forearm.L",
+  		"l_thightwist2": "DEF-thigh.L.001",
+  		"l_upperarmtwist2": "DEF-upper_arm.L.001",
+  		"l_forearmtwist2": "DEF-forearm.L.001",
+  		"r_thightwist1": "DEF-thigh.R",
+  		"r_upperarmtwist1": "DEF-upper_arm.R",
+  		"r_forearmtwist1": "DEF-forearm.R",
+  		"r_thightwist2": "DEF-thigh.R.001",
+  		"r_upperarmtwist2": "DEF-upper_arm.R.001",
+  		"r_forearmtwist2": "DEF-forearm.R.001"
+  	}
 }
