@@ -143,8 +143,8 @@ class DazData:
         self.face_bones = entry.get("face_bones", [])
         self.owner_orient = entry.get("owner_orient", [])
         self.local_with_parent = entry.get("local_with_parent", [])
-        self.twist_bones = entry.get("twist_bones", [])
-        self.drv_twist_bones = [drvBone(bname) for bname in self.twist_bones]
+        self.twist_bones = entry.get("twist_bones", {})
+        self.drv_twist_bones = [drvBone(bname) for bname in self.twist_bones.keys()]
 
         self.rigifybones = dict(
             [(dbone, rbone) for rbone, dbone in self.dazbones.items()])
