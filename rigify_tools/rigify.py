@@ -1330,10 +1330,9 @@ class Rigifier(RigifyCommon):
 
     def copyBoneInfo(self, srcname, trgname, rig, gen):
         from ..figure import copyBoneInfo
-        if (srcname in rig.pose.bones.keys() and
-            trgname in gen.pose.bones.keys()):
-            srcpb = rig.pose.bones[srcname]
-            trgpb = gen.pose.bones[trgname]
+        srcpb = rig.pose.bones.get(srcname)
+        trgpb = gen.pose.bones.get(trgname)
+        if srcpb and trgpb:
             copyBoneInfo(srcpb, trgpb, usePoseBone=False)
             if srcpb.custom_shape:
                 trgpb.custom_shape = srcpb.custom_shape

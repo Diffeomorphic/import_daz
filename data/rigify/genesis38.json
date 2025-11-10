@@ -24,12 +24,12 @@
 
         "shoulder.L" :      "lCollar",
         "upper_arm.L" :     "lShldr",
-        "forearm.L" :       "lForearm",
+        "forearm.L" :       "lForeArm",
         "hand.L" :          "lHand",
 
         "shoulder.R" :      "rCollar",
         "upper_arm.R" :     "rShldr",
-        "forearm.R" :       "rForearm",
+        "forearm.R" :       "rForeArm",
         "hand.R" :          "rHand",
 
         "thumb.01.L" :       "lThumb1",
@@ -127,10 +127,10 @@
 
     "renames" : {
         "lShldrBend" : "lShldr",
-        "lForearmBend" : "lForearm",
+        "lForearmBend" : "lForeArm",
         "lThighBend" : "lThigh",
         "rShldrBend" : "rShldr",
-        "rForearmBend" : "rForearm",
+        "rForearmBend" : "rForeArm",
         "rThighBend" : "rThigh"
     },
 
