@@ -1602,7 +1602,8 @@ class Rigifier(RigifyCommon):
             cns.head_tail = 1.0
         elif pb.name == "pelvis":
             pass
-        elif pb.name in self.daz.owner_orient:
+        elif (pb.name in self.daz.owner_orient or
+              rname.startswith("DEF-spine")):
             cns = copyTransform(pb, rb, gen, space='LOCAL')
             cns.target_space = 'LOCAL_OWNER_ORIENT'
         elif pb.name in facebones:
@@ -1613,8 +1614,7 @@ class Rigifier(RigifyCommon):
             cns = copyRotation(pb, twb, gen, space='POSE')
         elif "twist" in pb.name.lower():
             cns = copyRotation(pb, rb, gen, space='LOCAL')
-        elif (pb.name in self.daz.local_with_parent or
-              rname.startswith("DEF-spine")):
+        elif pb.name in self.daz.local_with_parent:
             cns = copyTransform(pb, rb, gen, space='LOCAL_WITH_PARENT')
             cns = copyLocation(pb, rb, gen, space='POSE')
         elif pb.name[1:] in ("Shin", "_shin"):
