@@ -58,10 +58,10 @@ class BoneData:
     }
 
     SocketBones = [
-        "lShldr", "lShldrBend", "l_upperarm", #"l_upperarmtwist1", "l_upperarmtwist2",
-        "rShldr", "rShldrBend", "r_upperarm", #"r_upperarmtwist1", "r_upperarmtwist2",
-        "lThigh", "lThighBend", "l_thigh", #"l_thightwist1", "l_thightwist2",
-        "rThigh", "rThighBend", "r_thigh", #"r_thightwist1", "r_thightwist2",
+        "lShldr", "lShldrBend", "l_upperarm",
+        "rShldr", "rShldrBend", "r_upperarm",
+        "lThigh", "lThighBend", "l_thigh",
+        "rThigh", "rThighBend", "r_thigh",
     ]
 
     RotationModes = {
@@ -104,6 +104,8 @@ class BoneData:
 
         "upper_arm.fk.L" : "YXZ",
         "upper_arm.fk.R" : "YXZ",
+        "upper_arm_fk.L" : "YXZ",
+        "upper_arm_fk.R" : "YXZ",
     }
 
     UnFlips = [
