@@ -1169,7 +1169,7 @@ def getAngle(mat, xyz):
     return Vector(mat.to_euler(xyz))/D
 
 
-def setBoneTransform(tfm, pb, rig, oldStyle=False, bonemap={}):
+def setBoneTransform(tfm, pb, rig, bonemap={}):
     mat = getBoneMatrix(tfm, pb, rig, bonemap)
     if tfm.trans is None or tfm.trans.length == 0.0:
         mat.col[3] = (0,0,0,1)

@@ -1459,10 +1459,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             else:
                 if not self.affectScale:
                     tfm.setScale(pb.scale, False)
-                oldStyle = (self.useConvert or
-                            not dazRna(rig.data).DazHasAxes or
-                            dazRna(rig).DazRig.startswith("rigify"))
-                setBoneTransform(tfm, pb, rig, bonemap=self.bonemap, oldStyle=oldStyle)
+                setBoneTransform(tfm, pb, rig, bonemap=self.bonemap)
             imposeLocks(pb)
             if self.useInsertKeys:
                 insertKeys(pb, rig, n+offset, self, tfm)
