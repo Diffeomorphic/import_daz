@@ -111,7 +111,10 @@ class DeleteInvalidGroup(GeoTree):
 def addHairNodeGroup(ob, name):
     group = bpy.data.node_groups.get(name)
     if group is None:
-        aid = "geometry_nodes\\procedural_hair_node_assets.blend\\NodeTree\\%s" % name
+        if BLENDER4:
+            aid = "geometry_nodes\\procedural_hair_node_assets.blend\\NodeTree\\%s" % name
+        else:
+            aid = "nodes\\procedural_hair_node_assets.blend\\NodeTree\\%s" % name
         bpy.ops.object.modifier_add_node_group(
             asset_library_type = 'ESSENTIALS',
             asset_library_identifier = "",
