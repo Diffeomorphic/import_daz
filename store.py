@@ -248,7 +248,7 @@ def addModifierFirst(ob, modname, modtype, second=True):
     mod = ob.modifiers.new(modname, modtype)
     if not hasattr(ob.modifiers, "move"):
         pass
-    elif second and getModifier(ob, 'ARMATURE'):
+    elif second and modtype != 'ARMATURE' and getModifier(ob, 'ARMATURE'):
         ob.modifiers.move(n, 1)
     else:
         ob.modifiers.move(n, 0)
