@@ -769,21 +769,18 @@ class MetaMaker(RigifyCommon):
 
             heelhead = foot.head
             heeltail = Vector((xa, yb-1.3*(yb-ya), zb))
-            mid = (toe.head + heeltail)/2
-            r = Vector((yb-ya,0,0))
-            if xa > 0:
-                fac = 0.3
-            else:
-                fac = -0.3
-            heel02head = mid + fac*r
-            heel02tail = mid - fac*r
+            mid = Vector((xa, ya, zb))
+            sign = (1 if xa < 0 else -1)
+            dx = Vector((0.3*sign*foot.length, 0, 0))
+            heel02head = mid + dx
+            heel02tail = mid - dx
 
-            if "heel.%s" % suffix in meta.data.edit_bones.keys():
-                heel = meta.data.edit_bones["heel.%s" % suffix]
+            heel = meta.data.edit_bones.get("heel.%s" % suffix)
+            if heel:
                 heel.head = heelhead
                 heel.tail = heeltail
-            if "heel.02.%s" % suffix in meta.data.edit_bones.keys():
-                heel02 = meta.data.edit_bones["heel.02.%s" % suffix]
+            heel02 = meta.data.edit_bones.get("heel.02.%s" % suffix)
+            if heel02:
                 heel02.head = heel02head
                 heel02.tail = heel02tail
 
