@@ -72,22 +72,30 @@ def optimizePose(context, useApplyRestPose):
         pb.matrix_basis = Matrix()
 
     def setXAngle(angle, bnames, rig):
-        mat = Euler((angle, 0, 0), 'YZX').to_matrix().to_4x4()
+        wmat = Euler((angle, 0, 0)).to_matrix().to_4x4()
         for bname in bnames:
             pb = rig.pose.bones.get(bname)
             if pb:
-                pb.matrix_basis = mat
+                wmat.col[3] = pb.matrix.col[3]
+                pb.matrix = wmat
+                updateObject(context, rig)
+                euler = pb.matrix_basis.to_euler()
                 if useApplyRestPose:
                     cns = getConstraint(pb, 'LIMIT_ROTATION')
                     if cns:
-                        cns.min_x -= angle
-                        cns.max_x -= angle
-                    shiftDriver(rig, rig, bname, angle)
-                    shiftDriver(rig.data, rig, bname, angle)
-                    for ob in getShapeChildren(rig):
-                        shiftDriver(ob.data.shape_keys, rig, bname, angle)
+                        cns.min_x -= euler.x
+                        cns.max_x -= euler.x
+                        cns.min_y -= euler.y
+                        cns.max_y -= euler.y
+                        cns.min_z -= euler.z
+                        cns.max_z -= euler.z
+                    for ttype,angle in zip(('ROT_X', 'ROT_Z', 'ROT_Z'), euler):
+                        shiftDriver(rig, rig, bname, ttype, angle)
+                        shiftDriver(rig.data, rig, bname, ttype, angle)
+                        for ob in getShapeChildren(rig):
+                            shiftDriver(ob.data.shape_keys, rig, bname, ttype, angle)
 
-    def shiftDriver(rna, rig, bname, angle):
+    def shiftDriver(rna, rig, bname, ttype, angle):
         if rna.animation_data is None:
             return
         for fcu in rna.animation_data.drivers:
@@ -95,13 +103,13 @@ def optimizePose(context, useApplyRestPose):
                 for trg in var.targets:
                     if (trg.id == rig and
                         trg.bone_target == bname and
-                        trg.transform_type == 'ROT_X'):
+                        trg.transform_type == ttype):
                         string = fcu.driver.expression.replace(var.name, "(%s+%.3f)" % (var.name, angle))
                         fcu.driver.expression = string
 
-    setXAngle(-18*D, ["lThigh", "lThighBend", "l_thigh", "rThigh", "rThighBend", "r_thigh"], rig)
-    setXAngle(18*D, ["lShin", "lShinBend", "l_shin", "rShin", "rShinBend", "r_shin"], rig)
-    #setXAngle(0*D, ["lFoot", "l_foot", "rFoot", "r_foot"], rig)
+    setXAngle(-100*D, ["lThigh", "lThighBend", "l_thigh", "rThigh", "rThighBend", "r_thigh"], rig)
+    setXAngle(-80*D, ["lShin", "lShinBend", "l_shin", "rShin", "rShinBend", "r_shin"], rig)
+    setXAngle(180*D, ["lFoot", "l_foot", "rFoot", "r_foot"], rig)
     from .apply import applyRestPoses
     if useApplyRestPose:
         applyRestPoses(context, rig)
