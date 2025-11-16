@@ -71,45 +71,56 @@ def optimizePose(context, useApplyRestPose):
     for pb in rig.pose.bones:
         pb.matrix_basis = Matrix()
 
-    def setXAngle(angle, bnames, rig):
-        wmat = Euler((angle, 0, 0)).to_matrix().to_4x4()
+    def getBones(bnames, rig):
+        bones = []
         for bname in bnames:
             pb = rig.pose.bones.get(bname)
             if pb:
-                wmat.col[3] = pb.matrix.col[3]
-                pb.matrix = wmat
-                updateObject(context, rig)
-                euler = pb.matrix_basis.to_euler()
-                if useApplyRestPose:
-                    cns = getConstraint(pb, 'LIMIT_ROTATION')
-                    if cns:
-                        cns.min_x -= euler.x
-                        cns.max_x -= euler.x
-                        cns.min_y -= euler.y
-                        cns.max_y -= euler.y
-                        cns.min_z -= euler.z
-                        cns.max_z -= euler.z
-                    for ttype,angle in zip(('ROT_X', 'ROT_Z', 'ROT_Z'), euler):
-                        shiftDriver(rig, rig, bname, ttype, angle)
-                        shiftDriver(rig.data, rig, bname, ttype, angle)
-                        for ob in getShapeChildren(rig):
-                            shiftDriver(ob.data.shape_keys, rig, bname, ttype, angle)
+                bones.append(pb)
+        return bones
 
-    def shiftDriver(rna, rig, bname, ttype, angle):
+    def setXAngles(angles, pbs, rig):
+        for angle,pb in zip(angles, pbs):
+            wmat = Euler((angle, 0, 0)).to_matrix().to_4x4()
+            wmat.col[3] = pb.matrix.col[3]
+            pb.matrix = wmat
+            updateObject(context, rig)
+            euler = pb.matrix_basis.to_euler()
+            if useApplyRestPose:
+                cns = getConstraint(pb, 'LIMIT_ROTATION')
+                if cns:
+                    cns.min_x -= euler.x
+                    cns.max_x -= euler.x
+                    cns.min_y -= euler.y
+                    cns.max_y -= euler.y
+                    cns.min_z -= euler.z
+                    cns.max_z -= euler.z
+                for ttype,angle in zip(('ROT_X', 'ROT_Z', 'ROT_Z'), euler):
+                    shiftDriver(rig, rig, pb, ttype, angle)
+                    shiftDriver(rig.data, rig, pb, ttype, angle)
+                    for ob in getShapeChildren(rig):
+                        shiftDriver(ob.data.shape_keys, rig, pb, ttype, angle)
+
+    def shiftDriver(rna, rig, pb, ttype, angle):
         if rna.animation_data is None:
             return
         for fcu in rna.animation_data.drivers:
             for var in fcu.driver.variables:
                 for trg in var.targets:
                     if (trg.id == rig and
-                        trg.bone_target == bname and
+                        trg.bone_target == pb.name and
                         trg.transform_type == ttype):
                         string = fcu.driver.expression.replace(var.name, "(%s+%.3f)" % (var.name, angle))
                         fcu.driver.expression = string
 
-    setXAngle(-100*D, ["lThigh", "lThighBend", "l_thigh", "rThigh", "rThighBend", "r_thigh"], rig)
-    setXAngle(-80*D, ["lShin", "lShinBend", "l_shin", "rShin", "rShinBend", "r_shin"], rig)
-    setXAngle(180*D, ["lFoot", "l_foot", "rFoot", "r_foot"], rig)
+    thighs = getBones(["lThigh", "lThighBend", "l_thigh", "rThigh", "rThighBend", "r_thigh"], rig)
+    shins = getBones(["lShin", "lShinBend", "l_shin", "rShin", "rShinBend", "r_shin"], rig)
+    feet = getBones(["lFoot", "l_foot", "rFoot", "r_foot"], rig)
+    fangles = [pb.matrix.to_euler().x for pb in feet]
+    setXAngles([-100*D]*len(thighs), thighs, rig)
+    setXAngles([-80*D]*len(shins), shins, rig)
+    setXAngles(fangles, feet, rig)
+
     from .apply import applyRestPoses
     if useApplyRestPose:
         applyRestPoses(context, rig)
