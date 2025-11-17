@@ -298,7 +298,7 @@ class DBZRestData:
         self.dazhead = dazhead
 
     def checkBone(self, bname):
-        if (self.head - self.tail).length < 1e-5:
+        if (self.head - self.tail).length < 1e-4*GS.scale:
             raise RuntimeError("Check bone %s %s %s" % (bname, self.head, self.tail))
 
 

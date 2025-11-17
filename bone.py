@@ -427,7 +427,7 @@ class BoneInstance(Instance):
                 dazRna(pb).DazRestRotation = tfm.rot
         else:
             setBoneTransform(tfm, pb, rig)
-            if nonzero(tfm.trans):
+            if nonzero(tfm.trans, "location"):
                 dazRna(pb).DazTranslation = tfm.trans
             if nonzero(tfm.rot):
                 dazRna(pb).DazRotation = tfm.rot

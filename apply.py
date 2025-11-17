@@ -156,7 +156,7 @@ def applyRestPoses(context, rig, useMergeTiedBones=False):
                     channel != "HdOffset"):
                     pb = rig.pose.bones[bname]
                     value = getattr(pb, channel)[fcu.array_index]
-                    if abs(value) > 1e-6:
+                    if abs(value) > getEpsilon(channel):
                         bmat = bmats.get(bname)
                         if bmat:
                             rig.animation_data.drivers.remove(fcu)

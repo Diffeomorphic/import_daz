@@ -59,8 +59,9 @@ class DAZ_OT_LockChannels(DazPropsOperator, IsObject):
         def lockAll(pb, channel, lockchannel, default):
             values = getattr(pb, channel)
             locks = getattr(pb, lockchannel)
+            eps = getEpsilon(channel)
             for n in range(3):
-                if not self.useNonzero or abs(values[n]-default) < 1e-7:
+                if not self.useNonzero or abs(values[n]-default) < eps:
                     locks[n] = True
                     values[n] = default
 

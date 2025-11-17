@@ -454,8 +454,15 @@ def trunc2Default(ob, attr, default, eps):
     setattr(ob, attr, vec)
 
 
-def nonzero(vec):
-    return (max([abs(x) for x in vec]) > 1e-6)
+def getEpsilon(channel):
+    if channel == "location":
+        return GS.scale * 1e-4
+    else:
+        return 1e-4
+
+
+def nonzero(vec, channel=None):
+    return (max([abs(x) for x in vec]) > getEpsilon(channel))
 
 
 def getEulerMatrix(vec, xyz):

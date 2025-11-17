@@ -799,7 +799,7 @@ def identifyVerts(hum, pxy):
                     vn = data2[1]
             humPxy[vn] = pvn
             pxyHum[pvn] = vn
-            if mindist > 1e-7:
+            if mindist > 1e-4*GS.scale:
                 pco = pxy.data.vertices[pvn]
                 co = hum.data.vertices[vn]
                 print("DIST", pvn, vn, pco, co, mindist)
