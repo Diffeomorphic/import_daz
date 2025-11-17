@@ -1229,9 +1229,9 @@ class Rigifier(RigifyCommon):
             self.fixFingerIk(rig, gen)
 
         if meta["DazIkOptimization"] == 'HINT':
-            self.fixPoles(meta, gen, True)
+            self.fixPoles(meta, gen, 18)
         elif meta["DazIkOptimization"] == 'POLE':
-            self.fixPoles(meta, gen, False)
+            self.fixPoles(meta, gen, None)
 
         #Clean up
         print("  Clean up")
@@ -1552,7 +1552,7 @@ class Rigifier(RigifyCommon):
                                 setattr(pb, "ik_max_%s" % comp, dmax)
 
 
-    def fixPoles(self, meta, gen, useHint):
+    def fixPoles(self, meta, gen, hint):
         from ..rig_utils import addHint
         bnames = [("MCH-shin_ik.L", "thigh_ik_target.L", "MCH-thigh_ik_target.parent.L"),
                   ("MCH-shin_ik.R", "thigh_ik_target.R", "MCH-thigh_ik_target.parent.R"),
@@ -1565,18 +1565,26 @@ class Rigifier(RigifyCommon):
             parent = gen.data.edit_bones.get(parname)
             if eb and pole:
                 y = pole.length
+                if pole.name.startswith("thigh"):
+                    dy = pole.head[1] - eb.head[1]
+                    if dy > 0:
+                        pole.head[1] = eb.head[1] - dy
+                        hint = 5
                 pole.head[0] = eb.head[0]
                 pole.tail = pole.head + Vector((0, y, 0))
                 if parent:
                     parent.head = pole.head
                     parent.tail = pole.tail
         setMode('OBJECT')
-        if useHint:
+        if hint is not None:
             for bname,polename,parname in bnames:
                 pb = gen.pose.bones.get(bname)
                 if pb:
+                    for cns in pb.constraints:
+                        if cns.type == 'IK' and cns.pole_target and cns.pole_angle > 0:
+                            cns.pole_angle *= -1
                     n = len(pb.constraints)
-                    addHint(pb, gen, 'YZX')
+                    addHint(pb, gen, 'YZX', hint)
                     pb.constraints.move(n, 0)
 
 
