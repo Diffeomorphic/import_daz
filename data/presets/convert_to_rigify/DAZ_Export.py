@@ -1,7 +1,7 @@
 import bpy
 op = bpy.context.active_operator
 
-op.useImproveIk = False
+op.useRigifyPose = False
 op.useLimitConstraints = True
 op.useFingerIk = False
 op.tongueControl = 'NONE'

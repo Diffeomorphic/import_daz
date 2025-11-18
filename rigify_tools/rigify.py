@@ -213,7 +213,10 @@ class RigifyCommon:
 class MetaMaker(RigifyCommon):
     useRigifyPose : BoolProperty(
         name = "Rigify Pose",
-        description = "Change the rest pose to improve IK.\nThe rest pose may change slightly even if disabled to make IK work properly",
+        description = (
+            "Change the rest pose to improve IK.\n" +
+            "If this is disabled then some fixes are added to Rigify to make it work with the daz rest pose,\n" +
+            "a small extra bend may appear in pose mode when necessary"),
         default = True)
 
     useAutoAlign : BoolProperty(
