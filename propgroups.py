@@ -156,16 +156,23 @@ if DAZ_PROPS:
                         pass
                     elif hasattr(data[0], "name"):
                         ndata = getattr(trg, attr)
-                        if len(ndata) == 0:
-                            for pg in data:
-                                npg = ndata.add()
-                                for key in dir(pg):
-                                    value = getattr(pg, key)
-                                    if (isinstance(value, (int, float, bool, str)) and
-                                        key[0] != "_"):
-                                        setattr(npg, key, value)
+                        self.copyCollection(data, ndata)
                     else:
                         setattr(trg, attr, data)
+
+        def copyCollection(self, data, ndata):
+            if len(ndata) == 0:
+                for pg in data:
+                    npg = ndata.add()
+                    for key in dir(pg):
+                        value = getattr(pg, key)
+                        if key.startswith(("__", "bl_", "rna_")):
+                            pass
+                        elif isinstance(value, (int, float, bool, str)):
+                            setattr(npg, key, value)
+                        elif len(value) > 0 and hasattr(value[0], "name"):
+                            nvalue = getattr(npg, key)
+                            self.copyCollection(value, nvalue)
 
 
     class DazImporterBone(DazImporterGroup):
@@ -255,7 +262,7 @@ if DAZ_PROPS:
         DazFinalized  : BoolProperty()
         DazBoneMap : CollectionProperty(type=DazStringGroup)
         DazMergedRigs : CollectionProperty(type = DazStringBoolGroup)
-        DazRigidityScaleFactors : bpy.props.CollectionProperty(type=DazRigidityScaleFactor)
+        DazRigidityScaleFactors : CollectionProperty(type=DazRigidityScaleFactor)
 
 
     class DazImporterMesh(DazImporterGroup):
