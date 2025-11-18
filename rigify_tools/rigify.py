@@ -211,14 +211,10 @@ class RigifyCommon:
 #-------------------------------------------------------------
 
 class MetaMaker(RigifyCommon):
-    ikOptimization : EnumProperty(
-        items = [('POSE', "IK Pose", "Change the Genesis rest pose into the Rigify rest pose. Works with poles, does not work with DAZ poses"),
-                 ('POLE', "IK Poles", "Change the location of the IK poles. Works with both poles and DAZ poses"),
-                 ('HINT', "IK Hint", "Add a hint angle to IK constraints, works with DAZ poses"),
-                 ('NONE', "IK None", "No IK optimization. Works with prebended figures, where the Rigify rest pose is exported from DAZ studio")],
-        name = "IK Optimization",
-        description = "Method used for optimizing the rest pose before rigifying",
-        default = 'POSE')
+    useRigifyPose : BoolProperty(
+        name = "Rigify Pose",
+        description = "Change the rest pose to improve IK.\nThe rest pose may change slightly even if disabled to make IK work properly",
+        default = True)
 
     useAutoAlign : BoolProperty(
         name = "Auto Align Hand/Foot",
@@ -241,7 +237,7 @@ class MetaMaker(RigifyCommon):
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "ikOptimization")
+        self.layout.prop(self, "useRigifyPose")
         #self.layout.prop(self, "useAutoAlign")
         #self.layout.prop(self, "useRecalcRoll")
         self.layout.prop(self, "useSplitShin")
@@ -267,7 +263,7 @@ class MetaMaker(RigifyCommon):
             raise DazError("Rigify: %s is neither an armature nor has armature parent" % ob)
         self.makeRealParents(context, rig)
 
-        if self.ikOptimization == 'POSE' and dazRna(rig).DazRig.startswith("genesis"):
+        if self.useRigifyPose and dazRna(rig).DazRig.startswith("genesis"):
             from ..convert import optimizePose
             optimizePose(context, True)
         if self.keepRig:
@@ -309,7 +305,7 @@ class MetaMaker(RigifyCommon):
         meta["DazMetaRig"] = True
         meta.DazRig = "metarig"
         meta["DazSplitShin"] = self.useSplitShin
-        meta["DazIkOptimization"]= self.ikOptimization
+        meta["DazRigifyPose"]= self.useRigifyPose
         meta["DazFingerIk"] = self.useFingerIk
         meta["DazCustomLayers"] = self.useCustomLayers
 
@@ -1228,9 +1224,7 @@ class Rigifier(RigifyCommon):
         if meta["DazFingerIk"]:
             self.fixFingerIk(rig, gen)
 
-        if meta["DazIkOptimization"] == 'HINT':
-            self.fixPoles(meta, gen, 18)
-        elif meta["DazIkOptimization"] == 'POLE':
+        if not meta["DazRigifyPose"]:
             self.fixPoles(meta, gen, None)
 
         #Clean up
