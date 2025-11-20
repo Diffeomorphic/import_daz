@@ -826,6 +826,7 @@ if DAZ_PROPS:
         rna.daz_importer.legacy = False
 
     def hasLegacyProps(rna):
+        return False
         return rna.daz_importer.legacy
 
     def modernizeBones(rig):
