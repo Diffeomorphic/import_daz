@@ -156,11 +156,6 @@ class BoneInstance(Instance):
         vec = (eb.tail - eb.head)
         eb.tail = eb.head + length * vec.normalized()
 
-        trgname = BD.Irises.get(eb.name)
-        if trgname:
-            trg = rig.data.edit_bones.get(trgname)
-            if trg:
-                eb.tail = trg.tail
         if self.name in BD.FaceRigs:
             isFace = True
         for child in self.children.values():
@@ -395,13 +390,15 @@ class BoneInstance(Instance):
         self.setRotationLockDaz(pb, rig)
         self.setLocationLockDaz(pb, rig)
 
-        trgname = BD.Irises.get(pb.name)
-        if trgname:
-            trg = rig.pose.bones.get(trgname)
-            if trg:
-                from .rig_utils import dampedTrack
-                cns = dampedTrack(pb, trg, rig)
-                cns.head_tail = 1.0
+        eyename = BD.Irises.get(pb.name.lower())
+        if eyename:
+            eye = rig.pose.bones.get(eyename)
+            if eye:
+                from .rig_utils import copyRotation
+                cns = copyRotation(pb, eye, rig, space='LOCAL')
+                cns.target_space = 'LOCAL_OWNER_ORIENT'
+                cns.influence = 0.25
+
         for child in self.children.values():
             if isinstance(child, BoneInstance):
                 child.buildPose(figure, inFace, tchildren, missing)

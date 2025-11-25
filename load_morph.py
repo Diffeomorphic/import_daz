@@ -2036,8 +2036,11 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                 rig.data[final] = 0.0
             lm.buildBoneDriver(raw, bname, expr, True)
 
+    from .bone_data import BD
     exprs,rig2 = asset.evalFormulas(rig, None, True)
     for driven,expr in exprs.items():
+        if BD.Irises.get(driven.lower()) and rig2:
+            continue
         if "rotation" in expr.keys():
             if driven in rig2.pose.bones.keys():
                 pb = rig2.pose.bones[driven]

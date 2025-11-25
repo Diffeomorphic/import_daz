@@ -269,6 +269,8 @@ class BoneData:
     Irises = {
         "l_iris" : "l_eye",
         "r_iris" : "r_eye",
+        "left iris" : "l_eye",
+        "right iris" : "r_eye",
     }
 
     #-------------------------------------------------------------
