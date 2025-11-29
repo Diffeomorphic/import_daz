@@ -285,6 +285,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             taken = []
             rig,bones,_meshes = info[0]
             activateObject(context, rig)
+            bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+            bpy.ops.object.transform_apply()
             setMode('EDIT')
             for subrig,subbones,_submeshes in info[1:]:
                 for bname,binfo in subbones.items():
