@@ -1288,7 +1288,7 @@ class Rigifier(RigifyCommon):
             return R_CUSTOM, False
         elif isFinal(pb.name) or isInNumLayer(pb.bone, gen, R_HELP):
             return R_HELP, False
-        elif lname.startswith("tongue"):
+        elif pb.name in self.tongueBones:
             return R_DETAIL, False
         elif pb.parent:
             par = pb.parent
@@ -1510,7 +1510,7 @@ class Rigifier(RigifyCommon):
                 self.addGizmo(pb, "GZM_Circle", 0.2)
                 setBonegroup(pb, gen, "DAZ", color)
                 enableBoneNumLayer(pb.bone, gen, R_FACE)
-            elif lname.startswith("tongue"):
+            elif pb.name in self.tongueBones:
                 self.addGizmo(pb, "GZM_MTongue", 1)
                 setBonegroup(pb, gen, "DAZ", color)
             elif (pb.name.startswith(("bigToe", "smallToe")) or

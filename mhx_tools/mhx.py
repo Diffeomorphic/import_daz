@@ -435,6 +435,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
         for mname, bname in MHX.ExtraRenames:
             self.renamedBones[mname] = self.renamedBones[bname]
+        self.tongueBones = self.checkTongueIk(rig)
+        self.shaftBones = self.getShaftBones(rig)
 
         from ..driver import getDrivenBoneFcurves
         driven = getDrivenBoneFcurves(rig)
@@ -445,8 +447,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             enableBoneNumLayer(pb.bone, rig, layer)
             if False and unlock:
                 pb.lock_location = FFalse
-        self.tongueBones = self.checkTongueIk(rig)
-        self.shaftBones = self.getShaftBones(rig)
         self.checkFingerIk(rig)
 
 
@@ -462,7 +462,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             return L_TWEAK, False
         elif isFinal(pb.name) or isInNumLayer(pb.bone, rig, L_HELP2):
             return L_HELP2, False
-        elif pb.name[0:6] == "tongue":
+        elif pb.name in self.tongueBones:
             return L_FACE, False
         elif pb.parent:
             par = pb.parent
@@ -772,7 +772,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             elif pb.name[-2:] in [".L", ".R"] and pb.name[:-2] in LRGizmos.keys():
                 gizmo,scale,offset = getData(LRGizmos[pb.name[:-2]])
                 self.addGizmo(pb, gizmo, scale, offset)
-            elif pb.name[0:6] == "tongue":
+            elif pb.name in self.tongueBones:
                 self.addGizmo(pb, "GZM_MTongue", 1)
             elif self.isEyeLid(pb):
                 self.addGizmo(pb, "GZM_Line", 1)
