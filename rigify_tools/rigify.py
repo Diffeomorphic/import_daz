@@ -1089,13 +1089,6 @@ class Rigifier(RigifyCommon):
                     pb.lock_location = FFalse
                 self.copyBoneInfo(dname, rname, rig, gen)
 
-        # Rescale custom shapes
-        for bname,tfm in self.daz.custom_shape_fix.items():
-            scale,offset = tfm
-            if offset:
-                offset = Vector(offset)*GS.scale
-            self.fixCustomShape(gen, bname, scale, offset)
-
         # Add DAZ properties
         print("  Add DAZ properties")
         for key in list(rig.keys()):
@@ -1229,6 +1222,11 @@ class Rigifier(RigifyCommon):
 
         if not meta["DazRigifyPose"]:
             self.fixPoles(meta, gen, None)
+
+        # Rescale custom shapes
+        for bname,tfm in self.daz.custom_shape_fix.items():
+            scale,offset = tfm
+            self.fixCustomShape(gen, bname, scale, offset)
 
         #Clean up
         print("  Clean up")

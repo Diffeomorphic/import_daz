@@ -359,8 +359,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 self.fixBendTwistDrivers(ob)
                 if ob.data.shape_keys:
                     self.fixBendTwistDrivers(ob.data.shape_keys)
-        if dazRna(rig).DazRig in ["genesis3", "genesis8"]:
-            self.fixCustomShape(rig, "head", 4)
+        if dazRna(rig).DazRig in ["genesis3", "genesis8", "genesis9"]:
+            self.fixCustomShape(rig, "head", 4, 0)
+            self.fixCustomShape(rig, "lowerjaw", 1, (0,4,2))
+            self.fixCustomShape(rig, "lowerJaw", 1, (0,4,2))
         showProgress(22, 25, "  Collect deform bones")
         self.collectDeformBones(rig)
         setMode('OBJECT')

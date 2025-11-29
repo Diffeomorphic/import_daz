@@ -137,7 +137,8 @@
 
     "custom_shape_fix" : {
         "head" : [4.0, 0],
-        "neck" : [0.6, 0]
+        "neck" : [0.6, 0],
+        "lowerjaw" : [1.0, [0,4,2]]
     },
 
     "owner_orient" : ["spine1"],

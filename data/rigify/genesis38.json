@@ -167,7 +167,8 @@
     ],
 
     "custom_shape_fix" : {
-        "head" : [4.0, 0]
+        "head" : [4.0, 0],
+        "lowerJaw" : [1.0, [0, 4, 2]]
     },
 
     "owner_orient" : ["abdomenLower"],

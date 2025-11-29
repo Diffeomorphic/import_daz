@@ -122,10 +122,13 @@ class Fixer(DriverUser):
         setMode('OBJECT')
 
 
-    def fixCustomShape(self, rig, bname, scale, offset=None):
+    def fixCustomShape(self, rig, bname, scale, offset):
         pb = rig.pose.bones.get(bname)
         if pb and pb.custom_shape:
-            setCustomShapeTransform(pb, scale, trans=offset)
+            if isinstance(offset, (int, float)):
+                offset = (offset, offset, offset)
+            trans = Vector(offset)*GS.scale
+            setCustomShapeTransform(pb, scale, trans=trans)
 
 
     def fixHands(self, rig):
@@ -370,7 +373,7 @@ class Fixer(DriverUser):
         if len(bnames) < 3:
             print("Did not find tongue")
             self.tongueControl = 'NONE'
-            return
+            return []
         if not ES.easy:
             print("Tongue bones:", bnames)
         if self.checkDriven(rig, bnames, "Tongue IK"):
