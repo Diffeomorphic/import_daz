@@ -820,6 +820,8 @@ class Rigifier(RigifyCommon):
         if self.shaftControl != 'NONE':
             self.layout.prop(self, "shaftName")
         self.layout.prop(self, "addNondeformExtras")
+        if not BLENDER4:
+            self.layout.prop(self, "useDisplayTransform")
 
 
     def setupExtras(self, context, rig, meta):
@@ -1230,6 +1232,7 @@ class Rigifier(RigifyCommon):
 
         #Clean up
         print("  Clean up")
+        self.addDisplayTransform(gen, "DEF-spine.007")
         #gen.data.display_type = 'WIRE'
         gen.show_in_front = True
         modernizeBones(gen)

@@ -133,6 +133,31 @@ class DAZ_OT_MakeEulers(DazOperator, IsArmature):
             fcurves.remove(fcu)
 
 #-------------------------------------------------------------
+#   Add Display Transform
+#-------------------------------------------------------------
+
+class DAZ_OT_AddDisplayTransform(DazOperator, IsArmature):
+    bl_idname = "daz.add_display_transform"
+    bl_label = "Add Display Transform"
+    bl_description = "Add display transform bones to the active armature, targeting the selected mesh"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        from ..rig_utils import addDisplayTransform
+        if BLENDER4:
+            raise DazError("bpy.ops.daz.add_display_transform requires Blender 5.0 or higher")
+        rig = context.object
+        meshes = getSelectedMeshes(context)
+        if len(meshes) != 1:
+            raise DazError("Exactly one mesh must be selected")
+        if dazRna(rig).DazRig.startswith("rigify"):
+            headname = "DEF-spine.007"
+        else:
+            headname = "head"
+        if not addDisplayTransform(rig, meshes[0], headname):
+            raise DazError("Failed to add display transform bones")
+
+#-------------------------------------------------------------
 #   Copy Roll
 #-------------------------------------------------------------
 
@@ -204,6 +229,7 @@ class DAZ_OT_CheckRestPoses(DazOperator, IsArmature):
 classes = [
     DAZ_OT_HideUnusedLinks,
     DAZ_OT_MakeEulers,
+    DAZ_OT_AddDisplayTransform,
     DAZ_OT_CopyRolls,
     DAZ_OT_CheckRestPoses
 ]

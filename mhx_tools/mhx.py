@@ -162,6 +162,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             self.layout.prop(self, "shaftName")
         self.layout.prop(self, "useAnkleIk")
         self.layout.prop(self, "keepG9Twist")
+        if not BLENDER4:
+            self.layout.prop(self, "useDisplayTransform")
         self.layout.prop(self, "useRaiseError")
 
 
@@ -370,6 +372,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
         showProgress(24, 25, "  Add bone groups")
         self.addBoneGroups(rig)
+        self.addDisplayTransform(rig, "head")
         rig["MhxRig"] = True
         rig.data["MhaFeatures"] |= F_IDPROPS
         modernizeBones(rig)

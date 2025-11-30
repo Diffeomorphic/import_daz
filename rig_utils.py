@@ -275,22 +275,20 @@ def improveIk(rig, exclude=[]):
 #   Add display transform
 #-------------------------------------------------------------
 
-def addDisplayTransform(rig, mesh):
+def addDisplayTransform(rig, mesh, headname):
     if rig.animation_data is None:
-        return
-    head = rig.pose.bones.get("DEF-spine.007")
-    if head is None:
-        head = rig.pose.bones.get("head")
+        return False
+    head = rig.pose.bones.get(headname)
     if head is None:
         print("No head bone found")
-        return
+        return False
 
     def illegal(bname):
         lname = bname.lower()
         for string in ["brow", "nose", "cheek", "mouth"]:
             if string in lname:
                 return False
-        for string in ["jaw", "eye", "lid", "ear"]:
+        for string in ["jaw", "eye", "lid", "ear", "tongue"]:
             if string in lname:
                 return True
         return False
@@ -326,6 +324,10 @@ def addDisplayTransform(rig, mesh):
         pb.use_transform_at_custom_shape = True
         pb.use_transform_around_custom_shape = True
         pb.use_custom_shape_bone_size = True
+    coll = rig.data.collections.get("Display")
+    if coll:
+        coll.is_visible = False
+    return True
 
 
 

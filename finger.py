@@ -215,6 +215,12 @@ def isGenesis(ob):
     return False
 
 
+def getGenesis(meshes):
+    for mesh in meshes:
+        if isGenesis(mesh):
+            return mesh
+
+
 def getCharacter(ob):
     chars = getFingeredCharacters(ob, True, verbose=False)[2]
     if chars:

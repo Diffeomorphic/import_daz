@@ -72,6 +72,11 @@ class Fixer(DriverUser):
         description = "Keep the original DAZ rig for deformation",
         default = False)
 
+    useDisplayTransform : BoolProperty(
+        name = "Display Transform Bones",
+        description = "Add display transform bones to facial bones",
+        default = True)
+
     def drawMeta(self):
         self.layout.prop(self, "keepRig")
         self.layout.prop(self, "useFingerIk")
@@ -626,6 +631,18 @@ class Fixer(DriverUser):
                     vgrp = ob.vertex_groups[tname]
                     vgrp.name = dname
 
+    #-------------------------------------------------------------
+    #   Display transform bones
+    #-------------------------------------------------------------
+
+    def addDisplayTransform(self, rig, headname):
+         if self.useDisplayTransform and not BLENDER4:
+            from .rig_utils import addDisplayTransform
+            from .finger import getGenesis
+            mesh = getGenesis(self.meshes)
+            if not (mesh and addDisplayTransform(rig, mesh, headname)):
+                print ("Failed to add display transform bones")
+
 #-------------------------------------------------------------
 #   Gizmos (custom shapes)
 #-------------------------------------------------------------
@@ -928,31 +945,12 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                 eb.matrix = mat
             setMode('OBJECT')
 
-#-------------------------------------------------------------
-#   Add Display Transform
-#-------------------------------------------------------------
-
-class DAZ_OT_AddDisplayTransform(DazOperator, IsArmature):
-    bl_idname = "daz.add_display_transform"
-    bl_label = "Add Display Transform"
-    bl_description = "Add display transform bones to the active armature, targeting the selected mesh"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        from .rig_utils import addDisplayTransform
-        rig = context.object
-        meshes = getSelectedMeshes(context)
-        if len(meshes) != 1:
-            raise DazError("Exactly one mesh must be selected")
-        addDisplayTransform(rig, meshes[0])
-
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
 classes = [
     DAZ_OT_ChangeArmature,
-    DAZ_OT_AddDisplayTransform,
 ]
 
 def register():
