@@ -278,8 +278,11 @@ def improveIk(rig, exclude=[]):
 def addDisplayTransform(rig, mesh):
     if rig.animation_data is None:
         return
-    head = rig.pose.bones.get("head")
+    head = rig.pose.bones.get("DEF-spine.007")
     if head is None:
+        head = rig.pose.bones.get("head")
+    if head is None:
+        print("No head bone found")
         return
 
     def illegal(bname):
