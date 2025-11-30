@@ -270,3 +270,59 @@ def improveIk(rig, exclude=[]):
         pb.use_ik_limit_x = True
         pb.ik_min_x = -15*D
         pb.ik_max_x = 160*D
+
+#-------------------------------------------------------------
+#   Add display transform
+#-------------------------------------------------------------
+
+def addDisplayTransform(rig, mesh):
+    if rig.animation_data is None:
+        return
+    head = rig.pose.bones.get("head")
+    if head is None:
+        return
+
+    def illegal(bname):
+        lname = bname.lower()
+        for string in ["brow", "nose", "cheek", "mouth"]:
+            if string in lname:
+                return False
+        for string in ["jaw", "eye", "lid", "ear"]:
+            if string in lname:
+                return True
+        return False
+
+    def findDisplayBones(rig, parent, defbones):
+        for pb in parent.children:
+            if (pb.name in mesh.vertex_groups.keys() and
+                pb.custom_shape and
+                not illegal(pb.name)):
+                defbones.add(pb.name)
+            findDisplayBones(rig, pb, defbones)
+
+    defbones = set()
+    findDisplayBones(rig, head, defbones)
+    print("Add display bones to:\n%s" % defbones)
+
+    def dspName(bname):
+        return "%s(dsp)" % bname
+
+    setMode('EDIT')
+    for bname in defbones:
+        eb = rig.data.edit_bones[bname]
+        dspb = deriveBone(dspName(bname), eb, rig, "Display", eb.parent)
+        dspb.use_deform = False
+    setMode('OBJECT')
+    for bname in defbones:
+        dspb = rig.pose.bones[dspName(bname)]
+        cns = dspb.constraints.new('COPY_LOCATION')
+        cns.target = mesh
+        cns.subtarget = bname
+        pb = rig.pose.bones[bname]
+        pb.custom_shape_transform = dspb
+        pb.use_transform_at_custom_shape = True
+        pb.use_transform_around_custom_shape = True
+        pb.use_custom_shape_bone_size = True
+
+
+

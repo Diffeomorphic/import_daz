@@ -156,6 +156,7 @@ class DAZ_PT_SetupFinishing(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.remove_corrupt_drivers")
         self.layout.operator("daz.finalize_armature")
         self.layout.operator("daz.apply_rest_pose")
+        self.layout.operator("daz.add_display_transform")
 
 #----------------------------------------------------------
 #   Rigging
