@@ -104,6 +104,7 @@ class GlobalSettings:
         self.useBakedMorphs = False
         self.useStripCategory = False
         self.useDefaultDrivers = True
+        self.usePropDrivers = True
         self.onShapekeyDrivers = 'REGULAR'
         self.useRigidityAttributes = True
         self.useFaceGroupMasks = False

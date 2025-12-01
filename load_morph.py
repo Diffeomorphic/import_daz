@@ -230,7 +230,8 @@ class LoadMorph(DriverUser):
                 self.buildDrivers()
                 self.buildSumDrivers()
                 self.buildRestDrivers()
-                if self.isJcm and GS.onShapekeyDrivers == 'OPTIMIZE_JCMS':
+                if ((self.isJcm or not GS.usePropDrivers)
+                    and GS.onShapekeyDrivers == 'OPTIMIZE'):
                     self.optimizeJcmDrivers()
                 self.correctScaleParents()
             finally:
@@ -667,7 +668,7 @@ class LoadMorph(DriverUser):
 
     def makeValueFormula(self, output, expr, drivers):
         output = self.getUniqueName(output)
-        if expr.props:
+        if expr.props and GS.usePropDrivers:
             self.addNewProp(output)
             for target in expr.props:
                 prop = self.getUniqueName(target.key)
@@ -1781,7 +1782,7 @@ class LoadMorph(DriverUser):
 
 
     def optimizeJcmDrivers(self):
-        if (GS.onShapekeyDrivers != 'OPTIMIZE_JCMS' or
+        if (GS.onShapekeyDrivers != 'OPTIMIZE' or
             GS.useMakeHiddenSliders or
             self.useMakeHiddenSliders or
             self.rig is None or
@@ -1820,9 +1821,10 @@ class LoadMorph(DriverUser):
                     skey.driver_remove("value")
                     fcu2 = skeys.animation_data.drivers.from_existing(src_driver=fcu)
                     fcu2.data_path = 'key_blocks["%s"].value' % prop
-                    self.obj.driver_remove(propRef(prop))
-                    if prop in self.obj.keys():
-                        del self.obj[prop]
+                    if self.isJcm:
+                        self.obj.driver_remove(propRef(prop))
+                        if prop in self.obj.keys():
+                            del self.obj[prop]
                     self.amt.driver_remove(propRef(final))
                     if final in self.amt.keys():
                         del self.amt[final]
