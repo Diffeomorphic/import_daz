@@ -1821,13 +1821,13 @@ class LoadMorph(DriverUser):
                     skey.driver_remove("value")
                     fcu2 = skeys.animation_data.drivers.from_existing(src_driver=fcu)
                     fcu2.data_path = 'key_blocks["%s"].value' % prop
+                    self.obj.driver_remove(propRef(prop))
+                    self.amt.driver_remove(propRef(final))
                     if self.isJcm:
-                        self.obj.driver_remove(propRef(prop))
                         if prop in self.obj.keys():
                             del self.obj[prop]
-                    self.amt.driver_remove(propRef(final))
-                    if final in self.amt.keys():
-                        del self.amt[final]
+                        if final in self.amt.keys():
+                            del self.amt[final]
 
 
     def addScaleDriver(self, pb, idx):
