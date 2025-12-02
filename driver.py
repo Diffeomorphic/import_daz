@@ -1121,6 +1121,75 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
                     self.deldrivers[prop] = fcu2
 
 #----------------------------------------------------------
+#   Optimize further
+#----------------------------------------------------------
+
+class DAZ_OT_OptimizeFurther(DazOperator, IsArmature):
+    bl_idname = "daz.optimize_further"
+    bl_label = "Optimize Further"
+    bl_description = "Further morph optimization.\nExperimental, may optimize too much"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        rig = context.object
+        unmatched = [final for final in rig.data.keys()
+                     if not baseProp(final) in rig.keys()]
+
+        def getUnmatchedFcurves(rna, rig, unmatched):
+            if not rna.animation_data:
+                return []
+            fcurves = []
+            for fcu in rna.animation_data.drivers:
+                if len(fcu.driver.variables) != 1:
+                    continue
+                for var in fcu.driver.variables:
+                    if var.type == 'SINGLE_PROP':
+                        for trg in var.targets:
+                            if trg.id == rig.data:
+                                final = getProp(trg.data_path)
+                                if final in unmatched:
+                                    fcurves.append(fcu)
+            return fcurves
+
+        for ob in getShapeChildren(rig):
+            skeys = ob.data.shape_keys
+            fcurves = getUnmatchedFcurves(skeys, rig, unmatched)
+            for fcu in fcurves:
+                sname,channel = getShapeChannel(fcu)
+                skeys.animation_data.drivers.remove(fcu)
+                skey = skeys.key_blocks.get(sname)
+                if skey:
+                    ob.shape_key_remove(skey)
+
+        def getUsedProps(rna, rig, used):
+            if not rna.animation_data:
+                return
+            for fcu in rna.animation_data.drivers:
+                for var in fcu.driver.variables:
+                    if var.type == 'SINGLE_PROP':
+                        for trg in var.targets:
+                            if trg.id == rig:
+                                prop = getProp(trg.data_path)
+                                used.add(prop)
+
+        used = set()
+        getUsedProps(rig, rig, used)
+        getUsedProps(rig.data, rig, used)
+        for ob in getShapeChildren(rig):
+            skeys = ob.data.shape_keys
+            getUsedProps(skeys, rig, used)
+
+        from .morphing import MS
+        for morphset in MS.Standards:
+            pgs = getattr(dazRna(rig), "Daz%s" % morphset)
+            unused = [(idx,pg.name) for idx,pg in enumerate(pgs) if pg.name not in used]
+            unused.reverse()
+            for idx,prop in unused:
+                pgs.remove(idx)
+                if prop in rig.keys():
+                    del rig[prop]
+
+#----------------------------------------------------------
 #   Update button
 #----------------------------------------------------------
 
@@ -1402,6 +1471,7 @@ classes = [
     DAZ_OT_DisableDrivers,
     DAZ_OT_EnableDrivers,
     DAZ_OT_OptimizeDrivers,
+    DAZ_OT_OptimizeFurther,
     DAZ_OT_CopyDrivers,
     DAZ_OT_RemoveCorruptDrivers,
 ]
