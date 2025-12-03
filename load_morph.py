@@ -230,8 +230,7 @@ class LoadMorph(DriverUser):
                 self.buildDrivers()
                 self.buildSumDrivers()
                 self.buildRestDrivers()
-                if ((self.isJcm or not GS.usePropDrivers)
-                    and GS.onShapekeyDrivers == 'OPTIMIZE_JCM'):
+                if self.isJcm and GS.onShapekeyDrivers == 'OPTIMIZE_JCM':
                     self.optimizeJcmDrivers()
                 self.correctScaleParents()
             finally:

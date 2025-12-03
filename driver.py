@@ -1173,10 +1173,10 @@ class DAZ_OT_OptimizeFurther(DazOperator, IsArmature):
                                 usedObj.add(prop)
                             elif trg.id == rig.data:
                                 prop = getProp(trg.data_path)
-                                usedAmt.add(prop)
+                                usedAmt[prop] = fcu
 
         usedObj = set()
-        usedAmt = set()
+        usedAmt = {}
         getUsedProps(rig, rig, usedObj, usedAmt)
         getUsedProps(rig.data, rig, usedObj, usedAmt)
         for ob in getShapeChildren(rig):
@@ -1198,10 +1198,18 @@ class DAZ_OT_OptimizeFurther(DazOperator, IsArmature):
                 ":Rot:" in prop or
                 ":Loc:" in prop or
                 ":Sca:" in prop):
-                return (prop not in usedAmt)
+                return (prop not in usedAmt.keys())
 
         unusedAmt = [prop for prop in rig.data.keys() if isRemovable(prop, usedAmt)]
+        fcurves = {}
+        for fcu in rig.data.animation_data.drivers:
+            prop = getProp(fcu.data_path)
+            if isFinal(prop):
+                fcurves[prop] = fcu
         for prop in unusedAmt:
+            fcu = fcurves.get(prop)
+            if fcu:
+                rig.data.animation_data.drivers.remove(fcu)
             if prop in rig.data.keys():
                 del rig.data[prop]
 
