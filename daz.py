@@ -355,7 +355,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     onShapekeyDrivers : EnumProperty(
         items = [('REGULAR', "Regular", "Make regular, non-optimized drivers"),
-                 ('OPTIMIZE', "Optimize", "Optimize drivers when loading JCMs and flexions.\nAlso optimize other shapekey drivers if Property Drivers is disabled"),
+                 ('OPTIMIZE_JCM', "Optimize JCMs", "Optimize drivers when loading JCMs and flexions"),
                  ('MUTE_DRIVERS', "Mute Drivers", "Add drivers that mute shapekeys if shapekey value = 0.\nAffects JCMs, flexions and custom morphs")],
         name = "Shapekey Drivers",
         description = "Optimization method for shapekey drivers")

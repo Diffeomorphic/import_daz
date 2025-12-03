@@ -1161,7 +1161,7 @@ class DAZ_OT_OptimizeFurther(DazOperator, IsArmature):
                 if skey:
                     ob.shape_key_remove(skey)
 
-        def getUsedProps(rna, rig, used):
+        def getUsedProps(rna, rig, usedObj, usedAmt):
             if not rna.animation_data:
                 return
             for fcu in rna.animation_data.drivers:
@@ -1170,24 +1170,40 @@ class DAZ_OT_OptimizeFurther(DazOperator, IsArmature):
                         for trg in var.targets:
                             if trg.id == rig:
                                 prop = getProp(trg.data_path)
-                                used.add(prop)
+                                usedObj.add(prop)
+                            elif trg.id == rig.data:
+                                prop = getProp(trg.data_path)
+                                usedAmt.add(prop)
 
-        used = set()
-        getUsedProps(rig, rig, used)
-        getUsedProps(rig.data, rig, used)
+        usedObj = set()
+        usedAmt = set()
+        getUsedProps(rig, rig, usedObj, usedAmt)
+        getUsedProps(rig.data, rig, usedObj, usedAmt)
         for ob in getShapeChildren(rig):
             skeys = ob.data.shape_keys
-            getUsedProps(skeys, rig, used)
+            getUsedProps(skeys, rig, usedObj, usedAmt)
 
         from .morphing import MS
         for morphset in MS.Standards:
             pgs = getattr(dazRna(rig), "Daz%s" % morphset)
-            unused = [(idx,pg.name) for idx,pg in enumerate(pgs) if pg.name not in used]
-            unused.reverse()
-            for idx,prop in unused:
+            unusedObj = [(idx,pg.name) for idx,pg in enumerate(pgs) if pg.name not in usedObj]
+            unusedObj.reverse()
+            for idx,prop in unusedObj:
                 pgs.remove(idx)
                 if prop in rig.keys():
                     del rig[prop]
+
+        def isRemovable(prop, usedAmt):
+            if (isFinal(prop) or
+                ":Rot:" in prop or
+                ":Loc:" in prop or
+                ":Sca:" in prop):
+                return (prop not in usedAmt)
+
+        unusedAmt = [prop for prop in rig.data.keys() if isRemovable(prop, usedAmt)]
+        for prop in unusedAmt:
+            if prop in rig.data.keys():
+                del rig.data[prop]
 
 #----------------------------------------------------------
 #   Update button

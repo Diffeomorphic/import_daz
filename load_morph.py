@@ -231,7 +231,7 @@ class LoadMorph(DriverUser):
                 self.buildSumDrivers()
                 self.buildRestDrivers()
                 if ((self.isJcm or not GS.usePropDrivers)
-                    and GS.onShapekeyDrivers == 'OPTIMIZE'):
+                    and GS.onShapekeyDrivers == 'OPTIMIZE_JCM'):
                     self.optimizeJcmDrivers()
                 self.correctScaleParents()
             finally:
@@ -1782,7 +1782,7 @@ class LoadMorph(DriverUser):
 
 
     def optimizeJcmDrivers(self):
-        if (GS.onShapekeyDrivers != 'OPTIMIZE' or
+        if (GS.onShapekeyDrivers != 'OPTIMIZE_JCM' or
             GS.useMakeHiddenSliders or
             self.useMakeHiddenSliders or
             self.rig is None or
@@ -1822,12 +1822,11 @@ class LoadMorph(DriverUser):
                     fcu2 = skeys.animation_data.drivers.from_existing(src_driver=fcu)
                     fcu2.data_path = 'key_blocks["%s"].value' % prop
                     self.obj.driver_remove(propRef(prop))
+                    if prop in self.obj.keys():
+                        del self.obj[prop]
                     self.amt.driver_remove(propRef(final))
-                    if self.isJcm:
-                        if prop in self.obj.keys():
-                            del self.obj[prop]
-                        if final in self.amt.keys():
-                            del self.amt[final]
+                    if final in self.amt.keys():
+                        del self.amt[final]
 
 
     def addScaleDriver(self, pb, idx):
