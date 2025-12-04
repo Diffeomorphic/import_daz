@@ -347,11 +347,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Default Drivers",
         description = "Create default drivers defined in the scene file")
 
-    usePropDrivers : BoolProperty(
-        name = "Property Drivers",
-        description = (
-            "Let properties drive other properties.\n" +
-            "Disable to optimize performance, but some drivers do not work"))
+    useOptimizedDrivers : BoolProperty(
+        name = "Optimized Drivers",
+        description = "Optimize drivers by ignoring properties that driver other properties\nSome drivers do not work")
 
     onShapekeyDrivers : EnumProperty(
         items = [('REGULAR', "Regular", "Make regular, non-optimized drivers"),
@@ -779,7 +777,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "sliderMultiplier")
         box.prop(self, "showFinalProps")
         box.prop(self, "showInTerminal")
-        box.prop(self, "usePropDrivers")
+        box.prop(self, "useOptimizedDrivers")
         drawEnum(self, box, "onShapekeyDrivers")
         drawEnum(self, box, "ercMethod")
         box.prop(self, "useBakedMorphs")

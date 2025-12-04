@@ -826,10 +826,7 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
     bl_description = "Optimize the web of drivers.\nNew morphs can not be loaded afterwards"
     bl_options = {'UNDO'}
 
-    useRemoveMultipliers : BoolProperty(
-        name = "Remove Multipliers",
-        description = "Remove multipliers from drivers.\nCan change how drivers work",
-        default = False)
+    useRemoveMultipliers = False
 
     useRemoveHiddenSliders : BoolProperty(
         name = "Remove Hidden Sliders",
@@ -842,7 +839,6 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "useRemoveMultipliers")
         self.layout.prop(self, "useRemoveHiddenSliders")
         self.layout.prop(self, "useRemoveERC")
 
@@ -861,6 +857,10 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
         self.modernizeShapekeys()
         self.ndeleted = 0
         ndrivers = len(self.amt.animation_data.drivers)
+        for ob in getShapeChildren(self.rig):
+            skeys = ob.data.shape_keys
+            if skeys.animation_data:
+                ndrivers += len(skeys.animation_data.drivers)
         self.sumdrivers = {}
         self.findrivers = {}
         self.restdrivers = {}
@@ -872,7 +872,8 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
             self.replaceTargets(skeys)
         self.deleteDrivers(self.amt)
         self.removeInvalid(self.amt)
-        msg = "Deleted %d out of %d drivers from %s" % (self.ndeleted, ndrivers, self.rig.name)
+        self.ndeleted += optimizeFurther(self.rig)
+        msg = "Deleted %d out of %d drivers from %s and child meshes" % (self.ndeleted, ndrivers, self.rig.name)
         if ES.easy:
             print(msg)
         else:
@@ -1121,97 +1122,95 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
                     self.deldrivers[prop] = fcu2
 
 #----------------------------------------------------------
-#   Optimize further
+#   optimizeFurther
 #----------------------------------------------------------
 
-class DAZ_OT_OptimizeFurther(DazOperator, IsArmature):
-    bl_idname = "daz.optimize_further"
-    bl_label = "Optimize Further"
-    bl_description = "Further morph optimization.\nExperimental, may optimize too much"
-    bl_options = {'UNDO'}
+def optimizeFurther(rig):
+    unmatched = [final for final in rig.data.keys()
+                 if not baseProp(final) in rig.keys()]
 
-    def run(self, context):
-        rig = context.object
-        unmatched = [final for final in rig.data.keys()
-                     if not baseProp(final) in rig.keys()]
-
-        def getUnmatchedFcurves(rna, rig, unmatched):
-            if not rna.animation_data:
-                return []
-            fcurves = []
-            for fcu in rna.animation_data.drivers:
-                if len(fcu.driver.variables) != 1:
-                    continue
-                for var in fcu.driver.variables:
-                    if var.type == 'SINGLE_PROP':
-                        for trg in var.targets:
-                            if trg.id == rig.data:
-                                final = getProp(trg.data_path)
-                                if final in unmatched:
-                                    fcurves.append(fcu)
+    def getUnmatchedFcurves(rna, rig, unmatched):
+        if not rna.animation_data:
+            return []
+        fcurves = []
+        for fcu in rna.animation_data.drivers:
+            if len(fcu.driver.variables) != 1:
+                continue
+            for var in fcu.driver.variables:
+                if var.type == 'SINGLE_PROP':
+                    for trg in var.targets:
+                        if trg.id == rig.data:
+                            final = getProp(trg.data_path)
+                            if final in unmatched:
+                                fcurves.append(fcu)
             return fcurves
 
-        for ob in getShapeChildren(rig):
-            skeys = ob.data.shape_keys
-            fcurves = getUnmatchedFcurves(skeys, rig, unmatched)
-            for fcu in fcurves:
-                sname,channel = getShapeChannel(fcu)
-                skeys.animation_data.drivers.remove(fcu)
-                skey = skeys.key_blocks.get(sname)
-                if skey:
-                    ob.shape_key_remove(skey)
+    ndeleted = 0
+    for ob in getShapeChildren(rig):
+        skeys = ob.data.shape_keys
+        fcurves = getUnmatchedFcurves(skeys, rig, unmatched)
+        for fcu in fcurves:
+            sname,channel = getShapeChannel(fcu)
+            skeys.animation_data.drivers.remove(fcu)
+            ndeleted += 1
+            skey = skeys.key_blocks.get(sname)
+            if skey:
+                ob.shape_key_remove(skey)
 
-        def getUsedProps(rna, rig, usedObj, usedAmt):
-            if not rna.animation_data:
-                return
-            for fcu in rna.animation_data.drivers:
-                for var in fcu.driver.variables:
-                    if var.type == 'SINGLE_PROP':
-                        for trg in var.targets:
-                            if trg.id == rig:
-                                prop = getProp(trg.data_path)
-                                usedObj.add(prop)
-                            elif trg.id == rig.data:
-                                prop = getProp(trg.data_path)
-                                usedAmt[prop] = fcu
+    def getUsedProps(rna, rig, usedObj, usedAmt):
+        if not rna.animation_data:
+            return
+        for fcu in rna.animation_data.drivers:
+            for var in fcu.driver.variables:
+                if var.type == 'SINGLE_PROP':
+                    for trg in var.targets:
+                        if trg.id == rig:
+                            prop = getProp(trg.data_path)
+                            usedObj.add(prop)
+                        elif trg.id == rig.data:
+                            prop = getProp(trg.data_path)
+                            usedAmt[prop] = fcu
 
-        usedObj = set()
-        usedAmt = {}
-        getUsedProps(rig, rig, usedObj, usedAmt)
-        getUsedProps(rig.data, rig, usedObj, usedAmt)
-        for ob in getShapeChildren(rig):
-            skeys = ob.data.shape_keys
-            getUsedProps(skeys, rig, usedObj, usedAmt)
+    usedObj = set()
+    usedAmt = {}
+    getUsedProps(rig, rig, usedObj, usedAmt)
+    getUsedProps(rig.data, rig, usedObj, usedAmt)
+    for ob in getShapeChildren(rig):
+        skeys = ob.data.shape_keys
+        getUsedProps(skeys, rig, usedObj, usedAmt)
 
-        from .morphing import MS
-        for morphset in MS.Standards:
-            pgs = getattr(dazRna(rig), "Daz%s" % morphset)
-            unusedObj = [(idx,pg.name) for idx,pg in enumerate(pgs) if pg.name not in usedObj]
-            unusedObj.reverse()
-            for idx,prop in unusedObj:
-                pgs.remove(idx)
-                if prop in rig.keys():
-                    del rig[prop]
+    from .morphing import MS
+    for morphset in MS.Standards:
+        pgs = getattr(dazRna(rig), "Daz%s" % morphset)
+        unusedObj = [(idx,pg.name) for idx,pg in enumerate(pgs) if pg.name not in usedObj]
+        unusedObj.reverse()
+        for idx,prop in unusedObj:
+            pgs.remove(idx)
+            if prop in rig.keys():
+                del rig[prop]
 
-        def isRemovable(prop, usedAmt):
-            if (isFinal(prop) or
-                ":Rot:" in prop or
-                ":Loc:" in prop or
-                ":Sca:" in prop):
-                return (prop not in usedAmt.keys())
+    def isRemovable(prop, usedAmt):
+        if (isFinal(prop) or
+            ":Rot:" in prop or
+            ":Loc:" in prop or
+            ":Sca:" in prop):
+            return (prop not in usedAmt.keys())
 
-        unusedAmt = [prop for prop in rig.data.keys() if isRemovable(prop, usedAmt)]
-        fcurves = {}
-        for fcu in rig.data.animation_data.drivers:
-            prop = getProp(fcu.data_path)
-            if isFinal(prop):
-                fcurves[prop] = fcu
-        for prop in unusedAmt:
-            fcu = fcurves.get(prop)
-            if fcu:
-                rig.data.animation_data.drivers.remove(fcu)
-            if prop in rig.data.keys():
-                del rig.data[prop]
+    unusedAmt = [prop for prop in rig.data.keys() if isRemovable(prop, usedAmt)]
+    fcurves = {}
+    for fcu in rig.data.animation_data.drivers:
+        prop = getProp(fcu.data_path)
+        if isFinal(prop):
+            fcurves[prop] = fcu
+    for prop in unusedAmt:
+        fcu = fcurves.get(prop)
+        if fcu:
+            rig.data.animation_data.drivers.remove(fcu)
+            ndeleted += 1
+        if prop in rig.data.keys():
+            del rig.data[prop]
+
+    return ndeleted
 
 #----------------------------------------------------------
 #   Update button
@@ -1495,7 +1494,6 @@ classes = [
     DAZ_OT_DisableDrivers,
     DAZ_OT_EnableDrivers,
     DAZ_OT_OptimizeDrivers,
-    DAZ_OT_OptimizeFurther,
     DAZ_OT_CopyDrivers,
     DAZ_OT_RemoveCorruptDrivers,
 ]

@@ -138,6 +138,8 @@ class LoadMorph(DriverUser):
         self.propDrivers = {}
         self.boneDrivers = {}
         self.hideDrivers = {}
+        self.allProps = set()
+        self.usedProps = set()
         self.shapekeys = {}
         self.faceshapes = {}
         self.mults = {}
@@ -463,6 +465,7 @@ class LoadMorph(DriverUser):
             skey.name = prop
             self.setShapeLimits(skey, asset)
             self.shapekeys[prop] = skey
+            self.usedProps.add(prop)
             if GS.ercMethod == 'TRANSLATION' and not self.disableErc:
                 pass
             elif self.bodypart == "Face":
@@ -625,6 +628,7 @@ class LoadMorph(DriverUser):
                 self.setFloatLimits(self.obj, raw, asset, None, True)
                 self.setFloatLimits(self.amt, final, asset, skey, False)
                 reportError("BUG: Unknown asset type: %s.\nAsset: %s" % (asset.type, asset))
+            self.allProps.add(raw)
             if visible:
                 setActivated(self.obj, raw, True)
                 self.addToMorphSet(raw, asset, False)
@@ -667,7 +671,7 @@ class LoadMorph(DriverUser):
 
     def makeValueFormula(self, output, expr, drivers):
         output = self.getUniqueName(output)
-        if expr.props and GS.usePropDrivers:
+        if expr.props and not GS.useOptimizedDrivers:
             self.addNewProp(output)
             for target in expr.props:
                 prop = self.getUniqueName(target.key)
@@ -1910,6 +1914,7 @@ class LoadMorph(DriverUser):
         for n,batch in enumerate(batches):
             string,vars = batch
             drvprop = self.getTermDriverName(prefix, n+1)
+            self.usedProps.add(drvprop)
             self.amt[drvprop] = 0.0
             path = propRef(drvprop)
             self.amt.driver_remove(path)

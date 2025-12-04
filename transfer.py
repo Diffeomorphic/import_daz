@@ -155,7 +155,6 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
     bl_description = "Transfer shapekeys from active mesh to selected meshes"
     bl_options = {'UNDO'}
 
-    usePropDriver = True
     defaultSelect = True
     needsTarget : BoolProperty(default = True)
 
