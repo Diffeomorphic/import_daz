@@ -1125,6 +1125,16 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
 #   optimizeFurther
 #----------------------------------------------------------
 
+class DAZ_OT_OptimizeFurther(DazOperator, IsArmature):
+    bl_idname = "daz.optimize_further"
+    bl_label = "Optimize Further"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        ndeleted = optimizeFurther(context.object)
+        print("%d drivers deleted" % ndeleted)
+
+
 def optimizeFurther(rig):
     unmatched = [final for final in rig.data.keys()
                  if not baseProp(final) in rig.keys()]
@@ -1144,6 +1154,7 @@ def optimizeFurther(rig):
                             if final in unmatched:
                                 fcurves.append(fcu)
             return fcurves
+        return []
 
     ndeleted = 0
     for ob in getShapeChildren(rig):
@@ -1171,31 +1182,33 @@ def optimizeFurther(rig):
                             prop = getProp(trg.data_path)
                             usedAmt[prop] = fcu
 
-    usedObj = set()
-    usedAmt = {}
-    getUsedProps(rig, rig, usedObj, usedAmt)
-    getUsedProps(rig.data, rig, usedObj, usedAmt)
-    for ob in getShapeChildren(rig):
-        skeys = ob.data.shape_keys
-        getUsedProps(skeys, rig, usedObj, usedAmt)
+    def getAllUsedProps(rig):
+        usedObj = set()
+        usedAmt = {}
+        getUsedProps(rig, rig, usedObj, usedAmt)
+        getUsedProps(rig.data, rig, usedObj, usedAmt)
+        for ob in getShapeChildren(rig):
+            skeys = ob.data.shape_keys
+            getUsedProps(skeys, rig, usedObj, usedAmt)
+        return usedObj, usedAmt
 
-    from .morphing import MS
-    for morphset in MS.Standards:
-        pgs = getattr(dazRna(rig), "Daz%s" % morphset)
-        unusedObj = [(idx,pg.name) for idx,pg in enumerate(pgs) if pg.name not in usedObj]
-        unusedObj.reverse()
-        for idx,prop in unusedObj:
-            pgs.remove(idx)
-            if prop in rig.keys():
-                del rig[prop]
+    def removeUnusedObj(rig, useObj):
+        from .morphing import MS
+        for morphset in MS.Standards:
+            pgs = getattr(dazRna(rig), "Daz%s" % morphset)
+            unusedObj = [(idx,pg.name) for idx,pg in enumerate(pgs) if pg.name not in usedObj]
+            unusedObj.reverse()
+            for idx,prop in unusedObj:
+                pgs.remove(idx)
+                if prop in rig.keys():
+                    del rig[prop]
 
     def isRemovable(prop, usedAmt):
-        if (isFinal(prop) or
-            ":Rot:" in prop or
-            ":Loc:" in prop or
-            ":Sca:" in prop):
+        if isFinal(prop):
             return (prop not in usedAmt.keys())
 
+    usedObj, usedAmt = getAllUsedProps(rig)
+    removeUnusedObj(rig, usedObj)
     unusedAmt = [prop for prop in rig.data.keys() if isRemovable(prop, usedAmt)]
     fcurves = {}
     for fcu in rig.data.animation_data.drivers:
@@ -1209,7 +1222,8 @@ def optimizeFurther(rig):
             ndeleted += 1
         if prop in rig.data.keys():
             del rig.data[prop]
-
+    usedObj, usedAmt = getAllUsedProps(rig)
+    removeUnusedObj(rig, usedObj)
     return ndeleted
 
 #----------------------------------------------------------
@@ -1494,6 +1508,7 @@ classes = [
     DAZ_OT_DisableDrivers,
     DAZ_OT_EnableDrivers,
     DAZ_OT_OptimizeDrivers,
+    DAZ_OT_OptimizeFurther,
     DAZ_OT_CopyDrivers,
     DAZ_OT_RemoveCorruptDrivers,
 ]
