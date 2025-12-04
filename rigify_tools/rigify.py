@@ -938,8 +938,21 @@ class Rigifier(RigifyCommon):
         gen = context.object
         gen.data["MhaFeatures"] = 0
 
+        vly = context.view_layer
+        activecoll = vly.active_layer_collection.collection
         coll = getCollection(context, rig)
         unhideAllObjects(context, rig)
+        activecoll.objects.unlink(gen)
+        coll.objects.link(gen)
+        unlinkAll(meta, False)
+        coll.objects.link(meta)
+        wcoll = activecoll.children.get("WGTS_rig")
+        if wcoll:
+            activecoll.children.unlink(wcoll)
+            coll.children.link(wcoll)
+            layer = getLayerCollection(context, wcoll)
+            if layer:
+                layer.exclude = True
         if rig.name not in coll.objects.keys():
             coll.objects.link(rig)
         self.meshes = (getMeshChildren(dazrig) if dazrig else getMeshChildren(rig))
@@ -1238,24 +1251,6 @@ class Rigifier(RigifyCommon):
         modernizeBones(gen)
         dazRna(gen).DazRig = meta.get("DazRigifyType", "")
         name = rig.name
-        if coll:
-            if gen.name in scn.collection.objects:
-                scn.collection.objects.unlink(gen)
-            if gen.name not in coll.objects:
-                coll.objects.link(gen)
-            if meta.name in scn.collection.objects:
-                scn.collection.objects.unlink(meta)
-            if meta.name not in coll.objects:
-                coll.objects.link(meta)
-            for wname in ["WGTS_rig"]:
-                wcoll = scn.collection.children.get(wname)
-                if wcoll:
-                    scn.collection.children.unlink(wcoll)
-                    coll.children.link(wcoll)
-                    layer = getLayerCollection(context, wcoll)
-                    if layer:
-                        layer.exclude = True
-                    break
         if BLENDER3:
             from .rigify_snap import setRigifyFkIk, setRigifyLayers, clearOtherRigify
             setRigifyFkIk(gen, 0.0, False, 0)
