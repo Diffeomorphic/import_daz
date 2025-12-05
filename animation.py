@@ -761,13 +761,13 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         from .convert import getCharacterFromRig
         if filepath is None:
             return offset,None
-        rig = getRigFromContext(context, strict=False, activate=True)
-        scn = context.scene
         ext = os.path.splitext(filepath)[1]
         if ext in [".duf", ".dsf"]:
             struct = JL.load(filepath, False)
         else:
             raise DazError("Wrong type of file: %s" % filepath)
+
+        rig = getRigFromContext(context, strict=False, activate=True)
         self.assetType = struct.get("asset_info", {}).get("type", "preset_pose")
         if self.assetType == "preset_camera" and rig.type != 'CAMERA':
             print("Not a camera: %s" % rig.name)
@@ -777,8 +777,50 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             return offset,None
         elif "scene" not in struct.keys():
             return offset,None
+        elif self.assetType == "preset_hierarchical_pose":
+            raise DazError("Hierarchical pose presets not yet supported")
+            result = offset,None
+            scene = struct["scene"]
+            nodes = self.collectNodes(context, scene["nodes"], scene["animations"])
+            for ob, anims in nodes:
+                nstruct = {"animations" : anims}
+                result = self.getPosePreset(context, ob, nstruct, filepath, offset)
+            return result
+        else:
+            return self.getPosePreset(context, rig, struct["scene"], filepath, offset)
+
+
+    def collectNodes(self, context, nodes, anims):
+        objects = {}
+        for ob in getSelectedObjects(context):
+            url = dazRna(ob).DazUrl.rsplit("#",1)[-1]
+            if url:
+                objects[url] = ob
+        n = len("name://@selection/")
+        print(objects)
+        figures = {}
+        active = None
+        for node in nodes:
+            key = node["id"]
+            ob = objects.get(key)
+            if ob:
+                active = ob
+            figures[key] = active
+        print(figures)
+        nanims = []
+        for anim in anims:
+            url = "name://@selection:%s" % anim["url"].rsplit(":",1)[-1]
+            nanim = { "url" : url, "keys" : anim["keys"] }
+            nanims.append(namim)
+
+        return []
+
+
+    def getPosePreset(self, context, rig, struct, filepath, offset):
+        from .convert import getCharacterFromRig
+        scn = context.scene
         self.trgCharacter = getCharacterFromRig(rig)
-        anims = self.parseScene(struct["scene"], rig)
+        anims = self.parseScene(struct, rig)
         if rig.type == 'ARMATURE':
             setMode('OBJECT')
             self.prepareRig(rig, scn.frame_current)
