@@ -25,6 +25,8 @@ class FrameConverter:
     def getConv(self, banims, rig):
         from .figure import getRigType
         from .convert import getConverter
+        if self.assetType == "preset_hierarchical_pose":
+            return {}, {}
         if self.useConvert:
             srctype = DF.SourceRigs[self.srcCharacter]
         elif self.trgRig and not dazRna(rig).DazRig.startswith("genesis"):
@@ -778,13 +780,16 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         elif "scene" not in struct.keys():
             return offset,None
         elif self.assetType == "preset_hierarchical_pose":
-            raise DazError("Hierarchical pose presets not yet supported")
+            #raise DazError("Hierarchical pose presets not yet supported")
             result = offset,None
             scene = struct["scene"]
-            nodes = self.collectNodes(context, scene["nodes"], scene["animations"])
-            for ob, anims in nodes:
-                nstruct = {"animations" : anims}
-                result = self.getPosePreset(context, ob, nstruct, filepath, offset)
+            objects, nanims = self.collectNodes(context, scene["nodes"], scene["animations"])
+            for key,ob in objects.items():
+                anims = nanims.get(key, [])
+                if anims:
+                    nstruct = {"animations" : anims}
+                    print(anims[0])
+                    result = self.getPosePreset(context, ob, nstruct, filepath, offset)
             return result
         else:
             return self.getPosePreset(context, rig, struct["scene"], filepath, offset)
@@ -797,23 +802,44 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             if url:
                 objects[url] = ob
         n = len("name://@selection/")
-        print(objects)
+
         figures = {}
+        taken = {}
         active = None
         for node in nodes:
             key = node["id"]
-            ob = objects.get(key)
+            url = node["url"][n:-1]
+            ob = objects.get(url)
             if ob:
-                active = ob
-            figures[key] = active
-        print(figures)
-        nanims = []
-        for anim in anims:
-            url = "name://@selection:%s" % anim["url"].rsplit(":",1)[-1]
-            nanim = { "url" : url, "keys" : anim["keys"] }
-            nanims.append(namim)
+                active = url
+            if active not in taken.keys():
+                taken[active] = []
+            if url not in taken[active]:
+                figures[key] = (active, url)
+                taken[active].append(url)
 
-        return []
+        nanims = {}
+        for anim in anims:
+            key,path = anim["url"].rsplit(":",1)
+            if key in figures.keys():
+                obname,url = figures[key]
+            else:
+                #print("MISS", key)
+                continue
+            ob = objects.get(obname)
+            if ob:
+                if obname not in nanims.keys():
+                    nanims[obname] = []
+                path2 = path.rsplit("#",1)[-1]
+                bname,channel = path2.split("?", 1)
+                url = "name://@selection/%s:?%s" % (bname, channel)
+                nanim = { "url" : url, "keys" : anim["keys"] }
+                nanims[obname].append(nanim)
+
+        for obname,anims in nanims.items():
+            print("OB", obname, len(anims))
+
+        return objects, nanims
 
 
     def getPosePreset(self, context, rig, struct, filepath, offset):
