@@ -163,7 +163,7 @@ def getConverter(srctype, trg, useConvertMerged=False):
         file = "genesis1238-genesis9"
     else:
         file = "%s-%s" % (srctype, trgtype)
-    conv = DF.loadEntry(file, "converters")
+    conv = DF.loadEntry(file, "converters", strict=False)
     if conv:
         print("Using converter", file)
     else:

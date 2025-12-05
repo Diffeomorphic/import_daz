@@ -25,8 +25,6 @@ class FrameConverter:
     def getConv(self, banims, rig):
         from .figure import getRigType
         from .convert import getConverter
-        if self.assetType == "preset_hierarchical_pose":
-            return {}, {}
         if self.useConvert:
             srctype = DF.SourceRigs[self.srcCharacter]
         elif self.trgRig and not dazRna(rig).DazRig.startswith("genesis"):
@@ -149,8 +147,9 @@ class FrameConverter:
                 elif not self.isObject(bname, rig):
                     missing.append(bname)
         if missing:
-            print("Missing bones:")
-            print(missing)
+            print("Missing %d bones:" % len(missing))
+            if self.assetType != "preset_hierarchical_pose":
+                print(missing)
         return bonemap, locks
 
 
@@ -770,6 +769,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             raise DazError("Wrong type of file: %s" % filepath)
 
         rig = getRigFromContext(context, strict=False, activate=True)
+        frame = context.scene.frame_current
         self.assetType = struct.get("asset_info", {}).get("type", "preset_pose")
         if self.assetType == "preset_camera" and rig.type != 'CAMERA':
             print("Not a camera: %s" % rig.name)
@@ -780,7 +780,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         elif "scene" not in struct.keys():
             return offset,None
         elif self.assetType == "preset_hierarchical_pose":
-            #raise DazError("Hierarchical pose presets not yet supported")
             result = offset,None
             scene = struct["scene"]
             objects, nanims = self.collectNodes(context, scene["nodes"], scene["animations"])
@@ -788,11 +787,13 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 anims = nanims.get(key, [])
                 if anims:
                     nstruct = {"animations" : anims}
-                    print(anims[0])
-                    result = self.getPosePreset(context, ob, nstruct, filepath, offset)
-            return result
+                    result = self.getPosePreset(context, ob, nstruct, filepath, frame, offset)
         else:
-            return self.getPosePreset(context, rig, struct["scene"], filepath, offset)
+            result = self.getPosePreset(context, rig, struct["scene"], filepath, frame, offset)
+        updateScene(context)
+        self.updateWinders(rig, frame)
+        setMode('OBJECT')
+        return result
 
 
     def collectNodes(self, context, nodes, anims):
@@ -836,20 +837,19 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 nanim = { "url" : url, "keys" : anim["keys"] }
                 nanims[obname].append(nanim)
 
-        for obname,anims in nanims.items():
-            print("OB", obname, len(anims))
+        #for obname,anims in nanims.items():
+        #    print("OB", obname, len(anims))
 
         return objects, nanims
 
 
-    def getPosePreset(self, context, rig, struct, filepath, offset):
+    def getPosePreset(self, context, rig, struct, filepath, frame, offset):
         from .convert import getCharacterFromRig
-        scn = context.scene
         self.trgCharacter = getCharacterFromRig(rig)
         anims = self.parseScene(struct, rig)
         if rig.type == 'ARMATURE':
             setMode('OBJECT')
-            self.prepareRig(rig, scn.frame_current)
+            self.prepareRig(rig, frame)
         nanims,locks,self.bonemap = self.prepareAnimations(anims, anims, rig, False)
         again = self.handleMissingMorphs(context, rig)
         if again:
@@ -861,13 +861,10 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             nanims,_,_ = self.prepareAnimations(anims, nanims, rig, True)
         self.clearPose(rig, offset)
         prop = None
-        result = self.animateBones(context, nanims, offset, prop, filepath)
+        result = self.animateBones(context, rig, nanims, offset, prop, filepath)
         for pb,lock in locks:
             pb.lock_location = lock
         updateDrivers(rig)
-        updateScene(context)
-        self.updateWinders(rig, scn.frame_current)
-        setMode('OBJECT')
         return result
 
 
@@ -1225,7 +1222,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             "Genesis8Male",
             "Genesis9",
         ]
-        if bname in KnownRigs:
+        if self.assetType == "preset_hierarchical_pose":
+            return False
+        elif bname in KnownRigs:
             return True
         else:
             return (bname != "_XTRA_" and
@@ -1247,8 +1246,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         return One
 
 
-    def animateBones(self, context, anims, offset, prop, filepath):
-        rig = context.object
+    def animateBones(self, context, rig, anims, offset, prop, filepath):
         errors = {}
         for banim,vanim,xanim,interps in anims:
             frames = {}
