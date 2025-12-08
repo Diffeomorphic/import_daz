@@ -5,7 +5,7 @@
 import bpy
 import math
 from math import pi
-from mathutils import Vector, Euler
+from mathutils import Vector, Euler, Matrix
 from urllib.parse import quote, unquote
 from time import perf_counter
 from bpy.props import *
@@ -891,7 +891,6 @@ def getCoord(p):
         co[getIndex(c["id"])] = c["value"]
     return d2b(co)
 
-
 def d2b90(v):
     return GS.scale*Vector((v[0], -v[2], v[1]))
 
@@ -934,6 +933,14 @@ def d2bs(v):
 def b2d(v):
     return Vector((v[0], v[2], -v[1]))/GS.scale
 
+#-------------------------------------------------------------
+#   Global rotation matrices
+#-------------------------------------------------------------
+
+RXP = Matrix.Rotation(pi/2, 4, 'X')
+RXN = Matrix.Rotation(-pi/2, 4, 'X')
+FX = Matrix.Rotation(pi, 4, 'X')
+FZ = Matrix.Rotation(pi, 4, 'Z')
 
 D2R = "%.6f*" % (pi/180)
 D = pi/180

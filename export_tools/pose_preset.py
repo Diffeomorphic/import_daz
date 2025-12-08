@@ -136,7 +136,6 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
 
 
     def run(self, context):
-        self.Z = Matrix.Rotation(pi/2, 4, 'X')
         rig = getRigFromContext(context, strict=False, activate=True)
         if dazRna(rig).DazRig.startswith(("mhx", "rigify")):
             self.trgRig = dazRna(rig).DazOriginalRig
@@ -326,7 +325,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
             euler = Euler(Vector(dazRna(pb.bone).DazOrient)*D, 'XYZ')
             dmat = euler.to_matrix().to_4x4()
             dmat.col[3][0:3] = Vector(dazRna(pb.bone).DazHead)*GS.scale
-            Fn = pb.bone.matrix_local.inverted() @ self.Z @ dmat
+            Fn = pb.bone.matrix_local.inverted() @ RXP @ dmat
             Fn = Fn.to_quaternion().to_matrix().to_4x4()
             for bname in self.getBoneNames(pb.name):
                 bname = self.getDazBone(bname, pb)
@@ -341,7 +340,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
         for frame in range(self.frame_start, self.frame_end+1):
             L = self.Ls[frame] = {}
             mat = self.getRigMatrix(rig, frame)
-            L[objkey] = self.Z.inverted() @ mat @ self.Z
+            L[objkey] = RXN @ mat @ RXP
 
 
     RootNames = ["Root", "master", "root"]
@@ -363,7 +362,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
                 rmat = self.getBoneMatrix(root, root.name, smats, rig, frame)
                 rmat = root.bone.matrix_local @ rmat @ root.bone.matrix_local.inverted()
                 mat = mat @ rmat
-            L[objkey] = self.Z.inverted() @ mat @ self.Z
+            L[objkey] = RXN @ mat @ RXP
 
             for pb in rig.pose.bones:
                 for bname in self.getBoneNames(pb.name):
@@ -707,7 +706,7 @@ class DAZ_OT_SavePosePreset(HideOperator, Preset, SingleFile, DufFile, FrameConv
             objkey = self.getDazObject(rig)
             Ls = [self.Ls[frame][objkey] for frame in range(self.frame_start, self.frame_end+1)]
             if rig.parent:
-                pmat = self.Z.inverted() @ rig.matrix_parent_inverse @ self.Z
+                pmat = RXN @ rig.matrix_parent_inverse @ RXP
                 Ls = [pmat @ L for L in Ls]
             locs = [L.to_translation() for L in Ls]
             self.getTrans("", rig, rig, locs, 1/GS.scale, anims)

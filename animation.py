@@ -770,6 +770,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
         rig = getRigFromContext(context, strict=False, activate=True)
         frame = context.scene.frame_current
+        self.hparents = {}
         self.assetType = struct.get("asset_info", {}).get("type", "preset_pose")
         if self.assetType == "preset_camera" and rig.type != 'CAMERA':
             print("Not a camera: %s" % rig.name)
@@ -782,7 +783,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         elif self.assetType == "preset_hierarchical_pose":
             result = offset,None
             scene = struct["scene"]
-            objects, nanims = self.collectNodes(context, scene["nodes"], scene["animations"])
+            objects, nanims = self.collectHierarchy(context, scene["nodes"], scene["animations"])
             for key,ob in objects.items():
                 anims = nanims.get(key, [])
                 if anims:
@@ -796,7 +797,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         return result
 
 
-    def collectNodes(self, context, nodes, anims):
+    def collectHierarchy(self, context, nodes, anims):
         objects = {}
         for ob in getSelectedObjects(context):
             url = dazRna(ob).DazUrl.rsplit("#",1)[-1]
@@ -806,6 +807,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
         figures = {}
         taken = {}
+        hnodes = {}
+        rig = None
         active = None
         for node in nodes:
             key = node["id"]
@@ -813,11 +816,27 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             ob = objects.get(url)
             if ob:
                 active = url
+                if ob.type == 'ARMATURE':
+                    rig = ob
+                else:
+                    rig = None
             if active not in taken.keys():
                 taken[active] = []
             if url not in taken[active]:
                 figures[key] = (active, url)
                 taken[active].append(url)
+            if rig:
+                pb = rig.pose.bones.get(url)
+                if pb:
+                    hnodes[key] = pb
+            if ob:
+                hnodes[key] = ob
+                parkey = node.get("parent")
+                if parkey:
+                    self.hparents[ob.name] = hnodes.get(parkey[1:])
+        print("Hierarchy parents:")
+        for obname, parent in self.hparents.items():
+            print("  %s : %s" % (obname, parent))
 
         nanims = {}
         for anim in anims:
@@ -1179,7 +1198,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         self.worldMatrix = rig.matrix_world.copy()
         tfm = Transform()
         if self.useClearPose and self.affectObject:
-            tfm.setObject(rig)
+            tfm.setObject(rig, None)
             if self.useInsertKeys:
                 insertKeys(rig, None, frame, self)
         if self.useClearMorphs and self.useShapekeys and self.affectMorphs:
@@ -1331,7 +1350,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if not self.affectObject:
             pass
         else:
-            tfm.setObject(rig)
+            tfm.setObject(rig, self.hparents.get(rig.name))
             if rig.type in ['LIGHT', 'CAMERA'] and GS.zup:
                 rig.rotation_euler[0] += pi/2
             if self.useInsertKeys:

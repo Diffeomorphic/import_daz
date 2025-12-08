@@ -580,8 +580,6 @@ class Instance(Accessor, Channels, SimNode):
         # global_scale for nodes = parent.global_scale * (parent.local_scale)-1 * orientation * scale * general_scale * (orientation)-1
         # global_transform = global_translation * global_rotation * global_scale
 
-        RXP = Matrix.Rotation(pi/2, 4, 'X')
-        RXN = Matrix.Rotation(-pi/2, 4, 'X')
         orient = Vector(attributes["orientation"])*D
         ormat = Euler(orient).to_matrix().to_4x4()
         cpoint = d2b00(attributes["center_point"])

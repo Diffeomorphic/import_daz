@@ -38,7 +38,6 @@ class GazeTransferer:
         self.gaze = rig.pose.bones["gaze"]
         self.lgaze = rig.pose.bones["gaze.L"]
         self.rgaze = rig.pose.bones["gaze.R"]
-        self.FZ = Matrix.Rotation(pi, 4, 'Z')
         self.gazedist = (self.lgaze.bone.head_local - self.leye.bone.head_local).length
 
 
@@ -111,7 +110,7 @@ class DAZ_OT_TransferToGaze(DazOperator, GazeTransferer):
         loc = eye.matrix.to_translation()
         vec = eye.matrix.to_quaternion().to_matrix().col[1]
         vec.normalize()
-        mat = eye.matrix @ self.FZ
+        mat = eye.matrix @ FZ
         mat.col[3][0:3] = loc + vec*self.gazedist
         eye.matrix_basis = Matrix()
         return mat

@@ -135,7 +135,7 @@ class Transform:
         return ((self.scale is None or (self.scale-One).length == 0.0) and self.general == 1)
 
 
-    def setObject(self, ob):
+    def setObject(self, ob, parent):
         # See calcMatrices in node.py
         trans = self.evalTrans() + Vector(dazRna(ob).DazCenter)
         euler = Euler(self.evalRot(), dazRna(ob).DazRotMode)
@@ -151,8 +151,7 @@ class Transform:
 
         # Blender world matrix
         if GS.zup:
-            X = Matrix.Rotation(pi/2, 4, 'X')
-            wmat = X @ M @ X.inverted()
+            wmat = RXP @ M @ RXN
         else:
             wmat = M
         setWorldMatrix(ob, wmat)

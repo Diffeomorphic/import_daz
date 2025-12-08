@@ -106,10 +106,6 @@ class BoneInstance(Instance):
             return DBZRestData(head, tail, orient, xyz, None, wsmat, dazhead)
 
 
-    RX = Matrix.Rotation(pi/2, 4, 'X')
-    FX = Matrix.Rotation(pi, 4, 'X')
-    FZ = Matrix.Rotation(pi, 4, 'Z')
-
     def buildEdit(self, figure, figinst, rig, parent, center, isFace):
         if self.ignoreBone:
             return
@@ -129,13 +125,13 @@ class BoneInstance(Instance):
             isPosed = (not eulerIsZero(lsmat.to_euler()))
             omat = omat.to_4x4()
             if GS.zup:
-                omat = self.RX @ omat
-            flip = self.FX
+                omat = RXP @ omat
+            flip = FX
             if not GS.unflipped:
                 omat,flip = self.flipAxes(omat, rdata.xyz)
             rmat = rdata.wsmat.to_4x4()
             if GS.zup:
-                rmat = self.RX @ rmat @ self.RX.inverted()
+                rmat = RXP @ rmat @ RXN
             #  engetudouiti's fix for posed bones
             if usePosed:
                 if rmat.determinant() > 1e-4:
@@ -182,20 +178,20 @@ class BoneInstance(Instance):
         if xyz == 'YZX':    #
             # Blender orientation: Y = twist, X = bend
             euler = Euler((0,0,0))
-            flip = self.FX
+            flip = FX
             self.axes = [0,1,2]
             self.flipped = [False,False,False]
             self.flopped = [False,True,True]
         elif xyz == 'YXZ':
             # Apparently not used
             euler = Euler((0, pi/2, 0))
-            flip = self.FZ
+            flip = FZ
             self.axes = [2,1,0]
             self.flipped = [False,False,False]
             self.flopped = [False,False,False]
         elif xyz == 'ZYX':  #
             euler = Euler((pi/2, 0, 0))
-            flip = self.FX
+            flip = FX
             self.axes = [0,2,1]
             self.flipped = [False,True,False]
             # Changed for issue 2413
@@ -203,20 +199,20 @@ class BoneInstance(Instance):
             self.flopped = [False,False,True]
         elif xyz == 'XZY':  #
             euler = Euler((0, 0, pi/2))
-            flip = self.FZ
+            flip = FZ
             self.axes = [1,0,2]
             self.flipped = [False,False,False]
             self.flopped = [False,True,False]
         elif xyz == 'ZXY':
             # Eyes and eyelids
             euler = Euler((pi/2, 0, 0))
-            flip = self.FZ
+            flip = FZ
             self.axes = [0,2,1]
             self.flipped = [False,True,False]
             self.flopped = [False,False,False]
         elif xyz == 'XYZ':  #
             euler = Euler((pi/2, pi/2, 0))
-            flip = self.FZ
+            flip = FZ
             self.axes = [1,2,0]
             self.flipped = [True,True,True]
             self.flopped = [True,True,False]
