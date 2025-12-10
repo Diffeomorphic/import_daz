@@ -144,7 +144,7 @@
 
     "limbs" : {
         "Shldr" : "upper_arm",
-        "Forearm" : "forearm",
+        "ForeArm" : "forearm",
         "Thigh" : "thigh",
         "Shin" : "shin"
     },
