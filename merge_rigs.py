@@ -80,6 +80,33 @@ class BoneInfo:
             pb.custom_shape_rotation_euler = self.pb.custom_shape_rotation_euler
 
 
+class ObjectInfo:
+    def __init__(self, ob, parent):
+        self.object = ob
+        self.parent = parent
+        self.partype = ob.parent_type
+        self.parbone = ob.parent_bone
+        self.wmat = ob.matrix_world.copy()
+        self.hide1 = ob.hide_viewport
+        self.hide2 = ob.hide_get()
+        ob.hide_viewport = False
+        ob.hide_set(False)
+
+
+    def restore(self):
+        ob = self.object
+        ob.parent = self.parent
+        ob.parent_type = self.partype
+        ob.parent_bone = self.parbone
+        setWorldMatrix(ob, self.wmat)
+        ob.hide_viewport = self.hide1
+        ob.hide_set(self.hide2)
+        if ob.type == 'MESH':
+            mod = getModifier(ob, 'ARMATURE')
+            if mod:
+                mod.object = ob.parent
+
+
 class MergeRigsOptions:
     duplicateDistance : FloatProperty(
         name = "Duplicate Distance (cm)",
@@ -197,9 +224,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             if ob in excluded:
                 return
             if parent and parent.type == 'ARMATURE':
-                objects.append((ob, parent, ob.matrix_world.copy(), ob.hide_viewport, ob.hide_get()))
-                ob.hide_viewport = False
-                ob.hide_set(False)
+                objects.append(ObjectInfo(ob, parent))
             wmat = None
             if ob.type == 'ARMATURE':
                 rig = ob
@@ -285,8 +310,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             taken = []
             rig,bones,_meshes = info[0]
             activateObject(context, rig)
-            bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-            bpy.ops.object.transform_apply()
+            if rig.parent_type != 'BONE':
+                bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+                bpy.ops.object.transform_apply()
             setMode('EDIT')
             for subrig,subbones,_submeshes in info[1:]:
                 for bname,binfo in subbones.items():
@@ -374,16 +400,8 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                 enableRigNumLayer(rig, T_WIDGETS)
 
         # Restore all objects
-        for ob,parent,wmat,hide1,hide2 in objects:
-            ob.parent = parent
-            setWorldMatrix(ob, wmat)
-            ob.hide_viewport = hide1
-            ob.hide_set(hide2)
-            if ob.type == 'MESH':
-                mod = getModifier(ob, 'ARMATURE')
-                if mod:
-                    mod.object = parent
-
+        for obinfo in objects:
+            obinfo.restore()
         return deletes
 
 #-------------------------------------------------------------
