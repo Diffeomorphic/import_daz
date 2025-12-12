@@ -137,17 +137,33 @@ class Transform:
 
     def setObject(self, ob, parent):
         # See calcMatrices in node.py
-        trans = self.evalTrans() + Vector(dazRna(ob).DazCenter)
+        trans = self.evalTrans()
         euler = Euler(self.evalRot(), dazRna(ob).DazRotMode)
         scale = self.evalScale()
         orient = Euler(dazRna(ob).DazOrient)
+        cpoint = Vector(dazRna(ob).DazCenter)
 
-        # DAZ world matrix
-        T = Matrix.Translation(GS.scale * trans)
-        R = euler.to_matrix().to_4x4()
-        S = Matrix.Diagonal(scale).to_4x4()
-        O = orient.to_matrix().to_4x4()
-        M = T @ O @ R @ S @ O.inverted()
+        R = euler.to_matrix()
+        S = Matrix.Diagonal(scale)
+        O = orient.to_matrix()
+        L = O @ R @ S @ O.inverted()
+
+        if parent:
+            return
+            if isinstance(parent, bpy.types.PoseBone):
+                pmat = RXN @ parent.matrix @ RXP
+                pcenter = Vector(dazRna(parent.bone).DazHead)
+            elif isinstance(parent, bpy.types.Object):
+                pmat = RXN @ parent.matrix_world @ RXP
+                pcenter = Vector(dazRna(parent).DazCenter)
+            pmat = pmat.to_3x3()
+            wtrans = pmat @ (trans + cpoint - pcenter)
+            wrot = pmat @ L
+        else:
+            wtrans = trans + cpoint
+            wrot = L
+
+        M = Matrix.Translation(wtrans * GS.scale) @ wrot.to_4x4()
 
         # Blender world matrix
         if GS.zup:

@@ -1241,10 +1241,10 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             "Genesis8Male",
             "Genesis9",
         ]
-        if self.assetType == "preset_hierarchical_pose":
-            return False
-        elif bname in KnownRigs:
+        if bname in KnownRigs:
             return True
+        elif self.assetType == "preset_hierarchical_pose":
+            return (bname in self.hparents.keys())
         else:
             return (bname != "_XTRA_" and
                     self.assetType in ["preset_camera", "preset_light"])
@@ -1296,6 +1296,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             self.olddata = {}
             self.dataRnas = set()
             for n,frame in lframes:
+                self.hinfos = {}
                 twists = {}
                 self.addTwists(frame)
                 for bname,bframe in frame.items():
