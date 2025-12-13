@@ -806,6 +806,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 addObjects(child, objects)
 
         objects = {}
+        ob = context.object
+        if ob.parent:
+            addObjects(ob.parent, objects)
         for ob in getSelectedObjects(context):
             addObjects(ob, objects)
         n = len("name://@selection/")
