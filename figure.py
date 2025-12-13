@@ -20,7 +20,6 @@ class FigureInstance(Instance):
             geo.figureInst = self
         Instance.__init__(self, fileref, node, struct)
         self.figure = self
-        self.planes = {}
         self.bones = {}
         self.hiddenBones = {}
 
@@ -63,10 +62,14 @@ class FigureInstance(Instance):
             dazRna(rig).DazMesh = char
             for mesh,char in zip(meshes, chars):
                 dazRna(mesh).DazMesh = char
-            self.poseChildren(rig, rig)
+            #self.poseChildren(rig, rig)
         elif meshes:
             for mesh,char in zip(meshes, chars):
                 dazRna(mesh).DazMesh = char
+        if rig:
+            inst = self.getConformInstance()
+            if inst:
+                self.copyParentPose(inst.rna, rig)
         Instance.finalize(self, context)
         if rig:
             for child in self.children.values():
@@ -81,23 +84,21 @@ class FigureInstance(Instance):
                 geonode.hideFaceGroups(self.hiddenBones.keys())
 
 
-    def poseChildren(self, ob, rig):
+    def copyParentPose(self, par, rig):
+        if rig is None or par is None:
+            return
         from .store import ConstraintStore
         store = ConstraintStore()
-        for child in ob.children:
-            if (child.type == 'ARMATURE' and
-                child.parent_type == 'OBJECT'):
-                for pb in child.pose.bones:
-                    if pb.name in rig.pose.bones.keys():
-                        parb = rig.pose.bones[pb.name]
-                        pb.matrix_basis = parb.matrix_basis
-                        pb.lock_location = parb.lock_location
-                        pb.lock_rotation = parb.lock_rotation
-                        pb.lock_scale = parb.lock_scale
-                        store.storeConstraints(parb.name, parb)
-                        store.removeConstraints(pb)
-                        store.restoreConstraints(parb.name, pb)
-                self.poseChildren(child, rig)
+        for pb in rig.pose.bones:
+            if pb.name in par.pose.bones.keys():
+                parb = par.pose.bones[pb.name]
+                pb.matrix_basis = parb.matrix_basis
+                pb.lock_location = parb.lock_location
+                pb.lock_rotation = parb.lock_rotation
+                pb.lock_scale = parb.lock_scale
+                store.storeConstraints(parb.name, parb)
+                store.removeConstraints(pb)
+                store.restoreConstraints(parb.name, pb)
 
 
     def selectChildren(self, rig):
