@@ -798,13 +798,17 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
 
     def collectHierarchy(self, context, nodes, anims):
+        def addObjects(ob, objects):
+            url = dazRna(ob).DazUrl.rsplit("#",1)[-1]
+            if url and url not in objects.keys():
+                objects[url] = ob
+            for child in ob.children:
+                addObjects(child, objects)
+
         objects = {}
         for ob in getSelectedObjects(context):
-            url = dazRna(ob).DazUrl.rsplit("#",1)[-1]
-            if url:
-                objects[url] = ob
+            addObjects(ob, objects)
         n = len("name://@selection/")
-
         figures = {}
         taken = {}
         hnodes = {}
@@ -833,7 +837,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 hnodes[key] = ob
                 parkey = node.get("parent")
                 if parkey:
-                    self.hparents[ob.name] = hnodes.get(parkey[1:])
+                    self.hparents[ob.name] = (key, hnodes.get(parkey[1:]))
         print("Hierarchy parents:")
         for obname, parent in self.hparents.items():
             print("  %s : %s" % (obname, parent))
@@ -1241,10 +1245,11 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             "Genesis8Male",
             "Genesis9",
         ]
-        if bname in KnownRigs:
+        if self.assetType == "preset_hierarchical_pose":
+            hparent = self.hparents.get(ob.name)
+            return (hparent and bname == hparent[0])
+        elif bname in KnownRigs:
             return True
-        elif self.assetType == "preset_hierarchical_pose":
-            return (bname in self.hparents.keys())
         else:
             return (bname != "_XTRA_" and
                     self.assetType in ["preset_camera", "preset_light"])
@@ -1350,7 +1355,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
         if not self.affectObject:
             pass
         else:
-            tfm.setObject(rig, self.hparents.get(rig.name))
+            hparent = self.hparents.get(rig.name)
+            if hparent:
+                tfm.setObject(rig, hparent[1])
             if rig.type in ['LIGHT', 'CAMERA'] and GS.zup:
                 rig.rotation_euler[0] += pi/2
             if self.useInsertKeys:
