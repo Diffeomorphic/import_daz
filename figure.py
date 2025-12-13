@@ -73,7 +73,6 @@ class FigureInstance(Instance):
                 if isinstance(child, BoneInstance):
                     child.buildFormulas(rig, False)
                 enableRigNumLayers(rig, [T_BONES, T_WIDGETS])
-
             if chars:
                 activateObject(context, rig)
                 self.selectChildren(rig)
@@ -86,7 +85,8 @@ class FigureInstance(Instance):
         from .store import ConstraintStore
         store = ConstraintStore()
         for child in ob.children:
-            if child.type == 'ARMATURE':
+            if (child.type == 'ARMATURE' and
+                child.parent_type == 'OBJECT'):
                 for pb in child.pose.bones:
                     if pb.name in rig.pose.bones.keys():
                         parb = rig.pose.bones[pb.name]

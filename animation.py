@@ -1296,7 +1296,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             self.olddata = {}
             self.dataRnas = set()
             for n,frame in lframes:
-                self.hinfos = {}
                 twists = {}
                 self.addTwists(frame)
                 for bname,bframe in frame.items():
