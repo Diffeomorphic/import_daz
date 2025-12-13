@@ -149,6 +149,11 @@ class Transform:
         L = O @ R @ S @ O.inverted()
 
         if parent:
+            ob.matrix_basis = Matrix()
+            if isinstance(parent, bpy.types.PoseBone):
+                ob.matrix_parent_inverse = parent.matrix.inverted()
+            elif isinstance(parent, bpy.types.Object):
+                ob.matrix_parent_inverse = parent.matrix_world.inverted()
             return
             if isinstance(parent, bpy.types.PoseBone):
                 pmat = RXN @ parent.matrix @ RXP
