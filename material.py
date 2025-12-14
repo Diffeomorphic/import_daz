@@ -1102,7 +1102,7 @@ class DAZ_OT_SaveLocalTextures(LocalTextureSaver, DazPropsOperator):
 #   Merge identical materials
 #-------------------------------------------------------------
 
-class DAZ_OT_MergeMaterials(MaterialCombiner, DazPropsOperator, IsMesh):
+class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
     bl_idname = "daz.merge_materials"
     bl_label = "Merge Materials"
     bl_description = "Merge identical materials of selected meshes"
