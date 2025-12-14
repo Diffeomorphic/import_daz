@@ -601,7 +601,7 @@ def mergeBones(rig, mergers, parents, context):
         if pb:
             pb.lock_rotation[1] = False
         for mname in mnames:
-            swapped[bname] = bname
+            swapped[mname] = bname
     for ob in rig.children:
         if ob.parent_type == 'BONE' and ob.parent_bone in swapped.keys():
             wmat = ob.matrix_world.copy()
