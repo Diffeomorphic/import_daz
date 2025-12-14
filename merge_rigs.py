@@ -537,7 +537,10 @@ def applyTransformToObjects(context, objects, excluded=[]):
                 child.name not in context.view_layer.objects.keys() or
                 (child.data and child.data.users > 1)):
                 continue
-            parents.append((child, ob, child.matrix_world.copy(), child.hide_viewport, child.hide_get(), child.hide_select))
+            parents.append((child, ob,
+                            child.parent_type, child.parent_bone,
+                            child.matrix_world.copy(),
+                            child.hide_viewport, child.hide_get(), child.hide_select))
             child.hide_viewport = False
             child.hide_set(False)
             child.hide_select = False
@@ -555,8 +558,10 @@ def applyTransformToObjects(context, objects, excluded=[]):
         ob.select_set(True)
     bpy.ops.object.transform_apply()
 
-    for child,ob,wmat,hide1,hide2,hide3 in parents:
+    for child, ob, partype, parbone, wmat, hide1, hide2, hide3 in parents:
         child.parent = ob
+        child.parent_type = partype
+        child.parent_bone = parbone
         setWorldMatrix(child, wmat)
         child.hide_viewport = hide1
         child.hide_set(hide2)

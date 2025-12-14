@@ -1125,16 +1125,6 @@ class DAZ_OT_OptimizeDrivers(DazPropsOperator, IsArmature):
 #   optimizeFurther
 #----------------------------------------------------------
 
-class DAZ_OT_OptimizeFurther(DazOperator, IsArmature):
-    bl_idname = "daz.optimize_further"
-    bl_label = "Optimize Further"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        ndeleted = optimizeFurther(context.object)
-        print("%d drivers deleted" % ndeleted)
-
-
 def optimizeFurther(rig):
     unmatched = [final for final in rig.data.keys()
                  if not baseProp(final) in rig.keys()]
@@ -1508,7 +1498,6 @@ classes = [
     DAZ_OT_DisableDrivers,
     DAZ_OT_EnableDrivers,
     DAZ_OT_OptimizeDrivers,
-    DAZ_OT_OptimizeFurther,
     DAZ_OT_CopyDrivers,
     DAZ_OT_RemoveCorruptDrivers,
 ]
