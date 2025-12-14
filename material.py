@@ -1099,22 +1099,56 @@ class DAZ_OT_SaveLocalTextures(LocalTextureSaver, DazPropsOperator):
         self.saveLocalTextures(context)
 
 #-------------------------------------------------------------
-#   Combine identical materials
+#   Merge identical materials
 #-------------------------------------------------------------
 
-class MaterialCombiner:
+class DAZ_OT_MergeMaterials(MaterialCombiner, DazPropsOperator, IsMesh):
+    bl_idname = "daz.merge_materials"
+    bl_label = "Merge Materials"
+    bl_description = "Merge identical materials of selected meshes"
+    bl_options = {'UNDO'}
+
+    useAcrossObjects : BoolProperty(
+        name = "Across Objects",
+        description = "Combine materials from different objects",
+        default = False)
+
+    useAllObjects : BoolProperty(
+        name = "All Objects",
+        description = "Combine materials for all objects in scene",
+        default = False)
+
     ignoreBump : BoolProperty(
         name = "Ignore Bump Strength",
         description = "Merge materials even if the bump strengths differ",
         default = True)
 
     def draw(self, context):
+        self.layout.prop(self, "useAcrossObjects")
+        self.layout.prop(self, "useAllObjects")
         self.layout.prop(self, "ignoreBump")
+
+
+    def run(self, context):
+        self.combine(context)
+        self.nMerged = 0
+        for ob in self.meshes:
+            self.mergeSlots(ob)
+        if not ES.easy:
+            print("Number of material slots merged: %d" % self.nMerged)
+
+
+    def getMeshes(self, context):
+        if self.useAllObjects:
+            return getVisibleMeshes(context)
+        else:
+            return getSelectedMeshes(context)
+
 
     def combine(self, context):
         self.setupShells(context)
         self.nCombined = 0
-        if self.acrossObjects:
+        if self.useAcrossObjects:
             table,diffuse = self.setupTable(self.meshes)
             for ob in self.meshes:
                 self.combineMaterials(ob, table, diffuse)
@@ -1389,43 +1423,6 @@ class MaterialCombiner:
                 return False
         return True
 
-
-class DAZ_OT_CombineSceneMaterials(MaterialCombiner, DazPropsOperator):
-    bl_idname = "daz.combine_scene_materials"
-    bl_label = "Combine Scene Materials"
-    bl_description = "Combine identical materials in scene across objects"
-    bl_options = {'UNDO'}
-
-    acrossObjects = True
-
-    def run(self, context):
-        self.combine(context)
-
-    def getMeshes(self, context):
-        return getVisibleMeshes(context)
-
-#-------------------------------------------------------------
-#   Merge identical materials
-#-------------------------------------------------------------
-
-class DAZ_OT_MergeMaterials(MaterialCombiner, DazPropsOperator, IsMesh):
-    bl_idname = "daz.merge_materials"
-    bl_label = "Merge Materials"
-    bl_description = "Merge identical materials of selected meshes"
-    bl_options = {'UNDO'}
-
-    acrossObjects = False
-
-    def run(self, context):
-        self.combine(context)
-        self.nMerged = 0
-        for ob in self.meshes:
-            self.mergeSlots(ob)
-        if not ES.easy:
-            print("Number of material slots merged: %d" % self.nMerged)
-
-    def getMeshes(self, context):
-        return getSelectedMeshes(context)
 
     def mergeSlots(self, ob):
         assoc = {}
@@ -2217,7 +2214,6 @@ def sortMaterialsByName(ob):
 
 classes = [
     DAZ_OT_SaveLocalTextures,
-    DAZ_OT_CombineSceneMaterials,
     DAZ_OT_MergeMaterials,
     DAZ_OT_CopyMaterials,
     DAZ_OT_PruneNodeTrees,

@@ -39,7 +39,6 @@ class DAZ_PT_MoreMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.strip_material_names")
         self.layout.operator("daz.copy_materials")
         self.layout.separator()
-        self.layout.operator("daz.combine_scene_materials")
         self.layout.operator("daz.find_missing_textures")
         self.layout.operator("daz.activate_diffuse")
         self.layout.separator()
