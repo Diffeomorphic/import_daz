@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "HDFeature" in locals():
+if DEBUG and "HDFeature" in locals():
     print("Reloading HD Tools")
     import imp
     imp.reload(hd_morphs)

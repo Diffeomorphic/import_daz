@@ -10,9 +10,7 @@ from ..debug import DEBUG
 import bpy
 BLENDER3 = (bpy.app.version < (4,0,0))
 
-if not DEBUG:
-    pass
-elif "HairToolsFeature" in locals():
+if DEBUG and "HairToolsFeature" in locals():
     print("Reloading Hair Tools")
     import imp
     imp.reload(hair_nodes)

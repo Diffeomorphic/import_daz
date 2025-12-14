@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "MorphFeature" in locals():
+if DEBUG and "MorphFeature" in locals():
     print("Reloading Morph Tools")
     import imp
     imp.reload(category)

@@ -4,9 +4,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "ShellEditFeature" in locals():
+if DEBUG and "ShellEditFeature" in locals():
     print("Reloading Shell Tools")
     import imp
     imp.reload(shell)

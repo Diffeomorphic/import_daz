@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "MHXFeature" in locals():
+if DEBUG and "MHXFeature" in locals():
     print("Reloading MHX Tools")
     import imp
     imp.reload(mhx_data)

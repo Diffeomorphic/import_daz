@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "FacsFeature" in locals():
+if DEBUG and "FacsFeature" in locals():
     print("Reloading FACS Tools")
     import imp
     imp.reload(facsbase)

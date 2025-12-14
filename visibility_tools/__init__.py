@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "VisibilityToolsFeature" in locals():
+if DEBUG and "VisibilityToolsFeature" in locals():
     print("Reloading Visibility Tools")
     import imp
     imp.reload(hide)

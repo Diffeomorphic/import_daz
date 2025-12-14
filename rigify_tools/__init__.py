@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "RigifyFeature" in locals():
+if DEBUG and "RigifyFeature" in locals():
     print("Reloading Rigify Tools")
     import imp
     imp.reload(rigify)

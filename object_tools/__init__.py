@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "ObjectToolsFeature" in locals():
+if DEBUG and "ObjectToolsFeature" in locals():
     print("Reloading Object Tools")
     import imp
     imp.reload(mannequin)
