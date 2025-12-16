@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "SimulationToolsFeature" in locals():
+if DEBUG and "SimulationToolsFeature" in locals():
     print("Reloading Simulation Tools")
     import imp
     imp.reload(simulation)

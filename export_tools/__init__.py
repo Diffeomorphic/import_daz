@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "ExportFeature" in locals():
+if DEBUG and "ExportFeature" in locals():
     print("Reloading Export Tools")
     import imp
     imp.reload(preset)

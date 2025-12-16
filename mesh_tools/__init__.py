@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "MeshTools" in locals():
+if DEBUG and "MeshTools" in locals():
     print("Reloading Mesh Tools")
     import imp
     imp.reload(vertex_groups)

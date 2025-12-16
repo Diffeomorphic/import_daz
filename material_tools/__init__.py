@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "MaterialToolsFeature" in locals():
+if DEBUG and "MaterialToolsFeature" in locals():
     print("Reloading Material Tools")
     import imp
     imp.reload(editor)

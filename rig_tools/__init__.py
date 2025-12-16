@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "RigToolsFeature" in locals():
+if DEBUG and "RigToolsFeature" in locals():
     print("Reloading Rig Tools")
     import imp
     imp.reload(varia)

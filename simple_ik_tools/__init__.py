@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "SimpleIkFeature" in locals():
+if DEBUG and "SimpleIkFeature" in locals():
     print("Reloading Simple IK Tools")
     import imp
     imp.reload(simple)

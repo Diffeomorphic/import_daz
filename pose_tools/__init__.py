@@ -8,9 +8,7 @@
 
 from ..debug import DEBUG
 
-if not DEBUG:
-    pass
-elif "PoseToolsFeature" in locals():
+if DEBUG and "PoseToolsFeature" in locals():
     print("Reloading Pose Tools")
     import imp
     imp.reload(save_poses)
