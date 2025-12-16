@@ -139,46 +139,6 @@ class DAZ_OT_DisplayPolygonGroup(DisplayFaceGroup, IsMesh):
         name = "Group")
 
 # ---------------------------------------------------------------------
-#   Mask face group
-# ---------------------------------------------------------------------
-
-class MaskFaceGroup(DazPropsOperator):
-    def draw(self, context):
-        self.layout.prop(self, "group")
-
-    def run(self, context):
-        from ..geonodes import addMaskFaceModifier
-        ob = context.object
-        pgs = getattr(dazRna(ob.data), self.attr)
-        pg = pgs.get(self.group)
-        if pg is None:
-            raise DazError("No face group data")
-        print("Face group %d %s" % (pg.a, pg.name))
-        addMaskFaceModifier(ob, self.attr, pg.name)
-
-
-class DAZ_OT_MaskMaterialGroup(MaskFaceGroup, IsMesh):
-    bl_idname = "daz.mask_material_group"
-    bl_label = "Mask Material Group"
-
-    attr = "DazMaterialGroup"
-
-    group : EnumProperty(
-        items = getMaterialGroups,
-        name = "Group")
-
-
-class DAZ_OT_MaskPolygonGroup(MaskFaceGroup, IsMesh):
-    bl_idname = "daz.mask_polygon_group"
-    bl_label = "Mask Polygon Group"
-
-    attr = "DazPolygonGroup"
-
-    group : EnumProperty(
-        items = getPolygonGroups,
-        name = "Group")
-
-# ---------------------------------------------------------------------
 #   Initialize
 # ---------------------------------------------------------------------
 
@@ -186,8 +146,6 @@ classes = [
     DAZ_OT_CopyAttributes,
     DAZ_OT_DisplayMaterialGroup,
     DAZ_OT_DisplayPolygonGroup,
-    DAZ_OT_MaskMaterialGroup,
-    DAZ_OT_MaskPolygonGroup,
 ]
 
 def register():
