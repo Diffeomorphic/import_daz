@@ -222,7 +222,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         finally:
             self.deleteTmp()
         t2 = perf_counter()
-        showProgress(25, 25, "MHX rig created in %.1f seconds" % (t2-t1))
+        showProgress(25, 28, "MHX rig created in %.1f seconds" % (t2-t1))
         endProgress()
         self.printMessages()
 
@@ -253,7 +253,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         #   Fix and rename bones of the genesis rig
         #-------------------------------------------------------------
 
-        showProgress(1, 25, "  Fix DAZ rig")
+        showProgress(1, 28, "  Fix DAZ rig")
         self.useBendTwist = True
         self.bendTwistGenesis = []
         bendTwistBones = list(MHX.BendTwistBones)
@@ -268,30 +268,30 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             for pb in rig.pose.bones:
                 if pb.name.endswith(("Bend", "Twist")):
                     self.store.storeConstraints(pb.name, pb)
-            showProgress(2, 25, "  Connect to parent")
+            showProgress(2, 28, "  Connect to parent")
             connectToParent(rig, MHX.ConnectBendTwist)
-            showProgress(3, 25, "  Delete bend-twist bones")
+            showProgress(3, 28, "  Delete bend-twist bones")
             self.deleteBendTwistDrvBones(rig)
-            showProgress(4, 25, "  Rename bones")
+            showProgress(4, 28, "  Rename bones")
             self.rename2Mhx(rig)
-            showProgress(5, 25, "  Join bend and twist bones")
+            showProgress(5, 28, "  Join bend and twist bones")
             bendTwistChildren = self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
-            showProgress(6, 25, "  Fix knees")
+            showProgress(6, 28, "  Fix knees")
             self.fixKnees(rig)
         elif dazRna(rig).DazRig == "genesis9":
             if self.keepG9Twist:
-                showProgress(4, 25, "  Rename bones")
+                showProgress(4, 28, "  Rename bones")
                 self.rename2Mhx(rig)
                 self.useBendTwist = False
             else:
                 self.bendTwistGenesis = MHX.BendTwistGenesis9
-                showProgress(2, 25, "  Connect to parent")
+                showProgress(2, 28, "  Connect to parent")
                 connectToParent(rig, MHX.ConnectBendTwist)
-                showProgress(3, 25, "  Delete bend-twist bones")
+                showProgress(3, 28, "  Delete bend-twist bones")
                 self.deleteBendTwistDrvBones(rig)
-                showProgress(4, 25, "  Rename bones")
+                showProgress(4, 28, "  Rename bones")
                 self.rename2Mhx(rig)
-                showProgress(5, 25, "  Join bend and twist bones")
+                showProgress(5, 28, "  Join bend and twist bones")
                 bendTwistChildren = self.joinBendTwists(rig, {}, bendTwistBones, keep=False)
                 for ob in getMeshChildren(rig):
                     self.joinVertexGroups(ob, MHX.BendTwistGenesis9)
@@ -306,51 +306,53 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         else:
             raise DazError("Cannot convert %s to MHX" % rig.name)
 
-        showProgress(7, 25, "  Fix hands")
+        showProgress(7, 28, "  Fix hands")
         self.fixHands(rig)
-        showProgress(8, 25, "  Store all constraints")
+        showProgress(8, 28, "  Store all constraints")
         self.store.storeAllConstraints(rig)
         if self.useBendTwist:
-            showProgress(9, 25, "  Create bend and twist bones")
+            showProgress(9, 28, "  Create bend and twist bones")
             self.createBendTwists(rig, bendTwistBones, bendTwistChildren)
-        #showProgress(10, 25, "  Fix bone drivers")
+        #showProgress(10, 28, "  Fix bone drivers")
         #self.fixBoneDrivers(rig, rig, MHX.BoneDrivers)
 
         #-------------------------------------------------------------
         #   Add MHX stuff
         #-------------------------------------------------------------
 
-        showProgress(10, 25, "  Add master bone")
+        showProgress(10, 28, "  Add master bone")
         self.addMaster(rig)
-        showProgress(11, 25, "  Add tweak bones")
+        showProgress(11, 28, "  Add tweak bones")
+        self.connectBones(rig)
+        showProgress(12, 28, "  Add tweak bones")
         self.addTweaks(rig)
-        showProgress(12, 25, "  Add backbone")
+        showProgress(13, 28, "  Add backbone")
         self.addBack(rig)
-        showProgress(13, 25, "  Setup FK-IK")
+        showProgress(14, 28, "  Setup FK-IK")
         self.setupFkIk(rig)
-        showProgress(14, 25, "  Add long fingers")
+        showProgress(15, 28, "  Add long fingers")
         self.addFingerWinders(rig)
-        showProgress(14, 25, "  Add head-neck follow")
+        showProgress(16, 28, "  Add head-neck follow")
         self.addHeadNeckFollow(rig)
-        showProgress(15, 25, "  Add layers")
+        showProgress(17, 28, "  Add layers")
         self.addLayers(rig)
-        showProgress(16, 25, "  Add markers")
+        showProgress(18, 28, "  Add markers")
         self.addMarkers(rig)
-        showProgress(17, 25, "  Add gizmos")
+        showProgress(19, 28, "  Add gizmos")
         self.addGizmos(rig, context)
-        showProgress(18, 25, "  Add tongue control")
+        showProgress(20, 28, "  Add tongue control")
         if self.tongueControl != 'NONE':
             self.addIkControl("tongue", self.tongueBones, self.tongueControl, "MhaTongueControl", "MhaTongueIk", F_TONGUE, rig, [L_HEAD, L_FACE], ["master"])
         if self.shaftControl != 'NONE':
             influs = [1/(n+1)**2 for n in range(len(self.shaftBones))]
             self.addIkControl("shaft", self.shaftBones, self.shaftControl, "MhaShaftControl", "MhaShaftIk", F_SHAFT, rig, [L_CUSTOM, L_CUSTOM2], ["master"], influs)
         #self.addShaftWinder(rig)
-        showProgress(19, 25, "  Constrain bend and twist bones")
+        showProgress(21, 28, "  Constrain bend and twist bones")
         self.constrainBendTwists(rig, bendTwistBones, self.useStretch)
         self.addCopyLocConstraints(rig)
-        showProgress(20, 25, "  Restore constraints")
+        showProgress(22, 28, "  Restore constraints")
         self.restoreFixConstraints(context, rig)
-        showProgress(21, 25, "  Fix constraints")
+        showProgress(23, 28, "  Fix constraints")
         deletes = self.fixConstraints(rig)
         self.store.restoreAllDrivers(rig, nrig, self.meshes, self.renamedBones)
         self.fixDrivers(rig.data)
@@ -365,12 +367,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             self.fixCustomShape(rig, "head", 4, 0)
             self.fixCustomShape(rig, "lowerjaw", 1, (0,4,2))
             self.fixCustomShape(rig, "lowerJaw", 1, (0,4,2))
-        showProgress(22, 25, "  Collect deform bones")
+        showProgress(24, 28, "  Collect deform bones")
         self.collectDeformBones(rig)
         setMode('OBJECT')
-        showProgress(23, 25, "  Rename face bones")
+        showProgress(25, 28, "  Rename face bones")
         self.renameFaceBones(rig, ["Eye", "Ear", "_eye", "_ear"])
-        showProgress(24, 25, "  Add bone groups")
+        showProgress(26, 28, "  Add bone groups")
         self.addBoneGroups(rig)
         self.addDisplayTransform(rig, "head")
         rig["MhxRig"] = True
@@ -909,7 +911,23 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         cns = copyRotation(neckpar, hip, rig, "MhaNeckFollowsSpine", "1-x", space='POSE')
 
     #-------------------------------------------------------------
-    #   Spine tweaks
+    #   Connect bones
+    #-------------------------------------------------------------
+
+    def connectBones(self, rig):
+        setMode('EDIT')
+        for suffix in ["L", "R"]:
+            shin = rig.data.edit_bones.get("shin.%s" % suffix)
+            foot = rig.data.edit_bones.get("foot.%s" % suffix)
+            toe = rig.data.edit_bones.get("toe.%s" % suffix)
+            shin.tail = foot.head
+            foot.use_connect = False
+            if toe:
+                foot.tail = toe.head
+                setConnected(toe, True)
+
+    #-------------------------------------------------------------
+    #   Tweak bones
     #-------------------------------------------------------------
 
     def addTweaks(self, rig):
@@ -1051,7 +1069,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             self.rolls[bname] = eb.roll
             return eb
 
-
     FkIk = {
         ("thigh.L", "shin.L", "foot.L"),
         ("upper_arm.L", "forearm.L", "toe.L"),
@@ -1132,11 +1149,6 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             toe = self.setLayer("toe.%s" % suffix, rig, L_HELP)
             if not (thigh and shin and foot):
                 raise DazError("Rig missing leg bones")
-            shin.tail = foot.head
-            foot.use_connect = False
-            if toe:
-                foot.tail = toe.head
-                setConnected(toe, True)
 
             legSocket = makeBone("legSocket.%s" % suffix, rig, thigh.head, thigh.head+ez, 0, L_TWEAK, thigh.parent)
             legParent = deriveBone("leg_parent.%s" % suffix, legSocket, rig, L_HELP, hip)
