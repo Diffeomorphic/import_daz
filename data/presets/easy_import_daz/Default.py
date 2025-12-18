@@ -16,7 +16,7 @@ op.useFlexions = False
 
 op.useEliminateEmpties = False
 op.useMergeRigs = True
-op.useApplyTransforms = False
+op.useApplyTransforms = True
 op.useMergeMaterials = True
 op.useMergeToes = False
 op.useBakedCorrectives = False

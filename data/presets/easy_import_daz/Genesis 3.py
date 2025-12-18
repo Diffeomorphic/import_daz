@@ -16,6 +16,7 @@ op.useBulges = False
 op.bodyMaterial = "Torso"
 
 op.useMergeRigs = True
+op.useApplyTransforms = True
 op.useMergeMaterials = True
 op.useBakedCorrectives = True
 op.useDazFavorites = True

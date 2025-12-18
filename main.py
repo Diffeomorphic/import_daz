@@ -664,7 +664,7 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
     useApplyTransforms : BoolProperty(
         name = "Apply Transforms",
         description = "Apply all transforms to objects that are not bone parented",
-        default = False)
+        default = True)
 
     useMergeMaterials : BoolProperty(
         name = "Merge Materials",

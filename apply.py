@@ -77,7 +77,7 @@ class DAZ_OT_ApplyRestPoses(CollectionShower, DazPropsOperator, IsArmature):
     useApplyTransforms : BoolProperty(
         name = "Apply Object Transforms",
         description = "Apply Object Transforms",
-        default = False)
+        default = True)
 
     useApplyShapekeys : BoolProperty(
         name = "Apply Shapekeys",

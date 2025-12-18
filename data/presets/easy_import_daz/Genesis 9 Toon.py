@@ -18,6 +18,7 @@ op.bodyMaterial = "Body"
 
 op.useMergeRigs = True
 op.useMergeMaterials = True
+op.useApplyTransforms = True
 op.useBakedCorrectives = True
 op.useDazFavorites = True
 op.useTransferClothes = True
