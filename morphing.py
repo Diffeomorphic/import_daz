@@ -29,6 +29,8 @@ class MorphSets:
         self.JCMs = ["Jcms", "Masculine", "Feminine", "Flexions"]
         self.Morphsets = self.Standards + self.Customs + self.JCMs + ["Visibility"]
 
+        self.FacsGroups =  ["Brow", "Nose", "Mouth", "Neck", "CheekJaw", "Eyes", "Lids", "Ears", "Tongue", "Visemes", "Misc"]
+
         self.Adjusters = {
             "Standard" : "Adjust Standard",
             "Custom" : "Adjust Custom",
@@ -498,7 +500,7 @@ class MorphLoader(LoadMorph, PosableMaker):
     def getAdjustProp(self):
         return self.adjuster
 
-    def findPropGroup(self, prop):
+    def findPropGroup(self, prop, asset):
         return None
 
     def addUrl(self, asset, aliases, filepath):
@@ -615,7 +617,7 @@ class MorphLoader(LoadMorph, PosableMaker):
 
     def addToMorphSet(self, prop, asset, hidden):
         from .modifier import getCanonicalKey
-        pgs = self.findPropGroup(prop)
+        pgs = self.findPropGroup(prop, asset)
         if pgs is None:
             return
         if prop in pgs.keys():
@@ -707,6 +709,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
     ignoreHD = False
     hideable = True
     disableErc = True
+    useSeparateFacsControls = False
 
     def drawOptions(self, layout):
         layout.prop(self, "useMakePosable")
@@ -734,8 +737,20 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
             return False
         return True
 
-    def findPropGroup(self, prop):
-        return getattr(dazRna(self.rig), "Daz%s" % self.morphset)
+
+    def findPropGroup(self, prop, asset):
+        attr = "Daz%s" % self.morphset
+        if asset and self.useSeparateFacsControls and GS.useSeparateFacsControls:
+            words = asset.group.split("/")
+            if words[-1] == "Adjustments":
+                group = "%sAdjustments" % words[-2].replace(" and ", "")
+            else:
+                group = words[-1].replace(" and ", "")
+            attr = "Daz%s%s" % (self.morphset, group)
+            if not group:
+                print("GG", prop, asset)
+        return getattr(dazRna(self.rig), attr)
+
 
     def getPaths(self, context):
         return
@@ -880,6 +895,7 @@ class DAZ_OT_ImportFacs(DazOperator, StandardMorphSelector, StandardMorphLoader,
 
     morphset = "Facs"
     bodypart = "Face"
+    useSeparateFacsControls = True
 
 
 class DAZ_OT_ImportFacsDetails(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
@@ -1329,7 +1345,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.loadMorphType(context, self.useExpressions, "Expressions", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
         self.loadMorphType(context, self.useVisemes, "Visemes", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
         self.loadMorphType(context, self.useHead, "Head", "Face")
-        self.loadMorphType(context, self.useFacs, "Facs", "Face")
+        self.loadMorphType(context, self.useFacs, "Facs", "Face", useSeparateFacsControls=True)
         self.loadMorphType(context, self.useFacsdetails, "Facsdetails", "Face")
         self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
         self.stripPrefix = "baseanime_"
@@ -1360,9 +1376,10 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.raiseWarning(self.message)
 
 
-    def loadMorphType(self, context, use, morphset, bodypart, ignoreFingers=False, ignoreHdMorphs=False):
+    def loadMorphType(self, context, use, morphset, bodypart, ignoreFingers=False, ignoreHdMorphs=False, useSeparateFacsControls=False):
         if use:
             t1 = perf_counter()
+            self.useSeparateFacsControls = useSeparateFacsControls
             self.morphset = morphset
             self.bodypart = bodypart
             self.faceshapes = {}
@@ -1422,7 +1439,7 @@ class CustomMorphLoader(MorphSuffix, MorphLoader):
     category = ""
     useMakePosable = False
 
-    def findPropGroup(self, prop):
+    def findPropGroup(self, prop, asset):
         if self.obj is None:
             return None
         if self.morphset != "Custom":
@@ -1867,7 +1884,7 @@ class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, 
             msg = self.getAllMorphs(namepaths, context)
 
 
-    def findPropGroup(self, prop):
+    def findPropGroup(self, prop, asset):
         if self.rig is None:
             return None
         elif self.morphset == "Custom":

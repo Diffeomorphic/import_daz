@@ -490,6 +490,11 @@ def register():
         for morphset in MS.Morphsets:
             setattr(DazImporterObject, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
             setattr(DazImporterArmature, "DazIndex%s" % morphset, IntProperty(default=0))
+        for group in MS.FacsGroups:
+            setattr(DazImporterObject, "DazFacs%s" % group, CollectionProperty(type = DazTextGroup))
+            setattr(DazImporterArmature, "DazIndexFacs%s" % group, IntProperty(default=0))
+            setattr(DazImporterObject, "DazFacs%sAdjustments" % group, CollectionProperty(type = DazTextGroup))
+            setattr(DazImporterArmature, "DazIndexFacs%sAdjustments" % group, IntProperty(default=0))
 
         bpy.types.Bone.daz_importer = PointerProperty(type=DazImporterBone)
         bpy.types.PoseBone.daz_importer = PointerProperty(type=DazImporterPoseBone)

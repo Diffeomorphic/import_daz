@@ -401,7 +401,7 @@ class LoadMorph(DriverUser):
 
 
     def setLabel(self, prop, label):
-        pgs = self.findPropGroup(prop)
+        pgs = self.findPropGroup(prop, None)
         if pgs and prop in pgs.keys():
             item = pgs[prop]
             item.text = label

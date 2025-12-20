@@ -289,6 +289,7 @@ class ChannelAsset(Modifier):
         self.value = 0
         self.min = 0
         self.max = 1
+        self.group = ""
 
     def __repr__(self):
         return ("<Channel %s %s %s>" % (self.id, self.type, self.value))
@@ -307,6 +308,7 @@ class ChannelAsset(Modifier):
                 self.type = value
         if "current_value" in channels.keys():
             self.value = channels["current_value"]
+        self.group = struct.get("group", "")
         if LS.useLoadBaked:
             LS.bakedMorphs[self.id] = self
 
@@ -855,7 +857,6 @@ class FormulaAsset(Formula, ChannelAsset):
     def __init__(self, fileref):
         ChannelAsset.__init__(self, fileref)
         Formula.__init__(self)
-        self.group = ""
         self.parentRef = None
 
 
@@ -866,12 +867,6 @@ class FormulaAsset(Formula, ChannelAsset):
     def parse(self, struct):
         Formula.parse(self, struct)
         ChannelAsset.parse(self, struct)
-        if "group" in struct.keys():
-            words = struct["group"].split("/")
-            if (len(words) > 2 and
-                words[0] == "" and
-                words[1] == "Pose Controls"):
-                self.group = words[2]
 
 
     def build(self, context, inst):

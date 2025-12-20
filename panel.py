@@ -492,8 +492,8 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
     def draw(self, context):
         scn = context.scene
         rig = self.getCurrentRig(context)
-        adj = MS.Adjusters[self.morphset]
-        if adj in rig.keys():
+        adj = MS.Adjusters.get(self.morphset)
+        if adj and adj in rig.keys():
             self.layout.prop(rig, propRef(adj))
         if not self.hasTheseMorphs(rig):
             return
@@ -651,6 +651,48 @@ class DAZ_PT_Facs(DAZ_PT_Morphs, bpy.types.Panel):
     morphset = "Facs"
     ftype = "DazFacs"
     uilist = "DAZ_UL_Facs"
+
+    def hasTheseMorphs(self, rig):
+        if dazRna(rig).DazFacs:
+            return True
+        for group in MS.FacsGroups:
+            if hasattr(dazRna(rig), "DazFacs%s" % group):
+                return True
+        return False
+
+
+for group in MS.FacsGroups:
+    string = (
+        'class DAZ_UL_Facs%s(DAZ_UL_StandardMorphs):\n' % group +
+        '    morphset = "Facs%s"\n' % group
+    )
+    exec(string)
+
+    string = (
+    'class DAZ_PT_Facs%s(DAZ_PT_Morphs, bpy.types.Panel):\n' % group +
+        '    bl_label = "%s"\n' % group +
+        '    bl_parent_id = "DAZ_PT_Facs"\n' +
+        '    morphset = "Facs%s"\n' % group +
+        '    ftype = "DazFacs%s"\n' % group +
+        '    uilist = "DAZ_UL_Facs%s"\n' % group
+    )
+    exec(string)
+
+    string = (
+        'class DAZ_UL_Facs%sAdjustments(DAZ_UL_StandardMorphs):\n' % group +
+        '    morphset = "Facs%sAdjustments"\n' % group
+    )
+    exec(string)
+
+    string = (
+        'class DAZ_PT_Facs%sAdjustments(DAZ_PT_Morphs, bpy.types.Panel):\n' % group +
+        '    bl_label = "%s Adjustments"\n' % group +
+        '    bl_parent_id = "DAZ_PT_Facs%s"\n' % group +
+        '    morphset = "Facs%sAdjustments"\n' % group +
+        '    ftype = "DazFacs%sAdjustments"\n' % group +
+        '    uilist = "DAZ_UL_Facs%sAdjustments"\n' % group
+    )
+    exec(string)
 
 
 class DAZ_UL_FacsDetails(DAZ_UL_StandardMorphs):
@@ -1052,6 +1094,15 @@ classes = [
     DAZ_PT_ClothesVisibility,
     DAZ_PT_ShellVisibility,
 ]
+
+for group in MS.FacsGroups:
+    for classname in [
+        "DAZ_UL_Facs%s" % group,
+        "DAZ_PT_Facs%s" % group,
+        "DAZ_UL_Facs%sAdjustments" % group,
+        "DAZ_PT_Facs%sAdjustments" % group]:
+        cls = eval(classname)
+        classes.append(cls)
 
 def register():
     for cls in classes:
