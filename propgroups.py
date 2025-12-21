@@ -490,11 +490,17 @@ def register():
         for morphset in MS.Morphsets:
             setattr(DazImporterObject, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
             setattr(DazImporterArmature, "DazIndex%s" % morphset, IntProperty(default=0))
-        for group in MS.FacsGroups:
-            setattr(DazImporterObject, "DazFacs%s" % group, CollectionProperty(type = DazTextGroup))
-            setattr(DazImporterArmature, "DazIndexFacs%s" % group, IntProperty(default=0))
-            setattr(DazImporterObject, "DazFacs%sAdjustments" % group, CollectionProperty(type = DazTextGroup))
-            setattr(DazImporterArmature, "DazIndexFacs%sAdjustments" % group, IntProperty(default=0))
+
+        def defineSubmorphs(base, adjust, groups):
+            for group in groups:
+                path = "%s%s%s" % (base, group, adjust)
+                setattr(DazImporterObject, "Daz%s" % path, CollectionProperty(type = DazTextGroup))
+                setattr(DazImporterArmature, "DazIndex%s" % path, IntProperty(default=0))
+
+        defineSubmorphs("Head", "", MS.HeadGroups)
+        defineSubmorphs("Facs", "", MS.FacsGroups)
+        defineSubmorphs("Head", "Adjustments", MS.HeadGroups)
+        defineSubmorphs("Facs", "Adjustments", MS.FacsGroups)
 
         bpy.types.Bone.daz_importer = PointerProperty(type=DazImporterBone)
         bpy.types.PoseBone.daz_importer = PointerProperty(type=DazImporterPoseBone)

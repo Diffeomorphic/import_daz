@@ -343,7 +343,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Strip Category",
         description = "Strip the category name from the beginning of the morph name if they are the same")
 
-    useSeparateFacsControls : BoolProperty(
+    useSeparateFaceControls : BoolProperty(
         name = "Separate FACS Controls",
         description = "Separate FACS sliders into group for face parts")
 
@@ -781,7 +781,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "sliderMultiplier")
         box.prop(self, "showFinalProps")
         box.prop(self, "showInTerminal")
-        box.prop(self, "useSeparateFacsControls")
+        box.prop(self, "useSeparateFaceControls")
         box.prop(self, "useOptimizedDrivers")
         drawEnum(self, box, "onShapekeyDrivers")
         drawEnum(self, box, "ercMethod")

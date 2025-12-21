@@ -24,20 +24,21 @@ from .uilist import updateScrollbars
 
 class MorphSets:
     def __init__(self):
-        self.Standards = ["Standard", "Units", "Expressions", "Visemes", "Head", "Facs", "Facsdetails", "Facsexpr", "Powerpose", "Body", "Anime"]
+        self.Standards = ["Standard", "Head", "Units", "Expressions", "Visemes", "Facs", "Facsdetails", "Facsexpr", "Powerpose", "Body", "Anime"]
         self.Customs = ["Custom", "Baked"]
         self.JCMs = ["Jcms", "Masculine", "Feminine", "Flexions"]
         self.Morphsets = self.Standards + self.Customs + self.JCMs + ["Visibility"]
 
-        self.FacsGroups =  ["Brow", "Nose", "Mouth", "Neck", "CheekJaw", "Eyes", "Lids", "Ears", "Tongue", "Visemes", "Misc"]
+        self.HeadGroups =  ["Brow", "Nose", "Mouth", "Lips", "Cheeks_and_Jaw", "Eyes", "Tongue", "Visemes", "Misc", "Real_World"]
+        self.FacsGroups =  ["Brow", "Nose", "Mouth", "Neck", "Cheek_and_Jaw", "Eyes", "Lids", "Ears", "Tongue", "Visemes", "Misc"]
 
         self.Adjusters = {
             "Standard" : "Adjust Standard",
             "Custom" : "Adjust Custom",
             "Baked" : "Adjust Baked",
+            "Head" : "Adjust Head",
             "Units" : "Adjust Units",
             "Expressions" : "Adjust Expressions",
-            "Head" : "Adjust Head",
             "Visemes" : "Adjust Visemes",
             "Facs" : "Adjust FACS",
             "Facsdetails" : "Adjust FACS Details",
@@ -709,7 +710,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
     ignoreHD = False
     hideable = True
     disableErc = True
-    useSeparateFacsControls = False
+    useSeparateFaceControls = False
 
     def drawOptions(self, layout):
         layout.prop(self, "useMakePosable")
@@ -740,12 +741,12 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
 
     def findPropGroup(self, prop, asset):
         attr = "Daz%s" % self.morphset
-        if asset and self.useSeparateFacsControls and GS.useSeparateFacsControls:
+        if asset and self.useSeparateFaceControls and GS.useSeparateFaceControls:
             words = asset.group.split("/")
             if words[-1] == "Adjustments":
-                group = "%sAdjustments" % words[-2].replace(" and ", "")
+                group = "%sAdjustments" % words[-2].replace(" ", "_")
             else:
-                group = words[-1].replace(" and ", "")
+                group = words[-1].replace(" ", "_")
             attr = "Daz%s%s" % (self.morphset, group)
             if not group:
                 print("GG", prop, asset)
@@ -885,6 +886,7 @@ class DAZ_OT_ImportHead(DazOperator, StandardMorphSelector, StandardMorphLoader,
 
     morphset = "Head"
     bodypart = "Face"
+    useSeparateFaceControls = True
 
 
 class DAZ_OT_ImportFacs(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
@@ -895,7 +897,7 @@ class DAZ_OT_ImportFacs(DazOperator, StandardMorphSelector, StandardMorphLoader,
 
     morphset = "Facs"
     bodypart = "Face"
-    useSeparateFacsControls = True
+    useSeparateFaceControls = True
 
 
 class DAZ_OT_ImportFacsDetails(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
@@ -1190,6 +1192,11 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
 class MorphTypeOptions:
     isMhxAware = True
 
+    useHead : BoolProperty(
+        name = "Head",
+        description = "Import all head morphs",
+        default = False)
+
     useUnits : BoolProperty(
         name = "Face Units",
         description = "Import all face units",
@@ -1208,11 +1215,6 @@ class MorphTypeOptions:
     ignoreHdMorphs : BoolProperty(
         name = "Ignore HD Morphs",
         description = "Don't import HD morphs for units, expressions, visemes",
-        default = False)
-
-    useHead : BoolProperty(
-        name = "Head",
-        description = "Import all head morphs",
         default = False)
 
     useFacs : BoolProperty(
@@ -1281,12 +1283,14 @@ class MorphTypeOptions:
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "useUnits")
+        if GS.useSeparateFaceControls:
+            self.layout.prop(self, "useHead")
+        else:
+            self.layout.prop(self, "useUnits")
+            self.layout.prop(self, "useVisemes")
         self.layout.prop(self, "useExpressions")
-        self.layout.prop(self, "useVisemes")
         if self.useUnits or self.useExpressions or self.useVisemes:
             self.subprop("ignoreHdMorphs")
-        self.layout.prop(self, "useHead")
         self.layout.prop(self, "useFacs")
         self.layout.prop(self, "useFacsdetails")
         self.layout.prop(self, "useFacsexpr")
@@ -1341,11 +1345,13 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.message = None
         self.isJcm = False
         self.stripPrefix = ""
-        self.loadMorphType(context, self.useUnits, "Units", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
+        if GS.useSeparateFaceControls:
+            self.loadMorphType(context, self.useHead, "Head", "Face", ignoreHdMorphs=self.ignoreHdMorphs, useSeparateFaceControls=True)
+        else:
+            self.loadMorphType(context, self.useUnits, "Units", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
+            self.loadMorphType(context, self.useVisemes, "Visemes", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
         self.loadMorphType(context, self.useExpressions, "Expressions", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
-        self.loadMorphType(context, self.useVisemes, "Visemes", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
-        self.loadMorphType(context, self.useHead, "Head", "Face")
-        self.loadMorphType(context, self.useFacs, "Facs", "Face", useSeparateFacsControls=True)
+        self.loadMorphType(context, self.useFacs, "Facs", "Face", useSeparateFaceControls=True)
         self.loadMorphType(context, self.useFacsdetails, "Facsdetails", "Face")
         self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
         self.stripPrefix = "baseanime_"
@@ -1376,10 +1382,10 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.raiseWarning(self.message)
 
 
-    def loadMorphType(self, context, use, morphset, bodypart, ignoreFingers=False, ignoreHdMorphs=False, useSeparateFacsControls=False):
+    def loadMorphType(self, context, use, morphset, bodypart, ignoreFingers=False, ignoreHdMorphs=False, useSeparateFaceControls=False):
         if use:
             t1 = perf_counter()
-            self.useSeparateFacsControls = useSeparateFacsControls
+            self.useSeparateFaceControls = useSeparateFaceControls
             self.morphset = morphset
             self.bodypart = bodypart
             self.faceshapes = {}

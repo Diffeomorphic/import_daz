@@ -551,6 +551,7 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
 
     def drawItems(self, scn, rig):
+        print("DIT", len(self.uilist))
         self.layout.template_list( self.uilist, "",
                                    dazRna(rig), "Daz%s" % self.morphset,
                                    dazRna(rig.data), "DazIndex%s" % self.morphset )
@@ -598,6 +599,30 @@ class DAZ_PT_Standard(DAZ_PT_Morphs, bpy.types.Panel):
     uilist = "DAZ_UL_Standard"
 
 
+def addSubpanels(base, adjust, groups):
+    for group in groups:
+        path = "%s%s%s" % (base, group, adjust)
+        parent = ("%s%s" % (base, group) if adjust else base)
+
+        string = (
+            'global DAZ_UL_%s\n' % path +
+            'class DAZ_UL_%s(DAZ_UL_StandardMorphs):\n' % path +
+            '    morphset = "%s"\n' % path
+        )
+        exec(string)
+
+        string = (
+            'global DAZ_PT_%s\n' % path +
+            'class DAZ_PT_%s(DAZ_PT_Morphs, bpy.types.Panel):\n' % path +
+            '    bl_label = "%s"\n' % group +
+            '    bl_parent_id = "DAZ_PT_%s"\n' % parent +
+            '    morphset = "%s"\n' % path +
+            '    ftype = "Daz%s"\n' % path +
+            '    uilist = "DAZ_UL_%s"\n' % path
+        )
+        exec(string)
+
+
 class DAZ_UL_Units(DAZ_UL_StandardMorphs):
     morphset = "Units"
 
@@ -618,6 +643,17 @@ class DAZ_PT_Head(DAZ_PT_Morphs, bpy.types.Panel):
     morphset = "Head"
     ftype = "DazHead"
     uilist = "DAZ_UL_Head"
+
+    def hasTheseMorphs(self, rig):
+        if dazRna(rig).DazHead:
+            return True
+        for group in MS.HeadGroups:
+            if hasattr(dazRna(rig), "DazHead%s" % group):
+                return True
+        return False
+
+addSubpanels("Head", "", MS.HeadGroups)
+addSubpanels("Head", "Adjustments", MS.HeadGroups)
 
 
 class DAZ_UL_Expressions(DAZ_UL_StandardMorphs):
@@ -660,39 +696,8 @@ class DAZ_PT_Facs(DAZ_PT_Morphs, bpy.types.Panel):
                 return True
         return False
 
-
-for group in MS.FacsGroups:
-    string = (
-        'class DAZ_UL_Facs%s(DAZ_UL_StandardMorphs):\n' % group +
-        '    morphset = "Facs%s"\n' % group
-    )
-    exec(string)
-
-    string = (
-    'class DAZ_PT_Facs%s(DAZ_PT_Morphs, bpy.types.Panel):\n' % group +
-        '    bl_label = "%s"\n' % group +
-        '    bl_parent_id = "DAZ_PT_Facs"\n' +
-        '    morphset = "Facs%s"\n' % group +
-        '    ftype = "DazFacs%s"\n' % group +
-        '    uilist = "DAZ_UL_Facs%s"\n' % group
-    )
-    exec(string)
-
-    string = (
-        'class DAZ_UL_Facs%sAdjustments(DAZ_UL_StandardMorphs):\n' % group +
-        '    morphset = "Facs%sAdjustments"\n' % group
-    )
-    exec(string)
-
-    string = (
-        'class DAZ_PT_Facs%sAdjustments(DAZ_PT_Morphs, bpy.types.Panel):\n' % group +
-        '    bl_label = "%s Adjustments"\n' % group +
-        '    bl_parent_id = "DAZ_PT_Facs%s"\n' % group +
-        '    morphset = "Facs%sAdjustments"\n' % group +
-        '    ftype = "DazFacs%sAdjustments"\n' % group +
-        '    uilist = "DAZ_UL_Facs%sAdjustments"\n' % group
-    )
-    exec(string)
+addSubpanels("Facs", "", MS.FacsGroups)
+addSubpanels("Facs", "Adjustments", MS.FacsGroups)
 
 
 class DAZ_UL_FacsDetails(DAZ_UL_StandardMorphs):
@@ -1095,14 +1100,19 @@ classes = [
     DAZ_PT_ShellVisibility,
 ]
 
-for group in MS.FacsGroups:
-    for classname in [
-        "DAZ_UL_Facs%s" % group,
-        "DAZ_PT_Facs%s" % group,
-        "DAZ_UL_Facs%sAdjustments" % group,
-        "DAZ_PT_Facs%sAdjustments" % group]:
-        cls = eval(classname)
-        classes.append(cls)
+def addSubpanelClasses(base, adjust, groups, classes):
+    for group in groups:
+        for classname in ["DAZ_UL_%s%s%s" % (base, group, adjust),
+                          "DAZ_PT_%s%s%s" % (base, group, adjust)]:
+            cls = eval(classname)
+            classes.append(cls)
+
+addSubpanelClasses("Head", "", MS.HeadGroups, classes)
+addSubpanelClasses("Head", "Adjustments", MS.HeadGroups, classes)
+addSubpanelClasses("Facs", "", MS.FacsGroups, classes)
+addSubpanelClasses("Facs", "Adjustments", MS.FacsGroups, classes)
+
+print(classes)
 
 def register():
     for cls in classes:
