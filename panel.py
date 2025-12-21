@@ -121,10 +121,12 @@ class DAZ_PT_SetupStandardMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Standard Morphs"
 
     def draw(self, context):
-        self.layout.operator("daz.import_units")
+        if GS.useSeparateFaceControls:
+            self.layout.operator("daz.import_head")
+        else:
+            self.layout.operator("daz.import_units")
+            self.layout.operator("daz.import_visemes")
         self.layout.operator("daz.import_expressions")
-        self.layout.operator("daz.import_visemes")
-        self.layout.operator("daz.import_head")
         self.layout.operator("daz.import_facs")
         self.layout.operator("daz.import_facs_details")
         self.layout.operator("daz.import_facs_expressions")
@@ -551,7 +553,6 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
 
     def drawItems(self, scn, rig):
-        print("DIT", len(self.uilist))
         self.layout.template_list( self.uilist, "",
                                    dazRna(rig), "Daz%s" % self.morphset,
                                    dazRna(rig.data), "DazIndex%s" % self.morphset )

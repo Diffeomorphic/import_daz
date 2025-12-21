@@ -213,6 +213,8 @@ class MorphPaths:
         self.morphFiles = {}
         self.morphNames = {}
         self.ShortForms["units"] = self.ShortForms["ctrlunits"] + self.ShortForms["ectrlunits"] + self.ShortForms["phmunits"]
+        self.ShortForms["ctrlhead"] = self.ShortForms["ctrlunits"] + ["ctrlvsm"]
+        self.ShortForms["head"] = self.ShortForms["units"] + ["vsm"]
 
 
     def getMorphPaths(self, char):

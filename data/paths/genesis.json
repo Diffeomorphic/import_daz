@@ -1,6 +1,12 @@
 {
 	"name" : "Genesis",
 	"hd-morphs" : false,
+	"head" : {
+		"prefix" : "ctrl",
+		"include" : "ctrlhead",
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis/Base/Morphs/DAZ 3D/Base/"
+	},
 	"units" : {
 		"prefix" : "ctrl",
 		"include" : "ctrlunits",
@@ -10,9 +16,8 @@
 	"expressions" : {
 		"prefix" : "ctrl",
 		"include" : ["ctrl"],
-		"exclude" : "ctrlunits",
+		"exclude" : "ctrlhead",
 		"exclude2" : "ctrlbody",
-		"exclude3" : ["ctrlvsm"],
 		"path" : "data/DAZ 3D/Genesis/Base/Morphs/DAZ 3D/Base/"
 	},
 	"visemes" : {
@@ -24,8 +29,8 @@
 	"body" : {
 		"prefix" : "ctrl",
 		"include" : "ctrlbody",
-		"exclude" : [],		
+		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis/Base/Morphs/DAZ 3D/Base/"
 	}
-}	
-		
+}
+

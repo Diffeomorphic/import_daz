@@ -1,6 +1,12 @@
 {
 	"name" : "Genesis2-male",
 	"hd-morphs" : false,
+	"head" : {
+		"prefix" : ["ctrl", "phm", "vsm"],
+		"include" : "head",
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 2/Male/Morphs/DAZ 3D/Base/"
+	},
 	"units" : {
 		"prefix" : ["ctrl", "phm"],
 		"include" : "units",
@@ -22,8 +28,8 @@
 	"body" : {
 		"prefix" : "ctrl",
 		"include" : "ctrlbody",
-		"exclude" : [],		
+		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 2/Male/Morphs/DAZ 3D/Base/"
 	}
-}	
-		
+}
+
