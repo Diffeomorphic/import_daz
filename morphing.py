@@ -296,7 +296,7 @@ class MorphPaths:
                                 continue
                             isright,name = self.isRightType(fname, prefixes, strips, includes, excludes)
                             key = fname.lower()
-                            if isright and key not in typeNames.keys():
+                            if isright and not typeFiles.get(name):
                                 typeFiles[name] = canonicalPath("%s/%s" % (abspath, file))
                                 typeNames[key] = name
 
