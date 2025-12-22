@@ -311,11 +311,17 @@ class MorphGroup:
     prefix : StringProperty(default = "")
     ftype : StringProperty(default = "")
 
+    subgroups = []
+
     def init(self, morphset, category, prefix, ftype):
         self.morphset = morphset
         self.category = category
         self.prefix = prefix
         self.ftype = ftype
+        if morphset == "DazFacs":
+            self.subgroups = MS.FacsGroups
+        elif morphset == "DazHead":
+            self.subgroups = MS.HeadGroups
 
 
     def getFiltered(self):
@@ -330,30 +336,41 @@ class MorphGroup:
 
 
     def getRelevantMorphs(self, scn, rig, adjusters=False):
-        filtered = self.getFiltered()
+        def addSubMorphs(rig, base, groups, morphs):
+            for group in groups:
+                pgs = getattr(dazRna(rig), "Daz%s%s" % (base, group))
+                morphs += list(pgs.keys())
+
+        from .morphing import MS
         morphs = []
         if rig is None:
             return morphs
         if self.morphset == "Custom":
             return self.getCustomMorphs(scn, rig)
         elif self.morphset == "All":
-            from .morphing import MS
             if adjusters:
                 adj = "Adjust Morph Strength"
                 if adj in rig.keys():
                     morphs.append(adj)
             for mset in MS.Standards:
                 pgs = getattr(dazRna(rig), "Daz%s" % mset)
-                morphs += [key for key in pgs.keys()]
+                morphs += list(pgs.keys())
+            addSubMorphs(rig, "Head", MS.HeadGroups, morphs)
+            addSubMorphs(rig, "Facs", MS.FacsGroups, morphs)
             for cat in dazRna(rig).DazMorphCats:
                 morphs += [morph.name for morph in cat.morphs]
         else:
+            filtered = self.getFiltered()
             if adjusters:
                 adj = "Adjust %s" % self.morphset
                 if adj in rig.keys():
                     morphs.append(adj)
             pgs = getattr(dazRna(rig), "Daz%s" % self.morphset)
             morphs += [key for key,on in zip(pgs.keys(), filtered) if on]
+            if self.morphset == "Head":
+                addSubMorphs(rig, "Head", MS.HeadGroups, morphs)
+            elif self.morphset == "Facs":
+                addSubMorphs(rig, "Facs", MS.FacsGroups, morphs)
         return morphs
 
 

@@ -553,9 +553,11 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
 
     def drawItems(self, scn, rig):
-        self.layout.template_list( self.uilist, "",
-                                   dazRna(rig), "Daz%s" % self.morphset,
-                                   dazRna(rig.data), "DazIndex%s" % self.morphset )
+        pgs = getattr(dazRna(rig), "Daz%s" % self.morphset)
+        if len(pgs) > 0:
+            self.layout.template_list( self.uilist, "",
+                                       dazRna(rig), "Daz%s" % self.morphset,
+                                       dazRna(rig.data), "DazIndex%s" % self.morphset )
 
 
 class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
@@ -649,12 +651,12 @@ class DAZ_PT_Head(DAZ_PT_Morphs, bpy.types.Panel):
         if dazRna(rig).DazHead:
             return True
         for group in MS.HeadGroups:
-            if hasattr(dazRna(rig), "DazHead%s" % group):
+            if getattr(dazRna(rig), "DazHead%s" % group):
                 return True
         return False
 
 addSubpanels("Head", "", MS.HeadGroups)
-addSubpanels("Head", "Adjustments", MS.HeadGroups)
+#addSubpanels("Head", "Adjustments", MS.HeadGroups)
 
 
 class DAZ_UL_Expressions(DAZ_UL_StandardMorphs):
@@ -693,7 +695,7 @@ class DAZ_PT_Facs(DAZ_PT_Morphs, bpy.types.Panel):
         if dazRna(rig).DazFacs:
             return True
         for group in MS.FacsGroups:
-            if hasattr(dazRna(rig), "DazFacs%s" % group):
+            if getattr(dazRna(rig), "DazFacs%s" % group):
                 return True
         return False
 
@@ -1109,11 +1111,9 @@ def addSubpanelClasses(base, adjust, groups, classes):
             classes.append(cls)
 
 addSubpanelClasses("Head", "", MS.HeadGroups, classes)
-addSubpanelClasses("Head", "Adjustments", MS.HeadGroups, classes)
+#addSubpanelClasses("Head", "Adjustments", MS.HeadGroups, classes)
 addSubpanelClasses("Facs", "", MS.FacsGroups, classes)
 addSubpanelClasses("Facs", "Adjustments", MS.FacsGroups, classes)
-
-print(classes)
 
 def register():
     for cls in classes:

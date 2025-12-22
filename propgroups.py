@@ -498,8 +498,8 @@ def register():
                 setattr(DazImporterArmature, "DazIndex%s" % path, IntProperty(default=0))
 
         defineSubmorphs("Head", "", MS.HeadGroups)
+        #defineSubmorphs("Head", "Adjustments", MS.HeadGroups)
         defineSubmorphs("Facs", "", MS.FacsGroups)
-        defineSubmorphs("Head", "Adjustments", MS.HeadGroups)
         defineSubmorphs("Facs", "Adjustments", MS.FacsGroups)
 
         bpy.types.Bone.daz_importer = PointerProperty(type=DazImporterBone)

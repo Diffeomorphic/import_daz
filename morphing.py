@@ -29,7 +29,7 @@ class MorphSets:
         self.JCMs = ["Jcms", "Masculine", "Feminine", "Flexions"]
         self.Morphsets = self.Standards + self.Customs + self.JCMs + ["Visibility"]
 
-        self.HeadGroups =  ["Brow", "Nose", "Mouth", "Lips", "Cheeks_and_Jaw", "Eyes", "Tongue", "Visemes", "Misc", "Real_World"]
+        self.HeadGroups =  ["Brow", "Nose", "Mouth", "Lips", "Cheeks_and_Jaw", "Eyes", "Tongue", "Visemes", "Real_World"]
         self.FacsGroups =  ["Brow", "Nose", "Mouth", "Neck", "Cheek_and_Jaw", "Eyes", "Lids", "Ears", "Tongue", "Visemes", "Misc"]
 
         self.Adjusters = {
@@ -52,7 +52,6 @@ class MorphSets:
             "Flexions" : "Adjust Flexions",
             "Anime" : "Adjust Anime",
         }
-
 
 MS = MorphSets()
 
@@ -749,9 +748,10 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
                 group = "%sAdjustments" % words[-2].replace(" ", "_")
             else:
                 group = words[-1].replace(" ", "_")
-            attr = "Daz%s%s" % (self.morphset, group)
-            if not group:
-                print("GG", prop, asset)
+            if group:
+                attr2 = "Daz%s%s" % (self.morphset, group)
+                if hasattr(dazRna(self.rig), attr2):
+                    return getattr(dazRna(self.rig), attr2)
         return getattr(dazRna(self.rig), attr)
 
 
