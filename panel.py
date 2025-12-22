@@ -617,7 +617,7 @@ def addSubpanels(base, adjust, groups):
         string = (
             'global DAZ_PT_%s\n' % path +
             'class DAZ_PT_%s(DAZ_PT_Morphs, bpy.types.Panel):\n' % path +
-            '    bl_label = "%s"\n' % group +
+            '    bl_label = "%s %s"\n' % (group, adjust) +
             '    bl_parent_id = "DAZ_PT_%s"\n' % parent +
             '    morphset = "%s"\n' % path +
             '    ftype = "Daz%s"\n' % path +
