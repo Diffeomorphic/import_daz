@@ -101,7 +101,7 @@ class GlobalSettings:
         self.showInTerminal = True
         self.driverRotationMode = 'NATIVE'
         self.ercMethod = 'NONE'
-        self.useSeparateFaceControls = False
+        self.useFaceSubpanels = False
         self.useBakedMorphs = False
         self.useStripCategory = False
         self.useDefaultDrivers = True

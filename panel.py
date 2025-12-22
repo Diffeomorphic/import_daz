@@ -121,7 +121,7 @@ class DAZ_PT_SetupStandardMorphs(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Standard Morphs"
 
     def draw(self, context):
-        if GS.useSeparateFaceControls:
+        if GS.useFaceSubpanels:
             self.layout.operator("daz.import_head")
         else:
             self.layout.operator("daz.import_units")

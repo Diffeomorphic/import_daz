@@ -711,7 +711,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
     ignoreHD = False
     hideable = True
     disableErc = True
-    useSeparateFaceControls = False
+    useFaceSubpanels = False
 
     def drawOptions(self, layout):
         layout.prop(self, "useMakePosable")
@@ -742,7 +742,7 @@ class StandardMorphLoader(MorphSuffix, MorphLoader):
 
     def findPropGroup(self, prop, asset):
         attr = "Daz%s" % self.morphset
-        if asset and self.useSeparateFaceControls and GS.useSeparateFaceControls:
+        if asset and self.useFaceSubpanels and GS.useFaceSubpanels:
             words = asset.group.split("/")
             if words[-1] == "Adjustments":
                 group = "%sAdjustments" % words[-2].replace(" ", "_")
@@ -888,7 +888,7 @@ class DAZ_OT_ImportHead(DazOperator, StandardMorphSelector, StandardMorphLoader,
 
     morphset = "Head"
     bodypart = "Face"
-    useSeparateFaceControls = True
+    useFaceSubpanels = True
 
 
 class DAZ_OT_ImportFacs(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
@@ -899,7 +899,7 @@ class DAZ_OT_ImportFacs(DazOperator, StandardMorphSelector, StandardMorphLoader,
 
     morphset = "Facs"
     bodypart = "Face"
-    useSeparateFaceControls = True
+    useFaceSubpanels = True
 
 
 class DAZ_OT_ImportFacsDetails(DazOperator, StandardMorphSelector, StandardMorphLoader, IsMeshArmature):
@@ -1285,7 +1285,7 @@ class MorphTypeOptions:
         default = True)
 
     def draw(self, context):
-        if GS.useSeparateFaceControls:
+        if GS.useFaceSubpanels:
             self.layout.prop(self, "useHead")
         else:
             self.layout.prop(self, "useUnits")
@@ -1347,13 +1347,13 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.message = None
         self.isJcm = False
         self.stripPrefix = ""
-        if GS.useSeparateFaceControls:
-            self.loadMorphType(context, self.useHead, "Head", "Face", ignoreHdMorphs=self.ignoreHdMorphs, useSeparateFaceControls=True)
+        if GS.useFaceSubpanels:
+            self.loadMorphType(context, self.useHead, "Head", "Face", ignoreHdMorphs=self.ignoreHdMorphs, useFaceSubpanels=True)
         else:
             self.loadMorphType(context, self.useUnits, "Units", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
             self.loadMorphType(context, self.useVisemes, "Visemes", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
         self.loadMorphType(context, self.useExpressions, "Expressions", "Face", ignoreHdMorphs=self.ignoreHdMorphs)
-        self.loadMorphType(context, self.useFacs, "Facs", "Face", useSeparateFaceControls=True)
+        self.loadMorphType(context, self.useFacs, "Facs", "Face", useFaceSubpanels=True)
         self.loadMorphType(context, self.useFacsdetails, "Facsdetails", "Face")
         self.loadMorphType(context, self.useFacsexpr, "Facsexpr", "Face")
         self.stripPrefix = "baseanime_"
@@ -1384,10 +1384,10 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
         self.raiseWarning(self.message)
 
 
-    def loadMorphType(self, context, use, morphset, bodypart, ignoreFingers=False, ignoreHdMorphs=False, useSeparateFaceControls=False):
+    def loadMorphType(self, context, use, morphset, bodypart, ignoreFingers=False, ignoreHdMorphs=False, useFaceSubpanels=False):
         if use:
             t1 = perf_counter()
-            self.useSeparateFaceControls = useSeparateFaceControls
+            self.useFaceSubpanels = useFaceSubpanels
             self.morphset = morphset
             self.bodypart = bodypart
             self.faceshapes = {}
