@@ -1116,6 +1116,42 @@ class DAZ_OT_MoveMorphsToCategory(DazOperator, GeneralMorphSelector, IsMeshArmat
         addToCategories(rig, props, labels, self.newCategory)
 
 #-------------------------------------------------------------
+#   Copy face subpanels
+#-------------------------------------------------------------
+
+class DAZ_OT_CopyFaceSubpanels(DazOperator, IsArmature):
+    bl_idname = "daz.copy_face_subpanels"
+    bl_label = "Copy Face Subpanels"
+    bl_description = "Copy face subpanels from active to selected"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        from ..morphing import MS
+        src = context.object
+        for trg in getSelectedArmatures(context):
+            if trg != src:
+                for group in MS.HeadGroups:
+                    self.copySubpanel(src, trg, "Head", "", group)
+                for group in MS.FacsGroups:
+                    self.copySubpanel(src, trg, "Facs", "", group)
+                    self.copySubpanel(src, trg, "Facs", "Adjustments", group)
+                for mset in ["Units", "Visemes", "Facs"]:
+                    pgs = getattr(dazRna(trg), "Daz%s" % mset)
+                    pgs.clear()
+
+
+    def copySubpanel(self, src, trg, base, adjust, group):
+        path = "Daz%s%s%s" % (base, group, adjust)
+        pgs1 = getattr(dazRna(src), path)
+        pgs2 = getattr(dazRna(trg), path)
+        pgs2.clear()
+        for pg1 in pgs1:
+            if pg1.name in trg.keys():
+                pg2 = pgs2.add()
+                pg2.name = pg1.name
+                pg2.text = pg1.text
+
+#-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
 
@@ -1137,6 +1173,8 @@ classes = [
 
     DAZ_OT_ConvertMorphsToShapes,
     DAZ_OT_MoveMorphsToCategory,
+
+    DAZ_OT_CopyFaceSubpanels,
 ]
 
 def register():

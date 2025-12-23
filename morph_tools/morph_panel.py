@@ -22,6 +22,8 @@ class DAZ_PT_Categories(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.join_categories")
         self.layout.operator("daz.remove_categories")
         self.layout.operator("daz.remove_standard_morphs")
+        self.layout.separator()
+        self.layout.operator("daz.copy_face_subpanels")
 
 
 class DAZ_PT_Shapekeys(DAZ_PT_SetupTab, bpy.types.Panel):
