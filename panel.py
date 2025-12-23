@@ -483,7 +483,7 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
     def hasTheseMorphs(self, rig):
         prop = "Daz%s" % self.morphset
-        return getattr(dazRna(rig), prop)
+        return (hasattr(dazRna(rig), prop) and getattr(dazRna(rig), prop))
 
 
     def hasAdjustProp(self, rig):
@@ -651,7 +651,8 @@ class DAZ_PT_Head(DAZ_PT_Morphs, bpy.types.Panel):
         if dazRna(rig).DazHead:
             return True
         for group in MS.HeadGroups:
-            if getattr(dazRna(rig), "DazHead%s" % group):
+            attr = "DazHead%s" % group
+            if hasattr(dazRna(rig), attr) and getattr(dazRna(rig), attr):
                 return True
         return False
 
@@ -695,7 +696,8 @@ class DAZ_PT_Facs(DAZ_PT_Morphs, bpy.types.Panel):
         if dazRna(rig).DazFacs:
             return True
         for group in MS.FacsGroups:
-            if getattr(dazRna(rig), "DazFacs%s" % group):
+            attr = "DazFacs%s" % group
+            if hasattr(dazRna(rig), attr) and getattr(dazRna(rig), attr):
                 return True
         return False
 
