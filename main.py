@@ -744,6 +744,7 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
         FitOptions.draw(self, context)
         ColorOptions.draw(self, context)
         self.layout.separator()
+        self.layout.prop(self, "useApplyTransforms")
         self.layout.prop(self, "useMergeMaterials")
         self.layout.prop(self, "useEliminateEmpties")
         self.layout.prop(self, "useMergeRigs")
@@ -752,7 +753,6 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
             self.subprop("useMergeNonConforming")
             self.subprop("useConvertWidgets")
             self.subprop("useTieRigs")
-        self.layout.prop(self, "useApplyTransforms")
         self.layout.prop(self, "useMergeToes")
         self.layout.separator()
         self.layout.prop(self, "useFavoMorphs")
@@ -887,6 +887,10 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
                 mainMesh = None
             print(msg)
 
+        if self.useApplyTransforms:
+            from .apply import applyTransforms
+            applyTransforms(objects)
+
         if mainRig and activateObject(context, mainRig):
             if self.useEliminateEmpties:
                 bpy.ops.daz.eliminate_empties(useAllEmpties = False)
@@ -955,9 +959,6 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
                         isSingleHD = copyGraftGroups(context, hdob, baseob, grafts)
 
         tied = []
-        if self.useApplyTransforms:
-            from .apply import applyTransforms
-            applyTransforms(objects)
 
         if mainChar and mainRig and mainMesh:
             if (  self.useUnits or

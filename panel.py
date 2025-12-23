@@ -53,9 +53,9 @@ class DAZ_PT_SetupCorrections(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Corrections"
 
     def draw(self, context):
+        self.layout.operator("daz.apply_transforms")
         self.layout.operator("daz.eliminate_empties")
         self.layout.operator("daz.merge_rigs")
-        self.layout.operator("daz.apply_transforms")
         self.layout.operator("daz.merge_toes")
         self.layout.separator()
         self.layout.operator("daz.copy_pose")
