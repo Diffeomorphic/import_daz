@@ -621,7 +621,7 @@ class MorphLoader(LoadMorph, PosableMaker):
         from .modifier import getCanonicalKey
         pgs = self.findPropGroup(prop, asset)
         if pgs is None:
-            return        
+            return
         if prop in pgs.keys():
             item = pgs[prop]
             old = True
@@ -650,14 +650,15 @@ class MorphLoader(LoadMorph, PosableMaker):
                 item.text = "[%s]" % label
         else:
             item.text = label
-        
-        pgs = dazRna(self.rig).DazActiveMorphs
-        pg = pgs.get(prop)
-        if pg is None:
-            pg = pgs.add()
-            pg.name = prop
-        pg.text = item.text
-        
+
+        if GS.useFaceSubpanels:
+            pgs = dazRna(self.rig).DazActiveMorphs
+            pg = pgs.get(prop)
+            if pg is None:
+                pg = pgs.add()
+                pg.name = prop
+            pg.text = item.text
+
         return prop
 
 
@@ -2262,6 +2263,43 @@ class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader
             self.raiseWarning(msg)
 
 #-------------------------------------------------------------
+#   Update active morphs
+#-------------------------------------------------------------
+
+class DAZ_OT_UpdateActiveMorphs(DazOperator, IsMeshArmature):
+    bl_idname = "daz.update_active_morphs"
+    bl_label = "Update Active Morphs"
+    bl_description = "Update the active morphs panel"
+
+    def run(self, context):
+        rig = getRigFromContext(context)
+
+        def addMorphs(rig, path, morphs):
+            pgs = getattr(dazRna(rig), path)
+            for pg in pgs:
+                morphs[pg.name] = pg.text
+
+        morphs = {}
+        for mset in MS.Standards:
+            addMorphs(rig, "Daz%s" % mset, morphs)
+        for group in MS.HeadGroups:
+            addMorphs(rig, "DazHead%s" % group, morphs)
+        for group in MS.FacsGroups:
+            addMorphs(rig, "DazFacs%s" % group, morphs)
+        for cat in dazRna(rig).DazMorphCats:
+            for pg in cat.morphs:
+                morphs[pg.name] = pg.text
+
+        pgs = dazRna(rig).DazActiveMorphs
+        pgs.clear()
+        morphs = list(morphs.items())
+        morphs.sort()
+        for name, text in morphs:
+            pg = pgs.add()
+            pg.name = name
+            pg.text = text
+
+#-------------------------------------------------------------
 #   Register
 #-------------------------------------------------------------
 
@@ -2291,6 +2329,8 @@ classes = [
     DAZ_OT_LoadFavoMorphs,
     DAZ_OT_ImportBakedCorrectives,
     DAZ_OT_ImportDazFavoMorphs,
+
+    DAZ_OT_UpdateActiveMorphs,
 ]
 
 def register():

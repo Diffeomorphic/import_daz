@@ -580,7 +580,10 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
         else:
             split = self.layout.split()
             split.operator("daz.disable_drivers")
-            split.prop(dazRna(scn), "DazUsedPropsOnly")
+            if GS.useFaceSubpanels:
+                split.operator("daz.update_active_morphs")
+            else:
+                split.prop(dazRna(scn), "DazUsedPropsOnly")
         self.preamble(self.layout, context.scene, rig)
         if GS.ercMethod in ('ARMATURE', 'ALL') and dazRna(rig).DazRig.startswith("genesis"):
             row = self.layout.row()
@@ -601,6 +604,10 @@ class DAZ_PT_ActiveMorphs(DAZ_PT_Morphs, bpy.types.Panel):
     morphset = "ActiveMorphs"
     ftype = "DazActiveMorphs"
     uilist = "DAZ_UL_ActiveMorphs"
+
+    @classmethod
+    def poll(self, context):
+        return GS.useFaceSubpanels
 
 
 class DAZ_UL_Standard(DAZ_UL_StandardMorphs):
