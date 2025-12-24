@@ -22,6 +22,8 @@ def morphText(rig, morph, prefix):
 
 
 class DAZ_UL_MorphList(bpy.types.UIList):
+    usedPropsOnly = False
+    
     def draw_item(self, context, layout, data, morph, icon, active, indexProp):
         rig,amt = self.getRigAmt(context)
         key = morph.name
@@ -78,7 +80,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
             flt_flags = [self.bitflag_filter_item] * len(morphs)
 
         scn = context.scene
-        if dazRna(scn).DazUsedPropsOnly:    # and isinstance(data, bpy.types.Object):
+        if dazRna(scn).DazUsedPropsOnly or self.usedPropsOnly: 
             rna = self.getRnaFromData(context, data)
             flt_flags = [flag * (abs(rna.get(finalProp(morph.name), 0.0)) > 1e-4)
                          for flag,morph in zip(flt_flags, morphs)]

@@ -621,7 +621,7 @@ class MorphLoader(LoadMorph, PosableMaker):
         from .modifier import getCanonicalKey
         pgs = self.findPropGroup(prop, asset)
         if pgs is None:
-            return
+            return        
         if prop in pgs.keys():
             item = pgs[prop]
             old = True
@@ -650,6 +650,14 @@ class MorphLoader(LoadMorph, PosableMaker):
                 item.text = "[%s]" % label
         else:
             item.text = label
+        
+        pgs = dazRna(self.rig).DazActiveMorphs
+        pg = pgs.get(prop)
+        if pg is None:
+            pg = pgs.add()
+            pg.name = prop
+        pg.text = item.text
+        
         return prop
 
 

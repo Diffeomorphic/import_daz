@@ -223,6 +223,7 @@ if DAZ_PROPS:
         DazInheritScale : BoolProperty()
         DazDriversDisabled : BoolProperty()
         DazCustomMorphs : BoolProperty()
+        DazActiveMorphs : CollectionProperty(type = DazTextGroup)
         DazMeshMorphs : BoolProperty()
         DazMeshDrivers : BoolProperty()
         DazMorphAuto : BoolProperty()
@@ -263,6 +264,7 @@ if DAZ_PROPS:
         DazBoneMap : CollectionProperty(type=DazStringGroup)
         DazMergedRigs : CollectionProperty(type = DazStringBoolGroup)
         DazRigidityScaleFactors : CollectionProperty(type=DazRigidityScaleFactor)
+        DazIndexActiveMorphs : IntProperty(default=0)
 
 
     class DazImporterMesh(DazImporterGroup):

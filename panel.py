@@ -591,6 +591,18 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
             self.layout.prop(rig, propRef(prop))
 
 
+class DAZ_UL_ActiveMorphs(DAZ_UL_StandardMorphs):
+    usedPropsOnly = True
+    morphset = "ActiveMorphs"
+
+class DAZ_PT_ActiveMorphs(DAZ_PT_Morphs, bpy.types.Panel):
+    bl_label = "Active Morphs"
+    bl_parent_id = "DAZ_PT_MorphGroup"
+    morphset = "ActiveMorphs"
+    ftype = "DazActiveMorphs"
+    uilist = "DAZ_UL_ActiveMorphs"
+
+
 class DAZ_UL_Standard(DAZ_UL_StandardMorphs):
     morphset = "Standard"
 
@@ -1067,6 +1079,7 @@ classes = [
     DAZ_PT_Posing,
     DAZ_PT_LocksLimits,
 
+    DAZ_UL_ActiveMorphs,
     DAZ_UL_Standard,
     DAZ_UL_Units,
     DAZ_UL_Head,
@@ -1083,6 +1096,7 @@ classes = [
     DAZ_UL_Baked,
 
     DAZ_PT_MorphGroup,
+    DAZ_PT_ActiveMorphs,
     DAZ_PT_Standard,
     DAZ_PT_Units,
     DAZ_PT_Head,
