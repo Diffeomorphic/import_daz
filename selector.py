@@ -531,20 +531,6 @@ class DAZ_OT_ClearMorphs(DazOperator, MorphGroup, IsMeshArmature):
             updateRigDrivers(context, rig)
 
 
-class DAZ_OT_SetMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):
-    bl_idname = "daz.set_morphs"
-    bl_label = "Set Morphs"
-    bl_description = "Set all selected morphs of specified type to given value.\nDoes not affect integer properties"
-    bl_options = {'UNDO'}
-
-
-    def run(self, context):
-        scn = context.scene
-        for rig in getRigsFromContext(context):
-            setMorphs(self.value, rig, self, scn, scn.frame_current, False)
-            updateRigDrivers(context, rig)
-
-
 class DAZ_OT_MultiplyMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):
     bl_idname = "daz.multiply_morphs"
     bl_label = "Multiply Morphs"
@@ -617,7 +603,6 @@ class DAZ_OT_AddKeysets(DazOperator, MorphGroup, IsMeshArmature):
             for morph in morphs:
                 if getActivated(rig, rig, morph):
                     aks.paths.add(rig.id_data, propRef(morph))
-            updateRigDrivers(context, rig)
 
 #------------------------------------------------------------------
 #   Set morph keys
@@ -637,7 +622,6 @@ class DAZ_OT_KeyMorphs(DazOperator, MorphGroup, IsMeshArmature):
             for morph in morphs:
                 if getActivated(rig, rig, morph):
                     keyProp(rig, morph, scn.frame_current)
-            updateRigDrivers(context, rig)
 
 
 class DAZ_OT_KeyShapes(DazOperator, MorphGroup, IsMesh):
@@ -672,7 +656,6 @@ class DAZ_OT_UnkeyMorphs(DazOperator, MorphGroup, IsMeshArmature):
             for morph in morphs:
                 if getActivated(rig, rig, morph):
                     unkeyProp(rig, morph, scn.frame_current)
-            updateRigDrivers(context, rig)
 
 
 class DAZ_OT_UnkeyShapes(DazOperator, MorphGroup, IsMesh):
