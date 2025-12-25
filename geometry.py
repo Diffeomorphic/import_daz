@@ -551,8 +551,8 @@ class GeoNode(Node, SimNode):
             self.addLSMesh(ob, inst, LS.rigname)
             for extra in self.extra:
                 for favo in extra.get("favorites", []):
-                    item = dazRna(ob.data).DazFavorites.add()
-                    item.name = favo
+                    pg = dazRna(ob.data).DazFavorites.add()
+                    pg.name = favo
 
 
     def copyHDMaterials(self, ob, hdob, context, inst):
@@ -1291,11 +1291,11 @@ class Geometry(Asset, Channels):
             if "materials" in struct.keys() and "name" in struct.keys():
                 if struct["name"][0:8] == "Template":
                     continue
-                items = dazRna(me).DazMaterialSets.add()
-                items.name = struct["name"]
+                pgs = dazRna(me).DazMaterialSets.add()
+                pgs.name = struct["name"]
                 for mname in struct["materials"]:
-                    item = items.names.add()
-                    item.name = mname
+                    pg = pgs.names.add()
+                    pg.name = mname
 
         obname = geonode.getObjectName(inst)
         ob = bpy.data.objects.new(obname, me)

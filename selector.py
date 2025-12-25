@@ -735,7 +735,7 @@ def autoKeyShape(skeys, key, scn, frame):
         keyShape(skeys, key, frame)
 
 
-def pinProp(rig, scn, key, mgrp, frame, value=1.0):
+def pinMorph(rig, scn, key, mgrp, frame, value=1.0):
     if rig:
         setMorphs(0.0, rig, mgrp, scn, frame, False)
         value0 = rig.get(key)
@@ -752,10 +752,10 @@ def pinShape(ob, scn, key, mgrp, frame):
         autoKeyShape(skeys, key, scn, frame)
 
 
-class DAZ_OT_PinProp(DazOperator, MorphGroup, IsMeshArmature):
-    bl_idname = "daz.pin_prop"
+class DAZ_OT_PinMorph(DazOperator, MorphGroup, IsMeshArmature):
+    bl_idname = "daz.pin_morph"
     bl_label = ""
-    bl_description = "Pin property"
+    bl_description = "Pin morph"
     bl_options = {'UNDO'}
 
     key : StringProperty()
@@ -765,7 +765,7 @@ class DAZ_OT_PinProp(DazOperator, MorphGroup, IsMeshArmature):
         rig = getRigFromContext(context)
         scn = context.scene
         MP.setupMorphPaths(False)
-        pinProp(rig, scn, self.key, self, scn.frame_current)
+        pinMorph(rig, scn, self.key, self, scn.frame_current)
         updateRigDrivers(context, rig)
 
 
@@ -804,7 +804,7 @@ classes = [
     DAZ_OT_UnkeyMorphs,
     DAZ_OT_KeyShapes,
     DAZ_OT_UnkeyShapes,
-    DAZ_OT_PinProp,
+    DAZ_OT_PinMorph,
     DAZ_OT_PinShape,
     DAZ_OT_ToggleAllCats,
 

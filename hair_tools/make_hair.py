@@ -599,7 +599,7 @@ class Tesselator:
         verts = hair.data.vertices
         pgs = dazRna(hair.data).DazPolylineMaterials
         if len(pgs) == len(plines):
-            strands = [(item.a, makeStrand(pline, verts)) for item,pline in zip(pgs, plines)]
+            strands = [(pg.a, makeStrand(pline, verts)) for pg,pline in zip(pgs, plines)]
         else:
             strands = [(0, makeStrand(pline, verts)) for pline in plines]
         return strands

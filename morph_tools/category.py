@@ -231,8 +231,8 @@ class DAZ_OT_RemoveStandardMorphs(DazPropsOperator, MorphTypeOptions, MorphRemov
 
     def removeUrls(self, ob, morphset):
         deletes = []
-        for idx,item in enumerate(dazRna(ob).DazMorphUrls):
-            if item.morphset == morphset:
+        for idx,pg in enumerate(dazRna(ob).DazMorphUrls):
+            if pg.morphset == morphset:
                 deletes.append(idx)
         deletes.reverse()
         for idx in deletes:

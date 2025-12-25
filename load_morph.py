@@ -9,7 +9,7 @@ import bpy
 from mathutils import Matrix
 from .driver import DriverUser, setFloatProp
 from .utils import *
-from .error import reportError, DazError, addItem
+from .error import reportError, DazError
 from .load_json import JL
 
 MAX_EXPRESSION_SIZE = 255
@@ -387,6 +387,7 @@ class LoadMorph(DriverUser):
 
 
     def setAlias(self, prop, alias):
+        from .morphing import addMorphProp
         if self.obj is None:
             return
         pgs = dazRna(self.obj).DazAlias
@@ -394,7 +395,7 @@ class LoadMorph(DriverUser):
             pg = pgs[alias]
             printName(" ==", "%s %s %s" % (prop, alias, pg.s))
         else:
-            pg = addItem(pgs)
+            pg = addMorphProp(pgs)
             pg.name = alias
             printName(" =", "%s %s" % (prop, alias))
             pg.s = prop
@@ -403,8 +404,8 @@ class LoadMorph(DriverUser):
     def setLabel(self, prop, label):
         pgs = self.findPropGroup(prop, None)
         if pgs and prop in pgs.keys():
-            item = pgs[prop]
-            item.text = label
+            pg = pgs[prop]
+            pg.text = label
 
 
     def buildShape(self, asset, useBuild=True):
@@ -416,6 +417,7 @@ class LoadMorph(DriverUser):
             return None,True
 
         from .driver import makePropDriver
+        from .morphing import addMorphProp
         from .hd_data import addSkeyToUrls
         useBuild = True
 
@@ -479,11 +481,11 @@ class LoadMorph(DriverUser):
                 self.addShapeDriver(skey, final)
             pgs = dazRna(self.mesh.data).DazBodyPart
             if prop in pgs.keys():
-                item = pgs[prop]
+                pg = pgs[prop]
             else:
-                item = addItem(pgs)
-                item.name = prop
-            item.s = self.bodypart
+                pg = addMorphProp(pgs)
+                pg.name = prop
+            pg.s = self.bodypart
             return skey,True
         else:
             return None,True

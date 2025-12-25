@@ -193,6 +193,13 @@ def copyMorphsets(rig1, rig2):
             cat2 = cats2[cat1.name]
         copyMorphset(cat1.morphs, cat2.morphs)
 
+
+def addMorphProp(pgs):
+    try:
+        return pgs.add()
+    except TypeError as err:
+        raise DazError("Loading morphs caused a type error:\n%s\nMorphs can not be loaded to linked characters." % err)
+
 #------------------------------------------------------------------
 #   Global lists of morph paths
 #------------------------------------------------------------------
@@ -513,7 +520,7 @@ class MorphLoader(LoadMorph, PosableMaker):
         else:
             return
         if filepath not in pgs.keys():
-            item = addItem(pgs)
+            item = addMorphProp(pgs)
             item.name = filepath
             item.morphset = self.getMorphSet(asset)
             if asset.name in aliases.keys():
@@ -626,7 +633,7 @@ class MorphLoader(LoadMorph, PosableMaker):
             item = pgs[prop]
             old = True
         else:
-            item = addItem(pgs)
+            item = addMorphProp(pgs)
             item.name = prop
             old = False
         if asset:

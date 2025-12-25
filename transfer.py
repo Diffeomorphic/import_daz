@@ -862,8 +862,8 @@ def removeShapeDriversAndProps(rig, sname):
 
 def removeFromPropGroup(pgs, prop):
     idxs = []
-    for n,item in enumerate(pgs):
-        if item.name == prop:
+    for n,pg in enumerate(pgs):
+        if pg.name == prop:
             idxs.append(n)
     idxs.reverse()
     for n in idxs:

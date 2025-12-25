@@ -62,13 +62,6 @@ class DazError(Exception):
         return repr(LS.message)
 
 
-def addItem(pgs):
-    try:
-        return pgs.add()
-    except TypeError as err:
-        raise DazError("Loading morphs caused a type error:\n%s\nMorphs can not be loaded to linked characters." % err)
-
-
 def reportError(msg, instances={}, warnPaths=False, trigger=(2,5), force=False):
     global theUseDumpErrors
     trigWarning,trigError = trigger

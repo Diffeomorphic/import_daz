@@ -44,7 +44,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
             split.prop(rig, propRef(key), text=morphText(rig, morph, prefix))
         row = split.row()
         self.showBool(row, rig, key)
-        op = row.operator("daz.pin_prop", icon='UNPINNED')
+        op = row.operator("daz.pin_morph", icon='UNPINNED')
         op.key = key
         op.morphset = morphset
         op.category = category

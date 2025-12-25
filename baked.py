@@ -67,12 +67,12 @@ def postloadMorphs(context, filepath):
                     ob[prop] = (float)(value*factor)
                 setActivated(ob, prop, False)
                 if prop not in dazRna(ob).DazBaked.keys():
-                    item = dazRna(ob).DazBaked.add()
-                    item.name = prop
-                    item.text = label
-                    item = dazRna(ob).DazBakedValue.add()
-                    item.name = prop
-                    item.f = (float)(value*factor)
+                    pg = dazRna(ob).DazBaked.add()
+                    pg.name = prop
+                    pg.text = label
+                    pg = dazRna(ob).DazBakedValue.add()
+                    pg.name = prop
+                    pg.f = (float)(value*factor)
 
     def addFormFormulas(forms, ob, lm):
         edict = {}
