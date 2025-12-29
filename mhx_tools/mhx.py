@@ -794,8 +794,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                         ("heel", "GZM_Ball", 0.25, 1)]:
                     if pb.name.startswith(pname):
                         if pb.name in driven.keys():
-                            setBoneNumLayer(pb.bone, L_HELP)
-                            setBoneNumLayer(pb.bone, L_TWEAK, False)
+                            setBoneNumLayer(pb.bone, rig, L_HELP)
+                            setBoneNumLayer(pb.bone, rig, L_TWEAK, False)
                         else:
                             self.addGizmo(pb, shape, scale, offset)
 
