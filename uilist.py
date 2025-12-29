@@ -82,7 +82,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         scn = context.scene
         if dazRna(scn).DazUsedPropsOnly or self.usedPropsOnly:
             rna = self.getRnaFromData(context, data)
-            flt_flags = [flag * (abs(rna.get(finalProp(morph.name), 0.0)) > 1e-4)
+            flt_flags = [flag * (abs(rna.get(morph.name, 0.0)) > 1e-4)
                          for flag,morph in zip(flt_flags, morphs)]
 
         flt_neworder = helper_funcs.sort_items_by_name(morphs, "text")
@@ -105,7 +105,7 @@ class DAZ_UL_StandardMorphs(DAZ_UL_MorphList):
 
     def getRnaFromData(self, context, data):
         rig = getRigFromContext(context, useMesh=False, strict=False)
-        return rig.data
+        return rig
 
 
 class DAZ_UL_CustomMorphs(DAZ_UL_MorphList):
@@ -117,7 +117,7 @@ class DAZ_UL_CustomMorphs(DAZ_UL_MorphList):
 
     def getRnaFromData(self, context, data):
         rig = getRigFromContext(context, useMesh=False, strict=False)
-        return rig.data
+        return rig
 
 
 class DAZ_UL_Shapekeys(DAZ_UL_MorphList):

@@ -494,6 +494,8 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
     def draw(self, context):
         scn = context.scene
         rig = self.getCurrentRig(context)
+        if rig is None:
+            return
         adj = MS.Adjusters.get(self.morphset)
         if adj and adj in rig.keys():
             self.layout.prop(rig, propRef(adj))
@@ -817,7 +819,7 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
     def draw(self, context):
         scn = context.scene
         rig = self.getCurrentRig(context)
-        if not self.hasTheseMorphs(rig):
+        if rig is None or not self.hasTheseMorphs(rig):
             return
         for item in dazRna(rig).DazBaked.values():
             pg = dazRna(rig).DazBakedValue.get(item.name)
