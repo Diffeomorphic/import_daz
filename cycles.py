@@ -1220,15 +1220,10 @@ class CyclesTree(Tree):
     #   Top Coat
     #-------------------------------------------------------------
 
-    def checkTopCoat(self):
-        return (LS.materialMethod in ['BSDF', 'EXTENDED_PRINCIPLED'] and
-                self.isEnabled("Top Coat") and
-                self.getValue(["Top Coat Weight"], 0))
-
-
     def buildTopCoat(self, uvname):
-        if not self.checkTopCoat():
-            return
+        if (not self.isEnabled("Top Coat") or
+            self.getValue(["Top Coat Weight"], 0) == 0):
+            return False
         fac,factex,texslot = self.getColorTex(["Top Coat Weight"], "NONE", 0)
         color,coltex,_ = self.getColorTex(["Top Coat Color"], "COLOR", WHITE)
         # Top Coat Layering Mode
@@ -1255,11 +1250,7 @@ class CyclesTree(Tree):
             power,powertex,_ = self.getColorTex(["Top Coat Curve Exponent"], "NONE", 1)
 
         bump,normal = self.getTopCoatBump(uvname)
-        roughness,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 0)
-        if roughness == 0:
-            glossiness,glosstex,_ = self.getColorTex(["Top Coat Glossiness"], "NONE", 1)
-            roughness = 1 - glossiness**2
-            roughtex = self.invertTex(glosstex, 5)
+        roughness,roughtex = self.getTopCoatRoughness()
         aniso,anitex,_ = self.getColorTex(["Top Coat Anisotropy"], "NONE", 0)
         anirot,rottex,_ = self.getColorTex(["Top Coat Rotations"], "NONE", 0)
 
@@ -1277,6 +1268,16 @@ class CyclesTree(Tree):
         self.linkScalar(rottex, top, 1 - anirot, "Rotation")
         self.linkTopCoatBump(bump, normal, top, "Normal")
         self.mixWithActive(fac, factex, texslot, top, keep=True, effect=effect)
+        return True
+
+
+    def getTopCoatRoughness(self):
+        roughness,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 0)
+        if roughness == 0:
+            glossiness,glosstex,_ = self.getColorTex(["Top Coat Glossiness"], "NONE", 1)
+            roughness = 1 - glossiness**2
+            roughtex = self.invertTex(glosstex, 5)
+        return roughness,roughtex
 
 
     def getTopCoatBump(self, uvname):
@@ -1287,7 +1288,8 @@ class CyclesTree(Tree):
             if bumptex is None:
                 pass
             elif bumpmode == 0 and GS.useBump:   # Height map
-                bump = self.mixBump(bumpmode, bumpval, bumptex)
+                bump = self.buildBumpMap(bumpval, bumptex)
+                self.linkNormal(bump)
             elif bumpmode == 1:   # Normal map
                 normal = self.mixNormal(bumpmode, bumpval, bumptex, uvname)
         else:
@@ -1296,12 +1298,6 @@ class CyclesTree(Tree):
                 bump = self.buildBumpMap(bumpval*self.bumpval, self.bumptex)
                 self.linkNormal(bump)
         return bump, normal
-
-
-    def mixBump(self, bumpmode, bumpval, bumptex):
-        bump = self.buildBumpMap(bumpval, bumptex)
-        self.linkBumpNormal(bump)
-        return bump
 
 
     def linkTopCoatBump(self, bump, normal, node, slot):

@@ -60,6 +60,7 @@ class GlobalSettings:
         self.displacementMethod = 'BOTH'
         self.toonMethod = 'FREESTYLE'
         self.skinMethod = 'IRAY'
+        self.useSimplifiedCoat = False
         self.viewportColors = 'GUESS'
         self.skinColor0 = 0.6
         self.skinColor1 = 0.4
@@ -101,7 +102,7 @@ class GlobalSettings:
         self.showInTerminal = True
         self.driverRotationMode = 'NATIVE'
         self.ercMethod = 'NONE'
-        self.useFaceSubpanels = False
+        self.useFaceSubpanels = True
         self.useBakedMorphs = False
         self.useStripCategory = False
         self.useDefaultDrivers = True

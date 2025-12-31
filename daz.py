@@ -648,6 +648,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Skin Method",
         description = "Conversion method for volumetric skin materials")
 
+    useSimplifiedCoat : BoolProperty(
+        name = "Simplified Coat",
+        description = "Use Principled Coat instead of separate Top Coat node")
+
     useVolume : BoolProperty(
         name = "Volume",
         description = "Use volume for volumetice materials")
@@ -809,6 +813,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         drawEnum(self, box, "displacementMethod")
         drawEnum(self, box, "toonMethod")
         drawEnum(self, box, "skinMethod")
+        box.prop(self, "useSimplifiedCoat")
         drawEnum(self, box, "onHairMaterial")
         drawEnum(self, box, "viewportColors")
         row = box.row()

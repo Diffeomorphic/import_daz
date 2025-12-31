@@ -107,10 +107,7 @@ class PbrTree(CyclesTree):
         self.column = 4
         if LS.materialMethod == 'EXTENDED_PRINCIPLED':
             self.buildDetail(uvname)
-        self.column = 5
-        useTopCoatNode = self.checkTopCoat()
-        self.column = 4
-        self.buildPBRNode(useTopCoatNode, uvname)
+        self.buildPBRNode(uvname)
         self.postPBR = False
         self.column = 7
         if LS.materialMethod == 'EXTENDED_PRINCIPLED':
@@ -131,9 +128,9 @@ class PbrTree(CyclesTree):
         if self.owner.isRefractive():
             self.buildRefraction()
         if LS.materialMethod == 'EXTENDED_PRINCIPLED':
-            if useTopCoatNode:
-                self.postPBR = True
-                self.buildTopCoat(uvname)
+            if not GS.useSimplifiedCoat:
+                if self.buildTopCoat(uvname):
+                    self.postPBR = True
             self.buildWeighted()
         self.buildEmission()
 
@@ -218,14 +215,14 @@ class PbrTree(CyclesTree):
     #   PBR Node
     #-------------------------------------------------------------
 
-    def buildPBRNode(self, useTopCoatNode, uvname):
+    def buildPBRNode(self, uvname):
         self.buildBaseSubsurface()
         self.buildMetallic()
         useTex = not (self.owner.basemix == 0 and self.pureMetal)
         self.buildSpecular(useTex)
         anisotropy = self.buildAnisotropy()
         self.buildRoughness(anisotropy, useTex)
-        if LS.materialMethod == 'EXTENDED_PRINCIPLED' and not useTopCoatNode:
+        if LS.materialMethod == 'FBX_COMPATIBLE' or GS.useSimplifiedCoat:
             self.addClearCoat(useTex, uvname)
         self.buildSheen()
 
@@ -426,7 +423,7 @@ class PbrTree(CyclesTree):
     def addClearCoat(self, useTex, uvname):
         if self.isEnabled("Top Coat"):
             top,toptex,texslot = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
-            rough,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
+            rough,roughtex = self.getTopCoatRoughness()
             color,coltex,_ = self.getColorTex(["Top Coat Color"], "COLOR", WHITE)
             self.linkScalar(roughtex, self.pbr, rough, PBR.CoatRoughness)
         else:
