@@ -1980,9 +1980,13 @@ class CyclesTree(Tree):
             maps = maps[1:]
         if len(assets) == 0:
             return None,texslot
-        elif (len(assets) == 1 or
-              LS.materialMethod == 'FBX_COMPATIBLE'):
+        elif len(assets) == 1:
             return newTexture(assets[0], maps[0]), texslot
+        elif LS.materialMethod == 'FBX_COMPATIBLE':
+            for asset,map in zip(assets, maps):
+                if asset:
+                    return newTexture(asset, map), texslot
+            return None,texslot
 
         from .cgroup import LayeredGroup
         node = None
