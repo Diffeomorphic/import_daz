@@ -1,12 +1,6 @@
 {
 	"name" : "Genesis9",
 	"hd-morphs" : true,
-	"head" : {
-		"prefix" : "head_",
-		"include" : ["head_"],
-		"exclude" : [],
-		"path" : "data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Head Asymmetry/"
-	},
 	"facs" : {
 		"prefix" : "facs_",
 		"include" : ["facs_ctrl_", "facs_bs_", "facs_cbs_"],
@@ -66,7 +60,7 @@
 			  "data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Anime FACS/",
 			  "data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Anime FACSExpressions/"
 			 ]
-	},		
+	},
 	"body" : {
 		"prefix" : "body_",
 		"include" : ["body_"],

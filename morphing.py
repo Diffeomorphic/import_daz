@@ -218,6 +218,7 @@ class MorphPaths:
     def __init__(self):
         self.morphFiles = {}
         self.morphNames = {}
+        self.morphPaths = {}
         self.ShortForms["units"] = self.ShortForms["ctrlunits"] + self.ShortForms["ectrlunits"] + self.ShortForms["phmunits"]
         self.ShortForms["ctrlhead"] = self.ShortForms["ctrlunits"] + ["ctrlvsm"]
         self.ShortForms["head"] = self.ShortForms["units"] + ["vsm"]
@@ -243,6 +244,7 @@ class MorphPaths:
             return
         self.morphFiles = {}
         self.morphNames = {}
+        self.morphPaths = {}
         self.projectionFiles = {}
         self.projection = {}
         self.projectionFactor = {}
@@ -259,6 +261,7 @@ class MorphPaths:
         for char in charPaths.keys():
             charFiles = self.morphFiles[char] = {}
             typeNames = self.morphNames[char] = {}
+            self.morphPaths[char] = []
 
             for key,struct in charPaths[char].items():
                 if key in ["name", "hd-morphs"]:
@@ -293,6 +296,7 @@ class MorphPaths:
                 folders = struct["path"]
                 if isinstance(folders, str):
                     folders = [folders]
+                self.morphPaths[char] += ["/%s" % canonicalPath(folder)[:-1].lower() for folder in folders]
                 for folder in folders:
                     for abspath in GS.getAbsPaths(folder):
                         files = list(os.listdir(abspath))
@@ -1948,10 +1952,16 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
         description = "Import pJCM files",
         default = True)
 
+    ignoreStandardMorphs : BoolProperty(
+        name = "Ignore Standard Morphs",
+        description = "Don't import correctives from standard morph locations",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useExpressions")
         self.layout.prop(self, "useFacs")
         self.layout.prop(self, "useJcms")
+        self.layout.prop(self, "ignoreStandardMorphs")
         MorphSuffix.draw(self, context)
 
     excluded = [folder.lower() for folder in []]
@@ -1965,10 +1975,14 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
             return False
 
         self.initLoadMorph()
+        MP.setupMorphPaths(False)
         self.getFingeredRigMeshes(context)
         used = []
         facepaths = {}
         bodypaths = {}
+        if self.ignoreStandardMorphs:
+            for char in self.chars:
+                used += MP.morphPaths.get(char, [])
         for path,pg in dazRna(self.rig).DazBakedFiles.items():
             folder = os.path.dirname(path)
             lfolder = folder.lower()
