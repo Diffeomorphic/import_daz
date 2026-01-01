@@ -1829,7 +1829,7 @@ class CyclesTree(Tree):
         for key,channel in self.owner.channels.items():
             if key not in self.usedTextures.keys():
                 colorspace = getColorSpace(key.lower())
-                texnode,texslot = self.addTexImageNode(channel, colorspace, False)
+                texnode,texslot = self.addTexImageNode(channel, colorspace, False, force=True)
                 if texnode:
                     texnodes[key] = texnode
         if texnodes:
@@ -1951,11 +1951,9 @@ class CyclesTree(Tree):
             self.links.new(texco.outputs["UV"], node.inputs[slot])
 
 
-    def addTexImageNode(self, channel, colorSpace, isMask):
+    def addTexImageNode(self, channel, colorSpace, isMask, force=False):
         def newTexture(asset, map):
             innode,texnode,outnode,isnew = self.addSingleTexture(col, asset, map, imgmod, colorSpace)
-            if "id" in channel.keys():
-                self.usedTextures[channel["id"]] = texnode.name
             if self.isDecal:
                 texnode.extension = 'CLIP'
                 self.clipsocket = texnode.outputs.get("Alpha")
@@ -1965,6 +1963,10 @@ class CyclesTree(Tree):
                 return texnode
             else:
                 return outnode
+
+        def addUsedTexture(node):
+            if "id" in channel.keys():
+                self.usedTextures[channel["id"]] = node.name
 
         if channel is None:
             return None, 0
@@ -1981,8 +1983,10 @@ class CyclesTree(Tree):
         if len(assets) == 0:
             return None,texslot
         elif len(assets) == 1:
-            return newTexture(assets[0], maps[0]), texslot
-        elif LS.materialMethod == 'FBX_COMPATIBLE':
+            node = newTexture(assets[0], maps[0])
+            addUsedTexture(node)
+            return node, texslot
+        elif LS.materialMethod == 'FBX_COMPATIBLE' and not force:
             for asset,map in zip(assets, maps):
                 if asset:
                     return newTexture(asset, map), texslot
@@ -2019,6 +2023,7 @@ class CyclesTree(Tree):
             self.layeredGroups[name] = node
 
         self.clipsocket = node.outputs.get("Alpha")
+        addUsedTexture(node)
         return node, texslot
 
 
