@@ -1272,11 +1272,15 @@ class CyclesTree(Tree):
 
 
     def getTopCoatRoughness(self):
-        roughness,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 0)
-        if roughness == 0:
+        if self.owner.basemix == 0:    # Metallic/Roughness
+            roughness,roughtex,_ = self.getColorTex(["Top Coat Roughness"], "NONE", 0)
+        elif self.owner.basemix == 1:  # Specular/Glossiness
             glossiness,glosstex,_ = self.getColorTex(["Top Coat Glossiness"], "NONE", 1)
             roughness = 1 - glossiness**2
             roughtex = self.invertTex(glosstex, 5)
+        else:
+            roughness = 0
+            roughtex = None
         return roughness,roughtex
 
 
@@ -1292,7 +1296,7 @@ class CyclesTree(Tree):
                 self.linkNormal(bump)
             elif bumpmode == 1:   # Normal map
                 normal = self.mixNormal(bumpmode, bumpval, bumptex, uvname)
-        else:
+        elif self.owner.shader == 'PBRSKIN':
             bumpval = self.getValue(["Top Coat Bump Weight"], 0)
             if self.bumptex and GS.useBump:
                 bump = self.buildBumpMap(bumpval*self.bumpval, self.bumptex)

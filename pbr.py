@@ -434,25 +434,17 @@ class PbrTree(CyclesTree):
 
         color,coltex,_ = self.getColorTex(["Top Coat Color"], "COLOR", WHITE)
         self.linkColor(coltex, self.pbr, color, "Coat Tint")
-        if self.owner.shader == 'UBER_IRAY':
-            if self.owner.basemix == 0:    # Metallic/Roughness
-                lmode = self.getValue(["Top Coat Layering Mode"], 0)
-                # [ "Reflectivity", "Weighted", "Fresnel", "Custom Curve" ]
-                if lmode == 0:      # Reflectivity
-                    refl,refltex,_ = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
-                    ior = 1 + refl
-                    iortex = refltex
-                elif lmode == 2:    # Fresnel
-                    ior,iortex,_ = self.getColorTex(["Top Coat IOR"], "NONE", 1.5)
-                else:
-                    ior = 1.5
-                    iortex = None
-            else:
-                iortex = None
-                ior = 1.5
-        else:
-            iortex = toptex
-            ior = top
+        lmode = self.getValue(["Top Coat Layering Mode"], 0)
+        # [ "Reflectivity", "Weighted", "Fresnel", "Custom Curve" ]
+        if lmode == 0:      # Reflectivity
+            refl,refltex,_ = self.getColorTex(["Reflectivity", "Top Coat Reflectivity"], "NONE", 0.5, False, useTex)
+            ior = 1 + refl
+            iortex = refltex
+        elif lmode == 2:    # Fresnel
+            ior,iortex,_ = self.getColorTex(["Top Coat IOR"], "NONE", 1.5)
+        else:               # Weighted, Custom curve
+            ior = 1.5
+            iortex = None
         if not useTex:
             iortex = None
         self.linkScalar(iortex, self.pbr, ior, "Coat IOR")
