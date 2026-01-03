@@ -424,42 +424,40 @@ class PbrTree(CyclesTree):
         if self.isEnabled("Top Coat"):
             top,toptex,texslot = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False, isMask=True)
             rough,roughtex = self.getTopCoatRoughness()
-            color,coltex,_ = self.getColorTex(["Top Coat Color"], "COLOR", WHITE)
+            self.linkScalar(toptex, self.pbr, top, PBR.CoatWeight)
             self.linkScalar(roughtex, self.pbr, rough, PBR.CoatRoughness)
         else:
-            top,toptex = 0.0,None
-            color,coltex = WHITE,None
+            self.pbr[PBR.CoatWeight].default_value = 0
+            return
+        if BLENDER3:
+            return
+
+        color,coltex,_ = self.getColorTex(["Top Coat Color"], "COLOR", WHITE)
+        self.linkColor(coltex, self.pbr, color, "Coat Tint")
         if self.owner.shader == 'UBER_IRAY':
             if self.owner.basemix == 0:    # Metallic/Roughness
-                refl,reftex,_ = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
-                coattex = self.mixTexs('MULTIPLY', toptex, reftex)
-                value = 1.25 * refl * top
-            elif self.owner.basemix == 1:  # Specular/Glossiness
-                coattex = toptex
-                value = top
-            elif self.owner.basemix == 2:  # Weighted
-                coattex = None
-                value = 0.0
-        else:
-            coattex = toptex
-            value = top
-        if not useTex:
-            coattex = None
-        self.setCoatWeight(clamp(value), coattex, color, coltex, uvname)
-
-
-    def setCoatWeight(self, coat, coattex, color, coltex, uvname):
-        if BLENDER3:
-            self.linkScalar(coattex, self.pbr, coat, "Clearcoat")
-        else:
-            if coat == 0:
-                self.pbr.inputs["Coat Weight"].default_value = 0
+                lmode = self.getValue(["Top Coat Layering Mode"], 0)
+                # [ "Reflectivity", "Weighted", "Fresnel", "Custom Curve" ]
+                if lmode == 0:      # Reflectivity
+                    refl,refltex,_ = self.getColorTex(["Glossy Reflectivity"], "NONE", 0.5, False, useTex)
+                    ior = 1 + refl
+                    iortex = refltex
+                elif lmode == 2:    # Fresnel
+                    ior,iortex,_ = self.getColorTex(["Top Coat IOR"], "NONE", 1.5)
+                else:
+                    ior = 1.5
+                    iortex = None
             else:
-                self.pbr.inputs["Coat Weight"].default_value = 1
-                self.linkScalar(coattex, self.pbr, 0.1*coat, "Coat IOR", add=1)
-                self.linkColor(coltex, self.pbr, color, "Coat Tint")
-                bump,normal = self.getTopCoatBump(uvname)
-                self.linkTopCoatBump(bump, normal, self.pbr, "Coat Normal")
+                iortex = None
+                ior = 1.5
+        else:
+            iortex = toptex
+            ior = top
+        if not useTex:
+            iortex = None
+        self.linkScalar(iortex, self.pbr, ior, "Coat IOR")
+        bump,normal = self.getTopCoatBump(uvname)
+        self.linkTopCoatBump(bump, normal, self.pbr, "Coat Normal")
 
     #-------------------------------------------------------------
     #   Sheen
