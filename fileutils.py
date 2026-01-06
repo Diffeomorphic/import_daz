@@ -251,18 +251,21 @@ def findPathRecursive(pattern, relpath, subpath, library="modifier_library", use
     from pathlib import Path
     from .load_json import JL
 
-    extensions = {ext.lower() for ext in extensions}
-    pattern = pattern.lower()
+    def canonical(pattern):
+        return pattern.lower().replace(" ", "_")
 
     def checkContent(path):
         struct = JL.load(path, silent=True)
         libs = struct.get(library, [])
-        return any(lib.get("name") == pattern for lib in libs)
+        return any(canonical(lib.get("name")) == pattern for lib in libs)
+
+    extensions = {ext.lower() for ext in extensions}
+    pattern = canonical(pattern)
 
     folders = getFolders(relpath, subpath, match81=True)
     for folder in folders:
         folder_paths = [str(path) for path in Path(folder).glob("**/*")
-                       if (path.stem.lower() == pattern and
+                       if (canonical(path.stem) == pattern and
                            path.suffix.lower() in extensions)]
         if len(folder_paths) == 1:
             return folder_paths[0].lower()
