@@ -130,6 +130,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         description = "Keep the original twist bones for Genesis 9.\nNecessary for reexport to DAZ Studio but may lead to flipping",
         default = False)
 
+    useG3Tarsal : BoolProperty(
+        name = "Genesis 3 Tarsals",
+        description = "",
+        default = True)
+
     boneGroups : CollectionProperty(
         type = DazPairGroup,
         name = "Bone Groups")
@@ -162,6 +167,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             self.layout.prop(self, "shaftName")
         self.layout.prop(self, "useAnkleIk")
         self.layout.prop(self, "keepG9Twist")
+        self.layout.prop(self, "useG3Tarsal")
         if not BLENDER4:
             self.layout.prop(self, "useDisplayTransform")
         self.layout.prop(self, "useRaiseError")
@@ -919,10 +925,20 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         for suffix in ["L", "R"]:
             shin = rig.data.edit_bones.get("shin.%s" % suffix)
             foot = rig.data.edit_bones.get("foot.%s" % suffix)
+            tarsal = rig.data.edit_bones.get("tarsal.%s" % suffix)
             toe = rig.data.edit_bones.get("toe.%s" % suffix)
+            heel = rig.data.edit_bones.get("heel.%s" % suffix)
             shin.tail = foot.head
             foot.use_connect = False
-            if toe:
+            if self.useG3Tarsal and tarsal and toe and heel:
+                bigtoe = rig.data.edit_bones.get("big_toe.01.%s" % suffix)
+                pinky = rig.data.edit_bones.get("small_toe_4.01.%s" % suffix)
+                if bigtoe and pinky:
+                    tarsal.tail[1] = toe.head[1] = (bigtoe.head[1] + pinky.head[1])/2
+                foot.tail = tarsal.head
+                setConnected(tarsal, True)
+                setConnected(toe, True)
+            elif toe:
                 foot.tail = toe.head
                 setConnected(toe, True)
 
@@ -1150,6 +1166,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             if not (thigh and shin and foot):
                 raise DazError("Rig missing leg bones")
 
+            tarsal = rig.data.edit_bones.get("tarsal.%s" % suffix)
+            heel = rig.data.edit_bones.get("heel.%s" % suffix)
+            if self.useG3Tarsal and heel and tarsal and toe:
+                self.setLayer("tarsal.%s" % suffix, rig, L_HELP)
+            else:
+                tarsal = None
+
             legSocket = makeBone("legSocket.%s" % suffix, rig, thigh.head, thigh.head+ez, 0, L_TWEAK, thigh.parent)
             legParent = deriveBone("leg_parent.%s" % suffix, legSocket, rig, L_HELP, hip)
             thigh.parent = legParent
@@ -1162,8 +1185,14 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             setConnected(shinFk, shin.use_connect)
             footFk = deriveBone("foot.fk.%s" % suffix, foot, rig, legFkLayer, shinFk)
             footFk.use_connect = False
-            toeFk = deriveBone("toe.fk.%s" % suffix, toe, rig, legFkLayer, footFk)
+            if tarsal:
+                tarsalFk = deriveBone("tarsal.fk.%s" % suffix, tarsal, rig, legFkLayer, footFk)
+                setConnected(tarsalFk, True)
+                toeFk = deriveBone("toe.fk.%s" % suffix, toe, rig, legFkLayer, tarsalFk)
+            else:
+                toeFk = deriveBone("toe.fk.%s" % suffix, toe, rig, legFkLayer, footFk)
             setConnected(toeFk, True)
+
             layer = (L_HELP2 if self.usePoleTargets else legIkLayer)
             thighIk = deriveBone("thigh.ik.%s" % suffix, thigh, rig, layer, thigh.parent)
             if not self.usePoleTargets:
@@ -1173,8 +1202,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, leg2Layer, thighIk)
             deriveBone("shin.ik.twist.%s" % suffix, shin, rig, leg2Layer, shinIk)
 
-            if "heel.%s" % suffix in rig.data.edit_bones.keys():
-                heel = rig.data.edit_bones["heel.%s" % suffix]
+            if heel:
                 locFootIk = (foot.head[0], heel.tail[1], toe.tail[2])
             else:
                 vec = foot.tail - foot.head
@@ -1182,7 +1210,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             footIk = makeBone("foot.ik.%s" % suffix, rig, locFootIk, toe.tail, 180*D, legIkLayer, master)
             toeRev = makeBone("toe.rev.%s" % suffix, rig, toe.tail, toe.head, 0, legIkLayer, footIk)
             setConnected(toeRev, True)
-            footRev = makeBone("foot.rev.%s" % suffix, rig, toe.head, foot.head, 0, legIkLayer, toeRev)
+            if tarsal:
+                tarsalRev = makeBone("tarsal.rev.%s" % suffix, rig, toe.head, tarsal.head, 0, legIkLayer, toeRev)
+                setConnected(tarsalRev, True)
+                footRev = makeBone("foot.rev.%s" % suffix, rig, tarsal.head, foot.head, 0, legIkLayer, tarsalRev)
+            else:
+                footRev = makeBone("foot.rev.%s" % suffix, rig, toe.head, foot.head, 0, legIkLayer, toeRev)
             setConnected(footRev, True)
             locAnkle = foot.head + (shin.tail-shin.head)/4
             if self.useAnkleIk:
@@ -1218,6 +1251,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             toeInvFk = deriveBone("toe.inv.fk.%s" % suffix, toeRev, rig, L_HELP2, toeFk)
             footInvIk = deriveBone("foot.inv.ik.%s" % suffix, foot, rig, L_HELP2, footRev)
             toeInvIk = deriveBone("toe.inv.ik.%s" % suffix, toe, rig, L_HELP2, toeRev)
+            if tarsal:
+                tarsalInvFk = deriveBone("tarsal.inv.fk.%s" % suffix, tarsalRev, rig, L_HELP2, tarsalFk)
+                tarsalInvIk = deriveBone("tarsal.inv.ik.%s" % suffix, tarsal, rig, L_HELP2, tarsalRev)
 
             self.addSingleGazeBone(rig, suffix, L_HEAD, L_HELP2)
 
@@ -1241,12 +1277,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 pb = rpbs["%s.%s" % (bname, suffix)]
                 copyBoneInfo(pb0, pb)
             for bname in ["upper_arm", "forearm", "hand",
-                          "thigh", "shin", "foot", "toe"]:
-                bone = rpbs["%s.%s" % (bname, suffix)]
-                fkbone = rpbs["%s.fk.%s" % (bname, suffix)]
-                copyBoneInfo(bone, fkbone)
-                #fkbone.rotation_mode = 'QUATERNION'
-                bone.lock_rotation = FFalse
+                          "thigh", "shin", "foot", "tarsal", "toe"]:
+                bone = rpbs.get("%s.%s" % (bname, suffix))
+                fkbone = rpbs.get("%s.fk.%s" % (bname, suffix))
+                if bone and fkbone:
+                    copyBoneInfo(bone, fkbone)
+                    bone.lock_rotation = FFalse
 
         for bname in ["hip", "pelvis"]:
             pb = rpbs[bname]
@@ -1256,8 +1292,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             'YZX': ["shin", "shin.fk", "shin.ik", "shin.ik.twist",
                     "thigh", "thigh.fk", "thigh.ik", "thigh.ik.twist",
                     "forearm", "forearm.fk", "forearm.ik", "forearm.ik.twist",
-                    "foot", "foot.fk", "foot.rev",
-                    "toe", "toe.fk", "foot.2", "toe.2", "toe.rev",
+                    "foot", "foot.fk", "foot.rev", "foot.2",
+                    "tarsal", "tarsal.fk", "tarsal.rev",
+                    "toe", "toe.fk", "toe.2", "toe.rev",
                     "knee.pt.ik", "elbow.pt.ik", "elbowPoleA", "kneePoleA",
                    ],
             'YXZ' : ["upper_arm", "upper_arm.fk", "upper_arm.ik", "upper_arm.ik.twist",
@@ -1339,7 +1376,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             thigh = rpbs["thigh.%s" % suffix]
             shin = rpbs["shin.%s" % suffix]
             foot = rpbs["foot.%s" % suffix]
-            toe = rpbs["toe.%s" % suffix]
+            toe = rpbs.get("toe.%s" % suffix)
+            heel = rpbs.get("heel.%s" % suffix)
+            if self.useG3Tarsal and toe and heel:
+                tarsal = rpbs.get("tarsal.%s" % suffix)
+            else:
+                tarsal = None
+
             if self.useAnkleIk:
                 foot2 = rpbs["foot.2.%s" % suffix]
                 toe2 = rpbs["toe.2.%s" % suffix]
@@ -1348,7 +1391,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             thighFk = getBoneCopy("thigh.fk.%s" % suffix, thigh, rpbs, True)
             shinFk = getBoneCopy("shin.fk.%s" % suffix, shin, rpbs, True)
             footFk = getBoneCopy("foot.fk.%s" % suffix, foot, rpbs, True)
+            if tarsal:
+                tarsalFk = getBoneCopy("tarsal.fk.%s" % suffix, tarsal, rpbs, True)
             toeFk = getBoneCopy("toe.fk.%s" % suffix, toe, rpbs, True)
+
             thighIk = rpbs["thigh.ik.%s" % suffix]
             shinIk = rpbs["shin.ik.%s" % suffix]
             thighIkTwist = rpbs.get("thigh.ik.twist.%s" % suffix, thighIk)
@@ -1356,11 +1402,15 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             footIk = rpbs["foot.ik.%s" % suffix]
             toeRev = rpbs["toe.rev.%s" % suffix]
             toeRev.lock_location = TTrue
+            toeInvIk = rpbs["toe.inv.ik.%s" % suffix]
+            if tarsal:
+                tarsalRev = rpbs["tarsal.rev.%s" % suffix]
+                tarsalRev.lock_location = TTrue
+                tarsalInvIk = rpbs["tarsal.inv.ik.%s" % suffix]
             footRev = rpbs["foot.rev.%s" % suffix]
             footRev.lock_location = TTrue
             footRev.lock_rotation = (False,True,True)
             footInvIk = rpbs["foot.inv.ik.%s" % suffix]
-            toeInvIk = rpbs["toe.inv.ik.%s" % suffix]
 
             prop = "MhaLegHinge_%s" % suffix
             setMhx(rig, prop, 0.0)
@@ -1378,6 +1428,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             copyTransformFkIk(thigh, thighFk, thighIkTwist, rig, prop1)
             copyTransformFkIk(shin, shinFk, shinIkTwist, rig, prop1)
             copyTransformFkIk(foot, footFk, footInvIk, rig, prop1, prop2)
+            if tarsal:
+                copyTransformFkIk(tarsal, tarsalFk, tarsalInvIk, rig, prop1, prop2)
             copyTransformFkIk(toe, toeFk, toeInvIk, rig, prop1, prop2)
 
             addHint(shinIk, rig)
@@ -1840,9 +1892,11 @@ LRGizmos = {
     "thigh.ik.twist":   ("GZM_Circle", 0.25, 0.5),
     "shin.ik.twist" :   ("GZM_Circle", 0.25, 0.5),
     "foot.fk" :         ("GZM_Foot", 1),
+    "tarsal.fk" :       ("GZM_Foot", 1),
     "toe.fk" :          ("GZM_Toe", 1),
     "legSocket" :       ("GZM_Cube", 0.25),
     "foot.rev" :        ("GZM_FootRev", 1),
+    "tarsal.rev" :      ("GZM_FootRev", 1),
     "foot.ik" :         ("GZM_Cube", 0.25),
     "toe.rev" :         ("GZM_ToeRev", 1),
     "foot.2" :          ("GZM_HandIK", 0.7),
