@@ -148,6 +148,35 @@ class Fixer(DriverUser):
                 hand.tail = hand.head + 0.35*flen/vec.length*vec
 
 
+    def fixG3Toes(self, rig):
+        setMode('OBJECT')
+        toenames = ["BigToe", "SmallToe1", "SmallToe2", "SmallToe3", "SmallToe4"]
+        drvnames = [drvBone(bname) for bname in toenames]
+        if rig.animation_data:
+            fcurves = rig.animation_data.drivers
+            for fcu in list(fcurves):
+                bname,_,_ = getBoneChannel(fcu)
+                if bname[1:] in toenames + drvnames:
+                    fcurves.remove(fcu)
+        for prefix in ["l", "r"]:
+            for bname in toenames:
+                pb = rig.pose.bones.get("%s%s" % (prefix, bname))
+                if pb:
+                    for cns in list(pb.constraints):
+                        if cns.type == "COPY_TRANSFORMS" and cns.subtarget == drvBone(pb.name):
+                            pb.constraints.remove(cns)
+        setMode('EDIT')
+        for prefix in ["l", "r"]:
+            tarsal =  rig.data.edit_bones.get("%sMetatarsals" % prefix)
+            toes = rig.data.edit_bones.get("%sToe" % prefix)
+            for bname in toenames:
+                toe = rig.data.edit_bones.get("%s%s" % (prefix, bname))
+                toe.parent = toes
+            for bname in drvnames:
+                eb = rig.data.edit_bones.get("%s%s" % (prefix, bname))
+                rig.data.edit_bones.remove(eb)
+
+
     def fixCarpals(self, rig):
         Carpals = {
             "Carpal1" : "Index1",

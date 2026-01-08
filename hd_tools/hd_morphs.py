@@ -384,14 +384,14 @@ class DAZ_OT_LoadNormalMap(DazOperator, LoadMaps, NormalAdder):
 #----------------------------------------------------------
 
 class Baker:
-    if bpy.app.version >= (5,0,0):
+    if BLENDER4:
+        enums = [('NORMALS', "Normals", "Bake normal maps"),
+                 ('DISPLACEMENT', "Displacement", "Bake scalar displacement maps")]
+    else:
         enums = [('NORMALS', "Normals", "Bake normal maps"),
                  ('DISPLACEMENT', "Displacement", "Bake scalar displacement maps"),
                  ('VECTOR_DISPLACEMENT', "Vector Displacement", "Bake vector displacement maps"),
                  ]
-    else:
-        enums = [('NORMALS', "Normals", "Bake normal maps"),
-                 ('DISPLACEMENT', "Displacement", "Bake scalar displacement maps")]
 
     bakeType : EnumProperty(
         items = enums,

@@ -275,6 +275,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 if pb.name.endswith(("Bend", "Twist")):
                     self.store.storeConstraints(pb.name, pb)
             showProgress(2, 28, "  Connect to parent")
+            if dazRna(rig).DazRig == "genesis3":
+                self.fixG3Toes(rig)
             connectToParent(rig, MHX.ConnectBendTwist)
             showProgress(3, 28, "  Delete bend-twist bones")
             self.deleteBendTwistDrvBones(rig)
@@ -927,10 +929,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             foot = rig.data.edit_bones.get("foot.%s" % suffix)
             tarsal = rig.data.edit_bones.get("tarsal.%s" % suffix)
             toe = rig.data.edit_bones.get("toe.%s" % suffix)
-            heel = rig.data.edit_bones.get("heel.%s" % suffix)
             shin.tail = foot.head
             foot.use_connect = False
-            if self.useG3Tarsal and tarsal and toe and heel:
+            if self.useG3Tarsal and dazRna(rig).DazRig == "genesis3" and tarsal and toe:
                 bigtoe = rig.data.edit_bones.get("big_toe.01.%s" % suffix)
                 pinky = rig.data.edit_bones.get("small_toe_4.01.%s" % suffix)
                 if bigtoe and pinky:
@@ -1167,8 +1168,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 raise DazError("Rig missing leg bones")
 
             tarsal = rig.data.edit_bones.get("tarsal.%s" % suffix)
-            heel = rig.data.edit_bones.get("heel.%s" % suffix)
-            if self.useG3Tarsal and heel and tarsal and toe:
+            if self.useG3Tarsal and dazRna(rig).DazRig == "genesis3" and tarsal and toe:
                 self.setLayer("tarsal.%s" % suffix, rig, L_HELP)
             else:
                 tarsal = None
@@ -1202,6 +1202,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             deriveBone("thigh.ik.twist.%s" % suffix, thigh, rig, leg2Layer, thighIk)
             deriveBone("shin.ik.twist.%s" % suffix, shin, rig, leg2Layer, shinIk)
 
+            heel = rig.data.edit_bones.get("heel.%s" % suffix)
             if heel:
                 locFootIk = (foot.head[0], heel.tail[1], toe.tail[2])
             else:
@@ -1377,8 +1378,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             shin = rpbs["shin.%s" % suffix]
             foot = rpbs["foot.%s" % suffix]
             toe = rpbs.get("toe.%s" % suffix)
-            heel = rpbs.get("heel.%s" % suffix)
-            if self.useG3Tarsal and toe and heel:
+            if self.useG3Tarsal and dazRna(rig).DazRig == "genesis3" and toe:
                 tarsal = rpbs.get("tarsal.%s" % suffix)
             else:
                 tarsal = None
@@ -1406,6 +1406,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             if tarsal:
                 tarsalRev = rpbs["tarsal.rev.%s" % suffix]
                 tarsalRev.lock_location = TTrue
+                tarsalRev.lock_rotation = (False,True,True)
                 tarsalInvIk = rpbs["tarsal.inv.ik.%s" % suffix]
             footRev = rpbs["foot.rev.%s" % suffix]
             footRev.lock_location = TTrue
