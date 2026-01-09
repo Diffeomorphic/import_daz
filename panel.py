@@ -62,6 +62,9 @@ class DAZ_PT_SetupCorrections(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.apply_rest_pose")
         self.layout.operator("daz.apply_active_shapekey")
         self.layout.operator("daz.change_armature")
+        self.layout.separator()
+        if not BLENDER4:
+            self.layout.operator("daz.add_erc_bones")
         self.layout.operator("daz.lock_all_channels")
 
 #----------------------------------------------------------

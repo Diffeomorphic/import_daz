@@ -974,12 +974,32 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                 eb.matrix = mat
             setMode('OBJECT')
 
+#-------------------------------------------------------------
+#  Add ERC bones
+#-------------------------------------------------------------
+
+class DAZ_OT_AddErcBones(DazOperator, GizmoUser, IsArmature):
+    bl_idname = "daz.add_erc_bones"
+    bl_label = "Add ERC Bones"
+    bl_description = "Add ERC bones"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        from .rig_utils import addErcBones
+        rig = context.object
+        if dazRna(rig.data).DazHasErcBones:
+            raise DazError("Rig already has ERC bones")
+        self.startGizmos(context, rig)
+        gizmo = self.makeEmptyGizmo("GZM_Cube", 'CUBE')
+        addErcBones(rig, gizmo)
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
 classes = [
     DAZ_OT_ChangeArmature,
+    DAZ_OT_AddErcBones,
 ]
 
 def register():

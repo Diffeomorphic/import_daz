@@ -329,5 +329,48 @@ def addDisplayTransform(rig, mesh, headname):
         coll.is_visible = False
     return True
 
+#-------------------------------------------------------------
+#   Add ERC bones
+#-------------------------------------------------------------
 
+def isErcName(bname):
+    return bname.endswith("(erc)")
+
+def ercName(bname):
+    if isErcName(bname):
+        return bname
+    else:
+        return "%s(erc)" % bname
+
+def addErcBones(rig, gizmo):
+    defbones = [bone.name for bone in rig.data.bones if bone.use_deform]
+    setMode('EDIT')
+    for bname in defbones:
+        eb = rig.data.edit_bones[bname]
+        if eb.parent:
+            parb = rig.data.edit_bones.get(ercName(eb.parent.name))
+        if parb is None:
+            parb = eb.parent
+        ercb = deriveBone(ercName(bname), eb, rig, "ERC", parb)
+        ercb.use_deform = False
+    setMode('OBJECT')
+    for bname in defbones:
+        pb = rig.pose.bones[bname]
+        ercb = rig.pose.bones[ercName(bname)]
+        ercb.bone.color.palette = 'THEME09'
+        ercb.color.palette = 'THEME09'
+        cns = copyRotation(ercb, pb, rig)
+        pb.custom_shape = gizmo
+        pb.custom_shape_translation[1] = pb.bone.length/2
+        pb.custom_shape_scale_xyz = (0.1, 0.5, 0.1)
+        pb.bone.show_wire = True
+        pb.bone.display_type = 'OCTAHEDRAL'
+        pb.custom_shape_transform = ercb
+        pb.use_transform_at_custom_shape = True
+        pb.use_transform_around_custom_shape = True
+        pb.use_custom_shape_bone_size = True
+    coll = rig.data.collections.get("ERC")
+    dazRna(rig.data).DazHasErcBones = True
+
+print("ERCloaded")
 
