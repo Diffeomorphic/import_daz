@@ -502,25 +502,21 @@ class ExtraBones(DriverUser):
 
 
     def addCopyConstraint(self, rig, bname, boneDrivers, sumDrivers):
+        from .rig_utils import copyTransform
         if (self.hasBoneDriver(bname, boneDrivers) or
             self.hasBoneDriver(bname, sumDrivers)):
             pb = rig.pose.bones[bname]
-            cns = pb.constraints.new('COPY_TRANSFORMS')
-            cns.name = "Copy %s" % bname
-            cns.target = rig
-            cns.subtarget = drvBone(bname)
-            cns.target_space = 'LOCAL'
-            cns.owner_space = 'LOCAL'
-            cns.influence = 1.0
+            drvb = rig.pose.bones[drvBone(bname)]
+            cns = copyTransform(pb, drvb, rig, space='LOCAL')
             cns.mix_mode = 'AFTER'
 
 
     def hasBoneDriver(self, bname, drivers):
-        if bname in drivers.keys():
-            for drv in drivers[bname]:
-                channel = drv.data_path.rsplit(".",1)[-1]
-                if channel in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
-                    return True
+        bdrivers = drivers.get(bname, [])
+        for drv in bdrivers:
+            channel = drv.data_path.rsplit(".",1)[-1]
+            if channel in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
+                return True
         return False
 
 
@@ -624,28 +620,28 @@ class ExtraBones(DriverUser):
             eb.name = drvBone(bname)
 
         for bname in self.bnames:
-            db = rig.data.edit_bones[drvBone(bname)]
-            eb = copyEditBone(db, rig, bname)
-            eb.parent = db.parent
-            db.use_deform = False
+            drvb = rig.data.edit_bones[drvBone(bname)]
+            eb = copyEditBone(drvb, rig, bname)
+            eb.parent = drvb.parent
+            drvb.use_deform = False
             self.changeLayer(eb, rig)
         setMode('OBJECT')
 
         for bname in self.bnames:
-            if (bname not in rig.pose.bones.keys() or
-                drvBone(bname) not in rig.pose.bones.keys()):
-                pass
-            else:
-                bone = rig.data.bones[bname]
-                db = rig.data.bones[drvBone(bname)]
-                bone["DazExtraBone"] = db.get("DazExtraBone", False)
+            pb = rig.pose.bones.get(bname)
+            drvb = rig.pose.bones.get(drvBone(bname))
+            if pb and drvb:
+                pb.bone["DazExtraBone"] = drvb.bone.get("DazExtraBone", False)
+                drvb.bone.color.palette = 'THEME06'
+                drvb.color.palette = 'THEME06'
 
         setMode('EDIT')
         for bname in self.bnames:
-            db = rig.data.edit_bones[drvBone(bname)]
-            for cb in db.children:
+            drvb = rig.data.edit_bones[drvBone(bname)]
+            eb = rig.data.edit_bones[bname]
+            for cb in drvb.children:
                 if cb.name != bname:
-                    cb.parent = rig.data.edit_bones[bname]
+                    cb.parent = eb
 
         if not ES.easy:
             print("  Change constraints")
@@ -653,14 +649,14 @@ class ExtraBones(DriverUser):
         store = ConstraintStore()
         for bname in self.bnames:
             pb = rig.pose.bones[bname]
-            db = rig.pose.bones[drvBone(bname)]
-            copyPoseBone(db, pb, rig)
-            db.custom_shape = None
-            copyBoneInfo(db, pb)
-            store.storeConstraints(db.name, db)
-            store.removeConstraints(db, onlyLimit=True)
+            drvb = rig.pose.bones[drvBone(bname)]
+            copyPoseBone(drvb, pb, rig)
+            drvb.custom_shape = None
+            copyBoneInfo(drvb, pb)
+            store.storeConstraints(drvb.name, drvb)
+            store.removeConstraints(drvb, onlyLimit=True)
             self.addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
-            store.restoreConstraints(db.name, pb)
+            store.restoreConstraints(drvb.name, pb)
         for pb in rig.pose.bones:
             if not isDrvBone(pb.name):
                 for cns in pb.constraints:
@@ -743,21 +739,22 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones,
         from .driver import getDrivenBoneFcurves
         exclude = ["lMetatarsals", "rMetatarsals", "l_metatarsal", "r_metatarsal"]
         driven = getDrivenBoneFcurves(rig, useRigifySafe=True)
-        bnames = {}
+        bnames = set()
         for pb in rig.pose.bones:
             if (pb.name in driven.keys() and
                 not isDrvBone(pb.name) and
+                not isErcBone(pb.name) and
                 drvBone(pb.name) not in rig.pose.bones.keys() and
-                pb.name not in exclude and
-                not isErcBone(pb.name)):
+                pb.name not in exclude):
+                bname = baseBone(pb.name)
                 if self.ignoreLocked and isLocationLocked(pb):
                     for fcu in driven[pb.name]:
-                        bname,channel,cnsname = getBoneChannel(fcu)
+                        _,channel,cnsname = getBoneChannel(fcu)
                         if channel != "location" and cnsname is None:
-                            bnames[pb.name] = True
+                            bnames.add(bname)
                             break
                 else:
-                    bnames[pb.name] = True
+                    bnames.add(bname)
         return bnames
 
 

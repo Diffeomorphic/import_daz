@@ -989,8 +989,14 @@ class DAZ_OT_AddErcBones(DazPropsOperator, GizmoUser, IsArmature):
         description = "Add custom shapes to original bones",
         default = True)
 
+    useParents : BoolProperty(
+        name = "Parents",
+        description = "ERC bones have the same parents as the original bones and copy their rotations",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useCustomShapes")
+        self.layout.prop(self, "useParents")
 
     def run(self, context):
         from .rig_utils import addErcBones
@@ -1002,7 +1008,7 @@ class DAZ_OT_AddErcBones(DazPropsOperator, GizmoUser, IsArmature):
             gizmo = self.makeEmptyGizmo("GZM_Cube", 'CUBE')
         else:
             gizmo = None
-        addErcBones(rig, gizmo)
+        addErcBones(rig, gizmo, self.useParents)
 
 #----------------------------------------------------------
 #   Initialize

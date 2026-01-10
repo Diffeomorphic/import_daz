@@ -333,13 +333,14 @@ def addDisplayTransform(rig, mesh, headname):
 #   Add ERC bones
 #-------------------------------------------------------------
 
-def addErcBones(rig, gizmo):
-    #defbones = [bone.name for bone in rig.data.bones if bone.use_deform]
-    defbones = list(rig.data.bones.keys())
+def addErcBones(rig, gizmo, useParents):
+    defbones = [bone.name for bone in rig.data.bones if not isDrvBone(bone.name)]
     setMode('EDIT')
     for bname in defbones:
         eb = rig.data.edit_bones[bname]
-        ercb = deriveBone(ercBone(bname), eb, rig, "ERC", eb.parent)
+        ercb = deriveBone(ercBone(bname), eb, rig, "ERC", None)
+        if useParents:
+            ercb.parent = eb.parent
         ercb.use_deform = False
     setMode('OBJECT')
     for bname in defbones:
@@ -347,7 +348,8 @@ def addErcBones(rig, gizmo):
         ercb = rig.pose.bones[ercBone(bname)]
         ercb.bone.color.palette = 'THEME09'
         ercb.color.palette = 'THEME09'
-        cns = copyRotation(ercb, pb, rig)
+        if useParents:
+            copyRotation(ercb, pb, rig)
         if gizmo is None:
             continue
         if pb.custom_shape is None:
@@ -367,11 +369,6 @@ def addErcBones(rig, gizmo):
 
 
 def morphErcArmature(rig):
-    posemats = [(pb, pb.matrix_basis.copy()) for pb in rig.pose.bones]
-    for pb in rig.pose.bones:
-        pb.matrix_basis = Matrix()
-    dg = bpy.context.evaluated_depsgraph_get()
-    dg.update()
     ercBones = [pb for pb in rig.pose.bones if pb.name[-5:] == "(erc)"]
     editmats = [(pb.name, pb.matrix.copy()) for pb in ercBones]
     setMode('EDIT')
@@ -379,8 +376,6 @@ def morphErcArmature(rig):
         eb = rig.data.edit_bones[bname[:-5]]
         eb.matrix = mat
     setMode('OBJECT')
-    for pb, mat in posemats:
-        pb.matrix_basis = mat
 
 
 
