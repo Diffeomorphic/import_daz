@@ -861,13 +861,17 @@ class DAZ_OT_MorphArmature(DazOperator, IsArmature):
     bl_description = "Update the armature for ERC morphs"
 
     def run(self, context):
-        from .runtime.morph_armature import getEditBones, morphArmature
         rig = context.object
-        mode = rig.mode
-        data = getEditBones(rig)
-        bpy.ops.object.mode_set(mode='EDIT')
-        morphArmature(data)
-        bpy.ops.object.mode_set(mode=mode)
+        if dazRna(rig.data).DazHasErcBones:
+            from .rig_utils import morphErcArmature
+            morphErcArmature(rig)
+        else:
+            from .runtime.morph_armature import getEditBones, morphArmature
+            mode = rig.mode
+            data = getEditBones(rig)
+            setMode('EDIT')
+            morphArmature(data)
+            setMode(mode)
 
 #-------------------------------------------------------------
 #   For debugging

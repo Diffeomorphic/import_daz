@@ -334,14 +334,17 @@ def addDisplayTransform(rig, mesh, headname):
 #-------------------------------------------------------------
 
 def addErcBones(rig, gizmo):
-    defbones = [bone.name for bone in rig.data.bones if bone.use_deform]
+    #defbones = [bone.name for bone in rig.data.bones if bone.use_deform]
+    defbones = list(rig.data.bones.keys())
     setMode('EDIT')
     for bname in defbones:
         eb = rig.data.edit_bones[bname]
         if eb.parent:
             parb = rig.data.edit_bones.get(ercBone(eb.parent.name))
-        if parb is None:
-            parb = eb.parent
+            if parb is None:
+                parb = eb.parent
+        else:
+            parb = None
         ercb = deriveBone(ercBone(bname), eb, rig, "ERC", parb)
         ercb.use_deform = False
     setMode('OBJECT')
@@ -351,17 +354,39 @@ def addErcBones(rig, gizmo):
         ercb.bone.color.palette = 'THEME09'
         ercb.color.palette = 'THEME09'
         cns = copyRotation(ercb, pb, rig)
-        pb.custom_shape = gizmo
-        pb.custom_shape_translation[1] = pb.bone.length/2
-        pb.custom_shape_scale_xyz = (0.1, 0.5, 0.1)
-        pb.bone.show_wire = True
+        if gizmo is None:
+            continue
+        if pb.custom_shape is None:
+            pb.custom_shape = gizmo
+            pb.custom_shape_translation[1] = pb.bone.length/2
+            pb.custom_shape_scale_xyz = (0.1, 0.5, 0.1)
+            pb.bone.show_wire = True
         pb.bone.display_type = 'OCTAHEDRAL'
         pb.custom_shape_transform = ercb
         pb.use_transform_at_custom_shape = True
         pb.use_transform_around_custom_shape = True
         pb.use_custom_shape_bone_size = True
     coll = rig.data.collections.get("ERC")
+    if coll:
+        coll.is_visible = False
     dazRna(rig.data).DazHasErcBones = True
 
-print("ERCloaded")
+
+def morphErcArmature(rig):
+    posemats = [(pb, pb.matrix_basis.copy()) for pb in rig.pose.bones]
+    for pb in rig.pose.bones:
+        pb.matrix_basis = Matrix()
+    dg = bpy.context.evaluated_depsgraph_get()
+    dg.update()
+    ercBones = [pb for pb in rig.pose.bones if pb.name[-5:] == "(erc)"]
+    editmats = [(pb.name, pb.matrix.copy()) for pb in ercBones]
+    setMode('EDIT')
+    for bname, mat in editmats:
+        eb = rig.data.edit_bones[bname[:-5]]
+        eb.matrix = mat
+    setMode('OBJECT')
+    for pb, mat in posemats:
+        pb.matrix_basis = mat
+
+
 

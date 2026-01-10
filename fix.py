@@ -978,19 +978,30 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
 #  Add ERC bones
 #-------------------------------------------------------------
 
-class DAZ_OT_AddErcBones(DazOperator, GizmoUser, IsArmature):
+class DAZ_OT_AddErcBones(DazPropsOperator, GizmoUser, IsArmature):
     bl_idname = "daz.add_erc_bones"
     bl_label = "Add ERC Bones"
     bl_description = "Add ERC bones"
     bl_options = {'UNDO'}
+
+    useCustomShapes : BoolProperty(
+        name = "Custom Shapes",
+        description = "Add custom shapes to original bones",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useCustomShapes")
 
     def run(self, context):
         from .rig_utils import addErcBones
         rig = context.object
         if dazRna(rig.data).DazHasErcBones:
             raise DazError("Rig already has ERC bones")
-        self.startGizmos(context, rig)
-        gizmo = self.makeEmptyGizmo("GZM_Cube", 'CUBE')
+        if self.useCustomShapes:
+            self.startGizmos(context, rig)
+            gizmo = self.makeEmptyGizmo("GZM_Cube", 'CUBE')
+        else:
+            gizmo = None
         addErcBones(rig, gizmo)
 
 #----------------------------------------------------------
