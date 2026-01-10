@@ -339,13 +339,7 @@ def addErcBones(rig, gizmo):
     setMode('EDIT')
     for bname in defbones:
         eb = rig.data.edit_bones[bname]
-        if eb.parent:
-            parb = rig.data.edit_bones.get(ercBone(eb.parent.name))
-            if parb is None:
-                parb = eb.parent
-        else:
-            parb = None
-        ercb = deriveBone(ercBone(bname), eb, rig, "ERC", parb)
+        ercb = deriveBone(ercBone(bname), eb, rig, "ERC", eb.parent)
         ercb.use_deform = False
     setMode('OBJECT')
     for bname in defbones:
