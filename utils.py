@@ -633,6 +633,15 @@ def isFinal(string):
 def isRest(string):
     return (string[-5:] == "(rst)")
 
+def isErcBone(string):
+    return string.endswith("(erc)")
+
+def ercBone(string):
+    if isErcBone(string):
+        return string
+    else:
+        return "%s(erc)" % string
+
 def drvBone(string, strict=False):
     if isDrvBone(string) and not strict:
         return string

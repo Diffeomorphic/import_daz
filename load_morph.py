@@ -555,7 +555,7 @@ class LoadMorph(DriverUser):
                             self.makeOffsetFormula("HdOffset", output, idx, expr)
                         elif self.disableErc:
                             pass
-                        elif GS.ercMethod == 'TRANSLATION':
+                        elif GS.ercMethod in ['TRANSLATION', 'ERC_BONES']:
                             self.makeErcFormula(output, idx, expr)
                         elif GS.ercMethod == 'ARMATURE':
                             self.makeOffsetFormula("HdOffset", output, idx, expr)
@@ -737,6 +737,10 @@ class LoadMorph(DriverUser):
     def makeErcFormula(self, bname, idx, expr):
         tfm,pb,prop,factor = self.getBoneData(bname, expr)
         self.ercMorphs[prop] = self.ercBones
+        if GS.ercMethod == 'ERC_BONES':
+            pb = self.rig.pose.bones.get(ercBone(bname))
+            if pb is None:
+                return
         if pb.name not in self.ercBones.keys():
             tfm.setTrans(factor, prop, index=idx)
             self.ercBones[pb.name] = (tfm, tfm.trans)

@@ -748,7 +748,8 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones,
             if (pb.name in driven.keys() and
                 not isDrvBone(pb.name) and
                 drvBone(pb.name) not in rig.pose.bones.keys() and
-                pb.name not in exclude):
+                pb.name not in exclude and
+                not isErcBone(pb.name)):
                 if self.ignoreLocked and isLocationLocked(pb):
                     for fcu in driven[pb.name]:
                         bname,channel,cnsname = getBoneChannel(fcu)

@@ -333,30 +333,21 @@ def addDisplayTransform(rig, mesh, headname):
 #   Add ERC bones
 #-------------------------------------------------------------
 
-def isErcName(bname):
-    return bname.endswith("(erc)")
-
-def ercName(bname):
-    if isErcName(bname):
-        return bname
-    else:
-        return "%s(erc)" % bname
-
 def addErcBones(rig, gizmo):
     defbones = [bone.name for bone in rig.data.bones if bone.use_deform]
     setMode('EDIT')
     for bname in defbones:
         eb = rig.data.edit_bones[bname]
         if eb.parent:
-            parb = rig.data.edit_bones.get(ercName(eb.parent.name))
+            parb = rig.data.edit_bones.get(ercBone(eb.parent.name))
         if parb is None:
             parb = eb.parent
-        ercb = deriveBone(ercName(bname), eb, rig, "ERC", parb)
+        ercb = deriveBone(ercBone(bname), eb, rig, "ERC", parb)
         ercb.use_deform = False
     setMode('OBJECT')
     for bname in defbones:
         pb = rig.pose.bones[bname]
-        ercb = rig.pose.bones[ercName(bname)]
+        ercb = rig.pose.bones[ercBone(bname)]
         ercb.bone.color.palette = 'THEME09'
         ercb.color.palette = 'THEME09'
         cns = copyRotation(ercb, pb, rig)

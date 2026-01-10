@@ -330,6 +330,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
     ercMethod : EnumProperty(
         items = [('NONE', "None", "ERC morphs are ignored"),
                  ('TRANSLATION', "Translation", "ERC morphs are translations"),
+                 ('ERC_BONES', "ERC Bones", "ERC morphs affect ERC bones"),
                  ('ARMATURE', "Armature Custom", "Custom ERC morphs change the rest pose"),
                  ('ALL', "Armature All", "All ERC morphs change the rest pose")],
         name = "ERC Method",
