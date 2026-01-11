@@ -987,7 +987,7 @@ class DAZ_OT_AddErcBones(DazPropsOperator, GizmoUser, IsArmature):
     useCustomShapes : BoolProperty(
         name = "Custom Shapes",
         description = "Add custom shapes to original bones",
-        default = True)
+        default = False)
 
     useParents : BoolProperty(
         name = "Parents",
@@ -1010,6 +1010,20 @@ class DAZ_OT_AddErcBones(DazPropsOperator, GizmoUser, IsArmature):
             gizmo = None
         addErcBones(rig, gizmo, self.useParents)
 
+
+class DAZ_OT_UpdateErcBones(DazOperator, IsArmature):
+    bl_idname = "daz.update_erc_bones"
+    bl_label = "Update ERC Bones"
+    bl_description = "Update ERC bones"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        from .rig_utils import updateErcBones
+        rig = context.object
+        if not dazRna(rig.data).DazHasErcBones:
+            raise DazError("Rig does not have ERC bones")
+        updateErcBones(rig)
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -1017,6 +1031,7 @@ class DAZ_OT_AddErcBones(DazPropsOperator, GizmoUser, IsArmature):
 classes = [
     DAZ_OT_ChangeArmature,
     DAZ_OT_AddErcBones,
+    DAZ_OT_UpdateErcBones,
 ]
 
 def register():

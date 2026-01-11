@@ -339,7 +339,9 @@ def addErcBones(rig, gizmo, useParents):
     for bname in defbones:
         eb = rig.data.edit_bones[bname]
         ercb = deriveBone(ercBone(bname), eb, rig, "ERC", None)
-        if useParents:
+        if useParents and eb.parent:
+            #parname = ercBone(eb.parent.name)
+            #ercb.parent = rig.data.edit_bones[parname]
             ercb.parent = eb.parent
         ercb.use_deform = False
     setMode('OBJECT')
@@ -348,8 +350,8 @@ def addErcBones(rig, gizmo, useParents):
         ercb = rig.pose.bones[ercBone(bname)]
         ercb.bone.color.palette = 'THEME09'
         ercb.color.palette = 'THEME09'
-        if useParents:
-            copyRotation(ercb, pb, rig)
+        #if useParents:
+        #    copyRotation(ercb, pb, rig)
         if gizmo is None:
             continue
         if pb.custom_shape is None:
@@ -368,14 +370,47 @@ def addErcBones(rig, gizmo, useParents):
     dazRna(rig.data).DazHasErcBones = True
 
 
-def morphErcArmature(rig):
-    ercBones = [pb for pb in rig.pose.bones if pb.name[-5:] == "(erc)"]
-    editmats = [(pb.name, pb.matrix.copy()) for pb in ercBones]
-    setMode('EDIT')
-    for bname, mat in editmats:
-        eb = rig.data.edit_bones[bname[:-5]]
-        eb.matrix = mat
-    setMode('OBJECT')
-
+def updateErcBones(rig):
+    from .figure import copyBoneInfo
+    from .store import copyConstraint, removeConstraints
+    from .driver import addGeneralDriver
+    ercbones = [pb for pb in rig.pose.bones if isErcBone(pb.name)]
+    basebones = [rig.pose.bones.get(baseBone(pb.name)) for pb in ercbones]
+    for pb, ercb in zip(basebones, ercbones):
+        if pb is None:
+            continue
+        bname = pb.name
+        pb.name = defBone(bname)
+        ercb.name = bname
+        removeConstraints(ercb)
+        copyBoneInfo(pb, ercb)
+        for cns in pb.constraints:
+            if cns.type == 'LIMIT_ROTATION':
+                copyConstraint(cns, ercb, rig)
+        ercb.lock_location = pb.lock_location
+        ercb.lock_rotation = pb.lock_rotation
+        ercb.lock_scale = pb.lock_scale
+        pb.driver_remove("location")
+        for idx,ttype in enumerate(['LOC_X', 'LOC_Y', 'LOC_Z']):
+            fcu = pb.driver_add("location", idx)
+            fcu.driver.type = 'SCRIPTED'
+            fcu.driver.expression = "-x"
+            var = fcu.driver.variables.new()
+            var.type = 'TRANSFORMS'
+            var.name = "x"
+            trg = var.targets[0]
+            trg.id = rig
+            trg.bone_target = ercb.name
+            trg.transform_type = ttype
+            trg.transform_space = 'LOCAL_SPACE'
+        removeConstraints(pb)
+        cns = copyTransform(pb, ercb, rig, space='LOCAL')
+        cns.mix_mode = 'BEFORE_FULL'
+    coll = rig.data.collections.get("Bones")
+    if coll:
+        coll.is_visible = False
+    coll = rig.data.collections.get("ERC")
+    if coll:
+        coll.is_visible = True
 
 

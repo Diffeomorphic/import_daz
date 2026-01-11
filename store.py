@@ -40,6 +40,14 @@ def copyConstraint(scns, trg, rig):
     return tcns
 
 
+def removeConstraints(pb, onlyLimit=False):
+    for cns in list(pb.constraints):
+        if not onlyLimit or cns.type.startswith("LIMIT"):
+            cns.driver_remove("influence")
+            cns.driver_remove("mute")
+            pb.constraints.remove(cns)
+
+
 class ConstraintStore:
     def __init__(self):
         self.constraints = {}
@@ -60,7 +68,7 @@ class ConstraintStore:
     def storeAllConstraints(self, rig):
         for pb in rig.pose.bones:
             self.storeConstraints(pb.name, pb)
-            self.removeConstraints(pb)
+            removeConstraints(pb)
 
 
     def getFkBone(self, key, rig):
@@ -138,13 +146,6 @@ class ConstraintStore:
             cns.target = target
         return cns
 
-
-    def removeConstraints(self, pb, onlyLimit=False):
-        for cns in list(pb.constraints):
-            if not onlyLimit or cns.type.startswith("LIMIT"):
-                cns.driver_remove("influence")
-                cns.driver_remove("mute")
-                pb.constraints.remove(cns)
 
     #-------------------------------------------------------------
     #   Driver store

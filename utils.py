@@ -623,7 +623,7 @@ def isDrvBone(string):
     return string.endswith("(drv)")
 
 def baseBone(string):
-    if string[-5:] in ["(fin)", "(drv)", "(erc)"]:
+    if string[-5:] in ["(fin)", "(drv)", "(erc)", "(def)"]:
         return string[:-5]
     return string
 
@@ -637,10 +637,10 @@ def isErcBone(string):
     return string.endswith("(erc)")
 
 def ercBone(string):
-    if isErcBone(string):
-        return string
-    else:
-        return "%s(erc)" % string
+    return "%s(erc)" % string
+
+def defBone(string):
+    return "%s(def)" % string
 
 def drvBone(string, strict=False):
     if isDrvBone(string) and not strict:

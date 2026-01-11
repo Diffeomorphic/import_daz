@@ -87,7 +87,7 @@ class FigureInstance(Instance):
     def copyParentPose(self, par, rig):
         if rig is None or par is None:
             return
-        from .store import ConstraintStore
+        from .store import ConstraintStore, removeConstraints
         store = ConstraintStore()
         for pb in rig.pose.bones:
             if pb.name in par.pose.bones.keys():
@@ -97,7 +97,7 @@ class FigureInstance(Instance):
                 pb.lock_rotation = parb.lock_rotation
                 pb.lock_scale = parb.lock_scale
                 store.storeConstraints(parb.name, parb)
-                store.removeConstraints(pb)
+                removeConstraints(pb)
                 store.restoreConstraints(parb.name, pb)
 
 
@@ -604,7 +604,7 @@ class ExtraBones(DriverUser):
             pb.bone.inherit_scale = db.bone.inherit_scale
 
         from .driver import getShapekeyDriver
-        from .store import ConstraintStore
+        from .store import ConstraintStore, removeConstraints
         if getattr(dazRna(rig.data), self.attr):
             msg = "Rig %s already has extra %s bones" % (rig.name, self.type)
             print(msg)
@@ -654,7 +654,7 @@ class ExtraBones(DriverUser):
             drvb.custom_shape = None
             copyBoneInfo(drvb, pb)
             store.storeConstraints(drvb.name, drvb)
-            store.removeConstraints(drvb, onlyLimit=True)
+            removeConstraints(drvb, onlyLimit=True)
             self.addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
             store.restoreConstraints(drvb.name, pb)
         for pb in rig.pose.bones:
@@ -858,17 +858,13 @@ class DAZ_OT_MorphArmature(DazOperator, IsArmature):
     bl_description = "Update the armature for ERC morphs"
 
     def run(self, context):
+        from .runtime.morph_armature import getEditBones, morphArmature
         rig = context.object
-        if dazRna(rig.data).DazHasErcBones:
-            from .rig_utils import morphErcArmature
-            morphErcArmature(rig)
-        else:
-            from .runtime.morph_armature import getEditBones, morphArmature
-            mode = rig.mode
-            data = getEditBones(rig)
-            setMode('EDIT')
-            morphArmature(data)
-            setMode(mode)
+        mode = rig.mode
+        data = getEditBones(rig)
+        setMode('EDIT')
+        morphArmature(data)
+        setMode(mode)
 
 #-------------------------------------------------------------
 #   For debugging

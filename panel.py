@@ -63,9 +63,9 @@ class DAZ_PT_SetupCorrections(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.apply_active_shapekey")
         self.layout.operator("daz.change_armature")
         self.layout.separator()
-        if not BLENDER4:
-            self.layout.operator("daz.add_erc_bones")
         self.layout.operator("daz.lock_all_channels")
+        self.layout.operator("daz.add_erc_bones")
+        self.layout.operator("daz.update_erc_bones")
 
 #----------------------------------------------------------
 #   Materials
@@ -590,7 +590,7 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
             else:
                 split.prop(dazRna(scn), "DazUsedPropsOnly")
         self.preamble(self.layout, context.scene, rig)
-        if (GS.ercMethod in ('ERC_BONES', 'ARMATURE', 'ALL') and
+        if (GS.ercMethod in ('ARMATURE', 'ALL') and
             dazRna(rig).DazRig.startswith("genesis")):
             row = self.layout.row()
             row.operator("daz.morph_armature")

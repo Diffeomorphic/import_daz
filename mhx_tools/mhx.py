@@ -540,6 +540,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
 
     def joinBendTwists(self, rig, renames, bendTwistBones, keep=True):
+        from ..store import removeConstraints
         bendTwistChildren = {}
         setMode('OBJECT')
         rotmodes = {}
@@ -551,10 +552,10 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             pb = rig.pose.bones[bendname]
             rotmodes[bname] = dazRna(pb).DazRotMode
             self.store.storeConstraints(bname, pb)
-            self.store.removeConstraints(pb)
+            removeConstraints(pb)
             self.deleteBoneDrivers(rig, bendname)
             pb = rig.pose.bones[twistname]
-            self.store.removeConstraints(pb)
+            removeConstraints(pb)
             self.deleteBoneDrivers(rig, twistname)
 
         setMode('EDIT')
