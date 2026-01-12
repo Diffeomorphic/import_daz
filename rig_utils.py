@@ -350,8 +350,6 @@ def addErcBones(rig, gizmo, useParents):
         ercb = rig.pose.bones[ercBone(bname)]
         ercb.bone.color.palette = 'THEME09'
         ercb.color.palette = 'THEME09'
-        #if useParents:
-        #    copyRotation(ercb, pb, rig)
         if gizmo is None:
             continue
         if pb.custom_shape is None:
@@ -375,7 +373,7 @@ def updateErcBones(rig):
     from .store import copyConstraint, removeConstraints
     from .driver import addGeneralDriver
     ercbones = [pb for pb in rig.pose.bones if isErcBone(pb.name)]
-    basebones = [rig.pose.bones.get(baseBone(pb.name)) for pb in ercbones]
+    basebones = [rig.pose.bones.get(ercBase(pb.name)) for pb in ercbones]
     for pb, ercb in zip(basebones, ercbones):
         if pb is None:
             continue
@@ -390,6 +388,7 @@ def updateErcBones(rig):
         ercb.lock_location = pb.lock_location
         ercb.lock_rotation = pb.lock_rotation
         ercb.lock_scale = pb.lock_scale
+
         pb.driver_remove("location")
         for idx,ttype in enumerate(['LOC_X', 'LOC_Y', 'LOC_Z']):
             fcu = pb.driver_add("location", idx)
