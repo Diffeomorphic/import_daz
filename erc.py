@@ -74,14 +74,16 @@ class DAZ_OT_UpdateErcBones(DazOperator, IsArmature):
 def updateErcBones(rig):
     from .figure import copyBoneInfo
     from .store import copyConstraint, removeConstraints
-    from .driver import addGeneralDriver
+    from .driver import setFloatProp, getDriver
     from .rig_utils import copyTransform
+
     ercbones = [pb for pb in rig.pose.bones if isErcBone(pb.name)]
     basebones = [rig.pose.bones.get(ercBase(pb.name)) for pb in ercbones]
     for pb, ercb in zip(basebones, ercbones):
         if pb is None:
             continue
         bname = pb.name
+        drvb = rig.pose.bones.get(drvBone(bname), pb)
         pb.name = defBone(bname)
         ercb.name = bname
         removeConstraints(ercb)
@@ -93,8 +95,36 @@ def updateErcBones(rig):
         ercb.lock_rotation = pb.lock_rotation
         ercb.lock_scale = pb.lock_scale
 
-        pb.driver_remove("location")
         for idx,ttype in enumerate(['LOC_X', 'LOC_Y', 'LOC_Z']):
+            channel = 'pose.bones["%s"].location' % drvb.name
+            prop = "%s:ERC:%d" % (bname, idx)
+            fcu0 = getDriver(rig, channel, idx)
+            if fcu0:
+                setFloatProp(rig.data, prop, 0.0, None, None, True)
+                fcu1 = rig.data.animation_data.drivers.from_existing(src_driver=fcu0)
+                fcu1.data_path = propRef(prop)
+
+            channel = 'pose.bones["%s"].location' % ercb.name
+            efcu = getDriver(rig, channel, idx)
+            if efcu and fcu0:
+                if efcu.driver.type == 'SCRIPTED':
+                    efcu.driver.expression = "%s+y" % fcu.driver.expression
+                elif efcu.driver.type == 'SUM':
+                    pass
+                var = efcu.driver.variables.new()
+                var.type = 'SINGLE_PROP'
+                var.name = "y"
+                trg = var.targets[0]
+                trg.id_type = 'ARMATURE'
+                trg.id = rig.data
+                trg.data_path = propRef(prop)
+            elif fcu0:
+                efcu = rig.data.animation_data.drivers.from_existing(src_driver=fcu0)
+                efcu.data_path = channel
+
+            pb.driver_remove("location", idx)
+            if drvb != pb:
+                drvb.driver_remove("location", idx)
             fcu = pb.driver_add("location", idx)
             fcu.driver.type = 'SCRIPTED'
             fcu.driver.expression = "-x"
