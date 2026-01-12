@@ -1356,15 +1356,17 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
 
     def makeObjectFrame(self, bname, rig, bframe, tfm, n, offset):
         if not self.affectObject:
-            pass
-        else:
-            hparent = self.hparents.get(rig.name)
-            if hparent:
-                tfm.setObject(rig, hparent[1])
-            if rig.type in ['LIGHT', 'CAMERA'] and GS.zup:
-                rig.rotation_euler[0] += pi/2
-            if self.useInsertKeys:
-                insertKeys(rig, None, n+offset, self, tfm)
+            return
+        hparent = None
+        if self.assetType == "preset_hierarchical_pose":
+            hparents = self.hparents.get(rig.name)
+            if hparents:
+                hparent = hparents[1]
+        tfm.setObject(rig, hparent)
+        if rig.type in ['LIGHT', 'CAMERA'] and GS.zup:
+            rig.rotation_euler[0] += pi/2
+        if self.useInsertKeys:
+            insertKeys(rig, None, n+offset, self, tfm)
 
 
     def makeBoneFrame(self, bname, rig, bframe, tfm, n, offset, twists):
