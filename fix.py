@@ -974,64 +974,12 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
                 eb.matrix = mat
             setMode('OBJECT')
 
-#-------------------------------------------------------------
-#  Add ERC bones
-#-------------------------------------------------------------
-
-class DAZ_OT_AddErcBones(DazPropsOperator, GizmoUser, IsArmature):
-    bl_idname = "daz.add_erc_bones"
-    bl_label = "Add ERC Bones"
-    bl_description = "Add ERC bones"
-    bl_options = {'UNDO'}
-
-    useCustomShapes : BoolProperty(
-        name = "Custom Shapes",
-        description = "Add custom shapes to original bones",
-        default = False)
-
-    useParents : BoolProperty(
-        name = "Parents",
-        description = "ERC bones have the same parents as the original bones and copy their rotations",
-        default = True)
-
-    def draw(self, context):
-        self.layout.prop(self, "useCustomShapes")
-        self.layout.prop(self, "useParents")
-
-    def run(self, context):
-        from .rig_utils import addErcBones
-        rig = context.object
-        if dazRna(rig.data).DazHasErcBones:
-            raise DazError("Rig already has ERC bones")
-        if self.useCustomShapes:
-            self.startGizmos(context, rig)
-            gizmo = self.makeEmptyGizmo("GZM_Cube", 'CUBE')
-        else:
-            gizmo = None
-        addErcBones(rig, gizmo, self.useParents)
-
-
-class DAZ_OT_UpdateErcBones(DazOperator, IsArmature):
-    bl_idname = "daz.update_erc_bones"
-    bl_label = "Update ERC Bones"
-    bl_description = "Update ERC bones"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        from .rig_utils import updateErcBones
-        rig = context.object
-        if not dazRna(rig.data).DazHasErcBones:
-            raise DazError("Rig does not have ERC bones")
-        updateErcBones(rig)
-
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
 classes = [
     DAZ_OT_ChangeArmature,
-    DAZ_OT_AddErcBones,
-    DAZ_OT_UpdateErcBones,
 ]
 
 def register():
