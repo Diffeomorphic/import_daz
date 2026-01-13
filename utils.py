@@ -622,6 +622,12 @@ def isHDMesh(ob):
 def isDrvBone(string):
     return string.endswith("(drv)")
 
+def isDefBone(string):
+    return string.endswith("(def)")
+
+def isBaseBone(string):
+    return (not string.endswith(("(drv)", "(fin)", "(erc)", "(def)")))
+
 def baseBone(string):
     if string[-5:] in ["(fin)", "(drv)"]:
         return string[:-5]

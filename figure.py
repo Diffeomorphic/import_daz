@@ -574,6 +574,20 @@ class ExtraBones(DriverUser):
                 self.clearTmpDriver(0)
 
 
+    def updateErcBones(self, rig):
+        for fcu in rig.animation_data.drivers:
+            bname,channel,_ = getBoneChannel(fcu)
+            if bname and isDefBone(bname):
+                for var in fcu.driver.variables:
+                    for trg in var.targets:
+                        trg.bone_target = baseBone(trg.bone_target)
+        for pb in rig.pose.bones:
+            if isDefBone(pb.name):
+                for cns in pb.constraints:
+                    if hasattr(cns, "subtarget"):
+                        cns.subtarget = baseBone(cns.subtarget)
+
+
     def addExtraBones(self, rig):
         def copyEditBone(db, rig, bname):
             eb = rig.data.edit_bones.new(bname)
@@ -632,8 +646,8 @@ class ExtraBones(DriverUser):
             drvb = rig.pose.bones.get(drvBone(bname))
             if pb and drvb:
                 pb.bone["DazExtraBone"] = drvb.bone.get("DazExtraBone", False)
-                drvb.bone.color.palette = 'THEME06'
-                drvb.color.palette = 'THEME06'
+                drvb.bone.color.palette = 'THEME14'
+                drvb.color.palette = 'THEME14'
 
         setMode('EDIT')
         for bname in self.bnames:
@@ -643,9 +657,9 @@ class ExtraBones(DriverUser):
                 if cb.name != bname:
                     cb.parent = eb
 
+        setMode('OBJECT')
         if not ES.easy:
             print("  Change constraints")
-        setMode('OBJECT')
         store = ConstraintStore()
         for bname in self.bnames:
             pb = rig.pose.bones[bname]
@@ -658,7 +672,7 @@ class ExtraBones(DriverUser):
             self.addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
             store.restoreConstraints(drvb.name, pb)
         for pb in rig.pose.bones:
-            if not isDrvBone(pb.name):
+            if isBaseBone(pb.name):
                 for cns in pb.constraints:
                     if (hasattr(cns, "subtarget") and
                         isDrvBone(cns.subtarget) and
@@ -674,6 +688,9 @@ class ExtraBones(DriverUser):
         if not ES.easy:
             print("  Update scripted drivers")
         self.updateScriptedDrivers(rig.data)
+        if not ES.easy:
+            print("  Update ERC bones")
+            self.updateErcBones(rig)
         if not ES.easy:
             print("  Update drivers")
         setattr(dazRna(rig.data), self.attr, True)
@@ -742,8 +759,7 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, ExtraBones,
         bnames = set()
         for pb in rig.pose.bones:
             if (pb.name in driven.keys() and
-                not isDrvBone(pb.name) and
-                not isErcBone(pb.name) and
+                isBaseBone(pb.name) and
                 drvBone(pb.name) not in rig.pose.bones.keys() and
                 pb.name not in exclude):
                 bname = baseBone(pb.name)

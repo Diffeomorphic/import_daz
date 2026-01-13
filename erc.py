@@ -138,6 +138,8 @@ def updateErcBones(rig):
         ercb.lock_location = pb.lock_location
         ercb.lock_rotation = pb.lock_rotation
         ercb.lock_scale = pb.lock_scale
+        pb.bone.color.palette = 'THEME04'
+        pb.color.palette = 'THEME04'
         if drvb != pb:
             for channel in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
                 drvb.driver_remove(channel)
