@@ -90,7 +90,7 @@ def updateErcBones(rig):
             if cns.type == 'LIMIT_ROTATION':
                 copyConstraint(cns, ercb, rig)
 
-        for idx,x in enumerate(['X', 'Y', 'Z']):
+        for idx,ttype in enumerate(['LOC_X', 'LOC_Y', 'LOC_Z']):
             fcu0 = getDriver(rig, 'pose.bones["%s"].location' % drvb.name, idx)
             efcu = getDriver(rig, 'pose.bones["%s"].location' % ercb.name, idx)
             if efcu and fcu0:
@@ -127,24 +127,24 @@ def updateErcBones(rig):
             trg = var.targets[0]
             trg.id = rig
             trg.bone_target = ercb.name
-            trg.transform_type = 'LOC_%s' % x
+            trg.transform_type = ttype
             trg.transform_space = 'LOCAL_SPACE'
 
         removeConstraints(pb)
         cns = copyTransform(pb, ercb, rig, space='LOCAL')
         cns.mix_mode = 'BEFORE_FULL'
-        #pb.name = defBone(bname)
-        #ercb.name = bname
+        pb.name = defBone(bname)
+        ercb.name = bname
         ercb.lock_location = pb.lock_location
         ercb.lock_rotation = pb.lock_rotation
         ercb.lock_scale = pb.lock_scale
-        if drvb:
+        if drvb != pb:
             for channel in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
                 drvb.driver_remove(channel)
 
     setMode('EDIT')
     for eb in rig.data.edit_bones:
-        if isDrvBone(eb.name):
+        if isDrvBone(eb.name) and "tongue" not in eb.name:
             rig.data.edit_bones.remove(eb)
     setMode('OBJECT')
 
