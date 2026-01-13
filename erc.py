@@ -84,29 +84,20 @@ def updateErcBones(rig):
             continue
         bname = pb.name
         drvb = rig.pose.bones.get(drvBone(bname), pb)
-        pb.name = defBone(bname)
-        ercb.name = bname
         removeConstraints(ercb)
         copyBoneInfo(pb, ercb)
         for cns in pb.constraints:
             if cns.type == 'LIMIT_ROTATION':
                 copyConstraint(cns, ercb, rig)
-        ercb.lock_location = pb.lock_location
-        ercb.lock_rotation = pb.lock_rotation
-        ercb.lock_scale = pb.lock_scale
 
-        for idx,ttype in enumerate(['LOC_X', 'LOC_Y', 'LOC_Z']):
-            channel = 'pose.bones["%s"].location' % drvb.name
-            prop = "%s:ERC:%d" % (bname, idx)
-            fcu0 = getDriver(rig, channel, idx)
-            if fcu0:
+        for idx,x in enumerate(['X', 'Y', 'Z']):
+            fcu0 = getDriver(rig, 'pose.bones["%s"].location' % drvb.name, idx)
+            efcu = getDriver(rig, 'pose.bones["%s"].location' % ercb.name, idx)
+            if efcu and fcu0:
+                prop = "%s:ERC:%d" % (bname, idx)
                 setFloatProp(rig.data, prop, 0.0, None, None, True)
                 fcu1 = rig.data.animation_data.drivers.from_existing(src_driver=fcu0)
                 fcu1.data_path = propRef(prop)
-
-            channel = 'pose.bones["%s"].location' % ercb.name
-            efcu = getDriver(rig, channel, idx)
-            if efcu and fcu0:
                 if efcu.driver.type == 'SCRIPTED':
                     efcu.driver.expression = "%s+y" % fcu.driver.expression
                 elif efcu.driver.type == 'SUM':
@@ -119,12 +110,14 @@ def updateErcBones(rig):
                 trg.id = rig.data
                 trg.data_path = propRef(prop)
             elif fcu0:
-                efcu = rig.data.animation_data.drivers.from_existing(src_driver=fcu0)
-                efcu.data_path = channel
+                fcu0.data_path = 'pose.bones["%s"].location' % ercb.name
+
+            for channel in ["rotation_euler", "rotation_quaternion", "scale"]:
+                fcu0 = getDriver(rig, 'pose.bones["%s"].%s' % (drvb.name, channel), idx)
+                if fcu0:
+                    fcu0.data_path = 'pose.bones["%s"].%s' % (ercb.name, channel)
 
             pb.driver_remove("location", idx)
-            if drvb != pb:
-                drvb.driver_remove("location", idx)
             fcu = pb.driver_add("location", idx)
             fcu.driver.type = 'SCRIPTED'
             fcu.driver.expression = "-x"
@@ -134,11 +127,27 @@ def updateErcBones(rig):
             trg = var.targets[0]
             trg.id = rig
             trg.bone_target = ercb.name
-            trg.transform_type = ttype
+            trg.transform_type = 'LOC_%s' % x
             trg.transform_space = 'LOCAL_SPACE'
+
         removeConstraints(pb)
         cns = copyTransform(pb, ercb, rig, space='LOCAL')
         cns.mix_mode = 'BEFORE_FULL'
+        #pb.name = defBone(bname)
+        #ercb.name = bname
+        ercb.lock_location = pb.lock_location
+        ercb.lock_rotation = pb.lock_rotation
+        ercb.lock_scale = pb.lock_scale
+        if drvb:
+            for channel in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
+                drvb.driver_remove(channel)
+
+    setMode('EDIT')
+    for eb in rig.data.edit_bones:
+        if isDrvBone(eb.name):
+            rig.data.edit_bones.remove(eb)
+    setMode('OBJECT')
+
     coll = rig.data.collections.get("Bones")
     if coll:
         coll.is_visible = False
