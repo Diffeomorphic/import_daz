@@ -508,7 +508,7 @@ class ExtraBones(DriverUser):
             pb = rig.pose.bones[bname]
             drvb = rig.pose.bones[drvBone(bname)]
             cns = copyTransform(pb, drvb, rig, space='LOCAL')
-            cns.mix_mode = 'AFTER'
+            cns.mix_mode = 'BEFORE_FULL'
 
 
     def hasBoneDriver(self, bname, drivers):
@@ -575,12 +575,13 @@ class ExtraBones(DriverUser):
 
 
     def updateErcBones(self, rig):
-        for fcu in rig.animation_data.drivers:
-            bname,channel,_ = getBoneChannel(fcu)
-            if bname and isDefBone(bname):
-                for var in fcu.driver.variables:
-                    for trg in var.targets:
-                        trg.bone_target = baseBone(trg.bone_target)
+        if rig.animation_data:
+            for fcu in rig.animation_data.drivers:
+                bname,channel,_ = getBoneChannel(fcu)
+                if bname and isDefBone(bname):
+                    for var in fcu.driver.variables:
+                        for trg in var.targets:
+                            trg.bone_target = baseBone(trg.bone_target)
         for pb in rig.pose.bones:
             if isDefBone(pb.name):
                 for cns in pb.constraints:

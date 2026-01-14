@@ -5,6 +5,7 @@
 import bpy
 from .utils import *
 from .error import *
+from .morphing import PosableMaker
 
 #-------------------------------------------------------------
 #  Add ERC bones
@@ -26,7 +27,7 @@ class DAZ_OT_AddErcBones(DazPropsOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        if dazRna(rig.data).DazHasErcBones:
+        if dazRna(rig.data).DazErcStatus > 0:
             raise DazError("Rig already has ERC bones")
         addErcBones(rig, self.useParents)
 
@@ -39,8 +40,6 @@ def addErcBones(rig, useParents):
         eb = rig.data.edit_bones[bname]
         ercb = deriveBone(ercBone(bname), eb, rig, "ERC", None)
         if useParents and eb.parent:
-            #parname = ercBone(eb.parent.name)
-            #ercb.parent = rig.data.edit_bones[parname]
             ercb.parent = eb.parent
         ercb.use_deform = False
     setMode('OBJECT')
@@ -52,13 +51,13 @@ def addErcBones(rig, useParents):
     coll = rig.data.collections.get("ERC")
     if coll:
         coll.is_visible = False
-    dazRna(rig.data).DazHasErcBones = True
+    dazRna(rig.data).DazErcStatus = 1
 
 #-------------------------------------------------------------
 #  Update ERC bones
 #-------------------------------------------------------------
 
-class DAZ_OT_UpdateErcBones(DazOperator, IsArmature):
+class DAZ_OT_UpdateErcBones(DazPropsOperator, PosableMaker, IsArmature):
     bl_idname = "daz.update_erc_bones"
     bl_label = "Update ERC Bones"
     bl_description = "Update ERC bones"
@@ -66,9 +65,12 @@ class DAZ_OT_UpdateErcBones(DazOperator, IsArmature):
 
     def run(self, context):
         rig = context.object
-        if not dazRna(rig.data).DazHasErcBones:
+        if dazRna(rig.data).DazErcStatus == 0:
             raise DazError("Rig does not have ERC bones")
+        elif dazRna(rig.data).DazErcStatus == 2:
+            raise DazError("ERC bones have already been updated")
         updateErcBones(rig)
+        self.makePosable(context, rig)
 
 
 def updateErcBones(rig):
@@ -156,6 +158,7 @@ def updateErcBones(rig):
     coll = rig.data.collections.get("ERC")
     if coll:
         coll.is_visible = True
+    dazRna(rig.data).DazErcStatus = 2
 
 #----------------------------------------------------------
 #   Initialize

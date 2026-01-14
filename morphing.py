@@ -469,9 +469,12 @@ class PosableMaker:
             (useEasy or not ES.easy) and
             rig and
             rig.type == 'ARMATURE' and
+            (not GS.ercMethod.startswith("ERC") or dazRna(rig.data).DazErcStatus >= 2) and
             (not useActivate or activateObject(context, rig))):
             print("Make all bones posable")
             bpy.ops.daz.make_all_bones_posable(errorOnFail=False)
+        else:
+            print("Bone must be made posable manually")
 
 
 class MorphLoader(LoadMorph, PosableMaker):
