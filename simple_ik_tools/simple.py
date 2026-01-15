@@ -204,6 +204,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         rig = context.object
         IK = SimpleIK(self)
         LS.__init__()
+        self.ercBones = {}
         self.genesis = IK.getGenesisType(rig)
         if not self.genesis:
             raise DazError("Cannot create simple IK for the rig %s" % rig.name)
@@ -217,6 +218,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if GS.ercMethod in ('ARMATURE', 'ALL') and self.useErcIk:
             copyOffsetDrivers(rig)
         modernizeBones(rig)
+        self.copyErcDrivers(rig)
         rig["DazSimpleIK"] = True
         from ..driver import setFloatProp
         setFloatProp(rig, "DazArmIK_L", 1.0, 0.0, 1.0, True)
@@ -395,6 +397,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             elif isInNumLayer(pb.bone, rig, T_TWEAK):
                 pass
                 #self.addToLayer(pb, S_TWEAK, rig, "Tweak")
+            elif isInNumLayer(pb.bone, rig, T_ERC):
+                pass
             elif isInNumLayer(pb.bone, rig, T_HIDDEN):
                 pass
             elif not isInNumLayer(pb.bone, rig, T_BONES):
@@ -564,12 +568,16 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 cns = copyRotation(hand, handIK, rig, prop=armProp, space='POSE')
                 cns.euler_order = hand.rotation_mode
                 self.addToLayer(handIK, S_ARMIK, rig, "IK")
+                self.copyErc(hand, handIK)
+                self.copyErc(foreBend, elbow)
             if self.useLegs:
                 legProp = "DazLegIK_%s" % suffix
                 foot, footIK, thighBend, thighTwist, shin, hip, knee = self.getEntry(self.legTable, prefix, rpbs)
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp)
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp)
                 setStretchLine(knee)
+                self.copyErc(foot, footIK)
+                self.copyErc(shin, knee)
                 if not self.useReverseFoot:
                     copyBoneProps(foot, footIK)
                     self.addToLayer(footIK, S_LEGIK, rig, "IK")
@@ -597,6 +605,12 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     heelCopy = rpbs["MCH-%s" % heelIK.name]
                     tarsalCopy.rotation_mode = tarsalIK.rotation_mode
                     heelCopy.rotation_mode = heelIK.rotation_mode
+                    self.copyErc(toe, toeIK)
+                    self.copyErc(toe, tarsalIK)
+                    self.copyErc(foot, heelIK)
+                    self.copyErc(tarsalIK, tarsalCopy)
+                    self.copyErc(heelIK, heelCopy)
+
 
             if self.genesis == "G38":
                 if self.useArms:
@@ -683,6 +697,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     self.setCustomShape(shldrIK, "CS_Arrows")
                     foreIK.custom_shape = None
                     setBonegroup(shldrIK, rig, "IK", self.BoneGroups["IK"])
+                    self.copyErc(shldrBend, shldrIK)
+                    self.copyErc(foreBend, foreIK)
                 if self.useLegs:
                     thighIK, shinIK = self.getEntry(self.legTable2, prefix, rpbs)
                     copyBoneProps(thighBend, thighIK)
@@ -704,6 +720,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     self.setCustomShape(thighIK, "CS_Arrows")
                     shinIK.custom_shape = None
                     setBonegroup(thighIK, rig, "IK", self.BoneGroups["IK"])
+                    self.copyErc(thighBend, thighIK)
+                    self.copyErc(shin, shinIK)
             elif self.genesis == "G38":
                 if self.useArms:
                     if self.useImproveIk:
@@ -722,6 +740,25 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     if self.useImproveIk:
                         addHint(shin, rig)
                     ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
+
+
+    def copyErc(self, src, trg):
+        self.ercBones[src.name] = trg
+
+
+    def copyErcDrivers(self, rig):
+        if rig.animation_data is None:
+            return
+        for fcu in list(rig.animation_data.drivers):
+            src,channel,_ = getBoneChannel(fcu)
+            if src and isErcBone(src) and channel == 'location':
+                trg = self.ercBones.get(ercBase(src))
+                if trg:
+                    fcu2 = rig.animation_data.drivers.from_existing(src_driver=fcu)
+                    if isinstance(trg, str):
+                        fcu2.data_path = 'pose.bones["%s"].location' % ercBone(trg)
+                    else:
+                        fcu2.data_path = 'pose.bones["%s"].location' % ercBone(trg.name)
 
 
 def copyOffsetDrivers(rig):

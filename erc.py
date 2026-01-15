@@ -39,7 +39,7 @@ def addErcBones(rig, useParents):
     setMode('EDIT')
     for bname in defbones:
         eb = rig.data.edit_bones[bname]
-        ercb = deriveBone(ercBone(bname), eb, rig, "ERC", None)
+        ercb = deriveBone(ercBone(bname), eb, rig, T_ERC, None)
         if useParents and eb.parent:
             ercb.parent = eb.parent
         ercb.use_deform = False
@@ -50,7 +50,7 @@ def addErcBones(rig, useParents):
         copyBoneInfo(pb, ercb)
         ercb.bone.color.palette = 'THEME09'
         ercb.color.palette = 'THEME09'
-    coll = rig.data.collections.get("ERC")
+    coll = rig.data.collections.get(T_ERC)
     if coll:
         coll.is_visible = False
     dazRna(rig.data).DazErcStatus = 1
@@ -74,7 +74,7 @@ class DAZ_OT_UpdateErcBones(DazPropsOperator, PosableMaker, IsArmature):
         #if self.useMakePosable:
         #    removePosableBones(rig)
         updateErcBones(rig)
-        self.makePosable(context, rig)
+        #self.makePosable(context, rig)
 
 
 def updateErcBones(rig):
@@ -91,7 +91,6 @@ def updateErcBones(rig):
         bname = pb.name
         drvb = rig.pose.bones.get(drvBone(bname), pb)
         removeConstraints(ercb)
-        copyBoneInfo(pb, ercb)
         for cns in pb.constraints:
             if cns.type == 'LIMIT_ROTATION':
                 copyConstraint(cns, ercb, rig)
@@ -142,9 +141,9 @@ def updateErcBones(rig):
         cns.mix_mode = 'BEFORE_FULL'
         pb.name = defBone(bname)
         ercb.name = bname
-        ercb.lock_location = pb.lock_location
-        ercb.lock_rotation = pb.lock_rotation
-        ercb.lock_scale = pb.lock_scale
+        copyBoneInfo(pb, ercb)
+        copyBoneLayers(pb, ercb, rig)
+        enableBoneNumLayer(pb.bone, rig, T_BONES)
         pb.bone.color.palette = 'THEME04'
         pb.color.palette = 'THEME04'
         if drvb != pb:
@@ -157,10 +156,10 @@ def updateErcBones(rig):
             rig.data.edit_bones.remove(eb)
     setMode('OBJECT')
 
-    coll = rig.data.collections.get("Bones")
+    coll = rig.data.collections.get(T_BONES)
     if coll:
         coll.is_visible = False
-    coll = rig.data.collections.get("ERC")
+    coll = rig.data.collections.get(T_ERC)
     if coll:
         coll.is_visible = True
     dazRna(rig.data).DazErcStatus = 2

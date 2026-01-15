@@ -394,8 +394,10 @@ class LegacyFigure(Figure):
 def copyBoneInfo(srcpb, trgpb, usePoseBone=True):
     modernizeBone(trgpb)
     if usePoseBone:
-        for attr in ["rotation_mode", "lock_location", "lock_rotation", "lock_scale"]:
-            setattr(trgpb, attr, getattr(srcpb, attr))
+        for attr in ["rotation_mode", "lock_location", "lock_rotation", "lock_scale",
+                     "custom_shape", "custom_shape_scale_xyz", "custom_shape_scale", "custom_shape_translation"]:
+            if hasattr(srcpb, attr):
+                setattr(trgpb, attr, getattr(srcpb, attr))
     for attr in ["bbone_x", "bbone_z", "use_relative_parent", "use_local_location", "use_inherit_rotation", "inherit_scale"]:
         setattr(trgpb.bone, attr, getattr(srcpb.bone, attr))
     for attr in ["DazRotMode"]:
@@ -684,7 +686,7 @@ class ExtraBones(DriverUser):
         self.updateScriptedDrivers(rig.data)
         if not ES.easy:
             print("  Update ERC bones")
-            self.updateErcBones(rig)
+        self.updateErcBones(rig)
         if not ES.easy:
             print("  Update drivers")
         setattr(dazRna(rig.data), self.attr, True)

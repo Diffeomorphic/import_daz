@@ -29,6 +29,16 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, headbone=None, tailbon
         LS.headbones[bname] = headbone.name
     if tailbone:
         LS.tailbones[bname] = tailbone.name
+    if GS.ercMethod.startswith("ERC") and not isErcBone(bname) and not BLENDER3:
+        ercb = rig.data.edit_bones.new(ercBone(bname))
+        ercb.use_connect = False
+        ercb.head = head
+        ercb.tail = tail
+        ercb.roll = eb.roll
+        ercb.parent = parent
+        ercb.use_deform = False
+        enableBoneNumLayer(ercb, rig, T_ERC)
+        print("ERC", ercb.name)
     return eb
 
 
