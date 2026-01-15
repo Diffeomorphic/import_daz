@@ -71,6 +71,8 @@ class DAZ_OT_UpdateErcBones(DazPropsOperator, PosableMaker, IsArmature):
             raise DazError("Rig does not have ERC bones")
         elif dazRna(rig.data).DazErcStatus == 2:
             raise DazError("ERC bones have already been updated")
+        #if self.useMakePosable:
+        #    removePosableBones(rig)
         updateErcBones(rig)
         self.makePosable(context, rig)
 
@@ -116,11 +118,6 @@ def updateErcBones(rig):
             elif fcu0:
                 fcu0.data_path = 'pose.bones["%s"].location' % ercb.name
 
-            for channel in ["rotation_euler", "rotation_quaternion", "scale"]:
-                fcu0 = getDriver(rig, 'pose.bones["%s"].%s' % (drvb.name, channel), idx)
-                if fcu0:
-                    fcu0.data_path = 'pose.bones["%s"].%s' % (ercb.name, channel)
-
             pb.driver_remove("location", idx)
             fcu = pb.driver_add("location", idx)
             fcu.driver.type = 'SCRIPTED'
@@ -133,6 +130,12 @@ def updateErcBones(rig):
             trg.bone_target = ercb.name
             trg.transform_type = ttype
             trg.transform_space = 'LOCAL_SPACE'
+
+        for channel,n in [("rotation_euler",3), ("rotation_quaternion",4), ("scale",3)]:
+            for idx in range(n):
+                fcu0 = getDriver(rig, 'pose.bones["%s"].%s' % (drvb.name, channel), idx)
+                if fcu0:
+                    fcu0.data_path = 'pose.bones["%s"].%s' % (ercb.name, channel)
 
         removeConstraints(pb)
         cns = copyTransform(pb, ercb, rig, space='LOCAL')
@@ -162,6 +165,52 @@ def updateErcBones(rig):
         coll.is_visible = True
     dazRna(rig.data).DazErcStatus = 2
 
+
+#-------------------------------------------------------------
+#  Remove Posable Bones
+#-------------------------------------------------------------
+
+class DAZ_OT_RemovePosableBones(DazOperator, IsArmature):
+    bl_idname = "daz.remove_posable_bones"
+    bl_label = "Remove Posable Bones"
+    bl_description = "Remove Posable Bones"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        rig = context.object
+        removePosableBones(rig)
+
+
+def removePosableBones(rig):
+    # Retarget drivers
+    if rig.animation_data:
+        for fcu in list(rig.animation_data.drivers):
+            bname,_,_ = getBoneChannel(fcu)
+            if bname is None:
+                pass
+            elif isDrvBone(bname):
+                fcu.data_path = fcu.data_path.replace("(drv)", "")
+            elif isDefBone(bname):
+                for var in fcu.driver.variables:
+                    for trg in var.targets:
+                        trg.bone_target = baseBone(trg.bone_target)
+    # Remove constraints
+    for pb in rig.pose.bones:
+        for cns in list(pb.constraints):
+            if cns.type == 'COPY_TRANSFORMS' and isDrvBone(cns.subtarget):
+                pb.constraints.remove(cns)
+    # Remove posable bones and rename drv bones
+    setMode('EDIT')
+    for drvb in list(rig.data.edit_bones):
+        if isDrvBone(drvb.name):
+            bname = baseBone(drvb.name)
+            eb = rig.data.edit_bones.get(bname)
+            if eb:
+                drvb.use_deform = eb.use_deform
+                rig.data.edit_bones.remove(eb)
+                drvb.name = bname
+    setMode('OBJECT')
+
 #----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
@@ -169,6 +218,7 @@ def updateErcBones(rig):
 classes = [
     DAZ_OT_AddErcBones,
     DAZ_OT_UpdateErcBones,
+    DAZ_OT_RemovePosableBones,
 ]
 
 def register():

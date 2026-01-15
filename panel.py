@@ -156,6 +156,7 @@ class DAZ_PT_SetupFinishing(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.convert_widgets")
         self.layout.operator("daz.finalize_meshes")
         self.layout.separator()
+        self.layout.operator("daz.remove_posable_bones")
         self.layout.operator("daz.make_all_bones_posable")
         self.layout.operator("daz.optimize_drivers")
         self.layout.operator("daz.remove_corrupt_drivers")
