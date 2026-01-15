@@ -661,6 +661,11 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
         description = "Merge all rigs to the main character rig",
         default = True)
 
+    useErcBones : BoolProperty(
+        name = "ERC Bones",
+        description = "Add bones for ERC morphs",
+        default = True)
+
     useApplyTransforms : BoolProperty(
         name = "Apply Transforms",
         description = "Apply all transforms to objects that are not bone parented",
@@ -754,6 +759,8 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
             self.subprop("useConvertWidgets")
             self.subprop("useTieRigs")
         self.layout.prop(self, "useMergeToes")
+        if GS.ercMethod.startswith("ERC"):
+            self.layout.prop(self, "useErcBones")
         self.layout.separator()
         self.layout.prop(self, "useFavoMorphs")
         if self.useFavoMorphs:
@@ -914,6 +921,9 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
                 if self.useMergeToes:
                     print("Merge toes")
                     bpy.ops.daz.merge_toes()
+                if self.useErcBones and GS.ercMethod.startswith("ERC"):
+                    from .erc import addErcBones
+                    addErcBones(mainRig, True)
 
         geografts = {}
         hairs = []

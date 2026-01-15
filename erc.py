@@ -34,6 +34,7 @@ class DAZ_OT_AddErcBones(DazPropsOperator, IsArmature):
 
 def addErcBones(rig, useParents):
     from .rig_utils import deriveBone
+    from .figure import copyBoneInfo
     defbones = [bone.name for bone in rig.data.bones if not isDrvBone(bone.name)]
     setMode('EDIT')
     for bname in defbones:
@@ -46,6 +47,7 @@ def addErcBones(rig, useParents):
     for bname in defbones:
         pb = rig.pose.bones[bname]
         ercb = rig.pose.bones[ercBone(bname)]
+        copyBoneInfo(pb, ercb)
         ercb.bone.color.palette = 'THEME09'
         ercb.color.palette = 'THEME09'
     coll = rig.data.collections.get("ERC")

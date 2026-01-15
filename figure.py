@@ -575,13 +575,6 @@ class ExtraBones(DriverUser):
 
 
     def updateErcBones(self, rig):
-        if rig.animation_data:
-            for fcu in rig.animation_data.drivers:
-                bname,channel,_ = getBoneChannel(fcu)
-                if bname and isDefBone(bname):
-                    for var in fcu.driver.variables:
-                        for trg in var.targets:
-                            trg.bone_target = baseBone(trg.bone_target)
         for pb in rig.pose.bones:
             if isDefBone(pb.name):
                 for cns in pb.constraints:
@@ -729,6 +722,7 @@ class ExtraBones(DriverUser):
                 "(drv)" in fcu.data_path):
                 fcu.data_path = fcu.data_path.replace("(drv)", "")
 
+        enableRigNumLayer(rig, T_HIDDEN, False)
         for pb in rig.pose.bones:
             if isDrvBone(pb.name):
                 pb.matrix_basis = Matrix()
