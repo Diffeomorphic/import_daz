@@ -201,10 +201,18 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     }
 
     def run(self, context):
+        LS.__init__()
+        if GS.ercMethod.startswith("ERC") and not BLENDER3:
+            LS.ercbones = self.ercbones = {}
+        try:
+            self.addSimpleIK(context)
+        finally:
+            LS.ercbones = None
+
+
+    def addSimpleIK(self, context):
         rig = context.object
         IK = SimpleIK(self)
-        LS.__init__()
-        self.ercBones = {}
         self.genesis = IK.getGenesisType(rig)
         if not self.genesis:
             raise DazError("Cannot create simple IK for the rig %s" % rig.name)
@@ -218,7 +226,9 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if GS.ercMethod in ('ARMATURE', 'ALL') and self.useErcIk:
             copyOffsetDrivers(rig)
         modernizeBones(rig)
-        self.copyErcDrivers(rig)
+        if LS.ercbones:
+            from ..erc import addErcFormulas
+            addErcFormulas(rig)
         rig["DazSimpleIK"] = True
         from ..driver import setFloatProp
         setFloatProp(rig, "DazArmIK_L", 1.0, 0.0, 1.0, True)
@@ -256,9 +266,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             zaxis = mat.col[2]
             head = eb.head - 40*GS.scale*zaxis
             tail = head + 10*GS.scale*Vector((0,0,1))
-            makeBone(bname, rig, head, tail, 0, S_SPINE, parent, eb, eb)
+            formula = [eb, ["OFFS", -40*GS.scale, "Z"]]
+            makeBone(bname, rig, head, tail, 0, S_SPINE, parent, formula, eb, eb)
             strname = self.stretchName(bname)
-            stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb, eb, eb)
+            stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb, eb, eb, eb)
             stretch.hide_select = True
 
         from ..rig_utils import makeBone, deriveBone
@@ -274,26 +285,26 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if self.useArms:
             for prefix,layer in [("l",S_LARMIK), ("r",S_RARMIK)]:
                 hand, hikname, shldrBend, shldrTwist, foreBend, foreTwist, collar, elbowname = self.getEntry(self.armTable, prefix, ebones)
-                handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, S_HIDDEN, root, hand, hand)
+                handIK = makeBone(hikname, rig, hand.head, hand.tail, hand.roll, S_HIDDEN, root, hand, hand, hand)
                 foreTwist.tail = hand.head
                 if self.useCopyRotation:
                     shikname, foreikname = self.getEntry(self.armTable2, prefix, ebones)
                     polelayer = (S_HIDDEN if self.usePoleTargets else layer)
-                    shldrIK = makeBone(shikname, rig, shldrBend.head, shldrTwist.tail, shldrBend.roll, polelayer, shldrBend.parent, shldrBend, shldrTwist)
-                    foreIK = makeBone(foreikname, rig, foreBend.head, foreTwist.tail, foreBend.roll, S_HIDDEN, shldrIK, foreBend, foreTwist)
+                    shldrIK = makeBone(shikname, rig, shldrBend.head, shldrTwist.tail, shldrBend.roll, polelayer, shldrBend.parent, shldrBend, shldrBend, shldrTwist)
+                    foreIK = makeBone(foreikname, rig, foreBend.head, foreTwist.tail, foreBend.roll, S_HIDDEN, shldrIK, foreBend, foreBend, foreTwist)
                 if IK.usePoleTargets:
                     elbow = makePole(elbowname, rig, foreBend, root)
 
         if self.useLegs:
             for prefix,layer in [("l",S_LLEGIK), ("r",S_RLEGIK)]:
                 foot, fikname, thighBend, thighTwist, shin, hip, kneename = self.getEntry(self.legTable, prefix, ebones)
-                footIK = makeBone(fikname, rig, foot.head, foot.tail, foot.roll, S_HIDDEN, root, foot, foot)
+                footIK = makeBone(fikname, rig, foot.head, foot.tail, foot.roll, S_HIDDEN, root, foot, foot, foot)
                 shin.tail = foot.head
                 if self.useCopyRotation:
                     thikname, shinikname = self.getEntry(self.legTable2, prefix, ebones)
                     polelayer = (S_HIDDEN if self.usePoleTargets else layer)
-                    thighIK = makeBone(thikname, rig, thighBend.head, thighTwist.tail, thighBend.roll, polelayer, thighBend.parent, thighBend, thighTwist)
-                    shinIK = makeBone(shinikname, rig, shin.head, shin.tail, shin.roll, S_HIDDEN, thighIK, shin, shin)
+                    thighIK = makeBone(thikname, rig, thighBend.head, thighTwist.tail, thighBend.roll, polelayer, thighBend.parent, thighBend, thighBend, thighTwist)
+                    shinIK = makeBone(shinikname, rig, shin.head, shin.tail, shin.roll, S_HIDDEN, thighIK, shin, shin, shin)
                 if IK.usePoleTargets:
                     knee = makePole(kneename, rig, shin, root)
 
@@ -304,9 +315,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     tail = Vector(toe.head)
                     head[2] = tail[2]
                     #head[0] = tail[0]
-                    heelIK = makeBone(heelname, rig, head, tail, 0, layer, root, foot, foot)
-                    toeIK = makeBone(toename, rig, toe.head, toe.tail, toe.roll, layer, heelIK, toe, toe)
-                    tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK, toe, shin)
+                    formula = [foot, ["COMP", toe, 2]]
+                    heelIK = makeBone(heelname, rig, head, tail, 0, layer, root, formula, foot, foot)
+                    toeIK = makeBone(toename, rig, toe.head, toe.tail, toe.roll, layer, heelIK, toe, toe, toe)
+                    tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK, toe, toe, shin)
                     footIK.parent = tarsalIK
                     deriveBone("MCH-%s" % tarsalname, tarsalIK, rig, S_HIDDEN, foot)
                     deriveBone("MCH-%s" % heelname, heelIK, rig, S_HIDDEN, foot)
@@ -397,6 +409,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             elif isInNumLayer(pb.bone, rig, T_TWEAK):
                 pass
                 #self.addToLayer(pb, S_TWEAK, rig, "Tweak")
+            elif isDefBone(pb.name):
+                pass
             elif isInNumLayer(pb.bone, rig, T_ERC):
                 pass
             elif isInNumLayer(pb.bone, rig, T_HIDDEN):
@@ -568,16 +582,12 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 cns = copyRotation(hand, handIK, rig, prop=armProp, space='POSE')
                 cns.euler_order = hand.rotation_mode
                 self.addToLayer(handIK, S_ARMIK, rig, "IK")
-                self.copyErc(hand, handIK)
-                self.copyErc(foreBend, elbow)
             if self.useLegs:
                 legProp = "DazLegIK_%s" % suffix
                 foot, footIK, thighBend, thighTwist, shin, hip, knee = self.getEntry(self.legTable, prefix, rpbs)
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp)
                 driveConstraint(foot, 'LIMIT_ROTATION', rig, legProp)
                 setStretchLine(knee)
-                self.copyErc(foot, footIK)
-                self.copyErc(shin, knee)
                 if not self.useReverseFoot:
                     copyBoneProps(foot, footIK)
                     self.addToLayer(footIK, S_LEGIK, rig, "IK")
@@ -605,11 +615,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     heelCopy = rpbs["MCH-%s" % heelIK.name]
                     tarsalCopy.rotation_mode = tarsalIK.rotation_mode
                     heelCopy.rotation_mode = heelIK.rotation_mode
-                    self.copyErc(toe, toeIK)
-                    self.copyErc(toe, tarsalIK)
-                    self.copyErc(foot, heelIK)
-                    self.copyErc(tarsalIK, tarsalCopy)
-                    self.copyErc(heelIK, heelCopy)
 
 
             if self.genesis == "G38":
@@ -697,8 +702,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     self.setCustomShape(shldrIK, "CS_Arrows")
                     foreIK.custom_shape = None
                     setBonegroup(shldrIK, rig, "IK", self.BoneGroups["IK"])
-                    self.copyErc(shldrBend, shldrIK)
-                    self.copyErc(foreBend, foreIK)
                 if self.useLegs:
                     thighIK, shinIK = self.getEntry(self.legTable2, prefix, rpbs)
                     copyBoneProps(thighBend, thighIK)
@@ -720,8 +723,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     self.setCustomShape(thighIK, "CS_Arrows")
                     shinIK.custom_shape = None
                     setBonegroup(thighIK, rig, "IK", self.BoneGroups["IK"])
-                    self.copyErc(thighBend, thighIK)
-                    self.copyErc(shin, shinIK)
             elif self.genesis == "G38":
                 if self.useArms:
                     if self.useImproveIk:
@@ -740,25 +741,6 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     if self.useImproveIk:
                         addHint(shin, rig)
                     ikConstraint(shin, footIK, knee, -90, 2, rig, prop=legProp)
-
-
-    def copyErc(self, src, trg):
-        self.ercBones[src.name] = trg
-
-
-    def copyErcDrivers(self, rig):
-        if rig.animation_data is None:
-            return
-        for fcu in list(rig.animation_data.drivers):
-            src,channel,_ = getBoneChannel(fcu)
-            if src and isErcBone(src) and channel == 'location':
-                trg = self.ercBones.get(ercBase(src))
-                if trg:
-                    fcu2 = rig.animation_data.drivers.from_existing(src_driver=fcu)
-                    if isinstance(trg, str):
-                        fcu2.data_path = 'pose.bones["%s"].location' % ercBone(trg)
-                    else:
-                        fcu2.data_path = 'pose.bones["%s"].location' % ercBone(trg.name)
 
 
 def copyOffsetDrivers(rig):

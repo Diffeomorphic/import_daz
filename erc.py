@@ -166,6 +166,48 @@ def updateErcBones(rig):
 
 
 #-------------------------------------------------------------
+#
+#-------------------------------------------------------------
+
+def addErcFormulas(rig):
+    from .figure import copyBoneInfo
+    from .store import removeConstraints
+    from .rig_utils import copyTransform
+
+    for bname,formula in LS.ercbones.items():
+        defb = rig.pose.bones[bname]
+        for idx,ttype in enumerate(['LOC_X', 'LOC_Y', 'LOC_Z']):
+            defb.driver_remove("location", idx)
+            fcu = defb.driver_add("location", idx)
+            fcu.driver.type = 'SCRIPTED'
+            expr = ""
+            vname = "A"
+            for form in formula:
+                var = fcu.driver.variables.new()
+                var.name = vname
+                trg = var.targets[0]
+                if form[0] == "BONE":
+                    expr += "-%s" % vname
+                    var.type = 'TRANSFORMS'
+                    trg.id = rig
+                    trg.bone_target = form[1]
+                    trg.transform_type = ttype
+                    trg.transform_space = 'LOCAL_SPACE'
+                    vname = chr(ord(vname)+1)
+            fcu.driver.expression = expr
+
+        removeConstraints(defb)
+        for form in formula:
+            if form[0] == "BONE":
+                pb = rig.pose.bones[form[1]]
+                break
+        cns = copyTransform(defb, pb, rig, space='LOCAL')
+        cns.mix_mode = 'BEFORE_FULL'
+        enableBoneNumLayer(defb.bone, rig, T_BONES)
+        defb.bone.color.palette = 'THEME04'
+        defb.color.palette = 'THEME04'
+
+#-------------------------------------------------------------
 #  Remove Posable Bones
 #-------------------------------------------------------------
 

@@ -13,10 +13,10 @@ from .driver import addDriver, setBoolProp, setFloatProp
 #----------------------------------------------------------
 
 def deriveBone(bname, eb0, rig, layer, parent):
-    return makeBone(bname, rig, eb0.head, eb0.tail, eb0.roll, layer, parent)
+    return makeBone(bname, rig, eb0.head, eb0.tail, eb0.roll, layer, parent, eb0)
 
 
-def makeBone(bname, rig, head, tail, roll, layer, parent, headbone=None, tailbone=None):
+def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone=None, tailbone=None):
     eb = rig.data.edit_bones.new(bname)
     eb.head = head
     eb.tail = tail
@@ -29,16 +29,27 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, headbone=None, tailbon
         LS.headbones[bname] = headbone.name
     if tailbone:
         LS.tailbones[bname] = tailbone.name
-    if GS.ercMethod.startswith("ERC") and not isErcBone(bname) and not BLENDER3:
-        ercb = rig.data.edit_bones.new(ercBone(bname))
-        ercb.use_connect = False
-        ercb.head = head
-        ercb.tail = tail
-        ercb.roll = eb.roll
-        ercb.parent = parent
-        ercb.use_deform = False
-        enableBoneNumLayer(ercb, rig, T_ERC)
-        print("ERC", ercb.name)
+    if formula and LS.ercbones is not None and not isDefBone(bname):
+        defb = rig.data.edit_bones.new(defBone(bname))
+        defb.use_connect = False
+        defb.head = head
+        defb.tail = tail
+        defb.roll = eb.roll
+        defb.parent = parent
+        defb.use_deform = False
+        enableBoneNumLayer(defb, rig, T_BONES)
+
+        def makeFormula(form):
+            if isinstance(form, bpy.types.EditBone):
+                return ["BONE", form.name]
+            elif isinstance(form, list):
+                return [makeFormula(elt) for elt in form]
+            else:
+                return form
+
+        if not isinstance(formula, list):
+            formula = [formula]
+        LS.ercbones[defb.name] = makeFormula(formula)
     return eb
 
 
