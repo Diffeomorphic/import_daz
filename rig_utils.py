@@ -29,7 +29,7 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
         LS.headbones[bname] = headbone.name
     if tailbone:
         LS.tailbones[bname] = tailbone.name
-    if formula and LS.ercbones is not None and not isDefBone(bname):
+    if formula and LS.ercFormulas is not None and not isDefBone(bname):
         defb = rig.data.edit_bones.new(defBone(bname))
         defb.use_connect = False
         defb.head = head
@@ -49,7 +49,7 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
 
         if not isinstance(formula, list):
             formula = [formula]
-        LS.ercbones[defb.name] = makeFormula(formula)
+        LS.ercFormulas[defb.name] = makeFormula(formula)
     return eb
 
 

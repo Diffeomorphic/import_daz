@@ -203,11 +203,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     def run(self, context):
         LS.__init__()
         if GS.ercMethod.startswith("ERC") and not BLENDER3:
-            LS.ercbones = self.ercbones = {}
+            LS.ercFormulas = self.ercbones = {}
         try:
             self.addSimpleIK(context)
         finally:
-            LS.ercbones = None
+            LS.ercFormulas = None
 
 
     def addSimpleIK(self, context):
@@ -226,7 +226,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         if GS.ercMethod in ('ARMATURE', 'ALL') and self.useErcIk:
             copyOffsetDrivers(rig)
         modernizeBones(rig)
-        if LS.ercbones:
+        if LS.ercFormulas:
             from ..erc import addErcFormulas
             addErcFormulas(rig)
         rig["DazSimpleIK"] = True
@@ -411,13 +411,12 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 #self.addToLayer(pb, S_TWEAK, rig, "Tweak")
             elif isDefBone(pb.name):
                 pass
-            elif isInNumLayer(pb.bone, rig, T_ERC):
-                pass
             elif isInNumLayer(pb.bone, rig, T_HIDDEN):
                 pass
-            elif not isInNumLayer(pb.bone, rig, T_BONES):
+            elif not isInNumLayer(pb.bone, rig, (T_BONES, T_ERC)):
                 self.addToLayer(pb, S_SPECIAL, rig, "Special")
-            elif pb.parent and pb.parent.name.lower() in ["lowerfacerig", "upperfacerig"]:
+            elif (pb.parent and
+                  ercBase(pb.parent.name).lower() in ["lowerfacerig", "upperfacerig"]):
                 if pb.name.startswith(("lEyelid", "rEyelid", "l_eyelid", "r_eyelid")):
                     self.setCustomShape(pb, "CS_Line")
                 else:
@@ -495,7 +494,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 pass
             else:
                 #self.setCustomShape(pb, "CS_CircleY2")
-                print("Unknown bone:", pb.name)
+                print("Unknown bone:", pb.name, pb.parent)
 
         from ..node import createHiddenCollection
         hidden = createHiddenCollection(context, rig)
@@ -701,7 +700,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
                     self.setCustomShape(shldrIK, "CS_Arrows")
                     foreIK.custom_shape = None
-                    setBonegroup(shldrIK, rig, "IK", self.BoneGroups["IK"])
+                    self.addToLayer(shldrIK, S_ARMIK, rig, "IK")
                 if self.useLegs:
                     thighIK, shinIK = self.getEntry(self.legTable2, prefix, rpbs)
                     copyBoneProps(thighBend, thighIK)
@@ -722,7 +721,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     cns = copyTransform(shin, shinIK, rig, prop=legProp, space='POSE')
                     self.setCustomShape(thighIK, "CS_Arrows")
                     shinIK.custom_shape = None
-                    setBonegroup(thighIK, rig, "IK", self.BoneGroups["IK"])
+                    self.addToLayer(thighIK, S_LEGIK, rig, "IK")
             elif self.genesis == "G38":
                 if self.useArms:
                     if self.useImproveIk:

@@ -71,10 +71,10 @@ class DAZ_OT_UpdateErcBones(DazPropsOperator, PosableMaker, IsArmature):
             raise DazError("Rig does not have ERC bones")
         elif dazRna(rig.data).DazErcStatus == 2:
             raise DazError("ERC bones have already been updated")
-        #if self.useMakePosable:
-        #    removePosableBones(rig)
+        if self.useMakePosable:
+            removePosableBones(rig)
         updateErcBones(rig)
-        #self.makePosable(context, rig)
+        self.makePosable(context, rig)
 
 
 def updateErcBones(rig):
@@ -174,7 +174,7 @@ def addErcFormulas(rig):
     from .store import removeConstraints
     from .rig_utils import copyTransform
 
-    for bname,formula in LS.ercbones.items():
+    for bname,formula in LS.ercFormulas.items():
         defb = rig.pose.bones[bname]
         for idx,ttype in enumerate(['LOC_X', 'LOC_Y', 'LOC_Z']):
             defb.driver_remove("location", idx)
