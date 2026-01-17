@@ -82,12 +82,13 @@ class Fixer(DriverUser):
         self.layout.prop(self, "useFingerIk")
 
 
-    def initFixer(self):
+    def initFixer(self, keepOffsetDrivers=False):
         from .store import ConstraintStore
         self.initTmp()
         self.messages = []
         self.renamedBones = {}
         self.store = ConstraintStore()
+        self.store.keepOffsetDrivers = keepOffsetDrivers
 
 
     def makeRealParents(self, context, rig):
@@ -449,11 +450,11 @@ class Fixer(DriverUser):
         for bname in revlist:
             eb = rig.data.edit_bones[bname]
             eb.use_connect = False
-            trgb = makeBone("ik_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, 0, layer, parent)
+            trgb = makeBone("ik_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, 0, layer, parent, ["TAIL", eb])
             if invb is None:
                 invb = trgb
                 parent = first.parent
-            invb = makeBone("inv_%s" % bname, rig, trgb.tail, trgb.head, 0, helplayer, invb)
+            invb = makeBone("inv_%s" % bname, rig, trgb.tail, trgb.head, 0, helplayer, invb, ["TAIL", trgb])
 
 
     def addIkControl(self, wname, bnames, ctrl, prop1, prop2, flag, rig, layers, parnames, influs=None):
@@ -546,7 +547,7 @@ class Fixer(DriverUser):
         vec = eye.tail-eye.head
         vec.normalize()
         loc = eye.head + vec*GS.scale*20
-        gaze = makeBone("gaze.%s" % suffix, rig, loc, loc+Vector((0,5*GS.scale,0)), 0, headLayer, None)
+        gaze = makeBone("gaze.%s" % suffix, rig, loc, loc+Vector((0,5*GS.scale,0)), 0, headLayer, None, ["OFFS", eye, vec*GS.scale*20])
 
 
     def addCombinedGazeBone(self, rig, headLayer, helpLayer):
@@ -559,9 +560,9 @@ class Fixer(DriverUser):
         uy = GS.scale*Vector((0,1,0))
         if lgaze and rgaze and leye and reye:
             loc = (leye.head + reye.head)/2
-            gaze0 = makeBone("gaze0", rig, loc, loc-20*uy, 0, helpLayer, head)
+            gaze0 = makeBone("gaze0", rig, loc, loc-20*uy, 0, helpLayer, head, head)
             gaze1 = deriveBone("gaze1", gaze0, rig, helpLayer, None)
-            gaze = makeBone("gaze", rig, loc-20*uy, loc-10*uy, 0, headLayer, gaze1)
+            gaze = makeBone("gaze", rig, loc-20*uy, loc-10*uy, 0, headLayer, gaze1, head)
             lgaze.parent = gaze
             rgaze.parent = gaze
 

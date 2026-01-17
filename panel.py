@@ -592,7 +592,7 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
                 split.prop(dazRna(scn), "DazUsedPropsOnly")
         self.preamble(self.layout, context.scene, rig)
         if (GS.ercMethod in ('ARMATURE', 'ALL') and
-            dazRna(rig).DazRig.startswith("genesis")):
+            dazRna(rig).DazRig.startswith(("genesis", "mhx"))):
             row = self.layout.row()
             row.operator("daz.morph_armature")
             row.prop(dazRna(scn), "DazAutoMorphArmatures")

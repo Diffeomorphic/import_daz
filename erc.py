@@ -231,6 +231,8 @@ def addHdOffsetFormulas(rig):
             offs = 0
             if key == "BONE":
                 bname1 = form[1]
+            elif key == "TAIL":
+                bname1 = form[1]
             elif key == "COMP":
                 bname1 = form[1+idx]
             elif key == "OFFS":

@@ -51,6 +51,7 @@ def removeConstraints(pb, onlyLimit=False):
 class ConstraintStore:
     def __init__(self):
         self.constraints = {}
+        self.keepOffsetDrivers = False
 
 
     def storeConstraints(self, key, pb):
@@ -146,7 +147,6 @@ class ConstraintStore:
             cns.target = target
         return cns
 
-
     #-------------------------------------------------------------
     #   Driver store
     #-------------------------------------------------------------
@@ -157,7 +157,8 @@ class ConstraintStore:
             if rna and rna.animation_data:
                 drivers = self.drivers[key] = []
                 for fcu in list(rna.animation_data.drivers):
-                    if not someMatch([":Hdo:", ":Tlo:"], fcu.data_path):
+                    if (self.keepOffsetDrivers or
+                        not someMatch([":Hdo:", ":Tlo:"], fcu.data_path)):
                         driver = Driver(fcu)
                         drivers.append(driver)
                     rna.animation_data.drivers.remove(fcu)

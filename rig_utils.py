@@ -33,6 +33,8 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
         def makeFormula(form):
             if isinstance(form, bpy.types.EditBone):
                 return ["BONE", form.name]
+            elif form[0] == "TAIL":
+                return ["TAIL", form[1].name]
             elif form[0] == "COMP":
                 return ["COMP", form[1].name, form[2].name, form[3].name]
             elif form[0] == "OFFS":
