@@ -4,6 +4,7 @@
 
 import bpy
 from mathutils import *
+from collections import OrderedDict
 from ..utils import *
 from ..error import *
 from ..bone_data import BD
@@ -202,8 +203,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
     def run(self, context):
         LS.__init__()
-        if GS.ercMethod.startswith("ERC") and not BLENDER3:
-            LS.ercFormulas = self.ercbones = {}
+        if GS.ercMethod.startswith("ARMATURE"):
+            LS.ercFormulas = OrderedDict()
         try:
             self.addSimpleIK(context)
         finally:
@@ -227,8 +228,12 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             copyOffsetDrivers(rig)
         modernizeBones(rig)
         if LS.ercFormulas:
-            from ..erc import addErcFormulas
-            addErcFormulas(rig)
+            if GS.ercMethod.startswith("ERC"):
+                from ..erc import addErcFormulas
+                addErcFormulas(rig)
+            elif GS.ercMethod.startswith("ARMATURE"):
+                from ..erc import addHdOffsetFormulas
+                addHdOffsetFormulas(rig)
         rig["DazSimpleIK"] = True
         from ..driver import setFloatProp
         setFloatProp(rig, "DazArmIK_L", 1.0, 0.0, 1.0, True)
@@ -266,7 +271,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             zaxis = mat.col[2]
             head = eb.head - 40*GS.scale*zaxis
             tail = head + 10*GS.scale*Vector((0,0,1))
-            formula = [eb, ["OFFS", -40*GS.scale, "Z"]]
+            formula = ["OFFS", eb, (0, 0, -40*GS.scale)]
             makeBone(bname, rig, head, tail, 0, S_SPINE, parent, formula, eb, eb)
             strname = self.stretchName(bname)
             stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb, eb, eb, eb)
@@ -315,7 +320,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     tail = Vector(toe.head)
                     head[2] = tail[2]
                     #head[0] = tail[0]
-                    formula = [foot, ["COMP", toe, 2]]
+                    formula = ["COMP", foot, foot, toe]
                     heelIK = makeBone(heelname, rig, head, tail, 0, layer, root, formula, foot, foot)
                     toeIK = makeBone(toename, rig, toe.head, toe.tail, toe.roll, layer, heelIK, toe, toe, toe)
                     tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK, toe, toe, shin)

@@ -30,26 +30,28 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
     if tailbone:
         LS.tailbones[bname] = tailbone.name
     if formula and LS.ercFormulas is not None and not isDefBone(bname):
-        defb = rig.data.edit_bones.new(defBone(bname))
-        defb.use_connect = False
-        defb.head = head
-        defb.tail = tail
-        defb.roll = eb.roll
-        defb.parent = parent
-        defb.use_deform = False
-        enableBoneNumLayer(defb, rig, T_BONES)
-
         def makeFormula(form):
             if isinstance(form, bpy.types.EditBone):
                 return ["BONE", form.name]
-            elif isinstance(form, list):
-                return [makeFormula(elt) for elt in form]
+            elif form[0] == "COMP":
+                return ["COMP", form[1].name, form[2].name, form[3].name]
+            elif form[0] == "OFFS":
+                return ["OFFS", form[1].name, form[2]]
             else:
-                return form
+                print("Unknown formula", form)
 
-        if not isinstance(formula, list):
-            formula = [formula]
-        LS.ercFormulas[defb.name] = makeFormula(formula)
+        if GS.ercMethod.startswith("ERC"):
+            defb = rig.data.edit_bones.new(defBone(bname))
+            defb.use_connect = False
+            defb.head = head
+            defb.tail = tail
+            defb.roll = eb.roll
+            defb.parent = parent
+            defb.use_deform = False
+            enableBoneNumLayer(defb, rig, T_BONES)
+            LS.ercFormulas[defb.name] = makeFormula(formula)
+        else:
+            LS.ercFormulas[bname] = makeFormula(formula)
     return eb
 
 
