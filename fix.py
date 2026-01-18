@@ -117,11 +117,7 @@ class Fixer(DriverUser):
             hip.tail = head
             hip.head = tail
         if "pelvis" not in rig.data.bones.keys():
-            pelvis = rig.data.edit_bones.new("pelvis")
-            pelvis.head = hip.head
-            pelvis.tail = hip.tail
-            pelvis.roll = hip.roll
-            pelvis.parent = hip
+            pelvis = deriveBone("pelvis", hip, rig, T_BONES, hip)
             lThigh = rig.data.edit_bones["lThigh"]
             rThigh = rig.data.edit_bones["rThigh"]
             lThigh.parent = pelvis
@@ -199,12 +195,7 @@ class Fixer(DriverUser):
             hand.tail = 2*hand.tail - hand.head
             for bname,cname in Carpals.items():
                 if prefix+cname in rig.data.edit_bones.keys():
-                    eb = rig.data.edit_bones.new(prefix+bname)
-                    child = rig.data.edit_bones[prefix+cname]
-                    eb.head = hand.head
-                    eb.tail = child.head
-                    eb.roll = child.roll
-                    eb.parent = hand
+                    eb = makeBone("%s%s" % (prefix, bname), rig, hand.head, child.head, child.roll, T_BONES, hand, hand)
                     child.parent = eb
                     child.use_connect = True
         setMode('OBJECT')
@@ -926,8 +917,8 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
         if extras:
             setMode('EDIT')
             for bname,data in extras.items():
-                eb = rig.data.edit_bones.new(bname)
-                eb.head, eb.tail, mat, layers, pname = data
+                head, tail, mat, layers, pname = data
+                eb = makeBone(bname, rig, head, tail, 0, layers[0], None, parent)
                 setBoneLayers(eb, rig, layers)
                 if pname is not None:
                     eb.parent = rig.data.edit_bones[pname]

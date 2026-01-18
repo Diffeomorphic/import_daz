@@ -102,7 +102,7 @@ def addWinder(rig, windname, bnames, layers,
     setMode('EDIT')
     first = rig.data.edit_bones[bnames[0]]
     last = rig.data.edit_bones[bnames[-1]]
-    windbone = makeBone(windname, rig, first.head, last.tail, first.roll, layers[0], first.parent)
+    windbone = makeBone(windname, rig, first.head, last.tail, first.roll, layers[0], first.parent, first)
     if xaxis is not None:
         from .bone import setRoll
         setRoll(windbone, xaxis)
