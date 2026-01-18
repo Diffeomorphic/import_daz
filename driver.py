@@ -229,10 +229,9 @@ def getDrivenBoneFcurves(rig, useRigifySafe=False):
             if pb.name.startswith(("DEF-", "ORG-", "MCH-")):
                 driven[pb.name] = []
     if rig.animation_data:
-        skip = ["HdOffset", "TlOffset"]
         for fcu in rig.animation_data.drivers:
             bname,channel,cnsname = getBoneChannel(fcu)
-            if channel not in skip and cnsname is None:
+            if channel != "HdOffset" and cnsname is None:
                 if bname not in driven.keys():
                     driven[bname] = []
                 driven[bname].append(fcu)
@@ -286,7 +285,7 @@ class Driver:
         drv = fcu.driver
         self.data_path = fcu.data_path
         channel = fcu.data_path.rsplit(".",1)[-1]
-        if channel in ["location", "rotation_euler", "rotation_quaternion", "scale", "HdOffset", "TlOffset"]:
+        if channel in ["location", "rotation_euler", "rotation_quaternion", "scale", "HdOffset"]:
             self.array_index = fcu.array_index
         else:
             self.array_index = -1
@@ -1260,7 +1259,7 @@ def muteDazFcurves(rig, mute, useLocation=True, useRotation=True, useScale=True,
                 if ((channel in ["rotation_euler", "rotation_quaternion"] and useRotation) or
                     (channel == "location" and useLocation) or
                     (channel == "scale" and useScale) or
-                    channel in ["HdOffset", "TlOffset"]):
+                    channel == "HdOffset"):
                     fcu.mute = mute
 
     if not useShapekeys:

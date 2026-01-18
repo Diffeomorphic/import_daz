@@ -184,7 +184,6 @@ def removeOffsetDrivers(rig):
     else:
         for pb in rig.pose.bones:
             pb.driver_remove("HdOffset")
-            pb.driver_remove("TlOffset")
 
 
 def addOffsetDrivers(rig):
@@ -212,7 +211,7 @@ def addOffsetDrivers(rig):
                 for n,path in enumerate(paths):
                     addDriverVar(fcu, "t%02d" % n, path, rig.data)
                 LS.ercDrivers["%s:%s" % (bname, idx)] = paths
-            else:
+            elif not isDspBone(bname):
                 print("Missing ERC driver", bname, bname1, idx)
 
 #-------------------------------------------------------------

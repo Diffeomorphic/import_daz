@@ -78,6 +78,7 @@ elif "bpy" in locals():
     import imp
     for modname in Modules:
         exec("imp.reload(%s)" % modname)
+    imp.reload(runtime.morph_armature)
     imp.reload(simple_ik_tools)
     imp.reload(mhx_tools)
     imp.reload(rigify_tools)
@@ -99,6 +100,7 @@ else:
     print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
     for modname in Modules:
         exec("from . import %s" % modname)
+    from .runtime import morph_armature
     from . import simple_ik_tools
     from . import mhx_tools
     from . import rigify_tools

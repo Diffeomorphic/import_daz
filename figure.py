@@ -641,7 +641,6 @@ class ExtraBones(DriverUser):
             pb = rig.pose.bones.get(bname)
             drvb = rig.pose.bones.get(drvBone(bname))
             if pb and drvb:
-                pb.bone["DazExtraBone"] = drvb.bone.get("DazExtraBone", False)
                 drvb.bone.color.palette = 'THEME14'
                 drvb.color.palette = 'THEME14'
 
