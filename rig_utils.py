@@ -12,6 +12,14 @@ from .driver import addDriver, setBoolProp, setFloatProp
 #  Make bone
 #----------------------------------------------------------
 
+def renameBone(bone, bname):
+    if LS.ercDrivers:
+        for idx in range(3):
+            paths = LS.ercDrivers.get("%s:%d" % (bone.name, idx), [])
+            LS.ercDrivers["%s:%d" % (bname, idx)] = paths
+    bone.name = bname
+
+
 def deriveBone(bname, eb0, rig, layer, parent):
     return makeBone(bname, rig, eb0.head, eb0.tail, eb0.roll, layer, parent, eb0)
 
@@ -270,6 +278,41 @@ def lockedTrack(pb, target, rig, prop=None, expr="x"):
         cns.influence = 0.0
         addDriver(cns, "influence", rig, mhxProp(prop), expr)
     return cns
+
+#----------------------------------------------------------
+#   Get suffix name
+#----------------------------------------------------------
+
+def getSuffixName(bname, useTwist):
+    if useTwist and bname.endswith(("twist1", "twist2")):
+        pass
+    elif isDrvBone(bname) or isFinal(bname):
+        return ""
+    if len(bname) < 2:
+        return bname
+    elif bname[1].isupper():
+        if bname[0] == "r":
+            return "%s%s.R" % (bname[1].lower(), bname[2:])
+        elif bname[0] == "l":
+            return "%s%s.L" % (bname[1].lower(), bname[2:])
+    elif len(bname) >= 3 and bname[1] == "_":
+        if bname[0] == "r":
+            return "%s%s.R" % (bname[2].lower(), bname[3:])
+        elif bname[0] == "l":
+            return "%s%s.L" % (bname[2].lower(), bname[3:])
+    elif bname[0].isupper():
+        return "%s%s" % (bname[0].lower(), bname[1:])
+    else:
+        return ""
+
+
+def getPreSufName(bname, rig):
+    if bname in rig.data.bones.keys():
+        return bname
+    sufname = getSuffixName(bname, True)
+    if sufname and sufname in rig.data.bones.keys():
+        return sufname
+    return ""
 
 #-------------------------------------------------------------
 #   Improve IK

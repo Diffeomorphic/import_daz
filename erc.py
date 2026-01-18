@@ -165,67 +165,32 @@ def updateErcBones(rig):
     dazRna(rig.data).DazErcStatus = 2
 
 #-------------------------------------------------------------
-#   Add ERC fprmulas. For IK bones
-#-------------------------------------------------------------
-
-def addErcFormulas(rig):
-    from .figure import copyBoneInfo
-    from .store import removeConstraints
-    from .rig_utils import copyTransform
-
-    for bname,form in LS.ercFormulas.items():
-        defb = rig.pose.bones[bname]
-        for idx,ttype in enumerate(['LOC_X', 'LOC_Y', 'LOC_Z']):
-            defb.driver_remove("location", idx)
-            fcu = defb.driver_add("location", idx)
-            fcu.driver.type = 'SCRIPTED'
-            fcu.driver.expression = "-x"
-            var = fcu.driver.variables.new()
-            var.name = vname
-            var.type = 'TRANSFORMS'
-            trg = var.targets[0]
-            trg.id = rig
-            key = form[0]
-            if key == "BONE":
-                trg.bone_target = form[1]
-            elif key == "COMP":
-                trg.bone_target = form[1+idx]
-            elif key == "OFFS":
-                trg.bone_target = form[1]
-            trg.transform_type = ttype
-            trg.transform_space = 'LOCAL_SPACE'
-
-        removeConstraints(defb)
-        for form in formula:
-            if form[0] == "BONE":
-                pb = rig.pose.bones[form[1]]
-                break
-        cns = copyTransform(defb, pb, rig, space='LOCAL')
-        cns.mix_mode = 'BEFORE_FULL'
-        enableBoneNumLayer(defb.bone, rig, T_BONES)
-        defb.bone.color.palette = 'THEME04'
-        defb.color.palette = 'THEME04'
-
-#-------------------------------------------------------------
 #   Add HdOffset formulas. For IK bones
 #-------------------------------------------------------------
 
-def addHdOffsetFormulas(rig):
-    from .figure import copyBoneInfo
-    from .store import removeConstraints
-    from .rig_utils import copyTransform
+def removeOffsetDrivers(rig):
+    from collections import OrderedDict
+    if GS.ercMethod.startswith("ARMATURE"):
+        LS.ercFormulas = OrderedDict()
+        LS.ercDrivers = {}
+        if rig.animation_data:
+            for fcu in rig.animation_data.drivers:
+                bname,channel,_ = getBoneChannel(fcu)
+                if channel == "HdOffset":
+                    paths = [trg.data_path
+                             for var in fcu.driver.variables
+                             for trg in var.targets]
+                    LS.ercDrivers["%s:%d" % (bname, fcu.array_index)] = paths
+    else:
+        for pb in rig.pose.bones:
+            pb.driver_remove("HdOffset")
+            pb.driver_remove("TlOffset")
 
-    if rig.animation_data is None:
-        return
-    drivers = {}
-    for fcu in rig.animation_data.drivers:
-        bname, channel, _ = getBoneChannel(fcu)
-        if channel == "HdOffset":
-            drivers["%s:%s" % (bname, fcu.array_index)] = fcu
 
+def addOffsetDrivers(rig):
+    from .driver import addDriverVar
     for bname,form in LS.ercFormulas.items():
         pb = rig.pose.bones.get(bname)
-        pb.driver_remove("HdOffset")
         for idx in range(3):
             key = form[0]
             offs = 0
@@ -240,14 +205,15 @@ def addHdOffsetFormulas(rig):
                 offs = form[2][idx]
             else:
                 print("Unknown HdOffset formula", form)
-            fcu0 = drivers.get("%s:%s" % (bname1, idx))
-            if fcu0:
-                fcu = rig.animation_data.drivers.from_existing(src_driver=fcu0)
-                fcu.data_path = 'pose.bones["%s"].HdOffset' % bname
-                fcu.array_index = idx
-                if offs:
-                    fcu.driver.expression += "+%.5f" % offs
-                drivers["%s:%s" % (bname, fcu.array_index)] = fcu
+            paths = LS.ercDrivers.get("%s:%s" % (bname1, idx))
+            if paths:
+                fcu = pb.driver_add("HdOffset", idx)
+                fcu.driver.type = 'SUM'
+                for n,path in enumerate(paths):
+                    addDriverVar(fcu, "t%02d" % n, path, rig.data)
+                LS.ercDrivers["%s:%s" % (bname, idx)] = paths
+            else:
+                print("Missing ERC driver", bname, bname1, idx)
 
 #-------------------------------------------------------------
 #  Remove Posable Bones

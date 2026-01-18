@@ -59,7 +59,7 @@ class BoneChains:
 
     def getGenesisType(self, rig):
         def hasAllBones(rig, bnames, prefix):
-            from .fix import getSuffixName
+            from .rig_utils import getSuffixName
             bnames = [prefix+bname for bname in bnames]
             for bname in bnames:
                 if bname not in rig.data.bones.keys():
@@ -87,7 +87,7 @@ class BoneChains:
         self.genesis = self.getGenesisType(rig)
         if not self.genesis:
             return []
-        from .fix import getPreSufName
+        from .rig_utils import getPreSufName
         table = getattr(self, self.genesis+type)
         prenames = []
         for bname in table:

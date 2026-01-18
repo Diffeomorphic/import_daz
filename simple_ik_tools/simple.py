@@ -168,7 +168,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.layout.prop(self, "usePoleTargets")
         self.layout.prop(self, "useReverseFoot")
         self.layout.prop(self, "useImproveIk")
-        if GS.ercMethod in ('ARMATURE', 'ALL'):
+        if GS.ercMethod.startswith("ARMATURE"):
             self.layout.prop(self, "useErcIk")
 
     armTable = {
@@ -203,20 +203,20 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
     def run(self, context):
         LS.__init__()
-        if GS.ercMethod.startswith("ARMATURE"):
-            LS.ercFormulas = OrderedDict()
         try:
             self.addSimpleIK(context)
         finally:
-            LS.ercFormulas = None
+            LS.__init__()
 
 
     def addSimpleIK(self, context):
+        from ..erc import removeOffsetDrivers, addOffsetDrivers
         rig = context.object
         IK = SimpleIK(self)
         self.genesis = IK.getGenesisType(rig)
         if not self.genesis:
             raise DazError("Cannot create simple IK for the rig %s" % rig.name)
+        removeOffsetDrivers(rig)
         enableAllRigLayers(rig, False)
         makeBoneCollections(rig, SimpleLayers)
         setMode('EDIT')
@@ -224,16 +224,11 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         setMode('OBJECT')
         self.makeCustomShapes(context, rig, IK)
         self.addConstraints(rig, IK)
-        if GS.ercMethod in ('ARMATURE', 'ALL') and self.useErcIk:
-            copyOffsetDrivers(rig)
+        #if GS.ercMethod.startswith("ARMATURE") and self.useErcIk:
+        #    copyOffsetDrivers(rig)
         modernizeBones(rig)
-        if LS.ercFormulas:
-            if GS.ercMethod.startswith("ERC"):
-                from ..erc import addErcFormulas
-                addErcFormulas(rig)
-            elif GS.ercMethod.startswith("ARMATURE"):
-                from ..erc import addHdOffsetFormulas
-                addHdOffsetFormulas(rig)
+        if LS.ercFormulas and LS.ercDrivers:
+            addOffsetDrivers(rig)
         rig["DazSimpleIK"] = True
         from ..driver import setFloatProp
         setFloatProp(rig, "DazArmIK_L", 1.0, 0.0, 1.0, True)

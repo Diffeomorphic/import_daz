@@ -6,6 +6,7 @@ import bpy
 from mathutils import *
 from .error import *
 from .utils import *
+from .rig_utils import *
 from .driver import DriverUser, addDriver
 
 #-------------------------------------------------------------
@@ -430,7 +431,6 @@ class Fixer(DriverUser):
     #-------------------------------------------------------------
 
     def addIkBones(self, wname, bnames, rig, ctrl, layer, deflayer, helplayer, parnames):
-        from .rig_utils import makeBone, deriveBone
         if ctrl not in ['IK', 'BOTH']:
             return
         if (len(bnames) == 0 or
@@ -463,7 +463,6 @@ class Fixer(DriverUser):
         elif bnames[0] not in rig.pose.bones.keys():
             print("%s bone %s not found." % (wname.capitalize(), bnames[0]))
             return
-        from .rig_utils import setMhx, mhxProp, stretchTo, copyLocation, copyTransform, addMuteDriver
         from .driver import addDriver
 
         if flag:
@@ -537,7 +536,6 @@ class Fixer(DriverUser):
 
 
     def addSingleGazeBone(self, rig, suffix, headLayer, helpLayer):
-        from .rig_utils import makeBone, deriveBone
         eye = self.getEyeBone(rig, suffix)
         if eye is None:
             return
@@ -551,7 +549,6 @@ class Fixer(DriverUser):
 
 
     def addCombinedGazeBone(self, rig, headLayer, helpLayer):
-        from .rig_utils import makeBone, deriveBone
         leye = self.getEyeBone(rig, "L")
         reye = self.getEyeBone(rig, "R")
         lgaze = rig.data.edit_bones.get("gaze.L")
@@ -576,7 +573,6 @@ class Fixer(DriverUser):
                         return True
             return False
 
-        from .rig_utils import dampedTrack, copyRotation, setMhx
         eye = rig.pose.bones.get("eye.%s" % suffix)
         eyedrv = rig.pose.bones.get(drvBone("eye.%s" % suffix))
         gaze = rig.pose.bones.get("gaze.%s" % suffix)
@@ -592,7 +588,6 @@ class Fixer(DriverUser):
 
 
     def addGazeFollowsHead(self, rig):
-        from .rig_utils import copyTransform, limitLocation, limitRotation, dampedTrack, setMhx, mhxProp
         gaze0 = rig.pose.bones.get("gaze0")
         gaze1 = rig.pose.bones.get("gaze1")
         gaze = rig.pose.bones.get("gaze")
@@ -667,7 +662,6 @@ class Fixer(DriverUser):
 
     def addDisplayTransform(self, rig, headname):
          if self.useDisplayTransform and not BLENDER4:
-            from .rig_utils import addDisplayTransform
             from .finger import getGenesis
             mesh = getGenesis(self.meshes)
             if not (mesh and addDisplayTransform(rig, mesh, headname)):
@@ -757,7 +751,7 @@ class GizmoUser:
             newname = self.getOtherName(bname)
             if newname:
                 renamed[bname] = newname
-                bone.name = newname
+                renameBone(bone, newname)
                 self.renamedBones[newname] = bname
 
         renamed = {}
@@ -774,41 +768,6 @@ class GizmoUser:
 
     def getOtherName(self, bname):
         return getSuffixName(bname, True)
-
-#----------------------------------------------------------
-#   Get suffix name
-#----------------------------------------------------------
-
-def getSuffixName(bname, useTwist):
-    if useTwist and bname.endswith(("twist1", "twist2")):
-        pass
-    elif isDrvBone(bname) or isFinal(bname):
-        return ""
-    if len(bname) < 2:
-        return bname
-    elif bname[1].isupper():
-        if bname[0] == "r":
-            return "%s%s.R" % (bname[1].lower(), bname[2:])
-        elif bname[0] == "l":
-            return "%s%s.L" % (bname[1].lower(), bname[2:])
-    elif len(bname) >= 3 and bname[1] == "_":
-        if bname[0] == "r":
-            return "%s%s.R" % (bname[2].lower(), bname[3:])
-        elif bname[0] == "l":
-            return "%s%s.L" % (bname[2].lower(), bname[3:])
-    elif bname[0].isupper():
-        return "%s%s" % (bname[0].lower(), bname[1:])
-    else:
-        return ""
-
-
-def getPreSufName(bname, rig):
-    if bname in rig.data.bones.keys():
-        return bname
-    sufname = getSuffixName(bname, True)
-    if sufname and sufname in rig.data.bones.keys():
-        return sufname
-    return ""
 
 #-------------------------------------------------------------
 #   BendTwist class

@@ -4,7 +4,6 @@
 
 import bpy
 from mathutils import *
-from collections import OrderedDict
 from ..error import *
 from ..utils import *
 from ..propgroups import DazPairGroup
@@ -210,14 +209,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         from ..merge_rigs import applyTransformToObjects, restoreTransformsToObjects
         rig = context.object
         LS.__init__()
-        if GS.ercMethod.startswith("ARMATURE"):
-            LS.ercFormulas = OrderedDict()
         wmats = applyTransformToObjects(context, [rig])
         try:
             self.makeMhx(context, rig)
         finally:
-            LS.ercFormulas = None
             restoreTransformsToObjects(wmats)
+            LS.__init__()
 
 
     def makeMhx(self, context, rig):
@@ -237,6 +234,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
     def convertMhx(self, context):
         from ..figure import finalizeArmature
+        from ..erc import removeOffsetDrivers, addOffsetDrivers
         rig = context.object
         self.rigname = rig.name
         rig["DazMhxLegacy"] = False
@@ -258,7 +256,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.rolls = {}
 
         #-------------------------------------------------------------
-        #   Fix and rename bones of the genesis rig
+        #   Fix and renameBone bones of the genesis rig
         #-------------------------------------------------------------
 
         showProgress(1, 28, "  Fix DAZ rig")
@@ -268,10 +266,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         bendTwistChildren = {}
         enableAllRigLayers(rig)
         bonechildren = applyBoneChildren(context, rig)
-        if not GS.ercMethod.startswith("ARMATURE"):
-            for pb in rig.pose.bones:
-                pb.driver_remove("HdOffset")
-                pb.driver_remove("TlOffset")
+        removeOffsetDrivers(rig)
         if dazRna(rig).DazRig in ["genesis3", "genesis8"]:
             self.bendTwistGenesis = MHX.BendTwistGenesis38
             for pb in rig.pose.bones:
@@ -386,15 +381,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         showProgress(26, 28, "  Add bone groups")
         self.addBoneGroups(rig)
         self.addDisplayTransform(rig, "head")
-
-        if LS.ercFormulas:
-            if GS.ercMethod.startswith("ERC"):
-                from ..erc import addErcFormulas
-                addErcFormulas(rig)
-            elif GS.ercMethod.startswith("ARMATURE"):
-                from ..erc import addHdOffsetFormulas
-                addHdOffsetFormulas(rig)
-
+        if LS.ercFormulas and LS.ercDrivers:
+            addOffsetDrivers(rig)
         rig["MhxRig"] = True
         rig.data["MhaFeatures"] |= F_IDPROPS
         modernizeBones(rig)
@@ -445,11 +433,12 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         for bone in rig.data.bones:
             bname = bone.name
             if bone.name in self.sacred:
-                bone.name = mname = bname + ".1"
+                mname = bname + ".1"
+                renameBone(bone, mname)
             elif bname in MHX.Skeleton.keys():
                 mname,layer = MHX.Skeleton[bname]
                 if bname != mname:
-                    bone.name = mname
+                    renameBone(bone, mname)
                 enableBoneNumLayer(bone, rig, layer)
                 fixed.append(mname)
             else:
@@ -593,7 +582,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
         for bname3,bname2 in renames.items():
             eb = rig.data.edit_bones[bname3]
-            eb.name = bname2
+            renameBone(eb, bname2)
 
         setMode('OBJECT')
         modernizeBones(rig)
@@ -963,7 +952,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                 sb = None
             elif bname in rig.data.edit_bones.keys():
                 tb = rig.data.edit_bones[bname]
-                tb.name = self.getTweakBoneName(bname)
+                renameBone(tb, self.getTweakBoneName(bname))
                 conn = tb.use_connect
                 tb.use_connect = False
                 enableBoneNumLayer(tb, rig, L_TWEAK)
@@ -1096,7 +1085,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             hand0 = self.setLayer("hand.%s" % suffix, rig, L_DEF)
             if not (upper_arm and forearm and hand0):
                 raise DazError("Rig missing arm bones")
-            hand0.name = "hand0.%s" % suffix
+            renameBone(hand0, "hand0.%s" % suffix)
             forearm.tail = hand0.head
             vec = forearm.tail - forearm.head
             vec.normalize()

@@ -237,7 +237,7 @@ class GlobalSettings:
         from .runtime.morph_armature import onFrameChangeDaz, unregister
         unregister()
         from .utils import dazRna
-        if dazRna(scn).DazAutoMorphArmatures and self.ercMethod in ('ARMATURE', 'ALL'):
+        if dazRna(scn).DazAutoMorphArmatures and self.ercMethod.startswith("ARMATURE"):
             bpy.app.handlers.frame_change_post.append(onFrameChangeDaz)
 
 
@@ -597,6 +597,7 @@ class LocalSettings:
         self.hdmeshes = { None : [] }
         self.bakedMorphs = {}
         self.returnValue = {}
+        self.ercDrivers = None
         self.ercFormulas = None
 
         if bpy.app.version < (4,0,0):

@@ -333,7 +333,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
                  ('ERC_BONES', "ERC Custom", "ERC morphs affect ERC bones (custom morphs only)"),
                  ('ERC_ALL', "ERC All", "ERC morphs affect ERC bones (all morphs)"),
                  ('ARMATURE', "Armature Custom", "Custom ERC morphs change the rest pose"),
-                 ('ALL', "Armature All", "All ERC morphs change the rest pose")],
+                 ('ARMATURE_ALL', "Armature All", "All ERC morphs change the rest pose")],
         name = "ERC Method",
         description = "Support for ERC morphs that change the rest pose")
 

@@ -25,7 +25,7 @@ def getMappedBone(bname, rig, mesh=None):
         bname1 = BD.BoneMap.get(bname, "")
         if bname1 and bname1 in rig.data.bones.keys():
             return bname1
-        from .fix import getSuffixName
+        from .rig_utils import getSuffixName
         sufname = getSuffixName(bname, False)
         if sufname in rig.pose.bones.keys():
             return sufname

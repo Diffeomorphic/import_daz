@@ -551,7 +551,7 @@ class LoadMorph(DriverUser):
                         self.makeScaleFormula(output, idx, expr)
                     elif key == "center_point":
                         self.erc = True
-                        if GS.ercMethod == 'ALL':
+                        if GS.ercMethod == 'ARMATURE_ALL':
                             self.makeOffsetFormula("HdOffset", output, idx, expr)
                         elif GS.ercMethod == 'ERC_ALL':
                             self.makeErcFormula(output, idx, expr)
