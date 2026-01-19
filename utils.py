@@ -627,6 +627,9 @@ def isDrvBone(string):
 def isDefBone(string):
     return string.endswith("(def)")
 
+def isDspBone(string):
+    return string.endswith("(dsp)")
+
 def isBaseBone(string):
     return (not string.endswith(("(drv)", "(fin)", "(erc)", "(def)")))
 
@@ -659,6 +662,9 @@ def drvBone(string, strict=False):
     if isDrvBone(string) and not strict:
         return string
     return "%s(drv)" % string
+
+def dspBone(string):
+    return "%s(dsp)" % string
 
 def nextLetter(char):
     return ("f" if char == "d" else chr(ord(char) + 1))

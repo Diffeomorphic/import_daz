@@ -441,11 +441,11 @@ class Fixer(DriverUser):
         for bname in revlist:
             eb = rig.data.edit_bones[bname]
             eb.use_connect = False
-            trgb = makeBone("ik_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, 0, layer, parent, ["TAIL", eb])
+            trgb = makeBone("ik_%s" % bname, rig, eb.tail, 2*eb.tail-eb.head, 0, layer, parent, eb)
             if invb is None:
                 invb = trgb
                 parent = first.parent
-            invb = makeBone("inv_%s" % bname, rig, trgb.tail, trgb.head, 0, helplayer, invb, ["TAIL", trgb])
+            invb = makeBone("inv_%s" % bname, rig, trgb.tail, trgb.head, 0, helplayer, invb, trgb)
 
 
     def addIkControl(self, wname, bnames, ctrl, prop1, prop2, flag, rig, layers, parnames, influs=None):
@@ -536,7 +536,7 @@ class Fixer(DriverUser):
         vec = eye.tail-eye.head
         vec.normalize()
         loc = eye.head + vec*GS.scale*20
-        gaze = makeBone("gaze.%s" % suffix, rig, loc, loc+Vector((0,5*GS.scale,0)), 0, headLayer, None, ["OFFS", eye, vec*GS.scale*20])
+        gaze = makeBone("gaze.%s" % suffix, rig, loc, loc+Vector((0,5*GS.scale,0)), 0, headLayer, None, eye)
 
 
     def addCombinedGazeBone(self, rig, headLayer, helpLayer):

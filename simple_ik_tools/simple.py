@@ -266,8 +266,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             zaxis = mat.col[2]
             head = eb.head - 40*GS.scale*zaxis
             tail = head + 10*GS.scale*Vector((0,0,1))
-            formula = ["OFFS", eb, (0, 0, -40*GS.scale)]
-            makeBone(bname, rig, head, tail, 0, S_SPINE, parent, formula, eb, eb)
+            makeBone(bname, rig, head, tail, 0, S_SPINE, parent, eb, eb, eb)
             strname = self.stretchName(bname)
             stretch = makeBone(strname, rig, eb.head, head, 0, S_SPINE, eb, eb, eb, eb)
             stretch.hide_select = True
@@ -314,9 +313,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                     head = Vector(foot.head)
                     tail = Vector(toe.head)
                     head[2] = tail[2]
-                    #head[0] = tail[0]
-                    formula = ["COMP", foot, foot, toe]
-                    heelIK = makeBone(heelname, rig, head, tail, 0, layer, root, formula, foot, foot)
+                    heelIK = makeBone(heelname, rig, head, tail, 0, layer, root, ["COMP", foot, foot, toe], foot, foot)
                     toeIK = makeBone(toename, rig, toe.head, toe.tail, toe.roll, layer, heelIK, toe, toe, toe)
                     tarsalIK = makeBone(tarsalname, rig, toe.head, foot.head, 0, layer, heelIK, toe, toe, shin)
                     footIK.parent = tarsalIK

@@ -192,16 +192,10 @@ def addOffsetDrivers(rig):
         pb = rig.pose.bones.get(bname)
         for idx in range(3):
             key = form[0]
-            offs = 0
             if key == "BONE":
-                bname1 = form[1]
-            elif key == "TAIL":
                 bname1 = form[1]
             elif key == "COMP":
                 bname1 = form[1+idx]
-            elif key == "OFFS":
-                bname1 = form[1]
-                offs = form[2][idx]
             else:
                 print("Unknown HdOffset formula", form)
             paths = LS.ercDrivers.get("%s:%s" % (bname1, idx))

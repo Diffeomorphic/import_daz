@@ -368,8 +368,6 @@ def register():
     for modname in Modules:
         if modname in Regnames:
             exec("%s.register()" % modname)
-    from .runtime import morph_armature
-    morph_armature.register()
 
     bpy.utils.register_class(DAZ_OT_EnableAllFeatures)
     bpy.utils.register_class(DAZ_OT_DisableAllFeatures)

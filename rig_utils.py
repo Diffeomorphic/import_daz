@@ -41,12 +41,8 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
         def makeFormula(form):
             if isinstance(form, bpy.types.EditBone):
                 return ["BONE", form.name]
-            elif form[0] == "TAIL":
-                return ["TAIL", form[1].name]
             elif form[0] == "COMP":
                 return ["COMP", form[1].name, form[2].name, form[3].name]
-            elif form[0] == "OFFS":
-                return ["OFFS", form[1].name, form[2]]
             else:
                 print("Unknown formula", form)
 
@@ -373,17 +369,14 @@ def addDisplayTransform(rig, mesh, headname):
     findDisplayBones(rig, head, defbones)
     print("Add display bones to:\n%s" % defbones)
 
-    def dspName(bname):
-        return "%s(dsp)" % bname
-
     setMode('EDIT')
     for bname in defbones:
         eb = rig.data.edit_bones[bname]
-        dspb = deriveBone(dspName(bname), eb, rig, "Display", eb.parent)
+        dspb = deriveBone(dspBone(bname), eb, rig, "Display", eb.parent)
         dspb.use_deform = False
     setMode('OBJECT')
     for bname in defbones:
-        dspb = rig.pose.bones[dspName(bname)]
+        dspb = rig.pose.bones[dspBone(bname)]
         cns = dspb.constraints.new('COPY_LOCATION')
         cns.target = mesh
         cns.subtarget = bname
