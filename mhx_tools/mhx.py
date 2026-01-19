@@ -671,8 +671,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             bendname,twistname = self.getSubBoneNames(bname)
             bend = makeBone(bendname, rig, eb.head, mid, eb.roll, L_DEF, eb.parent, eb)
             bend.use_connect = eb.use_connect
-            twist = makeBone(twistname, rig, mid, eb.tail, eb.roll, L_DEF, bend, eb)
-            twist.use_connect = True
+            goal = rig.data.edit_bones.get(tname)
+            twist = makeBone(twistname, rig, mid, eb.tail, eb.roll, L_DEF, bend, ["MID", eb, goal])
+            #twist.use_connect = True
             eb.use_deform = False
             if self.useTweakBones:
                 btwkname = self.getTweakBoneName(bendname)
@@ -728,7 +729,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             trg = rig.pose.bones[tname]
             cns = dampedTrack(bend, pb, rig)
             cns.head_tail = 1.0
-            copyTransform(twist, pb, rig)
+            copyRotation(twist, pb, rig, space='POSE')
+            copyScale(twist, pb, rig, space='POSE')
+            twist.lock_location = TTrue
             if useStretch and stretch:
                 stretchTo(bend, trg, rig, stretch, "x")
                 stretchTo(twist, trg, rig, stretch, "x")

@@ -43,6 +43,11 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
                 return ["BONE", form.name]
             elif form[0] == "COMP":
                 return ["COMP", form[1].name, form[2].name, form[3].name]
+            elif form[0] == "MID":
+                if form[2] is not None:
+                    return ["MID", form[1].name, form[2].name]
+                else:
+                    return ["BONE", form[1].name]
             else:
                 print("Unknown formula", form)
 

@@ -188,22 +188,36 @@ def removeOffsetDrivers(rig):
 
 def addOffsetDrivers(rig):
     from .driver import addDriverVar
+
     for bname,form in LS.ercFormulas.items():
         pb = rig.pose.bones.get(bname)
         for idx in range(3):
             key = form[0]
+            bname2 = None
             if key == "BONE":
                 bname1 = form[1]
             elif key == "COMP":
                 bname1 = form[1+idx]
+            elif key == "MID":
+                bname1 = form[1]
+                bname2 = form[2]
             else:
                 print("Unknown HdOffset formula", form)
             paths = LS.ercDrivers.get("%s:%s" % (bname1, idx))
             if paths:
                 fcu = pb.driver_add("HdOffset", idx)
-                fcu.driver.type = 'SUM'
+                if bname2:
+                    paths = paths + LS.ercDrivers.get("%s:%s" % (bname2, idx), [])
+                fcu.driver.type = 'SCRIPTED'
+                expr = ""
                 for n,path in enumerate(paths):
-                    addDriverVar(fcu, "t%02d" % n, path, rig.data)
+                    vname = "t%d" % n
+                    addDriverVar(fcu, vname, path, rig.data)
+                    expr += "+%s" % vname
+                if len(paths) > 1:
+                    fcu.driver.expression = "(%s)/%d" % (expr, len(paths))
+                else:
+                    fcu.driver.expression = expr
                 LS.ercDrivers["%s:%s" % (bname, idx)] = paths
             elif not isDspBone(bname):
                 print("Missing ERC driver", bname, bname1, idx)
