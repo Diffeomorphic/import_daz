@@ -17,6 +17,7 @@ def renameBone(bone, bname):
         for idx in range(3):
             paths = LS.ercDrivers.get("%s:%d" % (bone.name, idx), [])
             LS.ercDrivers["%s:%d" % (bname, idx)] = paths
+        LS.ercFormulas[bname] = ["BONE", bone.name]
     bone.name = bname
 
 

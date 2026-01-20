@@ -25,9 +25,9 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
     if master:
         master = rig.data.edit_bones.get(master)
     roll = first.roll
-    wind = makeBone("MCH-%s" % windname, rig, first.head, last.tail, roll, lhelp, first.parent)
+    wind = makeBone("MCH-%s" % windname, rig, first.head, last.tail, roll, lhelp, first.parent, first)
     fkwind = deriveBone(windname, wind, rig, lmain, first.parent)
-    ikwind = makeBone("ik_%s" % windname, rig, last.tail, first.head, roll, lmain, master)
+    ikwind = makeBone("ik_%s" % windname, rig, last.tail, first.head, roll, lmain, master, last)
     revwind = deriveBone("REV-%s" % windname, ikwind, rig, lhelp, fkwind)
     revikwind = deriveBone("REV-ik_%s" % windname, wind, rig, lhelp, ikwind)
     eb0 = rig.data.edit_bones[bnames[0]]
@@ -41,7 +41,7 @@ def addSuperWinder(rig, windname, bnames, layers, prop1=None, prop2=None, factor
         defb = rig.data.edit_bones[bname]
         if alignRoll:
             defb.roll = roll
-        defb.name = "DEF-%s" % bname
+        renameBone(defb, "DEF-%s" % bname)
         enableBoneNumLayer(defb, rig, ldef)
         mchb = deriveBone("MCH-%s" % bname, defb, rig, lhelp2, eb)
         eb = deriveBone(bname, defb, rig, lspine, mchb)

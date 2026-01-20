@@ -204,7 +204,13 @@ def addOffsetDrivers(rig):
             else:
                 print("Unknown HdOffset formula", form)
             paths = LS.ercDrivers.get("%s:%s" % (bname1, idx))
+            if paths is None:
+                if isDrvBone(bname1):
+                    paths = LS.ercDrivers.get("%s:%s" % (baseBone(bname1), idx))
+                else:
+                    paths = LS.ercDrivers.get("%s:%s" % (drvBone(bname1), idx))
             if paths:
+                pb.driver_remove("HdOffset", idx)
                 fcu = pb.driver_add("HdOffset", idx)
                 if bname2:
                     paths = paths + LS.ercDrivers.get("%s:%s" % (bname2, idx), [])
@@ -215,7 +221,7 @@ def addOffsetDrivers(rig):
                     addDriverVar(fcu, vname, path, rig.data)
                     expr += "+%s" % vname
                 if len(paths) > 1:
-                    fcu.driver.expression = "(%s)/%d" % (expr, len(paths))
+                    fcu.driver.expression = "(%s)/%d" % (expr[1:], len(paths))
                 else:
                     fcu.driver.expression = expr
                 LS.ercDrivers["%s:%s" % (bname, idx)] = paths
