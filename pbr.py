@@ -427,7 +427,7 @@ class PbrTree(CyclesTree):
             self.linkScalar(toptex, self.pbr, top, PBR.CoatWeight)
             self.linkScalar(roughtex, self.pbr, rough, PBR.CoatRoughness)
         else:
-            self.pbr[PBR.CoatWeight].default_value = 0
+            self.pbr.inputs[PBR.CoatWeight].default_value = 0
             return
         if BLENDER3:
             return
