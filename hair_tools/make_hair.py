@@ -677,6 +677,13 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
     dialogWidth = 1000
 
     def draw(self, context):
+        ob = context.object
+        hasmats = False
+        for mat in ob.data.materials:
+            if mat and mat.node_tree:
+                hasmats = True
+                break
+
         split = self.layout.split(factor=0.7)
         row = split.row()
         col = row.column()
@@ -708,11 +715,11 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         box = col.box()
         box.label(text="Material")
         keepmat = False
-        multimat = False
-        if self.strandType != 'TUBE':
+        multimat = (not hasmats)
+        if self.strandType != 'TUBE' and hasmats:
             box.prop(self, "multiMaterials")
             multimat = self.multiMaterials
-        if self.strandType != 'SHEET':
+        if self.strandType != 'SHEET' and hasmats:
             box.prop(self, "keepMaterial")
             keepmat = self.keepMaterial
         if keepmat:
@@ -721,7 +728,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         else:
             box.prop(self, "hairMaterialMethod")
             box.prop(self, "useActiveTexture")
-            if self.useActiveTexture:
+            if self.useActiveTexture and hasmats:
                 pass
             elif multimat:
                 for item in self.colors:
@@ -775,11 +782,14 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             if mat and mat.node_tree:
                 item = self.colors.add()
                 item.name = mat.name
-                item.color = mat.diffuse_color
-                self.color = mat.diffuse_color
+                item.color = self.color = mat.diffuse_color
                 node = mat.node_tree.nodes.active
                 if node and node.type == 'TEX_IMAGE' and node.image:
                     item.image = node.image.name
+        if len(self.colors) == 0:
+            item = self.colors.add()
+            item.name = "Hair"
+            item.color = self.color = (0.5, 0.5, 0.5, 1)
         self.invokePinner()
         return DazPropsOperator.invoke(self, context, event)
 
@@ -1337,8 +1347,9 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         self.materials = []
         fade = (self.strandShape == 'ROOTS')
         keepmat = (self.keepMaterial and self.strandType != 'SHEET')
-        if self.multiMaterials:
-            if keepmat:
+        mat = hair.data.materials.get(self.activeMaterial)
+        if self.multiMaterials or mat is None or mat.node_tree is None:
+            if keepmat and mat:
                 mats = hair.data.materials
             else:
                 mats = []
@@ -1357,8 +1368,6 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
                     hum.data.materials.append(mat)
                 self.materials.append(mat)
         else:
-            mname = self.activeMaterial
-            mat = hair.data.materials[mname]
             img = None
             if not keepmat:
                 node = mat.node_tree.nodes.active
