@@ -59,13 +59,14 @@ class FigureInstance(Instance):
         if rig and meshes:
             mesh = meshes[0]
             char = chars[0]
-            dazRna(rig).DazMesh = char
-            for mesh,char in zip(meshes, chars):
-                dazRna(mesh).DazMesh = char
-            #self.poseChildren(rig, rig)
+            if char:
+                dazRna(rig).DazMesh = char
+                for mesh,char in zip(meshes, chars):
+                    dazRna(mesh).DazMesh = char
         elif meshes:
             for mesh,char in zip(meshes, chars):
-                dazRna(mesh).DazMesh = char
+                if char:
+                    dazRna(mesh).DazMesh = char
         if rig:
             inst = self.getConformInstance()
             if inst:
