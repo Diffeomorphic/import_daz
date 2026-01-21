@@ -923,9 +923,6 @@ class Morph(FormulaAsset):
         pass
 
 
-    #def update(self, struct):
-    #    FormulaAsset.update(self, struct)
-
     def build(self, context, inst, value=None):
         if not LS.useMorph:
             return self
@@ -984,9 +981,25 @@ class Morph(FormulaAsset):
 
 
     def buildMorph(self, ob, vassoc={}, useBuild=True):
+        sname = self.getName()
+        rig = ob.parent
+
+        def addShapekey(ob, sname):
+            basis,skeys,new = getBasisShape(ob)
+            if sname in ob.data.shape_keys.key_blocks.keys():
+                skey = ob.data.shape_keys.key_blocks[sname]
+                ob.shape_key_remove(skey)
+            return ob.shape_key_add(name=sname)
+
+        skey = addShapekey(ob, sname)
+        if self.value < skey.slider_min:
+            skey.slider_min = self.value
+        if self.value > skey.slider_max:
+            skey.slider_max = self.value
+        skey.value = self.value
+        self.rna = (skey, ob, sname)
+
         def buildShapeKey(ob, skey):
-            for v in ob.data.vertices:
-                skey.data[v.index].co = v.co
             if GS.zup and vassoc:
                 for delta in self.deltas:
                     vn = vassoc.get(delta[0], -1)
@@ -1001,15 +1014,6 @@ class Morph(FormulaAsset):
                     vn = delta[0]
                     skey.data[vn].co += d2b00(delta[1:])
 
-        sname = self.getName()
-        rig = ob.parent
-        skey = addShapekey(ob, sname)
-        if self.value < skey.slider_min:
-            skey.slider_min = self.value
-        if self.value > skey.slider_max:
-            skey.slider_max = self.value
-        skey.value = self.value
-        self.rna = (skey, ob, sname)
         if useBuild:
             buildShapeKey(ob, skey)
 
@@ -1023,14 +1027,6 @@ class Morph(FormulaAsset):
             from .formula import buildBakedMorph
             buildBakedMorph(inst, self.id, self.value)
             self.buildBakedFormulas(context, inst)
-
-
-def addShapekey(ob, sname):
-    basis,skeys,new = getBasisShape(ob)
-    if sname in ob.data.shape_keys.key_blocks.keys():
-        skey = ob.data.shape_keys.key_blocks[sname]
-        ob.shape_key_remove(skey)
-    return ob.shape_key_add(name=sname)
 
 
 def getBasisShape(ob):

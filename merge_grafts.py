@@ -676,7 +676,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
 
     def moveGraftVerts(self, graft, hum, cvgrps):
-        from .modifier import addShapekey, getBasisShape
+        from .modifier import getBasisShape
         cvgroups = dict([(vgrp.index, vgrp.name) for vgrp in hum.vertex_groups])
         averts = graft.data.vertices
         cverts = hum.data.vertices
