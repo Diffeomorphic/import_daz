@@ -896,6 +896,7 @@ class Morph(FormulaAsset):
         self.vertex_count = 0
         self.deltas = []
         self.hd_url = None
+        self.useNumpyMorphs = True
 
 
     def __repr__(self):
@@ -997,15 +998,30 @@ class Morph(FormulaAsset):
 
         if useBuild:
             deltas = self.deltas
-            if GS.zup:
-                offsets = [(n, (x,-z,y)) for n,x,y,z in deltas]
-            else:
-                offsets = [(n, (x,y,z)) for n,x,y,z in deltas]
+            data = skey.data
+            offsets = [(delta[0], delta[1:]) for delta in deltas]
             if vassoc:
                 offsets = [(vassoc[n], offset) for n,offset in offsets if n in vassoc.keys()]
-            data = skey.data
-            for n,offset in offsets:
-                data[n].co += GS.scale*Vector(offset)
+            if GS.useNumpyMorphs and self.useNumpyMorphs:
+                idxs = np.array([offset[0] for offset in offsets])
+                offsets = GS.scale * np.array([offset[1] for offset in offsets])
+                if GS.zup:
+                    tmp = offsets[:,2]
+                    offsets[:,2] = offsets[:,1]
+                    offsets[:,1] = -tmp
+                nverts = len(data)
+                coords = np.zeros(3*nverts, dtype=float)
+                data.foreach_get("co", coords)
+                coords = coords.reshape((nverts, 3))
+                coords[idxs,:] += offsets
+                data.foreach_set("co", coords.ravel())
+            else:
+                if GS.zup:
+                    for n,offset in offsets:
+                        data[n].co += d2b90(offset)
+                else:
+                    for n,offset in offsets:
+                        data[n].co += d2b00(offset)
 
 
     def postbuild(self, context, inst):

@@ -104,6 +104,7 @@ class GlobalSettings:
         self.ercMethod = 'NONE'
         self.useFaceSubpanels = True
         self.useBakedMorphs = False
+        self.useNumpyMorphs = False
         self.useStripCategory = False
         self.useDefaultDrivers = True
         self.useOptimizedDrivers = False
