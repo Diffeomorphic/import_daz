@@ -996,10 +996,11 @@ class Morph(FormulaAsset):
         self.rna = (skey, ob, sname)
 
         if useBuild:
+            deltas = self.deltas
             if GS.zup:
-                offsets = [(n, (x,-z,y)) for n,x,y,z in self.deltas]
+                offsets = [(n, (x,-z,y)) for n,x,y,z in deltas]
             else:
-                offsets = [(n, (x,y,z)) for n,x,y,z in self.deltas]
+                offsets = [(n, (x,y,z)) for n,x,y,z in deltas]
             if vassoc:
                 offsets = [(vassoc[n], offset) for n,offset in offsets if n in vassoc.keys()]
             data = skey.data
