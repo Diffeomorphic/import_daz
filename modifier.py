@@ -983,15 +983,11 @@ class Morph(FormulaAsset):
     def buildMorph(self, ob, vassoc={}, useBuild=True):
         sname = self.getName()
         rig = ob.parent
-
-        def addShapekey(ob, sname):
-            basis,skeys,new = getBasisShape(ob)
-            if sname in ob.data.shape_keys.key_blocks.keys():
-                skey = ob.data.shape_keys.key_blocks[sname]
-                ob.shape_key_remove(skey)
-            return ob.shape_key_add(name=sname)
-
-        skey = addShapekey(ob, sname)
+        basis,skeys,new = getBasisShape(ob)
+        if sname in ob.data.shape_keys.key_blocks.keys():
+            skey = ob.data.shape_keys.key_blocks[sname]
+            ob.shape_key_remove(skey)
+        skey = ob.shape_key_add(name=sname)
         if self.value < skey.slider_min:
             skey.slider_min = self.value
         if self.value > skey.slider_max:
@@ -999,23 +995,23 @@ class Morph(FormulaAsset):
         skey.value = self.value
         self.rna = (skey, ob, sname)
 
-        def buildShapeKey(ob, skey):
-            if GS.zup and vassoc:
-                for delta in self.deltas:
-                    vn = vassoc.get(delta[0], -1)
-                    if vn >= 0:
-                        skey.data[vn].co += d2b90(delta[1:])
-            elif GS.zup:
-                for delta in self.deltas:
-                    vn = delta[0]
-                    skey.data[vn].co += d2b90(delta[1:])
-            else:
-                for delta in self.deltas:
-                    vn = delta[0]
-                    skey.data[vn].co += d2b00(delta[1:])
-
         if useBuild:
-            buildShapeKey(ob, skey)
+            deltas = self.deltas
+            if vassoc:
+                deltas = [(vassoc.get(n), x, y, z) for n,x,y,z in deltas]
+                deltas = [delta for delta in deltas if delta[0] is not None]
+            idxs = np.array([delta[0] for delta in deltas])
+            offsets = GS.scale * np.array([delta[1:] for delta in deltas])
+            if GS.zup:
+                tmp = offsets[:,2]
+                offsets[:,2] = offsets[:,1]
+                offsets[:,1] = -tmp
+            nverts = len(skey.data)
+            coords = np.zeros(3*nverts, dtype=float)
+            skey.data.foreach_get("co", coords)
+            coords = coords.reshape((nverts, 3))
+            coords[idxs,:] += offsets
+            skey.data.foreach_set("co", coords.ravel())
 
 
     def postbuild(self, context, inst):
