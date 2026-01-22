@@ -212,6 +212,10 @@ def addToons(context):
 
 
 def setToonView(context):
+    if BLENDER4:
+        toonexr = 'toon.exr'
+    else:
+        toonexr = 'toon_light.exr'
     for area in bpy.context.screen.areas:
         if area.type == 'VIEW_3D':
             for space in area.spaces:
@@ -219,6 +223,6 @@ def setToonView(context):
                     space.shading.type = 'SOLID'
                     space.shading.light = 'MATCAP'
                     space.shading.color_type = 'TEXTURE'
-                    space.shading.studio_light = 'toon.exr'
+                    space.shading.studio_light = toonexr
                     space.shading.show_backface_culling = True
                     space.shading.show_object_outline = False
