@@ -996,22 +996,15 @@ class Morph(FormulaAsset):
         self.rna = (skey, ob, sname)
 
         if useBuild:
-            deltas = self.deltas
-            if vassoc:
-                deltas = [(vassoc.get(n), x, y, z) for n,x,y,z in deltas]
-                deltas = [delta for delta in deltas if delta[0] is not None]
-            idxs = np.array([delta[0] for delta in deltas])
-            offsets = GS.scale * np.array([delta[1:] for delta in deltas])
             if GS.zup:
-                tmp = offsets[:,2]
-                offsets[:,2] = offsets[:,1]
-                offsets[:,1] = -tmp
-            nverts = len(skey.data)
-            coords = np.zeros(3*nverts, dtype=float)
-            skey.data.foreach_get("co", coords)
-            coords = coords.reshape((nverts, 3))
-            coords[idxs,:] += offsets
-            skey.data.foreach_set("co", coords.ravel())
+                offsets = [(n, (x,-z,y)) for n,x,y,z in self.deltas]
+            else:
+                offsets = [(n, (x,y,z)) for n,x,y,z in self.deltas]
+            if vassoc:
+                offsets = [(vassoc[n], offset) for n,offset in offsets if n in vassoc.keys()]
+            data = skey.data
+            for n,offset in offsets:
+                data[n].co += GS.scale*Vector(offset)
 
 
     def postbuild(self, context, inst):
