@@ -78,84 +78,16 @@ class DAZ_OT_UpdateErcBones(DazPropsOperator, PosableMaker, IsArmature):
 
 
 def updateErcBones(rig):
-    from .figure import copyBoneInfo
-    from .store import copyConstraint, removeConstraints
-    from .driver import setFloatProp, getDriver
-    from .rig_utils import copyTransform
-
     ercbones = [pb for pb in rig.pose.bones if isErcBone(pb.name)]
     basebones = [rig.pose.bones.get(ercBase(pb.name)) for pb in ercbones]
     for pb, ercb in zip(basebones, ercbones):
-        if pb is None:
-            continue
-        bname = pb.name
-        drvb = rig.pose.bones.get(drvBone(bname), pb)
-        removeConstraints(ercb)
-        for cns in pb.constraints:
-            if cns.type == 'LIMIT_ROTATION':
-                copyConstraint(cns, ercb, rig)
-
-        for idx,ttype in enumerate(['LOC_X', 'LOC_Y', 'LOC_Z']):
-            fcu0 = getDriver(rig, 'pose.bones["%s"].location' % drvb.name, idx)
-            efcu = getDriver(rig, 'pose.bones["%s"].location' % ercb.name, idx)
-            if efcu and fcu0:
-                prop = "%s:ERC:%d" % (bname, idx)
-                setFloatProp(rig.data, prop, 0.0, None, None, True)
-                fcu1 = rig.data.animation_data.drivers.from_existing(src_driver=fcu0)
-                fcu1.data_path = propRef(prop)
-                if efcu.driver.type == 'SCRIPTED':
-                    efcu.driver.expression = "%s+y" % fcu.driver.expression
-                elif efcu.driver.type == 'SUM':
-                    pass
-                var = efcu.driver.variables.new()
-                var.type = 'SINGLE_PROP'
-                var.name = "y"
-                trg = var.targets[0]
-                trg.id_type = 'ARMATURE'
-                trg.id = rig.data
-                trg.data_path = propRef(prop)
-            elif fcu0:
-                fcu0.data_path = 'pose.bones["%s"].location' % ercb.name
-
-            pb.driver_remove("location", idx)
-            fcu = pb.driver_add("location", idx)
-            fcu.driver.type = 'SCRIPTED'
-            fcu.driver.expression = "-x"
-            var = fcu.driver.variables.new()
-            var.type = 'TRANSFORMS'
-            var.name = "x"
-            trg = var.targets[0]
-            trg.id = rig
-            trg.bone_target = ercb.name
-            trg.transform_type = ttype
-            trg.transform_space = 'LOCAL_SPACE'
-
-        for channel,n in [("rotation_euler",3), ("rotation_quaternion",4), ("scale",3)]:
-            for idx in range(n):
-                fcu0 = getDriver(rig, 'pose.bones["%s"].%s' % (drvb.name, channel), idx)
-                if fcu0:
-                    fcu0.data_path = 'pose.bones["%s"].%s' % (ercb.name, channel)
-
-        removeConstraints(pb)
-        cns = copyTransform(pb, ercb, rig, space='LOCAL')
-        cns.mix_mode = 'BEFORE_FULL'
-        pb.name = defBone(bname)
-        ercb.name = bname
-        copyBoneInfo(pb, ercb)
-        copyBoneLayers(pb, ercb, rig)
-        enableBoneNumLayer(pb.bone, rig, T_BONES)
-        pb.bone.color.palette = 'THEME04'
-        pb.color.palette = 'THEME04'
-        if drvb != pb:
-            for channel in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
-                drvb.driver_remove(channel)
-
+        if pb:
+            updateErcBone(rig, pb, ercb)
     setMode('EDIT')
     for eb in rig.data.edit_bones:
         if isDrvBone(eb.name) and "tongue" not in eb.name:
             rig.data.edit_bones.remove(eb)
     setMode('OBJECT')
-
     coll = rig.data.collections.get(T_BONES)
     if coll:
         coll.is_visible = False
@@ -163,6 +95,75 @@ def updateErcBones(rig):
     if coll:
         coll.is_visible = True
     dazRna(rig.data).DazErcStatus = 2
+
+
+def updateErcBone(rig, pb, ercb):
+    from .figure import copyBoneInfo
+    from .store import copyConstraint, removeConstraints
+    from .driver import setFloatProp, getDriver
+    from .rig_utils import copyTransform
+
+    bname = pb.name
+    drvb = rig.pose.bones.get(drvBone(bname), pb)
+    removeConstraints(ercb)
+    for cns in pb.constraints:
+        if True or cns.type == 'LIMIT_ROTATION':
+            copyConstraint(cns, ercb, rig)
+
+    for idx,ttype in enumerate(['LOC_X', 'LOC_Y', 'LOC_Z']):
+        fcu0 = getDriver(rig, 'pose.bones["%s"].location' % drvb.name, idx)
+        efcu = getDriver(rig, 'pose.bones["%s"].location' % ercb.name, idx)
+        if efcu and fcu0:
+            prop = "%s:ERC:%d" % (bname, idx)
+            setFloatProp(rig.data, prop, 0.0, None, None, True)
+            fcu1 = rig.data.animation_data.drivers.from_existing(src_driver=fcu0)
+            fcu1.data_path = propRef(prop)
+            if efcu.driver.type == 'SCRIPTED':
+                efcu.driver.expression = "%s+y" % fcu.driver.expression
+            elif efcu.driver.type == 'SUM':
+                pass
+            var = efcu.driver.variables.new()
+            var.type = 'SINGLE_PROP'
+            var.name = "y"
+            trg = var.targets[0]
+            trg.id_type = 'ARMATURE'
+            trg.id = rig.data
+            trg.data_path = propRef(prop)
+        elif fcu0:
+            fcu0.data_path = 'pose.bones["%s"].location' % ercb.name
+
+        pb.driver_remove("location", idx)
+        fcu = pb.driver_add("location", idx)
+        fcu.driver.type = 'SCRIPTED'
+        fcu.driver.expression = "-x"
+        var = fcu.driver.variables.new()
+        var.type = 'TRANSFORMS'
+        var.name = "x"
+        trg = var.targets[0]
+        trg.id = rig
+        trg.bone_target = ercb.name
+        trg.transform_type = ttype
+        trg.transform_space = 'LOCAL_SPACE'
+
+    for channel,n in [("rotation_euler",3), ("rotation_quaternion",4), ("scale",3)]:
+        for idx in range(n):
+            fcu0 = getDriver(rig, 'pose.bones["%s"].%s' % (drvb.name, channel), idx)
+            if fcu0:
+                fcu0.data_path = 'pose.bones["%s"].%s' % (ercb.name, channel)
+
+    removeConstraints(pb)
+    cns = copyTransform(pb, ercb, rig, space='LOCAL')
+    cns.mix_mode = 'BEFORE_FULL'
+    pb.name = defBone(bname)
+    ercb.name = bname
+    copyBoneInfo(pb, ercb)
+    copyBoneLayers(pb, ercb, rig)
+    enableBoneNumLayer(pb.bone, rig, T_BONES)
+    pb.bone.color.palette = 'THEME04'
+    pb.color.palette = 'THEME04'
+    if drvb != pb:
+        for channel in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
+            drvb.driver_remove(channel)
 
 #-------------------------------------------------------------
 #   Add HdOffset formulas. For IK bones
@@ -184,49 +185,96 @@ def removeOffsetDrivers(rig):
     else:
         for pb in rig.pose.bones:
             pb.driver_remove("HdOffset")
+    if GS.ercMethod.startswith("ERC"):
+        LS.ercFormulas = OrderedDict()
+        LS.ercDrivers = True
 
 
-def addOffsetDrivers(rig):
-    from .driver import addDriverVar
+def addErcDrivers(rig):
+    def addOffsetDrivers(rig):
+        from .driver import addDriverVar
 
-    for bname,form in LS.ercFormulas.items():
-        pb = rig.pose.bones.get(bname)
-        for idx in range(3):
-            key = form[0]
-            bname2 = None
-            if key == "BONE":
-                bname1 = form[1]
-            elif key == "COMP":
-                bname1 = form[1+idx]
-            elif key == "MID":
-                bname1 = form[1]
-                bname2 = form[2]
-            else:
-                print("Unknown HdOffset formula", form)
-            paths = LS.ercDrivers.get("%s:%s" % (bname1, idx))
-            if paths is None:
-                if isDrvBone(bname1):
-                    paths = LS.ercDrivers.get("%s:%s" % (baseBone(bname1), idx))
+        for bname,form in LS.ercFormulas.items():
+            pb = rig.pose.bones.get(bname)
+            for idx in range(3):
+                key = form[0]
+                bname2 = None
+                if key == "BONE":
+                    bname1 = form[1]
+                elif key == "COMP":
+                    bname1 = form[1+idx]
+                elif key == "MID":
+                    bname1 = form[1]
+                    bname2 = form[2]
                 else:
-                    paths = LS.ercDrivers.get("%s:%s" % (drvBone(bname1), idx))
-            if paths:
-                pb.driver_remove("HdOffset", idx)
-                fcu = pb.driver_add("HdOffset", idx)
-                if bname2:
-                    paths = paths + LS.ercDrivers.get("%s:%s" % (bname2, idx), [])
-                fcu.driver.type = 'SCRIPTED'
-                expr = ""
-                for n,path in enumerate(paths):
-                    vname = "t%d" % n
-                    addDriverVar(fcu, vname, path, rig.data)
-                    expr += "+%s" % vname
-                if len(paths) > 1:
-                    fcu.driver.expression = "(%s)/%d" % (expr[1:], len(paths))
-                else:
-                    fcu.driver.expression = expr
-                LS.ercDrivers["%s:%s" % (bname, idx)] = paths
-            elif not isDspBone(bname):
-                print("Missing ERC driver", bname, bname1, idx)
+                    print("Unknown HdOffset formula", form)
+                paths = LS.ercDrivers.get("%s:%s" % (bname1, idx))
+                if paths is None:
+                    if isDrvBone(bname1):
+                        paths = LS.ercDrivers.get("%s:%s" % (baseBone(bname1), idx))
+                    else:
+                        paths = LS.ercDrivers.get("%s:%s" % (drvBone(bname1), idx))
+                if paths:
+                    pb.driver_remove("HdOffset", idx)
+                    fcu = pb.driver_add("HdOffset", idx)
+                    if bname2:
+                        paths = paths + LS.ercDrivers.get("%s:%s" % (bname2, idx), [])
+                    fcu.driver.type = 'SCRIPTED'
+                    expr = ""
+                    for n,path in enumerate(paths):
+                        vname = "t%d" % n
+                        addDriverVar(fcu, vname, path, rig.data)
+                        expr += "+%s" % vname
+                    if len(paths) > 1:
+                        fcu.driver.expression = "(%s)/%d" % (expr[1:], len(paths))
+                    else:
+                        fcu.driver.expression = expr
+                    LS.ercDrivers["%s:%s" % (bname, idx)] = paths
+                elif not isDspBone(bname):
+                    print("Missing ERC driver", bname, bname1, idx)
+
+    def addErcBoneDrivers(rig):
+        defbones = []
+        for pb in rig.pose.bones:
+            if isDefBone(pb.name) and not pb.constraints:
+                bname = ercBase(pb.name)
+                ercb = rig.pose.bones.get(bname)
+                if ercb:
+                    defbones.append((bname, pb, ercb))
+        for bname, pb, ercb in defbones:
+            ercb.name = ercBone(bname)
+            pb.name = bname
+        for bname, pb, ercb in defbones:
+            print(pb, ercb)
+            updateErcBone(rig, pb, ercb)
+        return
+
+        print("AERC", rig)
+        if rig.animation_data is None:
+            return
+        driverlist = {}
+        for fcu in list(rig.animation_data.drivers):
+            bname,channel,_ = getBoneChannel(fcu)
+            print("BB", bname, channel)
+            if bname and isErcBone(bname) and channel == 'location':
+                if bname not in driverlist.keys():
+                    driverlist[bname] = [None,None,None]
+                drivers = driverlist[bname]
+                drivers[fcu.array_index] = fcu
+        for bname,form in LS.ercFormulas.items():
+            src = ercBone(form[1])
+            drivers = driverlist.get(src, [])
+            print("KK", bname, src, drivers)
+            for idx,fcu in enumerate(drivers):
+                print("BB", bname, src, idx, fcu)
+                fcu2 = rig.animation_data.drivers.from_existing(src_driver=fcu)
+                fcu2.data_path = 'pose.bones["%s"].location' % bname
+                fcu2.array_index = idx
+
+    if GS.ercMethod.startswith("ARMATURE"):
+        addOffsetDrivers(rig)
+    elif GS.ercMethod.startswith("ERC"):
+        addErcBoneDrivers(rig)
 
 #-------------------------------------------------------------
 #  Remove Posable Bones

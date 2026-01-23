@@ -210,7 +210,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
 
     def addSimpleIK(self, context):
-        from ..erc import removeOffsetDrivers, addOffsetDrivers
+        from ..erc import removeOffsetDrivers, addErcDrivers
         rig = context.object
         IK = SimpleIK(self)
         self.genesis = IK.getGenesisType(rig)
@@ -227,8 +227,10 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         #if GS.ercMethod.startswith("ARMATURE") and self.useErcIk:
         #    copyOffsetDrivers(rig)
         modernizeBones(rig)
+        print("FF", LS.ercFormulas)
+        print("RR", LS.ercDrivers)
         if LS.ercFormulas and LS.ercDrivers:
-            addOffsetDrivers(rig)
+            addErcDrivers(rig)
         rig["DazSimpleIK"] = True
         from ..driver import setFloatProp
         setFloatProp(rig, "DazArmIK_L", 1.0, 0.0, 1.0, True)
@@ -408,7 +410,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 #self.addToLayer(pb, S_TWEAK, rig, "Tweak")
             elif isDefBone(pb.name):
                 pass
-            elif isInNumLayer(pb.bone, rig, T_HIDDEN):
+            elif isInNumLayer(pb.bone, rig, (T_HIDDEN, T_ERC)):
                 pass
             elif not isInNumLayer(pb.bone, rig, (T_BONES, T_ERC)):
                 self.addToLayer(pb, S_SPECIAL, rig, "Special")
