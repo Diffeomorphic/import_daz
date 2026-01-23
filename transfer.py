@@ -748,11 +748,20 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
             tskey = src.data.shape_keys.key_blocks[hskey.name]
         else:
             tskey = hskey
-        hcos = np.array([list(data.co) for data in tskey.data])
+
+        ndata = len(tskey.data)
+        hcos = np.zeros(3*ndata, dtype=float)
+        tskey.data.foreach_get("co", hcos)
+        hcos = hcos.reshape((ndata, 3))
+
+        nverts = len(trg.data.vertices)
+        cverts = np.zeros(3*nverts, dtype=float)
+        trg.data.vertices.foreach_get("co", cverts)
+        cverts = cverts.reshape((nverts, 3))
+
         tris, w, offsets = self.match
         tcos = hcos[tris]
         ccos = np.sum(tcos * w[:,:,None], axis=1) + offsets
-        cverts = np.array([list(v.co) for v in trg.data.vertices])
         dists = np.sum(np.abs(ccos-cverts), axis=1)
         dmax = np.max(dists)
         if dmax < self.eps:
@@ -760,12 +769,11 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         cskey = trg.shape_key_add(name=hskey.name)
         if self.useSelectedOnly:
             cverts = trg.data.vertices
-            for cvn,co in enumerate(ccos):
-                if cverts[cvn].select:
-                    cskey.data[cvn].co = co
+            selected = [cv.index for cv in cverts if cv.select]
+            for cvn in selected:
+                cskey.data[cvn].co = ccos[cvn]
         else:
-            for cvn,co in enumerate(ccos):
-                cskey.data[cvn].co = co
+            cskey.data.foreach_set("co", ccos.ravel())
         return True
 
 #-------------------------------------------------------------
