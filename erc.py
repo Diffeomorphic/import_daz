@@ -169,7 +169,7 @@ def updateErcBone(rig, pb, ercb):
 #   Add HdOffset formulas. For IK bones
 #-------------------------------------------------------------
 
-def removeOffsetDrivers(rig):
+def initErcDrivers(rig):
     from collections import OrderedDict
     if GS.ercMethod.startswith("ARMATURE"):
         LS.ercFormulas = OrderedDict()
@@ -187,27 +187,31 @@ def removeOffsetDrivers(rig):
             pb.driver_remove("HdOffset")
     if GS.ercMethod.startswith("ERC"):
         LS.ercFormulas = OrderedDict()
-        LS.ercDrivers = True
+        LS.ercDrivers = {}
 
 
-def addErcDrivers(rig):
+def addErcDrivers(context, rig):
+    def getBoneNames(form, idx):
+        key = form[0]
+        if key == "BONE":
+            return form[1], None
+        elif key == "COMP":
+            return form[1+idx], None
+        elif key == "MID":
+            return form[1], form[2]
+        else:
+            print("Unknown HdOffset formula", form)
+
     def addOffsetDrivers(rig):
         from .driver import addDriverVar
 
         for bname,form in LS.ercFormulas.items():
             pb = rig.pose.bones.get(bname)
+            if pb is None:
+                print("Missing bone:", bname)
+                continue
             for idx in range(3):
-                key = form[0]
-                bname2 = None
-                if key == "BONE":
-                    bname1 = form[1]
-                elif key == "COMP":
-                    bname1 = form[1+idx]
-                elif key == "MID":
-                    bname1 = form[1]
-                    bname2 = form[2]
-                else:
-                    print("Unknown HdOffset formula", form)
+                bname1, bname2 = getBoneNames(form, idx)
                 paths = LS.ercDrivers.get("%s:%s" % (bname1, idx))
                 if paths is None:
                     if isDrvBone(bname1):
@@ -233,7 +237,54 @@ def addErcDrivers(rig):
                 elif not isDspBone(bname):
                     print("Missing ERC driver", bname, bname1, idx)
 
-    def addErcBoneDrivers(rig):
+    def addErcBoneDrivers(context, rig):
+        if rig.data.animation_data is None:
+            return
+        ercpaths = set()
+        for fcu in list(rig.data.animation_data.drivers):
+            if ":Loc:" in fcu.data_path and fcu.driver.type == 'SCRIPTED':
+                for var in fcu.driver.variables:
+                    for trg in var.targets:
+                        ercpaths.add(trg.data_path)
+
+        gmatss = {}
+        for path in ercpaths:
+            prop = baseProp(getProp(path))
+            setProp(rig, prop)
+            updateRigDrivers(context, rig)
+            gmatss[prop] = dict([(pb.name, pb.matrix.copy()) for pb in rig.pose.bones])
+            clearProp(rig, prop)
+
+        for bname,form in LS.ercFormulas.items():
+            pb = rig.pose.bones[bname]
+            pb.driver_remove("location")
+            for idx in range(3):
+                fcu = pb.driver_add("location", idx)
+                bname1, bname2 = getBoneNames(form, idx)
+                pb1 = rig.pose.bones.get(bname1)
+                if pb1 is None:
+                    print("Missing bone: ", bname, bname1)
+                    continue
+                expr = ""
+                n = 0
+                for prop,gmats in gmatss.items():
+                    gmat = gmats[bname1]
+                    lmat = gmat.inverted() @ pb.bone.matrix_local
+                    if pb1.parent:
+                        parmat = gmats[pb1.parent.name]
+                        lmat = lmat @ parmat
+                    lloc = lmat.to_translation()
+                    vname = "t%02d" % n
+                    n += 1
+                    expr += "+%.3f*%s" % (lloc[idx], vname)
+                    var = fcu.driver.variables.new()
+                    var.name = vname
+                    trg = var.targets[0]
+                    trg.id_type = 'ARMATURE'
+                    trg.id = rig.data
+                    trg.data_path = propRef(finalProp(prop))
+                fcu.driver.expression = expr[1:]
+
         defbones = []
         for pb in rig.pose.bones:
             if isDefBone(pb.name) and not pb.constraints:
@@ -245,36 +296,13 @@ def addErcDrivers(rig):
             ercb.name = ercBone(bname)
             pb.name = bname
         for bname, pb, ercb in defbones:
-            print(pb, ercb)
             updateErcBone(rig, pb, ercb)
-        return
-
-        print("AERC", rig)
-        if rig.animation_data is None:
-            return
-        driverlist = {}
-        for fcu in list(rig.animation_data.drivers):
-            bname,channel,_ = getBoneChannel(fcu)
-            print("BB", bname, channel)
-            if bname and isErcBone(bname) and channel == 'location':
-                if bname not in driverlist.keys():
-                    driverlist[bname] = [None,None,None]
-                drivers = driverlist[bname]
-                drivers[fcu.array_index] = fcu
-        for bname,form in LS.ercFormulas.items():
-            src = ercBone(form[1])
-            drivers = driverlist.get(src, [])
-            print("KK", bname, src, drivers)
-            for idx,fcu in enumerate(drivers):
-                print("BB", bname, src, idx, fcu)
-                fcu2 = rig.animation_data.drivers.from_existing(src_driver=fcu)
-                fcu2.data_path = 'pose.bones["%s"].location' % bname
-                fcu2.array_index = idx
 
     if GS.ercMethod.startswith("ARMATURE"):
-        addOffsetDrivers(rig)
+        if LS.ercDrivers:
+            addOffsetDrivers(rig)
     elif GS.ercMethod.startswith("ERC"):
-        addErcBoneDrivers(rig)
+        addErcBoneDrivers(context, rig)
 
 #-------------------------------------------------------------
 #  Remove Posable Bones

@@ -210,13 +210,13 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
 
 
     def addSimpleIK(self, context):
-        from ..erc import removeOffsetDrivers, addErcDrivers
+        from ..erc import initErcDrivers, addErcDrivers
         rig = context.object
         IK = SimpleIK(self)
         self.genesis = IK.getGenesisType(rig)
         if not self.genesis:
             raise DazError("Cannot create simple IK for the rig %s" % rig.name)
-        removeOffsetDrivers(rig)
+        initErcDrivers(rig)
         enableAllRigLayers(rig, False)
         makeBoneCollections(rig, SimpleLayers)
         setMode('EDIT')
@@ -227,10 +227,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         #if GS.ercMethod.startswith("ARMATURE") and self.useErcIk:
         #    copyOffsetDrivers(rig)
         modernizeBones(rig)
-        print("FF", LS.ercFormulas)
-        print("RR", LS.ercDrivers)
-        if LS.ercFormulas and LS.ercDrivers:
-            addErcDrivers(rig)
+        if LS.ercFormulas:
+            addErcDrivers(context, rig)
         rig["DazSimpleIK"] = True
         from ..driver import setFloatProp
         setFloatProp(rig, "DazArmIK_L", 1.0, 0.0, 1.0, True)

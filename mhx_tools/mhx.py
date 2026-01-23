@@ -234,7 +234,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
     def convertMhx(self, context):
         from ..figure import finalizeArmature
-        from ..erc import removeOffsetDrivers, addOffsetDrivers
+        from ..erc import initErcDrivers, addErcDrivers
         rig = context.object
         self.rigname = rig.name
         rig["DazMhxLegacy"] = False
@@ -266,7 +266,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         bendTwistChildren = {}
         enableAllRigLayers(rig)
         bonechildren = applyBoneChildren(context, rig)
-        removeOffsetDrivers(rig)
+        initErcDrivers(rig)
         if dazRna(rig).DazRig in ["genesis3", "genesis8"]:
             self.bendTwistGenesis = MHX.BendTwistGenesis38
             for pb in rig.pose.bones:
@@ -381,8 +381,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         showProgress(26, 28, "  Add bone groups")
         self.addBoneGroups(rig)
         self.addDisplayTransform(rig, "head")
-        if LS.ercFormulas and LS.ercDrivers:
-            addOffsetDrivers(rig)
+        if LS.ercFormulas:
+            addErcDrivers(context, rig)
         rig["MhxRig"] = True
         rig.data["MhaFeatures"] |= F_IDPROPS
         modernizeBones(rig)
