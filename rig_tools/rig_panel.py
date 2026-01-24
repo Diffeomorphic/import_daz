@@ -51,14 +51,14 @@ class DAZ_PT_MoreRigging(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "More Rigging Tools"
 
     def draw(self, context):
-        self.layout.operator("daz.add_extra_face_bones")
+        #self.layout.operator("daz.add_extra_face_bones")
         self.layout.operator("daz.batch_set_custom_shape")
         self.layout.operator("daz.make_eulers")
         self.layout.separator()
         self.layout.operator("daz.remove_driven_bones")
-        self.layout.operator("daz.fix_limit_rot_constraints")
-        self.layout.operator("daz.fix_legacy_posable")
-        self.layout.operator("daz.rotate_bones")
+        #self.layout.operator("daz.fix_limit_rot_constraints")
+        #self.layout.operator("daz.fix_legacy_posable")
+        #self.layout.operator("daz.rotate_bones")
         return
 
 #----------------------------------------------------------

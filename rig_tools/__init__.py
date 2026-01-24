@@ -16,7 +16,6 @@ if DEBUG and "RigToolsFeature" in locals():
     imp.reload(ikgoals)
     imp.reload(prefix)
     imp.reload(wrappers)
-    imp.reload(legacy)
     imp.reload(rig_panel)
 else:
     print("Loading Rig Tools")
@@ -25,7 +24,6 @@ else:
     from . import ikgoals
     from . import prefix
     from . import wrappers
-    from . import legacy
     from . import rig_panel
     RigToolsFeature = True
 
@@ -37,13 +35,12 @@ def register():
     try:
         print("Register Rig Tools")
         from . import varia, connect_chains, ikgoals, prefix
-        from . import wrappers, legacy, rig_panel
+        from . import wrappers, rig_panel
         varia.register()
         connect_chains.register()
         ikgoals.register()
         prefix.register()
         wrappers.register()
-        legacy.register()
         rig_panel.register()
     except (RuntimeError, ValueError):
         pass
@@ -51,9 +48,8 @@ def register():
 def unregister():
     try:
         from . import varia, connect_chains, ikgoals, prefix
-        from . import wrappers, legacy, rig_panel
+        from . import wrappers, rig_panel
         rig_panel.unregister()
-        legacy.unregister()
         wrappers.unregister()
         prefix.unregister()
         ikgoals.unregister()

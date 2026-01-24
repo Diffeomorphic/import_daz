@@ -238,7 +238,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         setFloatProp(rig, "DazStretchArms", 1.0, 0.0, 1.0, True)
         setFloatProp(rig, "DazStretchLegs", 1.0, 0.0, 1.0, True)
         enableRigNumLayers(rig, [S_SPINE, S_FACE, S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK])
-        enableRigNumLayers(rig, [T_ERC, T_BONES])
+        #enableRigNumLayers(rig, [T_ERC, T_BONES])
         assignOtherBones(rig, S_HIDDEN)
 
 

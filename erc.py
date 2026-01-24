@@ -82,6 +82,10 @@ def updateErcBones(rig):
     basebones = [rig.pose.bones.get(ercBase(pb.name)) for pb in ercbones]
     for pb, ercb in zip(basebones, ercbones):
         if pb:
+            removeConstraints(ercb)
+            for cns in pb.constraints:
+                if cns.type == 'LIMIT_ROTATION':
+                    copyConstraint(cns, ercb, rig)
             updateErcBone(rig, pb, ercb)
     setMode('EDIT')
     for eb in rig.data.edit_bones:
@@ -105,10 +109,6 @@ def updateErcBone(rig, pb, ercb):
 
     bname = pb.name
     drvb = rig.pose.bones.get(drvBone(bname), pb)
-    removeConstraints(ercb)
-    for cns in pb.constraints:
-        if True or cns.type == 'LIMIT_ROTATION':
-            copyConstraint(cns, ercb, rig)
 
     for idx,ttype in enumerate(['LOC_X', 'LOC_Y', 'LOC_Z']):
         fcu0 = getDriver(rig, 'pose.bones["%s"].location' % drvb.name, idx)
@@ -316,6 +316,11 @@ def addErcDrivers(context, rig):
             pb.name = bname
         for bname, pb, ercb in defbones:
             updateErcBone(rig, pb, ercb)
+            pb.lock_ik_x = pb.lock_ik_y = pb.lock_ik_z = True
+            cns = getConstraint(ercb, "IK")
+            print("CCNS", ercb.name, cns)
+            if cns:
+                cns.chain_count = 2*cns.chain_count - 1
 
     if GS.ercMethod.startswith("ARMATURE"):
         if LS.ercDrivers:

@@ -414,6 +414,9 @@ def copyBoneInfo(srcpb, trgpb, usePoseBone=True):
             attr = "%s_%s" % (key, x)
             if hasattr(srcpb, attr):
                 setattr(trgpb, attr, getattr(srcpb, attr))
+    for attr in ["palette"]:
+        setattr(trgpb.bone.color, attr, getattr(srcpb.bone.color, attr))
+        setattr(trgpb.color, attr, getattr(srcpb.color, attr))
 
 #-------------------------------------------------------------
 #   Make bones posable
@@ -610,39 +613,31 @@ def makeBonesPosable(rig, ignoreLocked=True):
         for bname in bnames:
             eb = rig.data.edit_bones[bname]
             eb.name = drvBone(bname)
-
         for bname in bnames:
             drvb = rig.data.edit_bones[drvBone(bname)]
             eb = copyEditBone(drvb, rig, bname)
             eb.parent = drvb.parent
             drvb.use_deform = False
-        setMode('OBJECT')
-
-        for bname in bnames:
-            pb = rig.pose.bones.get(bname)
-            drvb = rig.pose.bones.get(drvBone(bname))
-            if pb and drvb:
-                drvb.bone.color.palette = 'THEME14'
-                drvb.color.palette = 'THEME14'
-
-        setMode('EDIT')
-        for bname in bnames:
-            drvb = rig.data.edit_bones[drvBone(bname)]
-            eb = rig.data.edit_bones[bname]
             for cb in drvb.children:
-                if cb.name != bname:
+                if cb != eb:
                     cb.parent = eb
 
         setMode('OBJECT')
         if not ES.easy:
             print("  Change constraints")
         store = ConstraintStore()
+        print("BB", bnames)
         for bname in bnames:
+            test = (bname == "lForearmIK")
             pb = rig.pose.bones[bname]
             drvb = rig.pose.bones[drvBone(bname)]
             copyPoseBone(drvb, pb, rig)
-            drvb.custom_shape = None
             copyBoneInfo(drvb, pb)
+            drvb.custom_shape = None
+            drvb.bone.color.palette = 'THEME14'
+            drvb.color.palette = 'THEME14'
+            if test:
+                print("CC", drvb.name, list(drvb.constraints))
             store.storeConstraints(drvb.name, drvb)
             removeConstraints(drvb, onlyLimit=True)
             addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
@@ -754,18 +749,15 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, IsArmature)
     def checkAllowed(self, rig):
         if dazRna(rig).DazRig.startswith(("mhx", "rigify")):
             msg = "Rig type = %s" % dazRna(rig).DazRig
-        elif rig.get("DazSimpleIK"):
-            msg = "Rig has simple IK"
+        #elif rig.get("DazSimpleIK"):
+        #    msg = "Rig has simple IK"
         elif dazRna(rig.data).DazFinalized:
             msg = "Rig has been finalized"
         else:
             return True
         msg = "Cannot make bones posable.     \n%s" % msg
         print(msg)
-        if self.errorOnFail:
-            raise DazError(msg)
-        else:
-            return False
+        raise DazError(msg)
 
     def run(self, context):
         rig = context.object
