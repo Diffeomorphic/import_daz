@@ -72,6 +72,10 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
             defb.parent = parent
             defb.use_deform = False
             enableBoneNumLayer(defb, rig, T_ERC)
+            if parent and not isDefBone(parent.name):
+                parent = rig.data.edit_bones.get(defBone(parent.name))
+                if parent:
+                    defb.parent = eb.parent = parent
             LS.ercFormulas[defb.name] = makeFormula(formula)
         else:
             LS.ercFormulas[bname] = makeFormula(formula)
