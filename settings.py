@@ -600,6 +600,7 @@ class LocalSettings:
         self.returnValue = {}
         self.ercDrivers = None
         self.ercFormulas = None
+        self.ercMats = None
 
         if bpy.app.version < (4,0,0):
             if GS.sssMethod == 'RANDOM_WALK_SKIN':

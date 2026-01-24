@@ -18,7 +18,14 @@ def renameBone(bone, bname):
             paths = LS.ercDrivers.get("%s:%d" % (bone.name, idx), [])
             LS.ercDrivers["%s:%d" % (bname, idx)] = paths
         LS.ercFormulas[bname] = ["BONE", bone.name]
+    updateErcMats(bone.name, bname)
     bone.name = bname
+
+
+def updateErcMats(src, trg):
+    if LS.ercMats:
+        for gmats in LS.ercMats.values():
+            gmats[trg] = gmats[src]
 
 
 def deriveBone(bname, eb0, rig, layer, parent):
@@ -39,12 +46,16 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
     if tailbone:
         LS.tailbones[bname] = tailbone.name
     if formula and LS.ercFormulas is not None and not isDefBone(bname):
+
         def makeFormula(form):
             if isinstance(form, bpy.types.EditBone):
+                updateErcMats(form.name, bname)
                 return ["BONE", form.name]
             elif form[0] == "COMP":
+                updateErcMats(form[1].name, bname)
                 return ["COMP", form[1].name, form[2].name, form[3].name]
             elif form[0] == "MID":
+                updateErcMats(form[1].name, bname)
                 if form[2] is not None:
                     return ["MID", form[1].name, form[2].name]
                 else:
@@ -60,7 +71,7 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
             defb.roll = eb.roll
             defb.parent = parent
             defb.use_deform = False
-            enableBoneNumLayer(defb, rig, T_BONES)
+            enableBoneNumLayer(defb, rig, T_ERC)
             LS.ercFormulas[defb.name] = makeFormula(formula)
         else:
             LS.ercFormulas[bname] = makeFormula(formula)

@@ -237,6 +237,7 @@ class DAZ_PT_ActiveObject(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
             self.vecRow(self.layout, trans, "Translation")
             self.vecRow(self.layout, Vector(quat.to_euler(ob.rotation_mode))/D, "Rotation")
             self.vecRow(self.layout, scale, "Scale")
+            self.layout.operator("daz.inspect_world_matrix")
         else:
             self.layout.label(text = "No active object")
 
@@ -262,8 +263,9 @@ class DAZ_PT_ActivePoseBone(DAZ_PT_SetupTab, PropRow, bpy.types.Panel):
             self.vecRow(self.layout, loc/GS.scale, "Location")
             self.vecRow(self.layout, Vector(quat.to_euler())/D, "Rotation")
             self.vecRow(self.layout, scale, "Scale")
+            self.layout.operator("daz.inspect_posebone_matrix")
         else:
-            self.layout.label(text = "No active bone")
+            self.layout.label(text = "No active posebone")
 
 
 class DAZ_PT_DazProperties(DAZ_PT_SetupTab, bpy.types.Panel):
@@ -377,7 +379,6 @@ class DAZ_PT_Debugging(DAZ_PT_SetupTab, bpy.types.Panel):
         icon = 'CHECKBOX_HLT' if GS.silentMode else 'CHECKBOX_DEHLT'
         self.layout.operator("daz.set_silent_mode", icon=icon, emboss=False)
         self.layout.operator("daz.get_finger_print")
-        self.layout.operator("daz.inspect_world_matrix")
         self.layout.operator("daz.select_parent_verts")
         self.layout.operator("daz.enable_all_layers")
 

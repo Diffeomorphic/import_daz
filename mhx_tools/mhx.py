@@ -266,7 +266,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         bendTwistChildren = {}
         enableAllRigLayers(rig)
         bonechildren = applyBoneChildren(context, rig)
-        initErcDrivers(rig)
+        initErcDrivers(context, rig)
         if dazRna(rig).DazRig in ["genesis3", "genesis8"]:
             self.bendTwistGenesis = MHX.BendTwistGenesis38
             for pb in rig.pose.bones:

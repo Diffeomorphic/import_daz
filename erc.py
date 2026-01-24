@@ -169,8 +169,9 @@ def updateErcBone(rig, pb, ercb):
 #   Add HdOffset formulas. For IK bones
 #-------------------------------------------------------------
 
-def initErcDrivers(rig):
+def initErcDrivers(context, rig):
     from collections import OrderedDict
+
     if GS.ercMethod.startswith("ARMATURE"):
         LS.ercFormulas = OrderedDict()
         LS.ercDrivers = {}
@@ -185,9 +186,26 @@ def initErcDrivers(rig):
     else:
         for pb in rig.pose.bones:
             pb.driver_remove("HdOffset")
+
     if GS.ercMethod.startswith("ERC"):
         LS.ercFormulas = OrderedDict()
         LS.ercDrivers = {}
+        if rig.data.animation_data is None:
+            return
+        ercpaths = set()
+        for fcu in list(rig.data.animation_data.drivers):
+            if ":Loc:" in fcu.data_path and fcu.driver.type == 'SCRIPTED':
+                for var in fcu.driver.variables:
+                    for trg in var.targets:
+                        ercpaths.add(trg.data_path)
+
+        LS.ercMats = {}
+        for path in ercpaths:
+            prop = baseProp(getProp(path))
+            setProp(rig, prop)
+            updateRigDrivers(context, rig)
+            LS.ercMats[prop] = dict([(pb.name, pb.matrix.copy()) for pb in rig.pose.bones])
+            clearProp(rig, prop)
 
 
 def addErcDrivers(context, rig):
@@ -238,23 +256,6 @@ def addErcDrivers(context, rig):
                     print("Missing ERC driver", bname, bname1, idx)
 
     def addErcBoneDrivers(context, rig):
-        if rig.data.animation_data is None:
-            return
-        ercpaths = set()
-        for fcu in list(rig.data.animation_data.drivers):
-            if ":Loc:" in fcu.data_path and fcu.driver.type == 'SCRIPTED':
-                for var in fcu.driver.variables:
-                    for trg in var.targets:
-                        ercpaths.add(trg.data_path)
-
-        gmatss = {}
-        for path in ercpaths:
-            prop = baseProp(getProp(path))
-            setProp(rig, prop)
-            updateRigDrivers(context, rig)
-            gmatss[prop] = dict([(pb.name, pb.matrix.copy()) for pb in rig.pose.bones])
-            clearProp(rig, prop)
-
         for bname,form in LS.ercFormulas.items():
             pb = rig.pose.bones[bname]
             pb.driver_remove("location")
@@ -266,23 +267,38 @@ def addErcDrivers(context, rig):
                     print("Missing bone: ", bname, bname1)
                     continue
                 expr = ""
-                n = 0
-                for prop,gmats in gmatss.items():
-                    gmat = gmats[bname1]
-                    lmat = gmat.inverted() @ pb.bone.matrix_local
+                vname = "A"
+                for prop,gmats in LS.ercMats.items():
+                    test = bname.startswith(("lForearm"))
+
+                    # M1 = M0 * R0^-1 * R1 * L1
+                    # L1 = R1^-1 * R0 * M0^-1 * M1
+                    M1 = gmats[bname1]
+                    R1 = pb1.bone.matrix_local
+                    L1 = R1.inverted() @ M1
+                    if test:
+                        print("GG1", bname, bname1, prop, idx)
+                        print(M1)
                     if pb1.parent:
-                        parmat = gmats[pb1.parent.name]
-                        lmat = lmat @ parmat
-                    lloc = lmat.to_translation()
-                    vname = "t%02d" % n
-                    n += 1
+                        M0 = gmats.get(pb1.parent.name)
+                        if test:
+                            print("PAR", pb1.parent.name)
+                            print(M0)
+                        if M0:
+                            R0 = pb1.parent.bone.matrix_local
+                            L1 = R1.inverted() @ R0 @ M0.inverted() @ M1
+                        else:
+                            print("Missing matrix:", pb1.parent.name)
+
+                    lloc = L1.to_translation()
                     expr += "+%.3f*%s" % (lloc[idx], vname)
                     var = fcu.driver.variables.new()
                     var.name = vname
                     trg = var.targets[0]
-                    trg.id_type = 'ARMATURE'
-                    trg.id = rig.data
-                    trg.data_path = propRef(finalProp(prop))
+                    trg.id_type = 'OBJECT'
+                    trg.id = rig
+                    trg.data_path = propRef(prop)
+                    vname = nextLetter(vname)
                 fcu.driver.expression = expr[1:]
 
         defbones = []

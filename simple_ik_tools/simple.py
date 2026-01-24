@@ -216,7 +216,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         self.genesis = IK.getGenesisType(rig)
         if not self.genesis:
             raise DazError("Cannot create simple IK for the rig %s" % rig.name)
-        initErcDrivers(rig)
+        initErcDrivers(context, rig)
         enableAllRigLayers(rig, False)
         makeBoneCollections(rig, SimpleLayers)
         setMode('EDIT')
@@ -231,13 +231,14 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
             addErcDrivers(context, rig)
         rig["DazSimpleIK"] = True
         from ..driver import setFloatProp
-        setFloatProp(rig, "DazArmIK_L", 1.0, 0.0, 1.0, True)
-        setFloatProp(rig, "DazArmIK_R", 1.0, 0.0, 1.0, True)
-        setFloatProp(rig, "DazLegIK_L", 1.0, 0.0, 1.0, True)
-        setFloatProp(rig, "DazLegIK_R", 1.0, 0.0, 1.0, True)
+        setFloatProp(rig, "DazArmIK_L", 0.0, 0.0, 1.0, True)
+        setFloatProp(rig, "DazArmIK_R", 0.0, 0.0, 1.0, True)
+        setFloatProp(rig, "DazLegIK_L", 0.0, 0.0, 1.0, True)
+        setFloatProp(rig, "DazLegIK_R", 0.0, 0.0, 1.0, True)
         setFloatProp(rig, "DazStretchArms", 1.0, 0.0, 1.0, True)
         setFloatProp(rig, "DazStretchLegs", 1.0, 0.0, 1.0, True)
         enableRigNumLayers(rig, [S_SPINE, S_FACE, S_LARMIK, S_RARMIK, S_LLEGIK, S_RLEGIK])
+        enableRigNumLayers(rig, [T_ERC, T_BONES])
         assignOtherBones(rig, S_HIDDEN)
 
 
