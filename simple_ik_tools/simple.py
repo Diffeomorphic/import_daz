@@ -409,7 +409,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
                 #self.addToLayer(pb, S_TWEAK, rig, "Tweak")
             elif isDefBone(pb.name):
                 pass
-            elif isInNumLayer(pb.bone, rig, (T_HIDDEN, T_ERC)):
+            elif isInNumLayer(pb.bone, rig, T_HIDDEN):
                 pass
             elif not isInNumLayer(pb.bone, rig, (T_BONES, T_ERC)):
                 self.addToLayer(pb, S_SPECIAL, rig, "Special")
