@@ -72,7 +72,7 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
             drvb.roll = eb.roll
             if parent:
                 parname = ercBase(parent.name)
-                eb.parent = rig.data.edit_bones.get(parname)
+                eb.parent = parent
                 drvb.parent = rig.data.edit_bones.get(drvBone(parname), eb.parent)
             drvb.use_deform = False
             enableBoneNumLayer(drvb, rig, T_HIDDEN)

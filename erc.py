@@ -293,7 +293,6 @@ def addErcDrivers(context, rig):
                             print(M0)
                         if M0:
                             R0 = pb1.parent.bone.matrix_local
-                            U0 = drvb.parent.bone.matrix_local
                             L1 = R1.inverted() @ R0 @ M0.inverted() @ M1
                         else:
                             print("Missing matrix:", parname)
