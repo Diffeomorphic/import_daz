@@ -33,6 +33,7 @@ def deriveBone(bname, eb0, rig, layer, parent):
 
 
 def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone=None, tailbone=None):
+    print("MK", bname, parent)
     eb = rig.data.edit_bones.new(bname)
     eb.head = head
     eb.tail = tail
@@ -64,19 +65,18 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
                 print("Unknown formula", form)
 
         if GS.ercMethod.startswith("ERC"):
-            defb = rig.data.edit_bones.new(defBone(bname))
-            defb.use_connect = False
-            defb.head = head
-            defb.tail = tail
-            defb.roll = eb.roll
-            defb.parent = parent
-            defb.use_deform = False
-            enableBoneNumLayer(defb, rig, T_ERC)
-            if parent and not isDefBone(parent.name):
-                parent = rig.data.edit_bones.get(defBone(parent.name))
-                if parent:
-                    defb.parent = eb.parent = parent
-            LS.ercFormulas[defb.name] = makeFormula(formula)
+            drvb = rig.data.edit_bones.new(drvBone(bname))
+            drvb.use_connect = False
+            drvb.head = head
+            drvb.tail = tail
+            drvb.roll = eb.roll
+            if parent:
+                parname = ercBase(parent.name)
+                eb.parent = rig.data.edit_bones.get(parname)
+                drvb.parent = rig.data.edit_bones.get(drvBone(parname), eb.parent)
+            drvb.use_deform = False
+            enableBoneNumLayer(drvb, rig, T_HIDDEN)
+            LS.ercFormulas[bname] = makeFormula(formula)
         else:
             LS.ercFormulas[bname] = makeFormula(formula)
     return eb

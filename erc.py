@@ -256,11 +256,15 @@ def addErcDrivers(context, rig):
                     print("Missing ERC driver", bname, bname1, idx)
 
     def addErcBoneDrivers(context, rig):
+        from .rig_utils import copyTransform
         for bname,form in LS.ercFormulas.items():
             pb = rig.pose.bones[bname]
-            pb.driver_remove("location")
+            drvb = rig.pose.bones[drvBone(bname)]
+            drvb.driver_remove("location")
+            drvb.bone.color.palette = 'THEME14'
+            drvb.color.palette = 'THEME14'
             for idx in range(3):
-                fcu = pb.driver_add("location", idx)
+                fcu = drvb.driver_add("location", idx)
                 bname1, bname2 = getBoneNames(form, idx)
                 pb1 = rig.pose.bones.get(bname1)
                 if pb1 is None:
@@ -269,26 +273,27 @@ def addErcDrivers(context, rig):
                 expr = ""
                 vname = "A"
                 for prop,gmats in LS.ercMats.items():
-                    test = bname.startswith(("Foo"))
+                    test = (bname.startswith(("lHand")) and idx==0)
 
                     # M1 = M0 * R0^-1 * R1 * L1
                     # L1 = R1^-1 * R0 * M0^-1 * M1
                     M1 = gmats[bname1]
-                    R1 = pb1.bone.matrix_local
+                    R1 = drvb.bone.matrix_local
                     L1 = R1.inverted() @ M1
                     if test:
-                        print("GG1", bname, bname1, prop, idx)
+                        print("GG1", bname, bname1, pb1.name, prop, idx)
                         print(M1)
                     if pb1.parent:
-                        parname = pb1.parent.name
-                        M0 = gmats.get(parname)
-                        if M0 is None and isDefBone(parname):
-                            M0 = gmats.get(ercBase(parname))
+                        parname = ercBase(pb1.parent.name)
+                        M0 = gmats.get(defBone(parname))
+                        if M0 is None:
+                            M0 = gmats.get(parname)
                         if test:
                             print("PAR", parname)
                             print(M0)
                         if M0:
                             R0 = pb1.parent.bone.matrix_local
+                            U0 = drvb.parent.bone.matrix_local
                             L1 = R1.inverted() @ R0 @ M0.inverted() @ M1
                         else:
                             print("Missing matrix:", parname)
@@ -304,23 +309,8 @@ def addErcDrivers(context, rig):
                     vname = nextLetter(vname)
                 fcu.driver.expression = expr[1:]
 
-        defbones = []
-        for pb in rig.pose.bones:
-            if isDefBone(pb.name) and not pb.constraints:
-                bname = ercBase(pb.name)
-                ercb = rig.pose.bones.get(bname)
-                if ercb:
-                    defbones.append((bname, pb, ercb))
-        for bname, pb, ercb in defbones:
-            ercb.name = ercBone(bname)
-            pb.name = bname
-        for bname, pb, ercb in defbones:
-            updateErcBone(rig, pb, ercb)
-            pb.lock_ik_x = pb.lock_ik_y = pb.lock_ik_z = True
-            cns = getConstraint(ercb, "IK")
-            print("CCNS", ercb.name, cns)
-            if cns:
-                cns.chain_count = 2*cns.chain_count - 1
+            cns = copyTransform(pb, drvb, rig, space='LOCAL')
+            cns.mix_mode = 'BEFORE_FULL'
 
     if GS.ercMethod.startswith("ARMATURE"):
         if LS.ercDrivers:

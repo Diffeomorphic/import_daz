@@ -626,9 +626,8 @@ def makeBonesPosable(rig, ignoreLocked=True):
         if not ES.easy:
             print("  Change constraints")
         store = ConstraintStore()
-        print("BB", bnames)
         for bname in bnames:
-            test = (bname == "lForearmIK")
+            test = False
             pb = rig.pose.bones[bname]
             drvb = rig.pose.bones[drvBone(bname)]
             copyPoseBone(drvb, pb, rig)
