@@ -872,15 +872,14 @@ class DAZ_OT_InspectWorldMatrix(DazOperator, IsObject):
 class DAZ_OT_InspectPoseBoneMatrix(DazOperator, IsArmature):
     bl_idname = "daz.inspect_posebone_matrix"
     bl_label = "Inspect Posebone Matrix"
-    bl_description = "List world matrix of active posebone"
+    bl_description = "List world matrix of selected posebones"
 
     def run(self, context):
         rig = context.object
-        bone = rig.data.bones.active
-        if bone:
-            pb = rig.pose.bones[bone.name]
-            print("Posebone Matrix", pb.name)
-            print(pb.matrix)
+        for pb in rig.pose.bones:
+            if P2B(pb).select:
+                print("Posebone Matrix", pb.name)
+                print(pb.matrix)
 
 
 class DAZ_OT_EnableAllLayers(DazOperator, IsArmature):

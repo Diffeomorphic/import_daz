@@ -12,20 +12,23 @@ from .driver import addDriver, setBoolProp, setFloatProp
 #  Make bone
 #----------------------------------------------------------
 
-def renameBone(bone, bname):
+def renameBone(eb, bname):
     if LS.ercDrivers:
         for idx in range(3):
-            paths = LS.ercDrivers.get("%s:%d" % (bone.name, idx), [])
+            paths = LS.ercDrivers.get("%s:%d" % (eb.name, idx), [])
             LS.ercDrivers["%s:%d" % (bname, idx)] = paths
-        LS.ercFormulas[bname] = ["BONE", bone.name]
-    updateErcMats(bone.name, bname)
-    bone.name = bname
+        LS.ercFormulas[bname] = ["BONE", eb.name]
+    updateErcMats(3*[eb], bname)
+    eb.name = bname
 
 
-def updateErcMats(src, trg):
+def updateErcMats(ebs, bname):
     if LS.ercMats:
         for gmats in LS.ercMats.values():
-            gmats[trg] = gmats[src]
+            #gmats[bname] = gmats[ebs[0].name]
+            gmats[bname] = Matrix()
+            for idx,eb in enumerate(ebs):
+                gmats[bname].row[idx] = gmats[eb.name].row[idx]
 
 
 def deriveBone(bname, eb0, rig, layer, parent):
@@ -33,7 +36,6 @@ def deriveBone(bname, eb0, rig, layer, parent):
 
 
 def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone=None, tailbone=None):
-    print("MK", bname, parent)
     eb = rig.data.edit_bones.new(bname)
     eb.head = head
     eb.tail = tail
@@ -50,13 +52,13 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
 
         def makeFormula(form):
             if isinstance(form, bpy.types.EditBone):
-                updateErcMats(form.name, bname)
+                updateErcMats(3*[form], bname)
                 return ["BONE", form.name]
             elif form[0] == "COMP":
-                updateErcMats(form[1].name, bname)
+                updateErcMats(form[1:], bname)
                 return ["COMP", form[1].name, form[2].name, form[3].name]
             elif form[0] == "MID":
-                updateErcMats(form[1].name, bname)
+                updateErcMats(3*[form[1]], bname)
                 if form[2] is not None:
                     return ["MID", form[1].name, form[2].name]
                 else:

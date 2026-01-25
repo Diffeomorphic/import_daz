@@ -159,7 +159,7 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
     useReverseFoot : BoolProperty(
         name = "Reverse Foot",
         description = "Add reverse foot for IK",
-        default = True)
+        default = False)
 
     def draw(self, context):
         self.layout.prop(self, "useRootBone")

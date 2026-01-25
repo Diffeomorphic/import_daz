@@ -273,7 +273,10 @@ def addErcDrivers(context, rig):
                 expr = ""
                 vname = "A"
                 for prop,gmats in LS.ercMats.items():
-                    test = (bname.startswith(("lHand")) and idx==0)
+                    test = (False and
+                            bname.startswith(("lThigh", "lShin", "lFoot", "lTarsal", "lToe")) and
+                            idx==0 and
+                            prop == "Raw_Massive_Monster")
 
                     # M1 = M0 * R0^-1 * R1 * L1
                     # L1 = R1^-1 * R0 * M0^-1 * M1
@@ -283,8 +286,8 @@ def addErcDrivers(context, rig):
                     if test:
                         print("GG1", bname, bname1, pb1.name, prop, idx)
                         print(M1)
-                    if pb1.parent:
-                        parname = ercBase(pb1.parent.name)
+                    if pb.parent:
+                        parname = ercBase(pb.parent.name)
                         M0 = gmats.get(defBone(parname))
                         if M0 is None:
                             M0 = gmats.get(parname)
@@ -292,9 +295,9 @@ def addErcDrivers(context, rig):
                             print("PAR", parname)
                             print(M0)
                         if M0:
-                            R0 = pb1.parent.bone.matrix_local
+                            R0 = pb.parent.bone.matrix_local
                             L1 = R1.inverted() @ R0 @ M0.inverted() @ M1
-                        else:
+                        elif parname not in ["Root", "Master"]:
                             print("Missing matrix:", parname)
 
                     lloc = L1.to_translation()
