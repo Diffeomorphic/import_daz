@@ -422,7 +422,7 @@ def copyBoneInfo(srcpb, trgpb, usePoseBone=True):
 #   Make bones posable
 #-------------------------------------------------------------
 
-def makeBonesPosable(rig, ignoreLocked=True):
+def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
     def correctDriver(fcu, rig):
         varnames = dict([(var.name,True) for var in fcu.driver.variables])
         for var in fcu.driver.variables:

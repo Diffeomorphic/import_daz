@@ -180,6 +180,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
     def storeState(self, context):
         from ..driver import muteDazFcurves
+        LS.__init__()
         DazPropsOperator.storeState(self, context)
         muteDazFcurves(self.activeObject, True)
 
@@ -189,6 +190,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         rig = self.activeObject
         muteDazFcurves(rig, dazRna(rig).DazDriversDisabled)
         DazPropsOperator.restoreState(self, context)
+        LS.__init__()
 
 
     def createBoneGroups(self, rig):
@@ -208,24 +210,20 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     def run(self, context):
         from ..merge_rigs import applyTransformToObjects, restoreTransformsToObjects
         rig = context.object
-        LS.__init__()
-        wmats = applyTransformToObjects(context, [rig])
-        try:
-            self.makeMhx(context, rig)
-        finally:
-            restoreTransformsToObjects(wmats)
-            LS.__init__()
-
-
-    def makeMhx(self, context, rig):
+        if dazRna(rig.data).DazErcStatus > 0:
+            raise DazError("MHX is incompatible with rigs with ERC bones")
+        else:
+            keep = GS.ercMethod.startswith("ARMATURE")
         startProgress("Convert %s to MHX" % rig.name)
         t1 = perf_counter()
-        self.initFixer(GS.ercMethod.startswith("ARMATURE"))
+        self.initFixer(keep)
+        wmats = applyTransformToObjects(context, [rig])
         self.createTmp()
         try:
             self.convertMhx(context)
         finally:
             self.deleteTmp()
+            restoreTransformsToObjects(wmats)
         t2 = perf_counter()
         showProgress(25, 28, "MHX rig created in %.1f seconds" % (t2-t1))
         endProgress()

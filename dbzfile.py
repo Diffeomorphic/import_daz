@@ -532,7 +532,7 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
         expr.props.append(target)
         try:
             lm.createTmp()
-            if GS.ercMethod == 'TRANSLATION':
+            if GS.ercMethod.startswith('TRANSLATION'):
                 self.makeErcFormulas(context, rig, meshes, lm, expr, restdata)
             elif GS.ercMethod.startswith("ARMATURE"):
                 self.makeOffsetFormulas(rig, lm, expr, restdata)

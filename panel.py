@@ -65,7 +65,6 @@ class DAZ_PT_SetupCorrections(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.lock_all_channels")
         self.layout.operator("daz.add_erc_bones")
-        self.layout.operator("daz.update_erc_bones")
 
 #----------------------------------------------------------
 #   Materials
@@ -157,6 +156,7 @@ class DAZ_PT_SetupFinishing(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.finalize_meshes")
         self.layout.separator()
         self.layout.operator("daz.remove_posable_bones")
+        self.layout.operator("daz.update_erc_bones")
         self.layout.operator("daz.make_all_bones_posable")
         self.layout.operator("daz.optimize_drivers")
         self.layout.operator("daz.remove_corrupt_drivers")

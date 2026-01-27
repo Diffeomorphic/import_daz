@@ -17,6 +17,14 @@ class DAZ_OT_AddErcBones(DazPropsOperator, IsArmature):
     bl_description = "Add ERC bones"
     bl_options = {'UNDO'}
 
+    @classmethod
+    def poll(self, context):
+        rig = context.object
+        return (rig and
+                rig.type == 'ARMATURE' and
+                GS.ercMethod.startswith("ERC") and
+                dazRna(rig.data).DazErcStatus == 0)
+
     useParents : BoolProperty(
         name = "Parents",
         description = "ERC bones have the same parents as the original bones and copy their rotations",
@@ -59,18 +67,22 @@ def addErcBones(rig, useParents):
 #  Update ERC bones
 #-------------------------------------------------------------
 
-class DAZ_OT_UpdateErcBones(DazPropsOperator, PosableMaker, IsArmature):
+class DAZ_OT_UpdateErcBones(DazPropsOperator, PosableMaker):
     bl_idname = "daz.update_erc_bones"
     bl_label = "Update ERC Bones"
     bl_description = "Update ERC bones"
     bl_options = {'UNDO'}
 
+    @classmethod
+    def poll(self, context):
+        rig = context.object
+        return (rig and
+                rig.type == 'ARMATURE' and
+                GS.ercMethod.startswith("ERC") and
+                dazRna(rig.data).DazErcStatus == 1)
+
     def run(self, context):
         rig = context.object
-        if dazRna(rig.data).DazErcStatus == 0:
-            raise DazError("Rig does not have ERC bones")
-        elif dazRna(rig.data).DazErcStatus == 2:
-            raise DazError("ERC bones have already been updated")
         if self.useMakePosable:
             removePosableBones(rig)
         updateErcBones(rig)
@@ -78,6 +90,7 @@ class DAZ_OT_UpdateErcBones(DazPropsOperator, PosableMaker, IsArmature):
 
 
 def updateErcBones(rig):
+    from .store import copyConstraint, removeConstraints
     ercbones = [pb for pb in rig.pose.bones if isErcBone(pb.name)]
     basebones = [rig.pose.bones.get(ercBase(pb.name)) for pb in ercbones]
     for pb, ercb in zip(basebones, ercbones):
@@ -92,12 +105,6 @@ def updateErcBones(rig):
         if isDrvBone(eb.name) and "tongue" not in eb.name:
             rig.data.edit_bones.remove(eb)
     setMode('OBJECT')
-    coll = rig.data.collections.get(T_BONES)
-    if coll:
-        coll.is_visible = False
-    coll = rig.data.collections.get(T_ERC)
-    if coll:
-        coll.is_visible = True
     dazRna(rig.data).DazErcStatus = 2
 
 
@@ -158,7 +165,8 @@ def updateErcBone(rig, pb, ercb):
     ercb.name = bname
     copyBoneInfo(pb, ercb)
     copyBoneLayers(pb, ercb, rig)
-    enableBoneNumLayer(pb.bone, rig, T_BONES)
+    enableBoneNumLayer(ercb.bone, rig, T_BONES)
+    enableBoneNumLayer(pb.bone, rig, T_ERC)
     pb.bone.color.palette = 'THEME04'
     pb.color.palette = 'THEME04'
     if drvb != pb:

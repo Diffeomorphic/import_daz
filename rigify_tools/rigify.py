@@ -258,6 +258,8 @@ class MetaMaker(RigifyCommon):
 
         print("Create metarig")
         rig = context.object
+        if dazRna(rig.data).DazErcStatus > 0:
+            raise DazError("Rigify is incompatible with rigs with ERC bones")
         wmats = applyTransformToObjects(context, [rig])
         self.setupDazSkeleton(rig)
         scale = GS.scale

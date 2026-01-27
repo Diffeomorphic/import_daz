@@ -471,7 +471,7 @@ class LoadMorph(DriverUser):
             skey.name = prop
             self.setShapeLimits(skey, asset)
             self.shapekeys[prop] = skey
-            if GS.ercMethod == 'TRANSLATION' and not self.disableErc:
+            if GS.ercMethod.startswith('TRANSLATION') and not self.disableErc:
                 pass
             elif self.bodypart == "Face":
                 self.faceshapes[skey.name] = True
@@ -553,13 +553,13 @@ class LoadMorph(DriverUser):
                         self.erc = True
                         if GS.ercMethod == 'ARMATURE_ALL':
                             self.makeOffsetFormula("HdOffset", output, idx, expr)
-                        elif GS.ercMethod == 'ERC_ALL':
+                        elif GS.ercMethod in ['TRANSLATION_ALL', 'ERC_ALL']:
                             self.makeErcFormula(output, idx, expr)
                         elif self.disableErc:
                             pass
-                        elif GS.ercMethod in ['TRANSLATION', 'ERC_BONES']:
+                        elif GS.ercMethod in ['TRANSLATION_CUSTOM', 'ERC_CUSTOM']:
                             self.makeErcFormula(output, idx, expr)
-                        elif GS.ercMethod == 'ARMATURE':
+                        elif GS.ercMethod == 'ARMATURE_CUSTOM':
                             self.makeOffsetFormula("HdOffset", output, idx, expr)
                     elif key == "extra/studio_node_channels/channels/Visible":
                         self.hideDrivers[output] = []
@@ -739,7 +739,7 @@ class LoadMorph(DriverUser):
     def makeErcFormula(self, bname, idx, expr):
         tfm,pb,prop,factor = self.getBoneData(bname, expr)
         self.ercMorphs[prop] = self.ercBones
-        if GS.ercMethod in ['ERC_BONES', 'ERC_ALL']:
+        if GS.ercMethod in ['ERC_CUSTOM', 'ERC_ALL']:
             pb = self.rig.pose.bones.get(ercBone(bname))
             if pb is None:
                 return

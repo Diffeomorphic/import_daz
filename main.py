@@ -661,10 +661,15 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
         description = "Merge all rigs to the main character rig",
         default = True)
 
-    useErcBones : BoolProperty(
-        name = "ERC Bones",
+    useAddErcBones : BoolProperty(
+        name = "Add ERC Bones",
         description = "Add bones for ERC morphs",
         default = True)
+
+    useUpdateErcBones : BoolProperty(
+        name = "Update ERC Bones",
+        description = "Update ERC bones after ERC morphs have been imported.\nFurther ERC morphs can not be loaded afterwards",
+        default = False)
 
     useApplyTransforms : BoolProperty(
         name = "Apply Transforms",
@@ -760,7 +765,9 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
             self.subprop("useTieRigs")
         self.layout.prop(self, "useMergeToes")
         if GS.ercMethod.startswith("ERC"):
-            self.layout.prop(self, "useErcBones")
+            self.layout.prop(self, "useAddErcBones")
+            if self.useAddErcBones:
+                self.layout.prop(self, "useUpdateErcBones")
         self.layout.separator()
         self.layout.prop(self, "useFavoMorphs")
         if self.useFavoMorphs:
@@ -921,7 +928,7 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
                 if self.useMergeToes:
                     print("Merge toes")
                     bpy.ops.daz.merge_toes()
-                if self.useErcBones and GS.ercMethod.startswith("ERC"):
+                if self.useAddErcBones and GS.ercMethod.startswith("ERC"):
                     from .erc import addErcBones
                     addErcBones(mainRig, True)
 
@@ -1134,6 +1141,9 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
 
         # Make all bones posable and final optimization
         if mainRig and activateObject(context, mainRig):
+            if self.useUpdateErcBones and GS.ercMethod.startswith("ERC"):
+                from .erc import updateErcBones
+                updateErcBones(mainRig)
             if self.useFinalOptimization:
                 bpy.ops.daz.finalize_meshes()
             self.makePosable(context, mainRig, useActivate=False, useEasy=True)

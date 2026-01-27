@@ -17,18 +17,21 @@ def renameBone(eb, bname):
         for idx in range(3):
             paths = LS.ercDrivers.get("%s:%d" % (eb.name, idx), [])
             LS.ercDrivers["%s:%d" % (bname, idx)] = paths
-        LS.ercFormulas[bname] = ["BONE", eb.name]
-    updateErcMats(3*[eb], bname)
+        LS.ercFormulas[bname] = form = ["BONE", eb.name]
+        updateErcMats(form, bname)
     eb.name = bname
 
 
-def updateErcMats(ebs, bname):
+def updateErcMats(form, bname):
     if LS.ercMats:
-        for gmats in LS.ercMats.values():
-            #gmats[bname] = gmats[ebs[0].name]
-            gmats[bname] = Matrix()
-            for idx,eb in enumerate(ebs):
-                gmats[bname].row[idx] = gmats[eb.name].row[idx]
+        if form[0] in ["BONE", "MID"]:
+            for gmats in LS.ercMats.values():
+                gmats[bname] = gmats[form[1]]
+        elif form[0] == "COMP":
+            for gmats in LS.ercMats.values():
+                gmats[bname] = Matrix()
+                for idx,fname in enumerate(form[1:]):
+                    gmats[bname].row[idx] = gmats[fname].row[idx]
 
 
 def deriveBone(bname, eb0, rig, layer, parent):
@@ -52,19 +55,19 @@ def makeBone(bname, rig, head, tail, roll, layer, parent, formula=None, headbone
 
         def makeFormula(form):
             if isinstance(form, bpy.types.EditBone):
-                updateErcMats(3*[form], bname)
-                return ["BONE", form.name]
+                data = ["BONE", form.name]
             elif form[0] == "COMP":
-                updateErcMats(form[1:], bname)
-                return ["COMP", form[1].name, form[2].name, form[3].name]
+                data = ["COMP", form[1].name, form[2].name, form[3].name]
             elif form[0] == "MID":
-                updateErcMats(3*[form[1]], bname)
-                if form[2] is not None:
-                    return ["MID", form[1].name, form[2].name]
+                if form[2]:
+                    data = ["MID", form[1].name, form[2].name]
                 else:
-                    return ["BONE", form[1].name]
+                    data = ["BONE", form[1].name]
             else:
                 print("Unknown formula", form)
+                return []
+            updateErcMats(data, bname)
+            return data
 
         if GS.ercMethod.startswith("ERC"):
             drvb = rig.data.edit_bones.new(drvBone(bname))

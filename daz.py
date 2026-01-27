@@ -329,11 +329,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     ercMethod : EnumProperty(
         items = [('NONE', "None", "ERC morphs are ignored"),
-                 ('TRANSLATION', "Translation", "ERC morphs are translations"),
-                 ('ERC_BONES', "ERC Custom", "ERC morphs affect ERC bones (custom morphs only)"),
+                 ('TRANSLATION_CUSTOM', "Translation Custom", "ERC morphs are translations (custom morphs only)"),
+                 ('TRANSLATION_ALL', "Translation All", "ERC morphs are translations (all morphs)"),
+                 ('ERC_CUSTOM', "ERC Custom", "ERC morphs affect ERC bones (custom morphs only)"),
                  ('ERC_ALL', "ERC All", "ERC morphs affect ERC bones (all morphs)"),
-                 ('ARMATURE', "Armature Custom", "Custom ERC morphs change the rest pose"),
-                 ('ARMATURE_ALL', "Armature All", "All ERC morphs change the rest pose")],
+                 ('ARMATURE_CUSTOM', "Armature Custom", "ERC morphs change the rest pose (custom morphs only)"),
+                 ('ARMATURE_ALL', "Armature All", "ERC morphs change the rest pose (all morphs)")],
         name = "ERC Method",
         description = "Support for ERC morphs that change the rest pose")
 

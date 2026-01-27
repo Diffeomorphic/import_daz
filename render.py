@@ -351,7 +351,7 @@ class DAZ_OT_RenderFrames(bpy.types.Operator):
         context.evaluated_depsgraph_get().update()
         scn.render.filepath = "%s%04d" % (self.filepath, scn.frame_current)
         try:
-            if self.rigs and GS.ercMethod.startswith("Armature"):
+            if self.rigs and GS.ercMethod.startswith("ARMATURE"):
                 from .runtime.morph_armature import onFrameChangeDaz
                 onFrameChangeDaz(scn)
             if self.useOpenGl:
