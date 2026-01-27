@@ -667,7 +667,12 @@ def dspBone(string):
     return "%s(dsp)" % string
 
 def nextLetter(char):
-    return ("f" if char == "d" else chr(ord(char) + 1))
+    if char == "Z":
+        return "a"
+    elif char == "d":
+        return "f"
+    else:
+        return chr(ord(char) + 1)
 
 def isSimpleType(x):
     return (isinstance(x, (int, float, str, bool)) or x is None)

@@ -450,7 +450,7 @@ class DAZ_OT_AddShapeVisDrivers(DazOperator, ShapekeySelector):
                 for prop in props:
                     addDriverVar(fcu, letter, propRef(prop), rig)
                     expr = expr + "*(1-%s)" % letter
-                    letter = chr(ord(letter)+1)
+                    letter = nextLetter(letter)
                 if rig and final in rig.data.keys():
                     addDriverVar(fcu, letter, propRef(final), rig.data)
                     expr = expr + "+%s" % letter

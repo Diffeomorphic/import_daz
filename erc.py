@@ -208,8 +208,11 @@ def initErcDrivers(context, rig):
                         ercpaths.add(trg.data_path)
 
         LS.ercMats = {}
+        print("Setting up ERC matrices")
         for path in ercpaths:
             prop = baseProp(getProp(path))
+            if prop.lower().startswith(("ectrl", "phm", "ephm", "facs")):
+                continue
             setProp(rig, prop)
             updateRigDrivers(context, rig)
             LS.ercMats[prop] = dict([(pb.name, pb.matrix.copy()) for pb in rig.pose.bones])
@@ -309,6 +312,8 @@ def addErcDrivers(context, rig):
                             print("Missing matrix:", parname)
 
                     lloc = L1.to_translation()
+                    if abs(lloc[idx]) < 0.01*GS.scale:  # 0.1 mm
+                        continue
                     expr += "+%.3f*%s" % (lloc[idx], vname)
                     var = fcu.driver.variables.new()
                     var.name = vname
@@ -317,7 +322,13 @@ def addErcDrivers(context, rig):
                     trg.id = rig
                     trg.data_path = propRef(prop)
                     vname = nextLetter(vname)
-                fcu.driver.expression = expr[1:]
+                    if len(expr) > 246:
+                        print("Exceeded driver limit:", bname, idx, len(expr))
+                        break
+                if expr == "":
+                    drvb.driver_remove("location", idx)
+                else:
+                    fcu.driver.expression = expr[1:]
 
             cns = copyTransform(pb, drvb, rig, space='LOCAL')
             cns.mix_mode = 'BEFORE_FULL'
