@@ -491,7 +491,7 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
                 return True
         return False
 
-    def updateScriptedDrivers(rna, drvuser):
+    def updateScriptedDrivers(rna, bnames, drvuser):
         if rna.animation_data:
             fcus = [fcu for fcu in rna.animation_data.drivers
                     if fcu.driver.type == 'SCRIPTED']
@@ -657,7 +657,7 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
         restoreBoneSumDrivers(rig, sumDrivers, drvuser)
         if not ES.easy:
             print("  Update scripted drivers")
-        updateScriptedDrivers(rig.data, drvuser)
+        updateScriptedDrivers(rig.data, bnames, drvuser)
         if not ES.easy:
             print("  Update ERC bones")
         updateErcBones(rig)
