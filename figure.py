@@ -7,7 +7,6 @@ from mathutils import *
 from .utils import *
 from .error import *
 from .node import Node, Instance
-from .driver import DriverUser
 
 #-------------------------------------------------------------
 #   FigureInstance
@@ -423,6 +422,9 @@ def copyBoneInfo(srcpb, trgpb, usePoseBone=True):
 #-------------------------------------------------------------
 
 def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
+    from .driver import DriverUser
+    drvuser = DriverUser()
+
     def correctDriver(fcu, rig):
         varnames = dict([(var.name,True) for var in fcu.driver.variables])
         for var in fcu.driver.variables:
@@ -456,7 +458,7 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
     def combineDrvSimple(fcu, var, trg, varnames):
         if var.name == "parscale":
             return
-        bones = getTargetBones(fcu)
+        bones = drvuser.getTargetBones(fcu)
         if trg.bone_target in bones:
             return
         from .driver import Target
@@ -491,7 +493,7 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
                 return True
         return False
 
-    def updateScriptedDrivers(rna, bnames, drvuser):
+    def updateScriptedDrivers(rna, bnames):
         if rna.animation_data:
             fcus = [fcu for fcu in rna.animation_data.drivers
                     if fcu.driver.type == 'SCRIPTED']
@@ -527,7 +529,7 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
         removeDriverFCurves(sumFcus.values(), rig)
         return boneDrivers, sumDrivers
 
-    def restoreBoneSumDrivers(rig, drivers, drvuser):
+    def restoreBoneSumDrivers(rig, drivers):
         for bname,bdrivers in drivers.items():
             pb = rig.pose.bones[drvBone(bname)]
             for driver in bdrivers:
@@ -597,7 +599,7 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
                     bnames.add(bname)
         return bnames
 
-    def addExtraBones(rig, drvuser, ignoreLocked):
+    def addExtraBones(rig, ignoreLocked):
         from .driver import getShapekeyDriver
         from .store import ConstraintStore, removeConstraints
         if dazRna(rig.data).DazExtraDrivenBones:
@@ -651,13 +653,13 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
 
         if not ES.easy:
             print("  Restore bone drivers")
-        restoreBoneSumDrivers(rig, boneDrivers, drvuser)
+        restoreBoneSumDrivers(rig, boneDrivers)
         if not ES.easy:
             print("  Restore sum drivers")
-        restoreBoneSumDrivers(rig, sumDrivers, drvuser)
+        restoreBoneSumDrivers(rig, sumDrivers)
         if not ES.easy:
             print("  Update scripted drivers")
-        updateScriptedDrivers(rig.data, bnames, drvuser)
+        updateScriptedDrivers(rig.data, bnames)
         if not ES.easy:
             print("  Update ERC bones")
         updateErcBones(rig)
@@ -712,14 +714,13 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
                         cns.driver_remove(channel)
 
     t1 = perf_counter()
-    drvuser = DriverUser()
     drvuser.initTmp()
     oldvis = getRigLayers(rig)
     enableAllRigLayers(rig)
     success = False
     drvuser.createTmp()
     try:
-        addExtraBones(rig, drvuser, ignoreLocked)
+        addExtraBones(rig, ignoreLocked)
         success = True
     finally:
         drvuser.deleteTmp()

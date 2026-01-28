@@ -977,8 +977,8 @@ class WidgetConverter:
         activateObject(context, rig)
         setMode('EDIT')
         for bname,gzm in self.gizmos:
-            if bname in rig.data.edit_bones.keys():
-                eb = rig.data.edit_bones[bname]
+            eb = rig.data.edit_bones.get(bname)
+            if eb:
                 eb.use_deform = False
 
         setMode('OBJECT')
@@ -987,8 +987,8 @@ class WidgetConverter:
         self.getDrivers(rig.data)
         self.unused = {}
         for bname,gzm in self.gizmos:
-            if bname in rig.pose.bones.keys():
-                pb = rig.pose.bones[bname]
+            pb = rig.pose.bones.get(bname)
+            if pb:
                 pb.custom_shape = gzm
                 scale = GS.scale / pb.bone.length
                 setCustomShapeTransform(pb, scale)
