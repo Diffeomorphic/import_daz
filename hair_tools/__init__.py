@@ -12,7 +12,11 @@ BLENDER3 = (bpy.app.version < (4,0,0))
 
 if DEBUG and "HairToolsFeature" in locals():
     print("Reloading Hair Tools")
-    import imp
+    if bpy.app.version < (5,0,0):
+        import imp
+    else:
+        import importlib
+        imp = importlib
     imp.reload(hair_nodes)
     imp.reload(hair_builder)
     imp.reload(make_hair)

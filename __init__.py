@@ -69,54 +69,50 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "hd_data", "framer", "scan", "api",
     ]
 
+Features = [
+    "rig_tools", "simple_ik_tools", "mhx_tools",
+    "rigify_tools", "pose_tools", "facs_tools", "object_tools",
+    "material_tools", "shell_tools", "mesh_tools",
+    "morph_tools", "hair_tools", "visibility_tools",
+    "hd_tools", "simulation_tools", "export_tools",
+]
+
+UseFeatures = [
+    "useRigTools", "useSimpleIkTools", "useMhxTools",
+    "useRigifyTools", "usePoseTools", "useFacsTools", "useObjectTools",
+    "useMaterialTools", "useShellTools", "useMeshTools",
+    "useMorphTools", "useHairTools", "useVisibilityTools",
+    "useHDTools", "useSimulationTools", "useExportTools",
+]
+
+
 from .debug import DEBUG
 
 if not DEBUG:
     pass
 elif "bpy" in locals():
     print("Reloading DAZ Importer v %d.%d.%d" % bl_info["version"])
-    import imp
-    for modname in Modules:
-        exec("imp.reload(%s)" % modname)
-    imp.reload(runtime.morph_armature)
-    imp.reload(simple_ik_tools)
-    imp.reload(mhx_tools)
-    imp.reload(rigify_tools)
-    imp.reload(rig_tools)
-    imp.reload(pose_tools)
-    imp.reload(facs_tools)
-    imp.reload(object_tools)
-    imp.reload(material_tools)
-    imp.reload(mesh_tools)
-    imp.reload(morph_tools)
-    imp.reload(hair_tools)
-    imp.reload(visibility_tools)
-    imp.reload(hd_tools)
-    imp.reload(simulation_tools)
-    imp.reload(export_tools)
-    imp.reload(shell_tools)
-
+    if bpy.app.version < (5,0,0):
+        import imp
+        for modname in Modules:
+            exec("imp.reload(%s)" % modname)
+        imp.reload(runtime.morph_armature)
+        for feature in Features:
+            exec("imp.reload(%s)" % feature)
+    else:
+        import importlib
+        for modname in Modules:
+            exec("importlib.reload(%s)" % modname)
+        importlib.reload(runtime.morph_armature)
+        for feature in Features:
+            exec("importlib.reload(%s)" % feature)
 else:
     print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
     for modname in Modules:
         exec("from . import %s" % modname)
     from .runtime import morph_armature
-    from . import simple_ik_tools
-    from . import mhx_tools
-    from . import rigify_tools
-    from . import rig_tools
-    from . import pose_tools
-    from . import facs_tools
-    from . import object_tools
-    from . import material_tools
-    from . import mesh_tools
-    from . import morph_tools
-    from . import hair_tools
-    from . import visibility_tools
-    from . import hd_tools
-    from . import simulation_tools
-    from . import export_tools
-    from . import shell_tools
+    for feature in Features:
+        exec("from . import %s" % feature)
 
 
 import bpy
@@ -183,13 +179,6 @@ def toggleModule(module, enable):
     else:
         exec("%s.unregister()" % module)
 
-
-theFeatures = ["useRigTools", "useSimpleIkTools", "useMhxTools",
-               "useRigifyTools", "usePoseTools", "useFacsTools", "useObjectTools",
-               "useMaterialTools", "useShellTools", "useMeshTools",
-               "useMorphTools", "useHairTools", "useVisibilityTools",
-               "useHDTools", "useSimulationTools", "useExportTools",
-              ]
 
 def updateSettings(self, context):
     GS.getSettingsDir(context)
@@ -322,8 +311,8 @@ class DazPreferences(bpy.types.AddonPreferences):
         row.operator("daz.enable_all_features")
         row.operator("daz.diaable_all_features")
         self.layout.label(text = "Features:")
-        for feature in theFeatures:
-            self.layout.prop(self, feature)
+        for use in UseFeatures:
+            self.layout.prop(self, use)
 
 
 class DAZ_OT_EnableAllFeatures(bpy.types.Operator):
@@ -332,8 +321,8 @@ class DAZ_OT_EnableAllFeatures(bpy.types.Operator):
 
     def execute(self, context):
         global thePrefs
-        for feature in theFeatures:
-            setattr(thePrefs, feature, True)
+        for use in UseFeatures:
+            setattr(thePrefs, use, True)
         return {'PASS_THROUGH'}
 
 
@@ -343,8 +332,8 @@ class DAZ_OT_DisableAllFeatures(bpy.types.Operator):
 
     def execute(self, context):
         global thePrefs
-        for feature in theFeatures:
-            setattr(thePrefs, feature, False)
+        for use in UseFeatures:
+            setattr(thePrefs, use, False)
         return {'PASS_THROUGH'}
 
 #----------------------------------------------------------
@@ -376,54 +365,10 @@ def register():
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
     if prefs:
-        if prefs.useSimpleIkTools:
-            from . import simple_ik_tools
-            simple_ik_tools.register()
-        if prefs.useMhxTools:
-            from . import mhx_tools
-            mhx_tools.register()
-        if prefs.useRigifyTools:
-            from . import rigify_tools
-            rigify_tools.register()
-        if prefs.useRigTools:
-            from . import rig_tools
-            rig_tools.register()
-        if prefs.usePoseTools:
-            from . import pose_tools
-            pose_tools.register()
-        if prefs.useFacsTools:
-            from . import facs_tools
-            facs_tools.register()
-        if prefs.useObjectTools:
-            from . import object_tools
-            object_tools.register()
-        if prefs.useMaterialTools:
-            from . import material_tools
-            material_tools.register()
-        if prefs.useMeshTools:
-            from . import mesh_tools
-            mesh_tools.register()
-        if prefs.useMorphTools:
-            from . import morph_tools
-            morph_tools.register()
-        if prefs.useHairTools:
-            from . import hair_tools
-            hair_tools.register()
-        if prefs.useVisibilityTools:
-            from . import visibility_tools
-            visibility_tools.register()
-        if prefs.useHDTools:
-            from . import hd_tools
-            hd_tools.register()
-        if prefs.useSimulationTools:
-            from . import simulation_tools
-            simulation_tools.register()
-        if prefs.useExportTools:
-            from . import export_tools
-            export_tools.register()
-        if prefs.useShellTools:
-            from . import shell_tools
-            shell_tools.register()
+        for feature,use in zip(Features, UseFeatures):
+            if getattr(prefs, use):
+                exec("from . import %s" % feature)
+                exec("%s.register" % feature)
 
     GS.getSettingsDir(bpy.context)
     GS.loadDefaults()
@@ -444,54 +389,10 @@ def unregister():
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
     if prefs:
-        if prefs.useSimpleIkTools:
-            from . import simple_ik_tools
-            simple_ik_tools.unregister()
-        if prefs.useMhxTools:
-            from . import mhx_tools
-            mhx_tools.unregister()
-        if prefs.useRigifyTools:
-            from . import rigify_tools
-            rigify_tools.unregister()
-        if prefs.useRigTools:
-            from . import rig_tools
-            rig_tools.unregister()
-        if prefs.usePoseTools:
-            from . import pose_tools
-            pose_tools.unregister()
-        if prefs.useFacsTools:
-            from . import facs_tools
-            facs_tools.unregister()
-        if prefs.useObjectTools:
-            from . import object_tools
-            object_tools.unregister()
-        if prefs.useMaterialTools:
-            from . import material_tools
-            material_tools.unregister()
-        if prefs.useMeshTools:
-            from . import mesh_tools
-            mesh_tools.unregister()
-        if prefs.useMorphTools:
-            from . import morph_tools
-            morph_tools.unregister()
-        if prefs.useHairTools:
-            from . import hair_tools
-            hair_tools.unregister()
-        if prefs.useVisibilityTools:
-            from . import visibility_tools
-            visibility_tools.unregister()
-        if prefs.useHDTools:
-            from . import hd_tools
-            hd_tools.unregister()
-        if prefs.useSimulationTools:
-            from . import simulation_tools
-            simulation_tools.unregister()
-        if prefs.useExportTools:
-            from . import export_tools
-            export_tools.unregister()
-        if prefs.useShellTools:
-            from . import shell_tools
-            shell_tools.unregister()
+        for feature,use in zip(Features, UseFeatures):
+            if getattr(prefs, use):
+                exec("from . import %s" % feature)
+                exec("%s.unregister" % feature)
     bpy.utils.unregister_class(DazPreferences)
 
 

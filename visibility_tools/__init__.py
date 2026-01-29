@@ -10,7 +10,12 @@ from ..debug import DEBUG
 
 if DEBUG and "VisibilityToolsFeature" in locals():
     print("Reloading Visibility Tools")
-    import imp
+    import bpy
+    if bpy.app.version < (5,0,0):
+        import imp
+    else:
+        import importlib
+        imp = importlib
     imp.reload(hide)
     imp.reload(hide_mod)
 else:

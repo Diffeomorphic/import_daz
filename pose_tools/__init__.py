@@ -10,7 +10,12 @@ from ..debug import DEBUG
 
 if DEBUG and "PoseToolsFeature" in locals():
     print("Reloading Pose Tools")
-    import imp
+    import bpy
+    if bpy.app.version < (5,0,0):
+        import imp
+    else:
+        import importlib
+        imp = importlib
     imp.reload(save_poses)
     imp.reload(mute)
     imp.reload(gaze)

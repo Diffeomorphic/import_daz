@@ -10,7 +10,12 @@ from ..debug import DEBUG
 
 if DEBUG and "RigifyFeature" in locals():
     print("Reloading Rigify Tools")
-    import imp
+    import bpy
+    if bpy.app.version < (5,0,0):
+        import imp
+    else:
+        import importlib
+        imp = importlib
     imp.reload(rigify)
     imp.reload(rigify_snap)
     imp.reload(panel)

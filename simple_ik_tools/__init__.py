@@ -10,7 +10,12 @@ from ..debug import DEBUG
 
 if DEBUG and "SimpleIkFeature" in locals():
     print("Reloading Simple IK Tools")
-    import imp
+    import bpy
+    if bpy.app.version < (5,0,0):
+        import imp
+    else:
+        import importlib
+        imp = importlib
     imp.reload(simple)
     imp.reload(panel)
 else:

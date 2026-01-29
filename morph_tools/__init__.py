@@ -10,7 +10,12 @@ from ..debug import DEBUG
 
 if DEBUG and "MorphFeature" in locals():
     print("Reloading Morph Tools")
-    import imp
+    import bpy
+    if bpy.app.version < (5,0,0):
+        import imp
+    else:
+        import importlib
+        imp = importlib
     imp.reload(category)
     imp.reload(shapekeys)
     imp.reload(morph_panel)
