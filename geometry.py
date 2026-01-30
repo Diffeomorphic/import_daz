@@ -1266,8 +1266,8 @@ class Geometry(Asset, Channels):
         if len(faces) != len(me.polygons):
             msg = ("Not all faces were created:\n" +
                    "Geometry: '%s'\n" % self.name +
-                   "\# DAZ faces: %d\n" % len(faces) +
-                   "\# Blender polygons: %d\n" % len(me.polygons))
+                   "DAZ faces: %d\n" % len(faces) +
+                   "Blender polygons: %d\n" % len(me.polygons))
             reportError(msg)
 
         if len(me.polygons) > 0:

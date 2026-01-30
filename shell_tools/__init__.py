@@ -10,8 +10,7 @@ if DEBUG and "ShellEditFeature" in locals():
     if bpy.app.version < (5,0,0):
         import imp
     else:
-        import importlib
-        imp = importlib
+        import importlib as imp
     imp.reload(shell)
     imp.reload(import_shell)
     imp.reload(lie)

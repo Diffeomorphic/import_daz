@@ -144,6 +144,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         description = "Raise error for missing bones",
         default = True)
 
+    useErcBones : BoolProperty(
+        name = "ERC Bones (Experimental)",
+        description = "Allow MHX generation for rigs with ERC bones",
+        default = False)
+
     @classmethod
     def poll(self, context):
         ob = context.object
@@ -171,6 +176,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         if not BLENDER4:
             self.layout.prop(self, "useDisplayTransform")
         self.layout.prop(self, "useRaiseError")
+        if GS.ercMethod.startswith("ERC"):
+            self.layout.prop(self, "useErcBones")
 
 
     def invoke(self, context, event):
@@ -210,7 +217,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
     def run(self, context):
         from ..merge_rigs import applyTransformToObjects, restoreTransformsToObjects
         rig = context.object
-        if dazRna(rig.data).DazErcStatus > 0:
+        if dazRna(rig.data).DazErcStatus > 0 and not self.useErcBones:
             raise DazError("MHX is incompatible with rigs with ERC bones")
         else:
             keep = GS.ercMethod.startswith("ARMATURE")
@@ -1998,7 +2005,9 @@ classes = [
 ]
 
 def register():
+    print("MHX REG")
     for cls in classes:
+        print("CLS", cls)
         bpy.utils.register_class(cls)
 
 

@@ -14,8 +14,7 @@ if DEBUG and "HDFeature" in locals():
     if bpy.app.version < (5,0,0):
         import imp
     else:
-        import importlib
-        imp = importlib
+        import importlib as imp
     imp.reload(hd_morphs)
 else:
     print("Loading HD Tools")

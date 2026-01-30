@@ -94,18 +94,13 @@ elif "bpy" in locals():
     print("Reloading DAZ Importer v %d.%d.%d" % bl_info["version"])
     if bpy.app.version < (5,0,0):
         import imp
-        for modname in Modules:
-            exec("imp.reload(%s)" % modname)
-        imp.reload(runtime.morph_armature)
-        for feature in Features:
-            exec("imp.reload(%s)" % feature)
     else:
-        import importlib
-        for modname in Modules:
-            exec("importlib.reload(%s)" % modname)
-        importlib.reload(runtime.morph_armature)
-        for feature in Features:
-            exec("importlib.reload(%s)" % feature)
+        import importlib as imp
+    for modname in Modules:
+        exec("imp.reload(%s)" % modname)
+    imp.reload(runtime.morph_armature)
+    for feature in Features:
+        exec("imp.reload(%s)" % feature)
 else:
     print("\nLoading DAZ Importer v %d.%d.%d" % bl_info["version"])
     for modname in Modules:
@@ -368,7 +363,7 @@ def register():
         for feature,use in zip(Features, UseFeatures):
             if getattr(prefs, use):
                 exec("from . import %s" % feature)
-                exec("%s.register" % feature)
+                exec("%s.register()" % feature)
 
     GS.getSettingsDir(bpy.context)
     GS.loadDefaults()
@@ -392,7 +387,7 @@ def unregister():
         for feature,use in zip(Features, UseFeatures):
             if getattr(prefs, use):
                 exec("from . import %s" % feature)
-                exec("%s.unregister" % feature)
+                exec("%s.unregister()" % feature)
     bpy.utils.unregister_class(DazPreferences)
 
 
