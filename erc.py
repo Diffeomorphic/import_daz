@@ -346,7 +346,7 @@ def addErcDrivers(context, rig):
 class DAZ_OT_RemovePosableBones(DazOperator, IsArmature):
     bl_idname = "daz.remove_posable_bones"
     bl_label = "Remove Posable Bones"
-    bl_description = "Remove Posable Bones"
+    bl_description = "Remove driven (drv) bones and drive the posable bones.\nThis undoes Make All Bones Posable"
     bl_options = {'UNDO'}
 
     def run(self, context):

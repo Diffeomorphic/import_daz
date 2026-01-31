@@ -76,7 +76,6 @@ def setDriverModes(rig, rotmode, useAll):
     for ob in getShapeChildren(rig):
         setModes(ob.data.shape_keys)
 
-
 #----------------------------------------------------------
 #   Batch set custom shape
 #----------------------------------------------------------
@@ -133,35 +132,6 @@ class DAZ_OT_BatchSetCustomShape(DazPropsOperator, IsArmature):
                     setCustomShapeTransform(pb, self.scale, self.translation, Vector(self.rotation)*D)
 
 #----------------------------------------------------------
-#   Remove Driven Bones
-#----------------------------------------------------------
-
-class DAZ_OT_RemoveDrivenBones(DazOperator, IsArmature):
-    bl_idname = "daz.remove_driven_bones"
-    bl_label = "Remove Driven Bones"
-    bl_description = "Remove driven (drv) bones and drive the posable bones.\nThis undoes Make All Bones Posable"
-    bl_options = {'UNDO'}
-
-    def run(self, context):
-        from ..bone_data import BD
-        rig = context.object
-        if rig.animation_data:
-            for fcu in list(rig.animation_data.drivers):
-                bname,channel,cnsname = getBoneChannel(fcu)
-                if bname and isDrvBone(bname):
-                    fcu.data_path = fcu.data_path.replace("(drv)", "")
-        for pb in rig.pose.bones:
-            for cns in list(pb.constraints):
-                if (cns.type in ['COPY_TRANSFORMS', 'COPY_ROTATION'] and
-                    isDrvBone(cns.subtarget)):
-                    pb.constraints.remove(cns)
-        setMode('EDIT')
-        for eb in list(rig.data.edit_bones):
-            if isDrvBone(eb.name):
-                rig.data.edit_bones.remove(eb)
-        setMode('OBJECT')
-
-#----------------------------------------------------------
 #   Initialize
 #----------------------------------------------------------
 
@@ -169,8 +139,6 @@ classes = [
     DAZ_OT_OptimizePose,
     DAZ_OT_SetDriverModes,
     DAZ_OT_BatchSetCustomShape,
-    DAZ_OT_RemoveDrivenBones,
-
 ]
 
 def register():
