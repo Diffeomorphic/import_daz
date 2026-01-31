@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2016-2025, Thomas Larsson
+# SPDX-FileCopyrightText: 2016-2026, Thomas Larsson
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
