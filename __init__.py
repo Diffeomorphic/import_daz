@@ -1,5 +1,5 @@
 #  DAZ Importer - Importer for native DAZ files (.duf, .dsf)
-#  Copyright (c) 2016-2025, Thomas Larsson
+#  Copyright (c) 2016-2026, Thomas Larsson
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -77,12 +77,12 @@ Features = [
     "hd_tools", "simulation_tools", "export_tools",
 ]
 
-UseFeatures = [
-    "useRigTools", "useSimpleIkTools", "useMhxTools",
-    "useRigifyTools", "usePoseTools", "useFacsTools", "useObjectTools",
-    "useMaterialTools", "useShellTools", "useMeshTools",
-    "useMorphTools", "useHairTools", "useVisibilityTools",
-    "useHDTools", "useSimulationTools", "useExportTools",
+FeatureNames = [
+    "RigTools", "SimpleIkTools", "MhxTools",
+    "RigifyTools", "PoseTools", "FacsTools", "ObjectTools",
+    "MaterialTools", "ShellTools", "MeshTools",
+    "MorphTools", "HairTools", "VisibilityTools",
+    "HDTools", "SimulationTools", "ExportTools",
 ]
 
 
@@ -119,60 +119,20 @@ from .api import *
 #   Preferences
 #----------------------------------------------------------
 
-def toggleSimpleIkTools(self, context):
-    toggleModule("simple_ik_tools", self.useSimpleIkTools)
-
-def toggleMhxTools(self, context):
-    toggleModule("mhx_tools", self.useMhxTools)
-
-def toggleRigifyTools(self, context):
-    toggleModule("rigify_tools", self.useRigifyTools)
-
-def toggleRigTools(self, context):
-    toggleModule("rig_tools", self.useRigTools)
-
-def togglePoseTools(self, context):
-    toggleModule("pose_tools", self.usePoseTools)
-
-def toggleFacsTools(self, context):
-    toggleModule("facs_tools", self.useFacsTools)
-
-def toggleObjectTools(self, context):
-    toggleModule("object_tools", self.useObjectTools)
-
-def toggleMaterialTools(self, context):
-    toggleModule("material_tools", self.useMaterialTools)
-
-def toggleMeshTools(self, context):
-    toggleModule("mesh_tools", self.useMeshTools)
-
-def toggleMorphTools(self, context):
-    toggleModule("morph_tools", self.useMorphTools)
-
-def toggleHairTools(self, context):
-    toggleModule("hair_tools", self.useHairTools)
-
-def toggleVisibilityTools(self, context):
-    toggleModule("visibility_tools", self.useVisibilityTools)
-
-def toggleHDTools(self, context):
-    toggleModule("hd_tools", self.useHDTools)
-
-def toggleSimulationTools(self, context):
-    toggleModule("simulation_tools", self.useSimulationTools)
-
-def toggleExportTools(self, context):
-    toggleModule("export_tools", self.useExportTools)
-
-def toggleShellTools(self, context):
-    toggleModule("shell_tools", self.useShellTools)
-
 def toggleModule(module, enable):
     exec("from . import %s" % module)
     if enable:
         exec("%s.register()" % module)
     else:
         exec("%s.unregister()" % module)
+
+
+for feature,fname in zip(Features, FeatureNames):
+    func = (
+        'def toggle%s(self, context):\n' % fname +
+        '    toggleModule("%s", self.use%s)\n' % (feature, fname)
+    )
+    exec(func)
 
 
 def updateSettings(self, context):
@@ -306,8 +266,8 @@ class DazPreferences(bpy.types.AddonPreferences):
         row.operator("daz.enable_all_features")
         row.operator("daz.diaable_all_features")
         self.layout.label(text = "Features:")
-        for use in UseFeatures:
-            self.layout.prop(self, use)
+        for fname in FeatureNames:
+            self.layout.prop(self, "use%s" % fname)
 
 
 class DAZ_OT_EnableAllFeatures(bpy.types.Operator):
@@ -316,8 +276,8 @@ class DAZ_OT_EnableAllFeatures(bpy.types.Operator):
 
     def execute(self, context):
         global thePrefs
-        for use in UseFeatures:
-            setattr(thePrefs, use, True)
+        for fname in FeatureNames:
+            setattr(thePrefs, "use%s" % fname, True)
         return {'PASS_THROUGH'}
 
 
@@ -327,8 +287,8 @@ class DAZ_OT_DisableAllFeatures(bpy.types.Operator):
 
     def execute(self, context):
         global thePrefs
-        for use in UseFeatures:
-            setattr(thePrefs, use, False)
+        for fname in FeatureNames:
+            setattr(thePrefs, "use%s" % fname, False)
         return {'PASS_THROUGH'}
 
 #----------------------------------------------------------
@@ -360,8 +320,8 @@ def register():
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
     if prefs:
-        for feature,use in zip(Features, UseFeatures):
-            if getattr(prefs, use):
+        for feature,fname in zip(Features, FeatureNames):
+            if getattr(prefs, "use%s" % fname):
                 exec("from . import %s" % feature)
                 exec("%s.register()" % feature)
 
@@ -384,8 +344,8 @@ def unregister():
     addon = bpy.context.preferences.addons.get(__name__)
     prefs = addon.preferences
     if prefs:
-        for feature,use in zip(Features, UseFeatures):
-            if getattr(prefs, use):
+        for feature,fname in zip(Features, FeatureNames):
+            if getattr(prefs, "use%s" % fname):
                 exec("from . import %s" % feature)
                 exec("%s.unregister()" % feature)
     bpy.utils.unregister_class(DazPreferences)
