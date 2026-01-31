@@ -589,7 +589,9 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
                 drvBone(pb.name) not in rig.pose.bones.keys() and
                 pb.name not in exclude):
                 bname = baseBone(pb.name)
-                if ignoreLocked and isLocationLocked(pb):
+                if bname not in rig.pose.bones.keys():
+                    print("Missing bone (makeBonesPosable): %s" % pb.name)
+                elif ignoreLocked and isLocationLocked(pb):
                     for fcu in driven[pb.name]:
                         _,channel,cnsname = getBoneChannel(fcu)
                         if channel != "location" and cnsname is None:
@@ -613,36 +615,36 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
         boneDrivers, sumDrivers = storeRemoveBoneSumDrivers(rig, bnames)
         setMode('EDIT')
         for bname in bnames:
-            eb = rig.data.edit_bones[bname]
-            eb.name = drvBone(bname)
+            eb = rig.data.edit_bones.get(bname)
+            if eb:
+                eb.name = drvBone(bname)
         for bname in bnames:
-            drvb = rig.data.edit_bones[drvBone(bname)]
-            eb = copyEditBone(drvb, rig, bname)
-            eb.parent = drvb.parent
-            drvb.use_deform = False
-            for cb in drvb.children:
-                if cb != eb:
-                    cb.parent = eb
+            drvb = rig.data.edit_bones.get(drvBone(bname))
+            if drvb:
+                eb = copyEditBone(drvb, rig, bname)
+                eb.parent = drvb.parent
+                drvb.use_deform = False
+                for cb in drvb.children:
+                    if cb != eb:
+                        cb.parent = eb
 
         setMode('OBJECT')
         if not ES.easy:
             print("  Change constraints")
         store = ConstraintStore()
         for bname in bnames:
-            test = False
-            pb = rig.pose.bones[bname]
-            drvb = rig.pose.bones[drvBone(bname)]
-            copyPoseBone(drvb, pb, rig)
-            copyBoneInfo(drvb, pb)
-            drvb.custom_shape = None
-            drvb.bone.color.palette = 'THEME14'
-            drvb.color.palette = 'THEME14'
-            if test:
-                print("CC", drvb.name, list(drvb.constraints))
-            store.storeConstraints(drvb.name, drvb)
-            removeConstraints(drvb, onlyLimit=True)
-            addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
-            store.restoreConstraints(drvb.name, pb)
+            pb = rig.pose.bones.get(bname)
+            drvb = rig.pose.bones.get(drvBone(bname))
+            if pb and drvb:
+                copyPoseBone(drvb, pb, rig)
+                copyBoneInfo(drvb, pb)
+                drvb.custom_shape = None
+                drvb.bone.color.palette = 'THEME14'
+                drvb.color.palette = 'THEME14'
+                store.storeConstraints(drvb.name, drvb)
+                removeConstraints(drvb, onlyLimit=True)
+                addCopyConstraint(rig, bname, boneDrivers, sumDrivers)
+                store.restoreConstraints(drvb.name, pb)
         for pb in rig.pose.bones:
             if isBaseBone(pb.name):
                 for cns in pb.constraints:

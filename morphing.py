@@ -475,7 +475,7 @@ class PosableMaker:
             from .figure import makeBonesPosable
             makeBonesPosable(rig, errorOnFail=False)
             #bpy.ops.daz.make_all_bones_posable(errorOnFail=False)
-        else:
+        elif not ES.easy:
             print("Bone must be made posable manually")
 
 

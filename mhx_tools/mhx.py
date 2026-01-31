@@ -2005,9 +2005,7 @@ classes = [
 ]
 
 def register():
-    print("MHX REG")
     for cls in classes:
-        print("CLS", cls)
         bpy.utils.register_class(cls)
 
 

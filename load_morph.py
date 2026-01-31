@@ -237,7 +237,7 @@ class LoadMorph(DriverUser):
                 self.deleteTmp()
             self.obj.update_tag()
             if self.mesh:
-                if self.ercMorphs:
+                if self.ercMorphs and GS.ercMethod.startswith("TRANSLATION"):
                     meshes = getMeshChildren(self.rig)
                     self.transferErcShapes(bpy.context, self.mesh, meshes)
                     for ob in getMeshChildren(self.rig):
@@ -739,7 +739,7 @@ class LoadMorph(DriverUser):
     def makeErcFormula(self, bname, idx, expr):
         tfm,pb,prop,factor = self.getBoneData(bname, expr)
         self.ercMorphs[prop] = self.ercBones
-        if GS.ercMethod in ['ERC_CUSTOM', 'ERC_ALL']:
+        if GS.ercMethod.startswith("ERC"):
             pb = self.rig.pose.bones.get(ercBone(bname))
             if pb is None:
                 return
