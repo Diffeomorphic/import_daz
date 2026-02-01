@@ -90,8 +90,8 @@ class FigureInstance(Instance):
         from .store import ConstraintStore, removeConstraints
         store = ConstraintStore()
         for pb in rig.pose.bones:
-            if pb.name in par.pose.bones.keys():
-                parb = par.pose.bones[pb.name]
+            parb = par.pose.bones.get(pb.name)
+            if parb:
                 pb.matrix_basis = parb.matrix_basis
                 pb.lock_location = parb.lock_location
                 pb.lock_rotation = parb.lock_rotation
@@ -159,13 +159,14 @@ class FigureInstance(Instance):
         needfix = {}
         driven = getDrivenBoneFcurves(rig)
         for bname,fcus in driven.items():
-            pb = rig.pose.bones[bname]
-            for fcu in fcus:
-                bname = getDrivingBone(fcu, rig)
-                if bname:
-                    for child in pb.children:
-                        if child.name == bname:
-                            needfix[pb.name] = (child.name, fcus)
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                for fcu in fcus:
+                    bname = getDrivingBone(fcu, rig)
+                    if bname:
+                        for child in pb.children:
+                            if child.name == bname:
+                                needfix[pb.name] = (child.name, fcus)
 
         if needfix:
             if GS.verbosity > 1:
@@ -479,10 +480,11 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
         from .rig_utils import copyTransform
         if (hasBoneDriver(bname, boneDrivers) or
             hasBoneDriver(bname, sumDrivers)):
-            pb = rig.pose.bones[bname]
-            drvb = rig.pose.bones[drvBone(bname)]
-            cns = copyTransform(pb, drvb, rig, space='LOCAL')
-            cns.mix_mode = 'BEFORE_FULL'
+            pb = rig.pose.bones.get(bname)
+            drvb = rig.pose.bones.get(drvBone(bname))
+            if pb and drvb:
+                cns = copyTransform(pb, drvb, rig, space='LOCAL')
+                cns.mix_mode = 'BEFORE_FULL'
 
     def hasBoneDriver(bname, drivers):
         return True
@@ -531,18 +533,19 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
 
     def restoreBoneSumDrivers(rig, drivers):
         for bname,bdrivers in drivers.items():
-            pb = rig.pose.bones[drvBone(bname)]
-            for driver in bdrivers:
-                fcu = drvuser.getTmpDriver(0)
-                driver.fill(fcu)
-                if driver.data_path.endswith(".scale"):
-                    correctScaleDriver(fcu, pb)
-                else:
-                    correctDriver(fcu, rig)
-                fcu2 = rig.animation_data.drivers.from_existing(src_driver=fcu)
-                fcu2.data_path = driver.data_path.replace(propRef(bname), propRef(drvBone(bname)))
-                fcu2.array_index = driver.array_index
-                drvuser.clearTmpDriver(0)
+            pb = rig.pose.bones.get(drvBone(bname))
+            if pb:
+                for driver in bdrivers:
+                    fcu = drvuser.getTmpDriver(0)
+                    driver.fill(fcu)
+                    if driver.data_path.endswith(".scale"):
+                        correctScaleDriver(fcu, pb)
+                    else:
+                        correctDriver(fcu, rig)
+                    fcu2 = rig.animation_data.drivers.from_existing(src_driver=fcu)
+                    fcu2.data_path = driver.data_path.replace(propRef(bname), propRef(drvBone(bname)))
+                    fcu2.array_index = driver.array_index
+                    drvuser.clearTmpDriver(0)
 
     def updateErcBones(rig):
         for pb in rig.pose.bones:
@@ -709,11 +712,12 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
 
     def removeLimits(rig, bnames):
         for bname in bnames:
-            pb = rig.pose.bones[bname]
-            for cns in list(pb.constraints):
-                if cns.type in ['LIMIT_LOCATION', 'LIMIT_ROTATION', 'LIMIT_SCALE']:
-                    for channel in ["min_x", "min_y", "min_z", "max_x", "max_y", "max_z"]:
-                        cns.driver_remove(channel)
+            pb = rig.pose.bones.get(bname)
+            if pb:
+                for cns in list(pb.constraints):
+                    if cns.type in ['LIMIT_LOCATION', 'LIMIT_ROTATION', 'LIMIT_SCALE']:
+                        for channel in ["min_x", "min_y", "min_z", "max_x", "max_y", "max_z"]:
+                            cns.driver_remove(channel)
 
     t1 = perf_counter()
     drvuser.initTmp()
