@@ -469,7 +469,7 @@ class PosableMaker:
             (useEasy or not ES.easy) and
             rig and
             rig.type == 'ARMATURE' and
-            #(not useActivate or activateObject(context, rig)) and
+            (not useActivate or activateObject(context, rig)) and
             (not GS.ercMethod.startswith("ERC") or dazRna(rig.data).DazErcStatus >= 2)):
             print("Make all bones posable")
             from .figure import makeBonesPosable

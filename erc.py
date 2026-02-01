@@ -237,7 +237,7 @@ def addErcDrivers(context, rig):
         for bname,form in LS.ercFormulas.items():
             pb = rig.pose.bones.get(bname)
             if pb is None:
-                print("Missing bone:", bname)
+                print("Missing bone (Offset):", bname)
                 continue
             for idx in range(3):
                 bname1, bname2 = getBoneNames(form, idx)
@@ -279,13 +279,17 @@ def addErcDrivers(context, rig):
                 bname1, bname2 = getBoneNames(form, idx)
                 pb1 = rig.pose.bones.get(bname1)
                 if pb1 is None:
-                    print("Missing bone: ", bname, bname1)
+                    bname1 = bname1.replace("Bend.", ".bend.")
+                    pb1 = rig.pose.bones.get(bname1)
+                if pb1 is None:
+                    print("Missing bone (ERC):", bname, bname1)
                     continue
                 expr = ""
                 vname = "A"
                 for prop,gmats in LS.ercMats.items():
-                    test = (False and
-                            bname.startswith(("lThigh", "lShin", "lFoot", "lTarsal", "lToe")) and
+                    test = (True and
+                            bname.startswith(("upper_arm")) and
+                            bname.endswith(".L") and
                             idx==0 and
                             prop == "Raw_Massive_Monster")
 

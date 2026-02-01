@@ -449,9 +449,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             else:
                 continue
             if bname.endswith("Bend"):
+                mname0 = mname
                 mname = mname.replace("Bend", ".bend")
+                updateErcMats(["BONE", mname0], mname)
             elif bname.endswith("Twist"):
+                mname0 = mname
                 mname = mname.replace("Twist", ".twist")
+                updateErcMats(["BONE", mname0], mname)
             self.renamedBones[mname] = bname
 
         for mname, bname in MHX.ExtraRenames:
