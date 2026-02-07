@@ -1006,7 +1006,7 @@ class Morph(FormulaAsset):
                 idxs = np.array([offset[0] for offset in offsets])
                 offsets = GS.scale * np.array([offset[1] for offset in offsets])
                 if GS.zup:
-                    tmp = offsets[:,2]
+                    tmp = offsets[:,2].copy()
                     offsets[:,2] = offsets[:,1]
                     offsets[:,1] = -tmp
                 nverts = len(data)
