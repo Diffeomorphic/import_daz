@@ -1002,7 +1002,7 @@ class Morph(FormulaAsset):
             offsets = [(delta[0], delta[1:]) for delta in deltas]
             if vassoc:
                 offsets = [(vassoc[n], offset) for n,offset in offsets if n in vassoc.keys()]
-            if GS.useNumpyMorphs and self.useNumpyMorphs:
+            if GS.useNumpyMorphs and self.useNumpyMorphs and offsets:
                 idxs = np.array([offset[0] for offset in offsets])
                 offsets = GS.scale * np.array([offset[1] for offset in offsets])
                 if GS.zup:
