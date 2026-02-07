@@ -215,7 +215,9 @@ class GeoNode(Node, SimNode):
                 dazRna(ob).DazConforms = False
             self.data.buildRigidity(ob)
             if self.hdType == 'MULTIRES':
-                self.data.buildRigidity(self.hdobject)
+                hdob = self.hdobject
+                if len(ob.data.vertices) == len(hdob.data.vertices):
+                        self.data.buildRigidity(hdob)
 
         renderLevel = 0
         if self.materials:
