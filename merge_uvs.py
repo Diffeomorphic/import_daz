@@ -56,7 +56,7 @@ class UVLayerMerger:
             if not (mat and mat.node_tree):
                 continue
             for node in mat.node_tree.nodes:
-                if isTexImage(node):
+                if isTexImage(node) and active:
                     uvname = getUvMap(node.inputs.get("Vector"), active.name)
                     uvmaps[uvname] = True
                 elif isShellNode(node):
@@ -231,6 +231,9 @@ class TileFixer:
             return ucoord, vcoord
 
         cuvlayer = hum.data.uv_layers.active
+        if cuvlayer is None:
+            print("Human has no active UV layer")
+            return
         fmasked = [face.a for face in dazRna(graft.data).DazMaskGroup]
         tiles = {}
         udims = {}
@@ -256,6 +259,8 @@ class TileFixer:
             udefault = list(udims.values())[0]
             vdefault = list(vdims.values())[0]
         auvlayer = graft.data.uv_layers.active
+        if auvlayer is None:
+            return
 
         def moveUVs(mn, udim, vdim):
             m = 0
@@ -280,7 +285,6 @@ class TileFixer:
                     vdim = vdefault
             print("Move %s:%s UVs to tile %d" % (graft.name, mname, tile))
             moveUVs(mn, udim, vdim)
-        return
 
 
     def getKnownTiles(self, ob):

@@ -182,14 +182,15 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         # Select graft group for each anatomy
         from .geometry import getActiveUvLayer
-        cuvname = getActiveUvLayer(hum).name
+        cuvlayer = getActiveUvLayer(hum)
         drivers = {}
         cvgrps = dict([(vgrp.index, vgrp.name) for vgrp in hum.vertex_groups])
         for graft in grafts:
             activateObject(context, graft)
             self.moveGraftVerts(graft, hum, cvgrps)
             self.getShapekeyDrivers(graft, drivers)
-            self.replaceTexco(graft, cuvname, self.useGeoNodes)
+            if cuvlayer:
+                self.replaceTexco(graft, cuvlayer.name, self.useGeoNodes)
 
         # For the body, setup mask groups
         activateObject(context, hum)
@@ -476,8 +477,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     if words[0] == "Geograft" and baseName(words[-1]) == "END":
                         hum.modifiers.remove(mod)
 
-        cuvname = getActiveUvLayer(hum).name
-        self.replaceTexco(hum, cuvname, True)
+        cuvlayer = getActiveUvLayer(hum)
+        if cuvlayer:
+            self.replaceTexco(hum, cuvlayer.name, True)
 
         from .geonodes import GeograftGroup
         from .tree import addNodeGroup
@@ -580,7 +582,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
     def replaceTexco(self, ob, cuvname, force):
         from .geometry import getActiveUvLayer
         from .tree import XSIZE
-        uvname = getActiveUvLayer(ob).name
+        uvlayer = getActiveUvLayer(ob)
+        if uvlayer is None:
+            return
+        uvname = uvlayer.name
         if (self.useMergeUvs or uvname == cuvname) and not force:
             return
         for mat in ob.data.materials:
