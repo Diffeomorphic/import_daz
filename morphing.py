@@ -464,7 +464,7 @@ class PosableMaker:
     def draw(self, context):
         self.layout.prop(self, "useMakePosable")
 
-    def makePosable(self, context, rig, useActivate=False, useEasy=False):
+    def makePosable(self, context, rig, useActivate=True, useEasy=False):
         if (self.useMakePosable and
             (useEasy or not ES.easy) and
             rig and
@@ -472,9 +472,9 @@ class PosableMaker:
             (not useActivate or activateObject(context, rig)) and
             (not GS.ercMethod.startswith("ERC") or dazRna(rig.data).DazErcStatus >= 2)):
             print("Make all bones posable")
-            from .figure import makeBonesPosable
-            makeBonesPosable(rig, errorOnFail=False)
-            #bpy.ops.daz.make_all_bones_posable(errorOnFail=False)
+            #from .figure import makeBonesPosable
+            #makeBonesPosable(rig, errorOnFail=False)
+            bpy.ops.daz.make_all_bones_posable(errorOnFail=False)
         elif not ES.easy:
             print("Bone must be made posable manually")
 

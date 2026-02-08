@@ -749,6 +749,8 @@ class DAZ_OT_MakeAllBonesPosable(CollectionShower, DazPropsOperator, IsArmature)
         description = "Don't create posable bones for locked location channels",
         default = True)
 
+    errorOnFail : BoolProperty(default=True)
+
     def draw(self, context):
         self.layout.prop(self, "ignoreLocked")
 
