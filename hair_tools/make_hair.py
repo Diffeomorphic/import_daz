@@ -710,7 +710,6 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
                     box.prop(self, "useResizeInBlocks")
         box.prop(self, "sparsity")
 
-
         col = row.column()
         box = col.box()
         box.label(text="Material")
@@ -777,6 +776,8 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
     def invoke(self, context, event):
         ob = context.object
         self.strandType = dazRna(ob.data).DazHairType
+        if self.strandType == 'SHEET' and len(ob.data.polygons) == 0:
+            self.strandType = 'LINE'
         self.colors.clear()
         for mat in ob.data.materials:
             if mat and mat.node_tree:
@@ -959,6 +960,10 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
         elif self.deformType == 'CURVES':
             if "rest_position" not in hum.data.attributes.keys():
                 hum.data.attributes.new("rest_position", 'FLOAT_VECTOR', 'POINT')
+            if activateObject(context, hum):
+                # issue 2637
+                bpy.ops.object.curves_empty_hair_add()
+                bpy.ops.object.delete()
             if activateObject(context, ob):
                 setMode('SCULPT_CURVES')
                 bpy.ops.curves.snap_curves_to_surface(attach_mode='NEAREST')
