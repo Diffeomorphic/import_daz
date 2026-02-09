@@ -161,7 +161,9 @@ class Proxifier(DriverUser):
             if self.colorOnly:
                 f.material_index = 0
 
-        deselectEverything(ob, context)
+        setMode('EDIT')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        setMode('OBJECT')
         self.dirty = dict([(fn,False) for fn in range(self.nfaces)])
         for f in ob.data.polygons:
             if f.hide:
@@ -211,7 +213,9 @@ class Proxifier(DriverUser):
 
 
     def getComponents(self, ob, context):
-        deselectEverything(ob, context)
+        setMode('EDIT')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        setMode('OBJECT')
         if ob.data.polygons:
             self.faceverts, self.vertfaces = getVertFaces(ob)
             self.neighbors = findNeighbors(range(self.nfaces), self.faceverts, self.vertfaces)
@@ -804,15 +808,6 @@ def identifyVerts(hum, pxy):
                 co = hum.data.vertices[vn]
                 print("DIST", pvn, vn, pco, co, mindist)
     return humPxy, pxyHum
-
-
-def deselectEverything(ob, context):
-    for f in ob.data.polygons:
-        f.select = False
-    for e in ob.data.edges:
-        e.select = False
-    for v in ob.data.vertices:
-        v.select = False
 
 #-------------------------------------------------------------
 #   Find seams
