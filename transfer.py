@@ -93,8 +93,8 @@ class MatchOperator(DazPropsOperator):
             msg = None
         except np.linalg.LinAlgError:
             msg = "Numerical error when finding match"
-        except ValueError:
-            msg = "Incompatible numpy dimensions: A = %s, B = %s" % (A.shape, B.shape)
+        except ValueError as err:
+            msg = "ValueError: %s\nNumpy dimensions: A = %s, B = %s" % (err, A.shape, B.shape)
         if msg:
             msg = ("%s.\n" % msg +
                    "Using the Legacy transfer method instead")
