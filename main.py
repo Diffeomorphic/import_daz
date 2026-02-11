@@ -203,7 +203,8 @@ class DazLoader:
         if GS.usePruneNodes:
             from .tree import pruneNodeTree
             from .geometry import getActiveUvLayer
-            for obs in LS.meshes.values():
+            obss = list(LS.meshes.values()) + list(LS.hairs.values())
+            for obs in obss:
                 for ob in obs:
                     active = getActiveUvLayer(ob)
                     for mat in ob.data.materials:

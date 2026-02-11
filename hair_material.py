@@ -108,7 +108,7 @@ class HairBaseTree:
         self.links.new(self.info.outputs["Tangent Normal"], node.inputs["Normal"])
 
 
-    def addRamp(self, node, label, root, tip, endpos=1, slot="Color"):
+    def addRamp(self, node, label, root, tip, startpos=0.75, endpos=1, slot="Color"):
         if self.image:
             root = tip = WHITE
         ramp = self.addNode('ShaderNodeValToRGB', col=self.column-2)
@@ -117,7 +117,7 @@ class HairBaseTree:
         ramp.color_ramp.interpolation = 'LINEAR'
         colramp = ramp.color_ramp
         elt = colramp.elements[0]
-        elt.position = 0
+        elt.position = startpos
         if len(root) == 3:
             elt.color = list(root) + [1]
         else:

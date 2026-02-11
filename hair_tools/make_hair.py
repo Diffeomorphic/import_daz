@@ -1445,7 +1445,7 @@ class FadeGroup(NodeGroup, HairTree):
     def addNodes(self, args=None):
         self.column = 3
         self.info = self.inputs
-        ramp,socket = self.addRamp(None, "Root Transparency", (1,1,1,0), (1,1,1,1), endpos=0.15)
+        ramp,socket = self.addRamp(None, "Root Transparency", (1,1,1,0), (1,1,1,1), startpos=0, endpos=0.15)
         maprange = self.addNode('ShaderNodeMapRange', col=1)
         maprange.inputs["From Min"].default_value = 0
         maprange.inputs["From Max"].default_value = 1

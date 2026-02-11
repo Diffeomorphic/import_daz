@@ -649,7 +649,7 @@ class LocalSettings:
         if self.materialMethod  == 'BSDF':
             self.hairMaterialMethod = 'HAIR_BSDF'
         else:
-            self.hairMaterialMethod = 'PRINCIPLED'
+            self.hairMaterialMethod = 'HAIR_PRINCIPLED'
         self.skinColor = btn.skinColor
         self.clothesColor = btn.clothesColor
         GS.setSkinColor(btn.skinColor)
