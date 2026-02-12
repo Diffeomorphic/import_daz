@@ -206,24 +206,42 @@ class Instance(Accessor, Channels, SimNode):
             etype = extra.get("type")
             if etype == None:
                 continue
+
             elif etype == "studio/node/shell":
                 self.isShell = True
+
             elif etype == "studio/node/group_node":
                 self.isGroupNode = True
+
             #elif etype == "studio/node/instance":
             #    self.isNodeInstance = True
+
             #elif etype == "studio/node/group_instance":
             #    self.isGroupInstance = True
+
             elif etype == "studio/node/strand_hair":
                 self.isStrandHair = True
                 for geonode in self.geometries:
                     geonode.isStrandHair = True
+
+            elif etype == "studio_node_channels":
+                for channels in extra.get("channels", []):
+                    channel = channels.get("channel", {})
+                    cid = channel.get("id")
+                    if cid == "Fit To":
+                        url = channel.get("node")
+                        for geonode in self.geometries:
+                            geonode.channels[cid] = url
+
             elif etype == "studio/node/rigid_follow":
                 self.rigidFollow = extra
+
             elif etype == "studio/node/environment":
                 self.ignore = True
+
             elif etype == "studio/node/tone_mapper":
                 self.ignore = True
+
             elif etype == "studio/scene_data/iray_decal":
                 if self.parent:
                     parent = self.parent

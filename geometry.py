@@ -46,6 +46,7 @@ class GeoNode(Node, SimNode):
         self.faces = []
         self.materials = OrderedDict()
         self.hairMaterials = []
+        self.texcos = set()
         self.isStrandHair = False
         self.properties = {}
         self.polylines = []
@@ -382,13 +383,24 @@ class GeoNode(Node, SimNode):
         ob = self.rna
         if ob is None:
             return
-        if self.hairMaterials:
-            for dmat in self.hairMaterials:
-                if dmat.rna:
-                    ob.data.materials.append(dmat.rna)
+
+        for dmat in self.hairMaterials:
+            if dmat.rna:
+                ob.data.materials.append(dmat.rna)
+
+        url = self.channels.get("Fit To")
+        if url:
+            node = self.getAsset(url)
+            if node:
+                inst = node.getInstance(url)
+                if inst:
+                    for texco in self.texcos:
+                        texco.object = inst.rna
+
         hdob = self.hdobject
         if hdob:
             self.finishHD(context, self.rna, hdob, inst)
+
         if ob.type == 'MESH':
             if GS.usePruneNodes:
                 pruneUvMaps(ob)

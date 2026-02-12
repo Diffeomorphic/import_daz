@@ -506,6 +506,8 @@ def pruneNodeTree(tree,
 
     def isUvPrunable(node, active):
         if node.type == 'TEX_COORD':
+            if node.object:
+                return False
             for key,socket in node.outputs.items():
                 if key != "UV" and len(socket.links) > 0:
                     return False
