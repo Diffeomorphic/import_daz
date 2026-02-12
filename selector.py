@@ -338,8 +338,10 @@ class MorphGroup:
     def getRelevantMorphs(self, scn, rig, adjusters=False):
         def addSubMorphs(rig, base, groups, morphs):
             for group in groups:
-                pgs = getattr(dazRna(rig), "Daz%s%s" % (base, group))
-                morphs += list(pgs.keys())
+                attr = "Daz%s%s" % (base, group)
+                if hasattr(dazRna(rig), attr):
+                    pgs = getattr(dazRna(rig), attr)
+                    morphs += list(pgs.keys())
 
         from .morphing import MS
         morphs = []
