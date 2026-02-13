@@ -163,7 +163,8 @@ class HairBaseTree:
         out = socket
         for tex in texs:
             if tex:
-                mix,a,b,out = self.addMixRgbNode('MULTIPLY', col=self.column-1)
+                mode = ('MULTIPLY' if LS.materialMethod == 'BSDF' else 'SCREEN')
+                mix,a,b,out = self.addMixRgbNode(mode, col=self.column-1)
                 mix.inputs[0].default_value = 1.0
                 self.links.new(tex.outputs[0], a)
                 self.links.new(ramp.outputs[0], b)

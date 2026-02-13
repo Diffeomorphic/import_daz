@@ -955,19 +955,21 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
         ob.name = "Hair %s" % baseName(hair.name)
         coll.objects.link(ob)
-        if self.deformType == 'NONE' or self.output != 'HAIR_CURVES':
-            self.parentToHead(ob, hum)
-        elif self.deformType == 'CURVES':
-            if "rest_position" not in hum.data.attributes.keys():
-                hum.data.attributes.new("rest_position", 'FLOAT_VECTOR', 'POINT')
+        if self.output == 'HAIR_CURVES':
             if activateObject(context, hum):
                 # issue 2637
                 bpy.ops.object.curves_empty_hair_add()
                 bpy.ops.object.delete()
+            if "rest_position" not in hum.data.attributes.keys():
+                hum.data.attributes.new("rest_position", 'FLOAT_VECTOR', 'POINT')
             if activateObject(context, ob):
                 setMode('SCULPT_CURVES')
                 bpy.ops.curves.snap_curves_to_surface(attach_mode='NEAREST')
+                print("Snapping curves to surface")
                 setMode('OBJECT')
+
+        if self.deformType == 'NONE' or self.output != 'HAIR_CURVES':
+            self.parentToHead(ob, hum)
         elif self.deformType == 'PROXY':
             proxy.name = "Proxy %s" % baseName(hair.name)
             coll.objects.link(proxy)

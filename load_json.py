@@ -106,7 +106,8 @@ def loadJson(filepath, mustOpen=False, silent=False):
                 with open(filepath, 'r', encoding=encoding) as fp:
                     string = fp.read()
                 return string
-            except (IOError, UnicodeError, UnicodeDecodeError):
+            except (IOError, UnicodeError, UnicodeDecodeError) as err:
+                print(err)
                 return None
 
         string = readFile(filepath, "utf-8-sig")
