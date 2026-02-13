@@ -89,7 +89,9 @@ class MatchOperator(DazPropsOperator):
         A = np.transpose(tverts, axes=(0,2,1))
         B = cverts - offsets
         try:
-            w = np.linalg.solve(A, B)
+            # issue 2641
+            # w = np.linalg.solve(A, B)
+            w = np.linalg.solve(A, B[..., np.newaxis]).squeeze(-1)
             msg = None
         except np.linalg.LinAlgError:
             msg = "Numerical error when finding match"
