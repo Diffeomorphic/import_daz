@@ -310,11 +310,12 @@ class GeoNode(Node, SimNode):
             uvlayer = makeNewUvLayer(hdob.data, uvname, setActive)
             if GS.verbosity >= 3:
                 print("Add HD UV layer %s to %s" % (uvlayer.name, hdob.name))
-            m = 0
-            for f in uvfaces:
-                for vn in f:
-                    uvlayer.data[m].uv = uvs[vn]
-                    m += 1
+                t1 = perf_counter()
+            uvdata = [uvs[vn] for f in uvfaces for vn in f]
+            uvlayer.data.foreach_set("uv", flatten(uvdata))
+            if GS.verbosity >= 3:
+                t2 = perf_counter()
+                print("HD UVs added in %s seconds" % (t2-t1))
 
         if len(ob.data.uv_layers) > 0:
             uvname = ob.data.uv_layers[0].name

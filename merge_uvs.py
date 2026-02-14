@@ -423,9 +423,11 @@ def mergeUvLayers(me, keepIdx, mergeIdx, allowOverlap):
         if checkLayersOverlap(keepLayer, mergeLayer):
             return
     replaceUVMapNodes(me, mergeLayer)
-    for n,data in enumerate(mergeLayer.data):
-        if data.uv.length > 1e-6:
-            keepLayer.data[n].uv = data.uv
+
+    for mdata,kdata in zip(mergeLayer.data, keepLayer.data):
+        if mdata.uv.length > 1e-6:
+            kdata.uv = mdata.uv
+
     for mat in me.materials:
         if mat and (not BLENDER5 or mat.use_nodes):
             replaceNodeNames(mat, mergeLayer.name, keepLayer.name)
