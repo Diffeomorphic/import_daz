@@ -1026,6 +1026,8 @@ class Node(Asset, Formula, Channels):
             ob = bpy.data.objects.new(obname, self.data)
             setModernProps(ob)
         self.rna = inst.rna = ob
+        if GS.verbosity >= 4:
+            print("  Object %s" % ob.name)
         ob.empty_display_size = 10*GS.scale
         LS.objects[LS.rigname].append(ob)
         self.arrangeObject(ob, inst, context, center)

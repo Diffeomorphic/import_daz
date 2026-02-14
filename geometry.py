@@ -1241,6 +1241,9 @@ class Geometry(Asset, Channels):
                 msg = ("BUG: Sourcing:\n%  %s\n  %s" % (self, asset))
                 reportError(msg)
 
+        if GS.verbosity >= 4:
+            print("Build mesh %s" % self.name)
+
         me = self.rna = bpy.data.meshes.new(geonode.getName())
         setModernProps(me)
 
@@ -1276,6 +1279,9 @@ class Geometry(Asset, Channels):
             me.from_pydata(verts, edges, faces)
         else:
             me.from_pydata([Vector(vco)-center for vco in verts], edges, faces)
+
+        if GS.verbosity >= 4:
+            print("  Mesh %s" % self.name)
 
         if len(faces) != len(me.polygons):
             msg = ("Not all faces were created:\n" +
@@ -1496,11 +1502,15 @@ class Geometry(Asset, Channels):
 
     def buildUVSet(self, context, uv_set, me, setActive):
         if uv_set:
+            if GS.verbosity >= 4:
+                print("Build UV %s" % self.name)
             if uv_set.checkSize(me):
                 uv_set.build(context, me, self, setActive)
             else:
                 msg = ("Incompatible UV sets:\n  %s\n  %s" % (me.name, uv_set.name))
                 reportError(msg)
+            if GS.verbosity >= 4:
+                print("  UV %s" % self.name)
 
 
     def buildRigidity(self, ob):
@@ -1687,25 +1697,19 @@ class Uvset(Asset):
         polyverts = self.getPolyVerts(me)
         self.checkPolyverts(me, polyverts, False)
         uvlayer = makeNewUvLayer(me, self.getLabel(), setActive)
-
-        m = 0
+        nfaces = len(me.polygons)
         vnmax = len(self.uvs)
-        nmats = len(geo.polygon_material_groups)
-        ucoords = [[] for n in range(nmats)]
-        for fn,f in enumerate(me.polygons):
-            mn = geo.material_indices[fn]
-            for n in range(len(f.vertices)):
-                vn = polyverts[f.index][n]
-                if vn < vnmax and mn < nmats:
-                    uv = self.uvs[vn]
-                    uvlayer.data[m].uv = uv
-                    ucoords[mn].append(uv[0])
-                m += 1
+        uvs = [self.uvs[vn] for fn in range(nfaces) for vn in polyverts[fn]]
+        uvlayer.data.foreach_set("uv", flatten(uvs))
 
+        nmats = len(geo.polygon_material_groups)
+        uvcoords = [(geo.material_indices[fn], self.uvs[vn])
+                    for fn in range(nfaces) for vn in polyverts[fn]]
         for mn in range(nmats):
-            if len(ucoords[mn]) > 0:
-                umin = min(ucoords[mn])
-                umax = max(ucoords[mn])
+            ucoords = [uv[0] for mn2,uv in uvcoords if mn2 == mn]
+            if len(ucoords) > 0:
+                umin = min(ucoords)
+                umax = max(ucoords)
                 if umax-umin <= 1:
                     udim = math.floor((umin+umax)/2)
                 else:
@@ -1713,6 +1717,7 @@ class Uvset(Asset):
                     if GS.verbosity > 2:
                         print("UV coordinate difference %f - %f > 1" % (umax, umin))
                 self.fixUdims(context, mn, udim, geo)
+
         self.built[me.name] = uvlayer
 
 
