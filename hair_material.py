@@ -163,7 +163,7 @@ class HairBaseTree:
         out = socket
         for tex in texs:
             if tex:
-                mode = ('MULTIPLY' if LS.materialMethod == 'BSDF' else 'SCREEN')
+                mode = ('MULTIPLY' if LS.materialMethod == 'BSDF' else 'DODGE')
                 mix,a,b,out = self.addMixRgbNode(mode, col=self.column-1)
                 mix.inputs[0].default_value = 1.0
                 self.links.new(tex.outputs[0], a)
@@ -211,13 +211,17 @@ class HairBSDFTree(HairTree):
     def buildLayer(self, uvname):
         self.initLayer()
         self.readColor(0.5)
-        trans = self.buildTransmission()
+        trans,ramp = self.buildTransmission()
         refl = self.buildHighlight()
         self.addColumn()
         if trans and refl:
             #weight = self.getValue(["Highlight Weight"], 0.11)
             weight = self.getValue(["Glossy Layer Weight"], 0.5)
-            self.active = self.mixShaders(trans, refl, weight)
+            mix1 = self.mixShaders(trans, refl, weight)
+            transp = self.addNode("ShaderNodeBsdfTransparent")
+            mix2 = self.mixShaders(transp, mix1, 0)
+            self.links.new(ramp.outputs["Alpha"], mix2.inputs[0])
+            self.active = mix2
         #self.buildAnisotropic()
         self.buildCutout()
         self.buildOutput()
@@ -235,7 +239,7 @@ class HairBSDFTree(HairTree):
         self.linkRamp(ramp, socket, [roottex, tiptex], trans, "Color")
         #self.linkTangent(trans)
         self.active = trans
-        return trans
+        return trans, ramp
 
 
     def buildHighlight(self):

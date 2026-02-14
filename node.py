@@ -224,7 +224,7 @@ class Instance(Accessor, Channels, SimNode):
                 for geonode in self.geometries:
                     geonode.isStrandHair = True
 
-            elif etype == "studio_node_channels":
+            elif False and etype == "studio_node_channels":
                 for channels in extra.get("channels", []):
                     channel = channels.get("channel", {})
                     cid = channel.get("id")
