@@ -163,8 +163,7 @@ class HairBaseTree:
         out = socket
         for tex in texs:
             if tex:
-                mode = ('MULTIPLY' if LS.materialMethod == 'BSDF' else 'DODGE')
-                mix,a,b,out = self.addMixRgbNode(mode, col=self.column-1)
+                mix,a,b,out = self.addMixRgbNode('MULTIPLY', col=self.column-1)
                 mix.inputs[0].default_value = 1.0
                 self.links.new(tex.outputs[0], a)
                 self.links.new(ramp.outputs[0], b)
@@ -292,7 +291,7 @@ class HairPBRTree(HairBaseTree, PbrTree):
 
     def buildLayer(self, uvname):
         self.initLayer()
-        self.readColor(0.216)
+        self.readColor(1.0)
         pbr = self.addNode("ShaderNodeBsdfHairPrincipled")
         self.active = self.pbr = pbr
         ramp,socket = self.addRamp(pbr, "Color", self.root, self.tip)
@@ -314,14 +313,19 @@ class HairEeveeTree(HairBaseTree, PbrTree):
 
     def buildLayer(self, uvname):
         self.initLayer()
-        self.readColor(0.216)
+        self.readColor(1.0)
         pbr = self.addNode("ShaderNodeBsdfPrincipled")
         self.active = self.pbr = pbr
         ramp,socket = self.addRamp(pbr, "Color", self.root, self.tip, slot="Base Color")
         self.linkRamp(ramp, socket, [self.roottex, self.tiptex], pbr, "Base Color")
         self.links.new(ramp.outputs["Alpha"], pbr.inputs["Alpha"])
-        pbr.inputs["Metallic"].default_value = 0.9
+        pbr.inputs["Metallic"].default_value = 0.0
         pbr.inputs["Roughness"].default_value = 0.2
+        if BLENDER3:
+            pbr.inputs["Specular"].default_value = 2
+        else:
+            pbr.inputs["IOR"].default_value = 1.5
+            pbr.inputs["Specular IOR Level"].default_value = 2
         self.postPBR = False
         self.buildCutout()
         self.buildOutput()
