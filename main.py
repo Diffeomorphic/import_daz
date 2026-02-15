@@ -498,8 +498,10 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
             ob.data.materials.clear()
             attr = ob.data.attributes.get("DazMaterialGroup")
             if attr:
-                for f in ob.data.polygons:
-                    f.material_index = attr.data[f.index].value
+                nfaces = len(ob.data.polygons)
+                data = list(range(nfaces))
+                attr.data.foreach_get("value", data)
+                ob.data.polygons.foreach_set("material_index", data)
 
 
     def matchFromNames(self, ob, main, matches):

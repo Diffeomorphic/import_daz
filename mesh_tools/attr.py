@@ -58,21 +58,22 @@ class DAZ_OT_CopyAttributes(DazPropsOperator, IsMesh):
         if srcattr is None:
             raise DazError("%s has no %s attribute" % (src.name, aname))
         if aname in ["DazVertex", "DazGraft"]:
-            ndata = len(src.data.vertices)
+            data = list(src.data.vertices)
         else:
-            ndata = len(src.data.polygons)
+            data = list(src.data.polygons)
             srcpgs = getattr(dazRna(src.data), aname)
             trgpgs = getattr(dazRna(trg.data), aname)
             trgpgs.clear()
-            for key in srcpgs.keys():
-                pg = trgpgs.add()
-                pg.name = key
+            for pg1 in srcpgs:
+                pg2 = trgpgs.add()
+                pg2.name = pg1.name
+                pg2.a = pg1.a
         attr = trg.data.attributes.get(aname)
         if attr:
             trg.data.attributes.remove(attr)
         trgattr = trg.data.attributes.new(aname, atype, domain)
-        for idx in range(ndata):
-            trgattr.data[idx].value = srcattr.data[idx].value
+        srcattr.data.foreach_get("value", data)
+        trgattr.data.foreach_set("value", data)
 
 # ---------------------------------------------------------------------
 #   Getters

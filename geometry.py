@@ -1535,9 +1535,9 @@ class Geometry(Asset, Channels):
                 aname = "%s:%s" % (prefix, rgroup.id)
                 verts = group[key]["values"]
                 if GS.useRigidityAttributes:
-                    data = ob.data.attributes.new(aname, 'BOOLEAN', 'POINT').data
-                    for vn in verts:
-                        data[vn].value = True
+                    rigidattr = ob.data.attributes.new(aname, 'BOOLEAN', 'POINT')
+                    nverts = len(ob.data.vertices)
+                    rigidattr.data.foreach_set("value", nverts*[True])
                 else:
                     weights = [(vn, 1.0) for vn in verts]
                     buildVertexGroup(ob, aname, weights)

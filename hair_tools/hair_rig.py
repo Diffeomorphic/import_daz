@@ -242,9 +242,9 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
 
 
     def storeOrigVerts(self, ob):
-        ovi:Attribute = ob.data.attributes.new("orig_vertex", 'INT', 'POINT')
-        for v in ob.data.vertices:
-            ovi.data[v.index].value = v.index
+        ovi = ob.data.attributes.new("orig_vertex", 'INT', 'POINT')
+        nverts = len(ob.data.vertices)
+        ovi.data.foreach_set("value", list(range(nverts)))
 
 
     def restoreOrigVerts(self, origMesh, ob):

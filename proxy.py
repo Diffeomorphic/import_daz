@@ -164,10 +164,7 @@ class Proxifier(DriverUser):
         setMode('EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')
         setMode('OBJECT')
-        self.dirty = dict([(fn,False) for fn in range(self.nfaces)])
-        for f in ob.data.polygons:
-            if f.hide:
-                self.dirty[f.index] = True
+        self.dirty = dict([(f.index, f.hide) for f in ob.data.polygons])
         newfaces = [[fn] for fn in range(self.nfaces) if self.dirty[fn]]
         printStatistics(ob)
         return newfaces

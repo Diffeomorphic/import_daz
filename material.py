@@ -2202,13 +2202,14 @@ def sortMaterialsByName(ob):
     mats = [(mat.name, n, mat) for n,mat in enumerate(ob.data.materials)]
     mats.sort()
     ob.data.materials.clear()
-    for data in mats:
-        ob.data.materials.append(data[2])
+    for mdata in mats:
+        ob.data.materials.append(mdata[2])
     assoc = {}
     for m,data in enumerate(mats):
         assoc[data[1]] = m
-    for f in ob.data.polygons:
-        f.material_index = assoc.get(mnums[f.index],0)
+    nfaces = len(ob.data.polygons)
+    data = [assoc.get(mnums[fn],0) for fn in range(nfaces)]
+    ob.data.polygons.foreach_set("material_index", data)
 
 #----------------------------------------------------------
 #   Initialize
