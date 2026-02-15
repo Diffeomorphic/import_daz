@@ -993,6 +993,8 @@ class Node(Asset, Formula, Channels):
 
 
     def build(self, context, inst):
+        if GS.verbosity >= 3:
+            print("Build node '%s'" % self.name)
         center = d2b(inst.attributes["center_point"])
         if inst.ignore:
             print("Ignore", inst)
@@ -1004,12 +1006,14 @@ class Node(Asset, Formula, Channels):
             self.buildObject(context, inst, center)
         if inst.extra:
             inst.buildExtra(context)
+        if GS.verbosity >= 3:
+            print("Node '%s' built" % self.name)
 
 
     def buildObject(self, context, inst, center):
         from .geometry import UnGeometry
-        if GS.verbosity >= 4:
-            print("Build object %s" % self.name)
+        if GS.verbosity >= 3:
+            print("  Build object '%s'" % self.name)
         scn = context.scene
         ob2 = None
         obname = self.getObjectName(inst)
@@ -1017,6 +1021,8 @@ class Node(Asset, Formula, Channels):
             ob = bpy.data.objects.new(obname, None)
         elif isinstance(self.data, Asset):
             if self.data.isShell and GS.shellMethod == 'MATERIAL':
+                if GS.verbosity >= 3:
+                    print("  Object '%s' is a shell" % self.name)
                 return
             ob,ob2 = self.data.buildData(context, self, inst, center)
             if not isinstance(ob, bpy.types.Object):
@@ -1026,8 +1032,8 @@ class Node(Asset, Formula, Channels):
             ob = bpy.data.objects.new(obname, self.data)
             setModernProps(ob)
         self.rna = inst.rna = ob
-        if GS.verbosity >= 4:
-            print("  Object %s" % ob.name)
+        if GS.verbosity >= 3:
+            print("  Object '%s' built" % ob.name)
         ob.empty_display_size = 10*GS.scale
         LS.objects[LS.rigname].append(ob)
         self.arrangeObject(ob, inst, context, center)

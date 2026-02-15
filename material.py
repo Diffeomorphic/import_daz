@@ -350,8 +350,8 @@ class Material(Asset, Channels):
         self.setupBasics()
         if self.dontBuild():
             return False
-        if GS.verbosity >= 4:
-            print("Build material %s" % self.name)
+        if GS.verbosity >= 3:
+            print("Build material '%s'" % self.name)
         mat = self.rna
         if mat is None:
             mat = self.rna = bpy.data.materials.new(self.name)
@@ -378,6 +378,8 @@ class Material(Asset, Channels):
         for shell in self.shells.values():
             pass
             #shell.material.shader = self.shader
+        if GS.verbosity >= 3:
+            print("Material '%s' built" % self.name)
         return True
 
 

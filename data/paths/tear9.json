@@ -3,12 +3,6 @@
 	"hd-morphs" : true,
 	"projection" : "data/Daz 3D/Genesis 9/Genesis 9 Tear/Morphs/Daz 3D/Base/head_bs_TearProjectionShape.dsf",
 	"factor" : 1.0,
-	"head" : {
-		"prefix" : "head_",
-		"include" : ["head_"],
-		"exclude" : [],
-		"path" : "data/DAZ 3D/Genesis 9/Genesis 9 Tear/Morphs/DAZ 3D/Head Asymmetry/"
-	},
 	"facs" : {
 		"prefix" : "facs_",
 		"include" : ["facs_ctrl_", "facs_bs_"],
@@ -33,5 +27,5 @@
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 9/Genesis 9 Tear/Morphs/DAZ 3D/Base Flexions/"
 	}
-}	
-		
+}
+

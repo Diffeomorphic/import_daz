@@ -1221,7 +1221,7 @@ class Geometry(Asset, Channels):
             asset = self.getAsset(url)
             if asset:
                 if GS.verbosity > 2:
-                    print("Found UV set '%s' in '%s'" % (uv, unquote(url)))
+                    print("  Found UV set '%s'" % uv)
                 self.uv_sets[uv] = asset
             return asset
         return None
@@ -1242,8 +1242,8 @@ class Geometry(Asset, Channels):
                 msg = ("BUG: Sourcing:\n%  %s\n  %s" % (self, asset))
                 reportError(msg)
 
-        if GS.verbosity >= 4:
-            print("Build mesh %s" % self.name)
+        if GS.verbosity >= 3:
+            print("    Build mesh '%s'" % self.name)
 
         me = self.rna = bpy.data.meshes.new(geonode.getName())
         setModernProps(me)
@@ -1269,6 +1269,8 @@ class Geometry(Asset, Channels):
         if not verts:
             if not self.isStrandHair:
                 self.addAllMaterials(me, geonode)
+            if GS.verbosity >= 3:
+                print("    Mesh '%s' has no vertices" % self.name)
             return None, None
 
         if self.polylines and not polymats:
@@ -1281,8 +1283,8 @@ class Geometry(Asset, Channels):
         else:
             me.from_pydata([Vector(vco)-center for vco in verts], edges, faces)
 
-        if GS.verbosity >= 4:
-            print("  Mesh %s" % self.name)
+        if GS.verbosity >= 3:
+            print("    Mesh '%s' built" % self.name)
 
         if len(faces) != len(me.polygons):
             msg = ("Not all faces were created:\n" +
@@ -1503,15 +1505,11 @@ class Geometry(Asset, Channels):
 
     def buildUVSet(self, context, uv_set, me, setActive):
         if uv_set:
-            if GS.verbosity >= 4:
-                print("Build UV %s" % self.name)
             if uv_set.checkSize(me):
                 uv_set.build(context, me, self, setActive)
             else:
                 msg = ("Incompatible UV sets:\n  %s\n  %s" % (me.name, uv_set.name))
                 reportError(msg)
-            if GS.verbosity >= 4:
-                print("  UV %s" % self.name)
 
 
     def buildRigidity(self, ob):
@@ -1695,6 +1693,8 @@ class Uvset(Asset):
                 print("NO UVs", me.name, self.name)
             return
 
+        if GS.verbosity >= 3:
+            print("    Build UV '%s' for '%s'" % (self.name, me.name))
         polyverts = self.getPolyVerts(me)
         self.checkPolyverts(me, polyverts, False)
         uvlayer = makeNewUvLayer(me, self.getLabel(), setActive)
@@ -1720,6 +1720,8 @@ class Uvset(Asset):
                 self.fixUdims(context, mn, udim, geo)
 
         self.built[me.name] = uvlayer
+        if GS.verbosity >= 3:
+            print("    UV '%s' for '%s' built" % (self.name, me.name))
 
 
     def fixUdims(self, context, mn, udim, geo):

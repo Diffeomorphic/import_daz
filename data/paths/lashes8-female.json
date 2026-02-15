@@ -3,6 +3,12 @@
 	"hd-morphs" : true,
 	"projection" : "data/DAZ 3D/Genesis 8/Female Eyelashes/Morphs/DAZ 3D/Base/PHMEyelashesExpand.dsf",
 	"factor" : -1.0,
+	"head" : {
+		"prefix" : ["ectrl", "ctrl", "phm", "ephm"],
+		"include" : ["ectrl", "ctrl", "phm", "ephm"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 8/Female Eyelashes/Morphs/DAZ 3D/Base Pose Head/"
+	},
 	"units" : {
 		"prefix" : ["ectrl", "ctrl", "phm", "ephm"],
 		"include" : ["ectrl", "ctrl", "phm", "ephm"],
@@ -14,12 +20,6 @@
 		"include" : ["ectrl", "ejcm", "ephm"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/Genesis 8/Female Eyelashes/Morphs/DAZ 3D/Expressions/"
-	},
-	"head" : {
-		"prefix" : "phm",
-		"include" : ["phm"],
-		"exclude" : [],
-		"path" : "data/DAZ 3D/Genesis 8/Female Eyelashes/Morphs/DAZ 3D/Head/"
 	}
-}	
-		
+}
+

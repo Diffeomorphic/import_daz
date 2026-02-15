@@ -1,12 +1,6 @@
 {
 	"name" : "Toon9-mouth",
 	"hd-morphs" : false,
-	"head" : {
-		"prefix" : "head_",
-		"include" : ["head_"],
-		"exclude" : [],
-		"path" : "data/DAZ 3D/G9ToonCommon/Genesis 9 Toon Mouth/Morphs/Daz 3D/Head/"
-	},
 	"facs" : {
 		"prefix" : "facs_",
 		"include" : ["facs_ctrl_", "facs_bs_"],
@@ -24,6 +18,6 @@
 		"include" : ["baseanime_"],
 		"exclude" : [],
 		"path" : "data/DAZ 3D/G9ToonCommon/Genesis 9 Toon Mouth/Morphs/DAZ 3D/Base Anime/"
-	}			
-}	
-		
+	}
+}
+

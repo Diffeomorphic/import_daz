@@ -469,8 +469,8 @@ class SkinBinding(Modifier):
         ob,hdob,rig,geonode = self.getGeoRig(context, inst)
         if ob is None or rig is None or ob.type != 'MESH':
             return
-        if GS.verbosity >= 4:
-            print("Build skinbinding %s" % self.name)
+        if GS.verbosity >= 3:
+            print("Build skinbinding '%s' for '%s'" % (self.name, ob.name))
 
         selmaps = self.skin.get("selection_map")
         if selmaps:
@@ -488,6 +488,8 @@ class SkinBinding(Modifier):
             if not ok:
                 from .transfer import transferVertexGroups
                 transferVertexGroups(context, ob, [hdob], 1e-3, False)
+        if GS.verbosity >= 3:
+            print("Skinbinding '%s' for '%s' built" % (self.name, ob.name))
 
 
     def addVertexGroups(self, ob, geonode, rig):
