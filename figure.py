@@ -259,7 +259,7 @@ class Figure(Node):
         from .asset import Asset
         scn = context.scene
         if GS.verbosity >= 3:
-            print("Build figure '%s'" % self.name)
+            print("Build figure '%s'" % inst.name)
         center = d2b(inst.attributes["center_point"])
         Asset.build(self, context, inst)
         inst.setLSRig()
@@ -302,7 +302,7 @@ class Figure(Node):
             if isinstance(child, BoneInstance):
                 child.buildBoneProps(rig, center)
         if GS.verbosity >= 3:
-            print("Figure '%s' built" % rig.name)
+            print("Figure '%s' built" % inst.name)
 
 
     def pointBones(self, rig):

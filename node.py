@@ -994,7 +994,7 @@ class Node(Asset, Formula, Channels):
 
     def build(self, context, inst):
         if GS.verbosity >= 3:
-            print("Build node '%s'" % self.name)
+            print("Build node '%s'" % inst.name)
         center = d2b(inst.attributes["center_point"])
         if inst.ignore:
             print("Ignore", inst)
@@ -1007,22 +1007,22 @@ class Node(Asset, Formula, Channels):
         if inst.extra:
             inst.buildExtra(context)
         if GS.verbosity >= 3:
-            print("Node '%s' built" % self.name)
+            print("Node '%s' built" % inst.name)
 
 
     def buildObject(self, context, inst, center):
         from .geometry import UnGeometry
-        if GS.verbosity >= 3:
-            print("  Build object '%s'" % self.name)
         scn = context.scene
         ob2 = None
         obname = self.getObjectName(inst)
+        if GS.verbosity >= 3:
+            print("  Build object '%s'" % obname)
         if isinstance(self.data, UnGeometry):
             ob = bpy.data.objects.new(obname, None)
         elif isinstance(self.data, Asset):
             if self.data.isShell and GS.shellMethod == 'MATERIAL':
                 if GS.verbosity >= 3:
-                    print("  Object '%s' is a shell" % self.name)
+                    print("  Object '%s' is a shell" % obname)
                 return
             ob,ob2 = self.data.buildData(context, self, inst, center)
             if not isinstance(ob, bpy.types.Object):
