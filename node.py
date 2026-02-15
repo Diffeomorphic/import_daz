@@ -995,6 +995,7 @@ class Node(Asset, Formula, Channels):
     def build(self, context, inst):
         if GS.verbosity >= 3:
             print("Build node '%s'" % inst.name)
+            t1 = perf_counter()
         center = d2b(inst.attributes["center_point"])
         if inst.ignore:
             print("Ignore", inst)
@@ -1007,7 +1008,8 @@ class Node(Asset, Formula, Channels):
         if inst.extra:
             inst.buildExtra(context)
         if GS.verbosity >= 3:
-            print("Node '%s' built" % inst.name)
+            t2 = perf_counter()
+            print("Node '%s' built in %.3f seconds" % (inst.name, t2-t1))
 
 
     def buildObject(self, context, inst, center):

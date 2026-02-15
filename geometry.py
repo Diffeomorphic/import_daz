@@ -1244,6 +1244,7 @@ class Geometry(Asset, Channels):
 
         if GS.verbosity >= 3:
             print("    Build mesh '%s'" % self.name)
+            t1 = perf_counter()
 
         me = self.rna = bpy.data.meshes.new(geonode.getName())
         setModernProps(me)
@@ -1282,9 +1283,8 @@ class Geometry(Asset, Channels):
             me.from_pydata(verts, edges, faces)
         else:
             me.from_pydata([Vector(vco)-center for vco in verts], edges, faces)
-
         if GS.verbosity >= 3:
-            print("    Mesh '%s' built" % self.name)
+            print("      Mesh created")
 
         if len(faces) != len(me.polygons):
             msg = ("Not all faces were created:\n" +
@@ -1328,6 +1328,9 @@ class Geometry(Asset, Channels):
         if hasShells:
             dazRna(ob).DazVisibilityDrivers = True
 
+        if GS.verbosity >= 3:
+            print("      Add attributes")
+            t3 = perf_counter()
         geonodes = list(self.nodes.values())
         if me.vertices and geonodes and self.id:
             pgs = dazRna(ob.data).DazGraftData
@@ -1337,9 +1340,13 @@ class Geometry(Asset, Channels):
             pg.i = len(ob.data.vertices)
             vattr = ob.data.attributes.new("DazVertex", 'INT', 'POINT')
             gattr = ob.data.attributes.new("DazGraft", 'INT', 'POINT')
-            for vn in range(len(me.vertices)):
-                vattr.data[vn].value = vn
-                gattr.data[vn].value = 0
+            nverts = len(me.vertices)
+            vattr.data.foreach_set("value", list(range(nverts)))
+            gattr.data.foreach_set("value", nverts*[0])
+        if GS.verbosity >= 3:
+            t4 = perf_counter()
+            print("      Attributes added in %.3f seconds" % (t4-t3))
+
         if me.polygons:
             self.addFaceMap(ob, "DazPolygonGroup", self.polygon_groups, self.polygon_indices)
             self.addFaceMap(ob, "DazMaterialGroup", self.polygon_material_groups, self.material_indices)
@@ -1358,18 +1365,27 @@ class Geometry(Asset, Channels):
                 guideMe.materials.append(mat)
             self.validateMesh(guideMe, guideOb.name)
 
+        if GS.verbosity >= 3:
+            t2 = perf_counter()
+            print("    Mesh '%s' built in %.3f seconds" % (self.name, t2-t1))
+
         return ob, guideOb
 
 
     def addFaceMap(self, ob, aname, groups, indices):
+        if GS.verbosity >= 3:
+            t1 = perf_counter()
+            print("      Add face map '%s'" % aname)
         pgs = getattr(dazRna(ob.data), aname)
         for group in groups:
             pg = pgs.add()
             pg.name = group
             pg.a = len(pgs) - 1
         attr = ob.data.attributes.new(aname, 'INT', 'FACE')
-        for fn,gn in enumerate(indices):
-            attr.data[fn].value = gn
+        attr.data.foreach_set("value", indices)
+        if GS.verbosity >= 3:
+            t2 = perf_counter()
+            print("      Face map '%s' added in %.3f seconds" % (aname, t2-t1))
 
 
     def getEdges(self, geonode, faces):
@@ -1687,14 +1703,16 @@ class Uvset(Asset):
             if setActive:
                 uvlayer.active = uvlayer.active_render = True
             return
-        if len(me.polygons) == 0:
-            LS.polyLines[geo.id] = geo
-            if GS.verbosity > 2:
-                print("NO UVs", me.name, self.name)
-            return
 
         if GS.verbosity >= 3:
-            print("    Build UV '%s' for '%s'" % (self.name, me.name))
+            print("      Build UV '%s' for '%s'" % (self.name, me.name))
+            t1 = perf_counter()
+        if len(me.polygons) == 0:
+            LS.polyLines[geo.id] = geo
+            if GS.verbosity >= 3:
+                print("      No UV '%s' for '%s'" % (self.name, me.name))
+            return
+
         polyverts = self.getPolyVerts(me)
         self.checkPolyverts(me, polyverts, False)
         uvlayer = makeNewUvLayer(me, self.getLabel(), setActive)
@@ -1721,7 +1739,8 @@ class Uvset(Asset):
 
         self.built[me.name] = uvlayer
         if GS.verbosity >= 3:
-            print("    UV '%s' for '%s' built" % (self.name, me.name))
+            t2 = perf_counter()
+            print("      UV '%s' for '%s' built in %.3f seconds" % (self.name, me.name, t2-t1))
 
 
     def fixUdims(self, context, mn, udim, geo):

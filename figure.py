@@ -260,6 +260,7 @@ class Figure(Node):
         scn = context.scene
         if GS.verbosity >= 3:
             print("Build figure '%s'" % inst.name)
+            t1 = perf_counter()
         center = d2b(inst.attributes["center_point"])
         Asset.build(self, context, inst)
         inst.setLSRig()
@@ -302,7 +303,8 @@ class Figure(Node):
             if isinstance(child, BoneInstance):
                 child.buildBoneProps(rig, center)
         if GS.verbosity >= 3:
-            print("Figure '%s' built" % inst.name)
+            t2 = perf_counter()
+            print("Figure '%s' built in %.3f seconds" % (inst.name, t2-t1))
 
 
     def pointBones(self, rig):
