@@ -63,26 +63,17 @@ class DazError(Exception):
 
 
 def reportError(msg, instances={}, warnPaths=False, trigger=(2,5), force=False):
-    global theUseDumpErrors
     trigWarning,trigError = trigger
     if GS.verbosity >= trigWarning or force:
         print(msg)
     if GS.verbosity >= trigError or force:
-        theUseDumpErrors = True
-        if warnPaths:
-            msg += ("\nHave all DAZ library paths been set up correctly?\n" +
-                    "See https://diffeomorphic.blogspot.se/p/setting-up-daz-library-paths.html         ")
-        msg += ("\nFor details see\n'%s'" % GS.getErrorPath())
-        raise DazError(msg)
-    return None
+        LS.useDumpErrors = True
 
 
 def handleDazError(context, warning=False, dump=False):
-    global theUseDumpErrors
-
-    if not (dump or theUseDumpErrors):
+    if not (dump or LS.useDumpErrors):
         return
-    theUseDumpErrors = False
+    LS.useDumpErrors = False
 
     filepath = GS.getErrorPath()
     try:
@@ -171,9 +162,6 @@ def printTraceBack(context, fp):
         if isinstance(value, str):
             value = ('"%s"' % value)
         fp.write('%25s:    %s\n' % (attr, value))
-
-
-theUseDumpErrors = False
 
 #-------------------------------------------------------------
 #   Execute

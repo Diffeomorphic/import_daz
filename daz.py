@@ -291,9 +291,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
             "Controls the number of warning messages when loading files\n" +
             "1: Silent mode.\n" +
             "2: Default. Warn about some problems.\n" +
-            "3: Warn about all problems.\n" +
-            "4: Warn about all problems and save a log file.\n" +
-            "5: Like verbosity = 4 and trigger a Python error."))
+            "3: Warn about more problems.\n" +
+            "4: Warn about all problems.\n" +
+            "5: Warn about all problems and save a log file."))
 
     rememberLastFolder : BoolProperty(
         name = "Remember Last Folder",
