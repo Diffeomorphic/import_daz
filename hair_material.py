@@ -247,9 +247,8 @@ class HairBSDFTree(HairTree):
         refl.inputs['Offset'].default_value = 0
         refl.inputs["RoughnessU"].default_value = 0.02
         refl.inputs["RoughnessV"].default_value = 1.0
-        #ramp,socket = self.addRamp(refl, "Reflection", self.root, self.tip)
-        #self.linkRamp(ramp, socket, [self.roottex, self.tiptex], refl, "Color")
-        self.linkColor(self.roottex, refl, self.root, "Color")
+        ramp,socket = self.addRamp(refl, "Reflection", self.root, self.tip)
+        self.linkRamp(ramp, socket, [self.roottex, self.tiptex], refl, "Color")
         self.active = refl
         return refl
 
