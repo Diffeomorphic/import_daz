@@ -6,6 +6,7 @@ from mathutils import Vector, Matrix
 import os
 import bpy
 import bmesh
+import numpy as np
 from collections import OrderedDict
 from .asset import Asset, normalizeRef
 from .channels import Channels
@@ -280,6 +281,7 @@ class GeoNode(Node, SimNode):
         faces = self.stripNegatives([f[0] for f in self.highdef.faces])
         mnums = [f[4] for f in self.highdef.faces]
         nverts = len(verts)
+        nfaces = len(faces)
         me = bpy.data.meshes.new(HDName(ob.data.name))
         setModernProps(me)
         if GS.verbosity >= 3:
@@ -287,9 +289,8 @@ class GeoNode(Node, SimNode):
         me.from_pydata(verts, edges, faces)
         if GS.verbosity >= 3:
             print("HD mesh %s built" % me.name)
-        for f in me.polygons:
-            f.material_index = mnums[f.index]
-            f.use_smooth = True
+        me.polygons.foreach_set("material_index", mnums)
+        me.polygons.foreach_set("use_smooth", nfaces*[True])
         self.data.setHairType(me)
         self.data.validateMesh(me, HDName(ob.name))
         return me
@@ -417,8 +418,8 @@ class GeoNode(Node, SimNode):
                 bpy.ops.mesh.select_mode(type='VERT')
                 bpy.ops.mesh.select_all(action='DESELECT')
                 setMode('OBJECT')
-                for f in me.polygons:
-                    f.select = (f.material_index == mnum)
+                selection = [(f.material_index == mnum) for f in me.polygons]
+                me.polygons.foreach_set("select", selection)
                 setMode('EDIT')
 
             if smooth and GS.useSharpEdges and not self.isSubdivided():
@@ -760,7 +761,7 @@ class DAZ_OT_MakeMultires(DazPropsOperator, IsMesh):
         print('Base "%s", HD "%s"' % (baseob.name, hdob.name))
         hdtype = addMultires(context, baseob, hdob, False, None, None)
         if hdtype == 'MULTIRES':
-            if self.useNewUvs or hdob.data.uv_layers is None:
+            if self.useNewUvs or len(hdob.data.uv_layers) == 0:
                 copyUvLayers(context, baseob, hdob)
             ok,msg = copyVertexGroups(baseob, hdob)
             if not ok:
@@ -773,46 +774,20 @@ class DAZ_OT_MakeMultires(DazPropsOperator, IsMesh):
 
 
 def copyUvLayers(context, src, trg, selection=None):
-    def setupLoopsMapping(me):
-        loopsMapping = {}
-        for f in me.polygons:
-            loops = dict([(vn, f.loop_indices[i]) for i,vn in enumerate(f.vertices)])
-            fid = tuple( sorted(list(f.vertices)) )
-            if fid in loopsMapping:
-                raise RuntimeError("duplicated face_id?")
-            loopsMapping[fid] = loops
-        return loopsMapping
-
-    def copyLayer(srcdata, trgdata, loopsMapping):
-        for f in src.data.polygons:
-            fid = tuple( sorted(list(f.vertices)) )
-            if fid not in loopsMapping:
-                return False
-            for i,vn in enumerate(f.vertices):
-                if vn not in loopsMapping[fid]:
-                    print("Bad vertex", vn)
-                    continue
-                trgloop = loopsMapping[fid][vn]
-                srcloop = f.loop_indices[i]
-                trgdata[trgloop].uv = srcdata[srcloop].uv
-        return True
-
-    def copyAllLayers(trg):
-        loopsMapping = setupLoopsMapping(trg.data)
-        for srclayer in list(src.data.uv_layers):
+    from .finger import getFingerPrint
+    if getFingerPrint(src) == getFingerPrint(trg):
+        vnums = [list(f.vertices) for f in src.data.polygons]
+        nverts = len(flatten(vnums))
+        array = np.zeros(2*nverts, dtype=float)
+        for srclayer in src.data.uv_layers:
             if selection is None or srclayer.name in selection:
                 if srclayer.name in trg.data.uv_layers.keys():
                     print('UV layer "%s" already exists' % srclayer.name)
                     continue
                 trglayer = makeNewUvLayer(trg.data, srclayer.name, False)
-                ok = copyLayer(srclayer.data, trglayer.data, loopsMapping)
-                if not ok:
-                    trg.data.uv_layers.remove(trglayer)
-                    return False
-        return True
-
-    ok = copyAllLayers(trg)
-    if not ok:
+                srclayer.data.foreach_get("uv", array)
+                trglayer.data.foreach_set("uv", array)
+    else:
         print("Cannot copy UV layer to target mesh.")
         from .transfer import transferUvLayers
         transferUvLayers(context, src, [trg])
