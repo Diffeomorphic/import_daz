@@ -496,10 +496,8 @@ class GeoNode(Node, SimNode):
                 verts = []
                 for mn,mat in enumerate(ob.data.materials):
                     if mat and mat.name.lower().startswith(("eyemoisture", "eyereflection")):
-                        for f in ob.data.polygons:
-                            if f.material_index == mn:
-                                verts += f.vertices
-                        break
+                        mverts = [list(f.vertices) for f in ob.data.polygons if f.material_index == mn]
+                        verts += flatten(mverts)
                 vgrp = ob.vertex_groups.new(name="Displace")
                 for vn in set(verts):
                     vgrp.add([vn], 1.0, 'REPLACE')

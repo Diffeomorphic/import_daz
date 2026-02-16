@@ -155,11 +155,10 @@ class Proxifier(DriverUser):
         self.faceverts, self.vertfaces, self.neighbors, self.seams = findSeams(ob)
         if self.colorOnly:
             self.createMaterials()
-        self.origMnums = {}
-        for f in ob.data.polygons:
-            self.origMnums[f.index] = f.material_index
-            if self.colorOnly:
-                f.material_index = 0
+        self.origMnums = dict([(f.index, f.material_index) for f in ob.data.polygons])
+        if self.colorOnly:
+            nfaces = len(ob.data.polygons)
+            ob.data.polygons.foreach_set("material_index", nfaces*[0])
 
         setMode('EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')

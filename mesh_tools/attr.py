@@ -114,8 +114,8 @@ class DisplayFaceGroup(DazPropsOperator):
         attr = ob.data.attributes.get(self.attr)
         if attr is None:
             raise DazError("Object %s missing attribute %s" % (ob.name, self.attr))
-        for f in ob.data.polygons:
-            f.select = (attr.data[f.index].value == pg.a)
+        selection = [(attr.data[f.index].value == pg.a) for f in ob.data.polygons]
+        ob.data.polygons.foreach_set("select", selection)
 
 
 class DAZ_OT_DisplayMaterialGroup(DisplayFaceGroup, IsMesh):

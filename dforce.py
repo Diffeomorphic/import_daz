@@ -88,10 +88,9 @@ class DynSim(DForce):
             for mgrp in simset.modifier.groups:
                 mn = mnums.get(mgrp)
                 if mn is not None:
-                    for f in ob.data.polygons:
-                        if f.material_index == mn:
-                            for vn in f.vertices:
-                                vgrp.add([vn], 1-strength*influ[vn], 'REPLACE')
+                    vnums = [list(f.vertices) for f in ob.data.polygons if f.material_index == mn]
+                    for vn in flatten(vnums):
+                        vgrp.add([vn], 1-strength*influ[vn], 'REPLACE')
         return vgrp
 
 #-------------------------------------------------------------
