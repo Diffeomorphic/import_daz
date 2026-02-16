@@ -291,7 +291,7 @@ class ImportDAZManually(DazOperator, ColorOptions, FitOptions, MultiFile, DazLoa
         if LS.toons:
             from .toon import addToons
             addToons(context)
-        if GS.useDump or GS.verbosity >= 4:
+        if GS.useDump or GS.verbosity >= 5:
             from .error import dumpErrors
             dumpErrors(filepath)
         if len(filepaths) > 1:

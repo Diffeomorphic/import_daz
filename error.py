@@ -63,17 +63,19 @@ class DazError(Exception):
 
 
 def reportError(msg, instances={}, warnPaths=False, trigger=(2,5), force=False):
+    global theDumpErrors
     trigWarning,trigError = trigger
     if GS.verbosity >= trigWarning or force:
         print(msg)
     if GS.verbosity >= trigError or force:
-        LS.useDumpErrors = True
+        theDumpErrors = True
 
 
 def handleDazError(context, warning=False, dump=False):
-    if not (dump or LS.useDumpErrors):
+    global theDumpErrors
+    if not (dump or theDumpErrors):
         return
-    LS.useDumpErrors = False
+    theDumpErrors = False
 
     filepath = GS.getErrorPath()
     try:
@@ -84,12 +86,7 @@ def handleDazError(context, warning=False, dump=False):
     fp.write(LS.message)
 
     try:
-        if False and warning:
-            string = getMissingAssets()
-            fp.write(string)
-            print(string)
-        else:
-            printTraceBack(context, fp)
+        printTraceBack(context, fp)
     except:
         pass
     finally:

@@ -507,7 +507,6 @@ class LocalSettings:
         self.button = None
         self.message = ""
         self.errorLines = []
-        self.useDumpErrors = False
         self.selection = []
         self.assets = {}
         self.otherAssets = {}
