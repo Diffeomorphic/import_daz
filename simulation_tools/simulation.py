@@ -314,10 +314,8 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, Collision, IsMesh):
             bname = self.getBoneName(wname)
             vgrp = ob.vertex_groups.get(bname)
             if vgrp:
-                for v in ob.data.vertices:
-                    for g in v.groups:
-                        if g.group == vgrp.index:
-                            wstruct[v.index] += g.weight
+                for v,w in getVertexWeights(ob, vgrp.index):
+                    wstruct[v.index] += w
         wmax = max(list(wstruct.values()))
         if wmax > 0.1:
             return [(vn, max(0, min(1, 1.5*w))) for vn,w in wstruct.items() if w > 0.001]
@@ -339,13 +337,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, Collision, IsMesh):
             if vgrp is None:
                 print("No vertex group", ob.name, vname)
                 continue
-            ok = False
-            for v in ob.data.vertices:
-                for g in v.groups:
-                    if g.group == vgrp.index:
-                        ok = True
-                        break
-            if not ok:
+            if not getVertexWeights(ob, vgrp.index):
                 if not ES.easy:
                     print("Remove %s from %s" % (vname, ob.name))
                 ob.vertex_groups.remove(vgrp)

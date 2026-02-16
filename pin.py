@@ -62,11 +62,8 @@ class Pinner:
         if "Root Distance" in ob.vertex_groups.keys():
             distgrp = ob.vertex_groups["Root Distance"]
             idx = distgrp.index
-            for v in ob.data.vertices:
-                for g in v.groups:
-                    if g.group == idx:
-                        self.addWeight(vgrp, v.index, g.weight)
-                        break
+            for v,w in getVertexWeights(ob, distgrp.index):
+                self.addWeight(vgrp, v.index, w)
         elif ob.data.uv_layers:
             uvs = ob.data.uv_layers.active.data
             m = 0

@@ -4,6 +4,7 @@
 
 import bpy
 from mathutils import Matrix
+import numpy as np
 
 from ..error import *
 from ..utils import *
@@ -530,16 +531,15 @@ class DAZ_OT_BakeAllErcDrivers(DazPropsOperator, RemoveAll, DriverUser, IsArmatu
 
 
 def bakeAllShapes(ob):
-    from numpy import array
     skeys = ob.data.shape_keys
     if skeys is None:
         return
     verts = ob.data.vertices
-    varr = array([v.co for v in verts])
+    varr = np.array([v.co for v in verts])
     tarr = varr.copy()
     blocks = list(skeys.key_blocks)
     for skey in blocks:
-        sarr = array([v.co for v in skey.data])
+        sarr = np.array([v.co for v in skey.data])
         tarr += skey.value * (sarr - varr)
     blocks.reverse()
     for skey in blocks:

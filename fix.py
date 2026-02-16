@@ -829,12 +829,10 @@ class BendTwists:
         vec /= vec.dot(vec)
         bend = {}
         twist = {}
-        for v in ob.data.vertices:
-            for g in v.groups:
-                if g.group == vgrp.index:
-                    x = max(0, min(1, vec.dot(v.co - head)))
-                    bend[v.index] = g.weight*(1-x)
-                    twist[v.index] = g.weight*x
+        for v,w in getVertexWeights(ob, vgrp.index):
+            x = max(0, min(1, vec.dot(v.co - head)))
+            bend[v.index] = w*(1-x)
+            twist[v.index] = w*x
         ob.vertex_groups.remove(vgrp)
 
         def addGroup(ob, nname, weights):

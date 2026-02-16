@@ -611,8 +611,7 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
                     print("Try %s (%d verts)" % (dbz.name, len(verts)))
                 if len(verts) == len(ob.data.vertices):
                     skey = ob.shape_key_add(name=sname)
-                    for vn,co in enumerate(verts):
-                        skey.data[vn].co = co
+                    skey.data.foreach_set("co", flatten(verts))
                     skey.slider_min = self.min
                     skey.slider_max = self.max
                     print("Morph created for %s" % sname)

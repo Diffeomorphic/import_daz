@@ -1058,8 +1058,7 @@ class WidgetConverter:
             vertedges = getVertEdges(ob)
             edgefaces = getEdgeFaces(ob, vertedges)
             verts = ob.data.vertices
-            for v in verts:
-                v.select = True
+            verts.foreach_set("select", len(verts)*[True])
             for e in ob.data.edges:
                 if len(edgefaces[e.index]) <= 1:
                     vn1,vn2 = e.vertices

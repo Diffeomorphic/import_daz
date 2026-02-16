@@ -535,6 +535,9 @@ def updateAll(context):
 #   More utility functions
 #-------------------------------------------------------------
 
+def getVertexWeights(ob, idx):
+    return [(v, g.weight) for v in ob.data.vertices for g in v.groups if g.group == idx]
+
 def getFigure(ob):
     if dazRna(ob).DazFigure:
         return dazRna(ob).DazFigure
