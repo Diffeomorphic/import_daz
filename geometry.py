@@ -1659,7 +1659,7 @@ class Uvset(Asset):
         return (len(me.polygons) >= fnums[-1])
 
 
-    def checkPolyverts(self, me, polyverts, error):
+    def checkPolyverts(self, me, polyverts, strict):
         uvnums = []
         for fverts in polyverts.values():
             uvnums += fverts
@@ -1673,7 +1673,7 @@ class Uvset(Asset):
                 msg = ("Vertex number mismatch.\n" +
                        "Expected mesh with %d UV vertices        \n" % len(self.uvs) +
                        "but %s has %d UV vertices." % (me.name, uvmax))
-                if error:
+                if strict:
                     raise DazError(msg)
                 else:
                     print(msg)

@@ -58,15 +58,11 @@ class DAZ_OT_LoadUV(DazOperator, DufFile, SingleFile, IsMesh):
             polyverts = uvset.getPolyVerts(me)
             uvset.checkPolyverts(me, polyverts, True)
             uvlayer = makeNewUvLayer(me, uvset.getLabel(), False)
-            vnmax = len(uvset.uvs)
-            m = 0
-            for fn,f in enumerate(me.polygons):
-                for n in range(len(f.vertices)):
-                    vn = polyverts[f.index][n]
-                    if vn < vnmax:
-                        uv = uvset.uvs[vn]
-                        uvlayer.data[m].uv = uv
-                    m += 1
+            vnmax = len(uvset.uvs)-1
+            vnums = [polyverts[f.index] for f in me.polygons]
+            vnums = flatten(vnums)
+            uvs = [uvset.uvs[min(vn,vnmax)] for vn in vnums]
+            uvlayer.data.foreach_set("uv", flatten(uvs))
 
 #-------------------------------------------------------------
 #   Collaps UDims

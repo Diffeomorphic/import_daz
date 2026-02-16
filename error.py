@@ -62,6 +62,8 @@ class DazError(Exception):
         return repr(LS.message)
 
 
+theDumpErrors = False
+
 def reportError(msg, instances={}, warnPaths=False, trigger=(2,5), force=False):
     global theDumpErrors
     trigWarning,trigError = trigger
