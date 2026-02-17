@@ -90,8 +90,8 @@ class MatchOperator(DazPropsOperator):
         B = cverts - offsets
         try:
             # issue 2641
-            # w = np.linalg.solve(A, B)
-            w = np.linalg.solve(A, B[..., np.newaxis]).squeeze(-1)
+            W = np.linalg.solve(A, B[:,:,None])
+            w = W.squeeze(-1)
             msg = None
         except np.linalg.LinAlgError:
             msg = "Numerical error when finding match"
