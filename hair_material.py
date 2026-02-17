@@ -79,9 +79,10 @@ class HairBaseTree:
 
 
     def addTexco(self, slot):
+        node = CyclesTree.addTexco(self, slot)
+        if node.type == 'UVMAP':
+            node.uv_map = ""
         self.info = self.addNode('ShaderNodeHairInfo', col=1)
-        node = self.addNode("ShaderNodeTexCoord")
-        self.texco = node.outputs[slot]
         geonode = self.owner.geometry
         if geonode and node:
             geonode.texcos.add(node)
