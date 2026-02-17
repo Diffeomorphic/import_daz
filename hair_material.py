@@ -79,12 +79,12 @@ class HairBaseTree:
 
 
     def addTexco(self, slot):
-        node = CyclesTree.addTexco(self, slot)
         self.info = self.addNode('ShaderNodeHairInfo', col=1)
+        node = self.addNode("ShaderNodeTexCoord")
+        self.texco = node.outputs[slot]
         geonode = self.owner.geometry
         if geonode and node:
             geonode.texcos.add(node)
-        #self.texco = self.info.outputs["Intercept"]
 
 
     def buildOutput(self):
