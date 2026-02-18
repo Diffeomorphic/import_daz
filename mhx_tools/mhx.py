@@ -11,6 +11,7 @@ from ..driver import addDriver
 from ..fix import BendTwists, Fixer, GizmoUser
 from ..bone_data import BD
 from ..rig_utils import *
+from ..debug import DEBUG
 from .layers import *
 from .mhx_data import MHX
 
@@ -144,10 +145,13 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         description = "Raise error for missing bones",
         default = True)
 
-    useErcBones : BoolProperty(
-        name = "ERC Bones (Experimental)",
-        description = "Allow MHX generation for rigs with ERC bones",
-        default = False)
+    if DEBUG:
+        useErcBones : BoolProperty(
+            name = "ERC Bones (Experimental)",
+            description = "Allow MHX generation for rigs with ERC bones",
+            default = False)
+    else:
+        useErcBones = False
 
     @classmethod
     def poll(self, context):
@@ -176,7 +180,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         if not BLENDER4:
             self.layout.prop(self, "useDisplayTransform")
         self.layout.prop(self, "useRaiseError")
-        if GS.ercMethod.startswith("ERC"):
+        if DEBUG and GS.ercMethod.startswith("ERC"):
             self.layout.prop(self, "useErcBones")
 
 

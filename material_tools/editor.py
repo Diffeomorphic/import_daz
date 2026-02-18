@@ -201,17 +201,23 @@ class ChannelSetter:
 
 
     def setNodeValue(self, node, fromnode, fromsocket, socket, mat, ncomps, item):
+        def setMixValue(slot):
+            self.ensureColor(ncomps, item)
+            fromsocket = fromnode.inputs[slot]
+            fromsocket.default_value = self.getItemValue(4, item)
+            node1, socket1 = self.getFromNode(mat, fromnode, fromsocket)
+            if node1 and socket1:
+                self.setNodeValue(fromnode, node1, socket1, fromsocket, mat, ncomps, item)
+
         if fromnode.type == 'MIX_RGB':
-            self.ensureColor(ncomps, item)
-            fromnode.inputs[MixRGB.LegacyColor1].default_value = self.getItemValue(4, item)
+            setMixValue(MixRGB.LegacyColor1)
         elif fromnode.type == 'MIX':
-            self.ensureColor(ncomps, item)
-            fromnode.inputs[MixRGB.Color1].default_value = self.getItemValue(4, item)
+            setMixValue(MixRGB.Color1)
         elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY':
             fromnode.inputs[0].default_value = self.getItemValue(1, item)
         elif fromnode.type == 'MATH' and fromnode.operation == 'MULTIPLY_ADD':
             fromnode.inputs[1].default_value = self.getItemValue(1, item)
-        elif fromnode.type in ['TEX_IMAGE', 'GAMMA']:
+        elif fromnode.type in ['TEX_IMAGE', 'GAMMA', 'GROUP']:
             self.multiplyTex(node, fromsocket, socket, mat.node_tree, item)
         else:
             return False
