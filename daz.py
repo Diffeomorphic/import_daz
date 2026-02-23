@@ -342,9 +342,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Baked Morphs",
         description = "Also load morphs that have been baked into the dbz file")
 
-    useNumpyMorphs : BoolProperty(
-        name = "Numpy Morphs",
-        description = "Use numpy to load morphs.\nCan speed up morph loading for large morphs")
+    numpyMorphFraction : FloatProperty(
+        name = "Numpy Morph Fraction",
+        min = 0.0, max = 1.0,
+        description = "Use numpy to load morphs bigger than this fraction.\nCan speed up morph loading for large morphs")
 
     useStripCategory : BoolProperty(
         name = "Strip Category",
@@ -797,7 +798,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         drawEnum(self, box, "onShapekeyDrivers")
         drawEnum(self, box, "ercMethod")
         box.prop(self, "useBakedMorphs")
-        box.prop(self, "useNumpyMorphs")
+        box.prop(self, "numpyMorphFraction")
         box.prop(self, "useStripCategory")
         box.prop(self, "useDefaultDrivers")
         box.prop(self, "useFaceGroupMasks")
