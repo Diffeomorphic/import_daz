@@ -1026,7 +1026,7 @@ class LoadMorph(DriverUser):
                 if final not in self.amt.keys():
                     setFloatProp(self.amt, final, 0.0, None, None, True)
         for output,drivers in self.boneDrivers.items():
-            if drivers:
+            if drivers and self.rig and self.onDrivers == 'RIG':
                 for bname,expr in drivers.items():
                     self.buildBoneDriver(output, bname, expr, False)
         for output,drivers in self.hideDrivers.items():
