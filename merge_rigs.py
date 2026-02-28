@@ -219,6 +219,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
     def mergeRigs(self, context, roots, excluded):
         from .fileutils import DF
+        from .apply import safeTransformApply
 
         def getObjects(ob, parent, objects, infos, widgets, info):
             if ob in excluded:
@@ -312,7 +313,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             activateObject(context, rig)
             if rig.parent_type != 'BONE':
                 bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-                bpy.ops.object.transform_apply()
+                safeTransformApply()
             setMode('EDIT')
             for subrig,subbones,_submeshes in info[1:]:
                 for bname,binfo in subbones.items():

@@ -247,13 +247,17 @@ def removeObjectDrivers(objects):
 
 
 def safeTransformApply(useLocRot=True):
-    for ob in bpy.context.selected_objects:
-        if ob.data and ob.data.users > 1:
-            ob.select_set(False)
     try:
         bpy.ops.object.transform_apply(location=useLocRot, rotation=useLocRot, scale=True)
-    except RuntimeError as err:
-        print("Cannot apply transforms")
+        ok = True
+    except RuntimeError:
+        ok = False
+    if not ok:
+        bpy.ops.object.make_single_user(object=True, obdata=True, material=False, animation=False, obdata_animation=False)
+        try:
+           bpy.ops.object.transform_apply(location=useLocRot, rotation=useLocRot, scale=True)
+        except RuntimeError as err:
+            raise DazError(err)
 
 
 def applyAllObjectTransforms(rigs):
