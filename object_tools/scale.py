@@ -188,7 +188,7 @@ class DAZ_OT_ScaleObjects(MaterialScaler, DazPropsOperator, IsMeshArmature):
             lock = list(ob.lock_scale)
             ob.lock_scale = FFalse
             ob.scale *= scale
-            safeTransformApply(False)
+            safeTransformApply(False, False, True)
 
 
     def fixRig(self, rig):

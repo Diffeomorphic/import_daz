@@ -215,7 +215,7 @@ def applyRestPoses(context, rig, useMergeTiedBones=False):
 
     if activateObject(context, rig):
         removeBoneDrivers(rig)
-        bpy.ops.object.transform_apply()
+        safeTransformApply()
         setMode('POSE')
         bpy.ops.pose.armature_apply()
         setMode('OBJECT')
@@ -246,16 +246,16 @@ def removeObjectDrivers(objects):
                     ob.animation_data.drivers.remove(fcu)
 
 
-def safeTransformApply(useLocRot=True):
+def safeTransformApply(loc=True, rot=True, scale=True):
     try:
-        bpy.ops.object.transform_apply(location=useLocRot, rotation=useLocRot, scale=True)
+        bpy.ops.object.transform_apply(location=loc, rotation=rot, scale=scale)
         ok = True
     except RuntimeError:
         ok = False
     if not ok:
         bpy.ops.object.make_single_user(object=True, obdata=True, material=False, animation=False, obdata_animation=False)
         try:
-           bpy.ops.object.transform_apply(location=useLocRot, rotation=useLocRot, scale=True)
+            bpy.ops.object.transform_apply(location=loc, rotation=rot, scale=scale)
         except RuntimeError as err:
             raise DazError(err)
 

@@ -6,6 +6,7 @@ import bpy
 import numpy as np
 from ..error import *
 from ..utils import *
+from ..apply import safeTransformApply
 from ..fix import GizmoUser
 from .make_hair import Separator
 
@@ -224,7 +225,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         if self.useVertexGroups:
             addArmatureModifier(ob, rig, "Armature Hair")
         setWorldMatrix(ob, wmat)
-        bpy.ops.object.transform_apply()
+        safeTransformApply()
         enableRigNumLayer(rig, T_WIDGETS)
         enableRigNumLayer(rig, T_HIDDEN, False)
 
@@ -300,7 +301,7 @@ class DAZ_OT_AddHairRig(DazPropsOperator, Separator, GizmoUser, IsMesh):
         setMode('OBJECT')
         activateObject(context, hairrig)
         setWorldMatrix(hairrig, rig.matrix_world)
-        bpy.ops.object.transform_apply()
+        safeTransformApply()
         setMode('EDIT')
         eb = amt.edit_bones.new(self.headName)
         eb.head = head

@@ -56,14 +56,14 @@ if fail:
 #----------------------------------------------------------
 
 Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "uilist",
-           "selector", "propgroups", "daz", "fileutils", "asset", "channels", "formula",
+           "selector", "propgroups", "daz", "apply", "fileutils", "asset", "channels", "formula",
            "rig_utils", "bone_data", "transform", "node", "figure", "bone", "geometry",
            "store", "modifier", "load_morph", "morphing", "slider", "baked",
            "animation", "fix", "dbzfile", "panel", "erc",
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "hair_material",
            "render", "camera", "light", "visibility",
            "guess", "convert", "files", "finger", "locks", "bone_chains",
-           "merge_uvs", "merge_grafts", "merge_rigs", "apply", "empties",
+           "merge_uvs", "merge_grafts", "merge_rigs", "empties",
            "matsel", "tables", "proxy", "transfer",
            "dforce", "pin", "main", "geonodes", "winder",
            "hd_data", "framer", "scan", "api",

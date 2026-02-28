@@ -7,6 +7,7 @@ from mathutils import Matrix
 from .utils import *
 from .error import *
 from .driver import DriverUser
+from .apply import safeTransformApply
 
 #-------------------------------------------------------------
 #   Get selected rigs
@@ -219,7 +220,6 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
 
     def mergeRigs(self, context, roots, excluded):
         from .fileutils import DF
-        from .apply import safeTransformApply
 
         def getObjects(ob, parent, objects, infos, widgets, info):
             if ob in excluded:
@@ -557,7 +557,7 @@ def applyTransformToObjects(context, objects, excluded=[]):
         ob.hide_set(False)
         ob.hide_select = False
         ob.select_set(True)
-    bpy.ops.object.transform_apply()
+    safeTransformApply()
 
     for child, ob, partype, parbone, wmat, hide1, hide2, hide3 in parents:
         child.parent = ob
@@ -576,7 +576,7 @@ def restoreTransformsToObjects(wmats):
     for ob,wmat,hide1,hide2,hide3 in wmats:
         setWorldMatrix(ob, wmat.inverted())
         ob.select_set(True)
-    bpy.ops.object.transform_apply()
+    safeTransformApply()
     for ob,wmat,hide1,hide2,hide3 in wmats:
         setWorldMatrix(ob, wmat)
         ob.hide_viewport = hide1

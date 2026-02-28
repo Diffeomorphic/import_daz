@@ -294,7 +294,7 @@ class MetaMaker(RigifyCommon):
         bpy.ops.object.rotation_clear()
         bpy.ops.object.scale_clear()
         bpy.ops.transform.resize(value=(100*scale, 100*scale, 100*scale))
-        safeTransformApply(False)
+        safeTransformApply(False, False, True)
 
         print("  Fix metarig")
         meta = context.object
