@@ -717,24 +717,52 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
         description = "Copy user interface",
         default = True)
 
+    useBones : BoolProperty(
+        name = "Add Missing Bones",
+        description = "Add missing bones",
+        default = True)
+
+    useConstraints : BoolProperty(
+        name = "Copy Constraints",
+        description = "Copy constraints",
+        default = True)
+
     useOverride : BoolProperty(
-        name = "Override Existing Drivers",
+        name = "Override Existing",
+        description = "Override existing drivers and constraints",
         default = True)
 
     def draw(self, context):
         self.layout.prop(self, "useShapekeys")
         self.layout.prop(self, "useMorphsets")
+        self.layout.prop(self, "useBones")
+        self.layout.prop(self, "useConstraints")
         self.layout.prop(self, "useOverride")
 
     def run(self, context):
         from .morphing import copyMorphsets
         rig1 = context.object
-        for rig2 in getSelectedObjects(context):
+        objects = getSelectedObjects(context)
+        if self.useBones:
+            newboness = {}
+            setMode('EDIT')
+            for rig2 in objects:
+                if rig2.type == 'ARMATURE' and rig2 != rig1:
+                    newboness[rig2.name] = self.addEditBones(rig1, rig2)
+            setMode('OBJECT')
+            for rig2 in objects:
+                newbones = newboness.get(rig2.name)
+                if newbones:
+                    self.addPoseBones(rig1, rig2, newbones)
+
+        for rig2 in objects:
             if rig2.type == 'ARMATURE' and rig2 != rig1:
                 if self.useMorphsets:
                     copyMorphsets(rig1, rig2)
                 self.copyDrivers(rig1, rig2, rig1, rig2, True)
                 self.copyDrivers(rig1.data, rig2.data, rig1, rig2, False)
+                if self.useConstraints:
+                    self.copyConstraints(rig1, rig2)
                 if self.useShapekeys:
                     for ob in getShapeChildren(rig2):
                         retargetDrivers(ob.data.shape_keys, rig1, rig2)
@@ -744,7 +772,7 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
         def fcukey(fcu):
             return "%s:%d" % (fcu.data_path, fcu.array_index)
 
-        if rna1.animation_data is None:
+        if rna1 == rna2 or rna1.animation_data is None:
             return
         if rna2.animation_data is None:
             rna2["Dummy"] = 0
@@ -776,6 +804,36 @@ class DAZ_OT_CopyDrivers(DazPropsOperator, IsArmature):
         if dummy:
             rna2.driver_remove(propRef("Dummy"))
             del rna2["Dummy"]
+
+
+    def addEditBones(self, rig1, rig2):
+        newbones = []
+        for eb1 in rig1.data.edit_bones:
+            if eb1.name not in rig2.data.edit_bones.keys():
+                newbones.append(eb1.name)
+                eb2 = rig2.data.edit_bones.new(eb1.name)
+                eb2.head = eb1.head
+                eb2.tail = eb1.tail
+                eb2.roll = eb1.roll
+                if eb1.parent:
+                    eb2.parent = rig2.data.edit_bones.get(eb1.parent.name)
+        return newbones
+
+
+    def addPoseBones(self, rig1, rig2, newbones):
+        from .figure import copyBoneInfo
+        for bname in newbones:
+            pb1 = rig1.pose.bones[bname]
+            pb2 = rig2.pose.bones[bname]
+            copyBoneInfo(pb1, pb2)
+
+
+    def copyConstraints(self, rig1, rig2):
+        from .store import copyConstraints
+        for pb1 in rig1.pose.bones:
+            pb2 = rig2.pose.bones.get(pb1.name)
+            if pb2:
+                copyConstraints(pb1, pb2, rig2)
 
 #----------------------------------------------------------
 #   Retargeting
