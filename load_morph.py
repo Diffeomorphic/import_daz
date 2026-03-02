@@ -532,6 +532,7 @@ class LoadMorph(DriverUser):
         if not exprs:
             return False
         for output,data in exprs.items():
+            output = rawProp(output)
             for key,data1 in data.items():
                 if key == "*fileref":
                     ref,channel = data1
@@ -586,10 +587,11 @@ class LoadMorph(DriverUser):
             raise DazError(msg)
 
 
-    def addNewProp(self, raw, asset=None, skey=None):
+    def addNewProp(self, prop, asset=None, skey=None):
         from .driver import setBoolProp, getPropMinMax
         from .selector import setActivated
         from .modifier import Alias, FormulaAsset
+        raw = rawProp(prop)
         final = finalProp(raw)
         if raw.startswith("CTRLMD"):
             return final
