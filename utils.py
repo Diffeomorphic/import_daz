@@ -588,13 +588,13 @@ def normalizePath(path):
     return path.replace("\\", "/")
 
 def rawProp(prop):
-    return prop[0:57]
+    return unquote(prop[0:57])
 
 def finalProp(prop):
-    return "%s(fin)" % prop[0:57]
+    return "%s(fin)" % unquote(prop[0:57])
 
 def restProp(prop):
-    return "%s(rst)" % prop[0:57]
+    return "%s(rst)" % unquote(prop[0:57])
 
 def baseProp(string):
     if string[-5:] in ["(fin)", "(rst)"]:

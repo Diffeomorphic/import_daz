@@ -285,7 +285,7 @@ def buildBakedMorph(inst, ref, value):
         value = float(value)
         file,raw = ref.rsplit("#",1)
         file = unquote(file)
-        raw = rawProp(unquote(raw))
+        raw = rawProp(raw)
         final = finalProp(raw)
         rig.data[final] = value
         if file not in dazRna(rig).DazBakedFiles.keys():
