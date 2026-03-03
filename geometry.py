@@ -193,7 +193,7 @@ class GeoNode(Node, SimNode):
             if GS.useMultires and hdob.data.polygons:
                 self.hdType = addMultires(context, ob, hdob, False, self.data.SubDIALevel, self.data)
             if self.hdType in ['MULTIRES', 'HIGHDEF']:
-                if len(ob.data.uv_layers) > len(hdob.data.uv_layers):
+                if len(hdob.data.uv_layers) == 0:
                     copyUvLayers(context, ob, hdob)
             elif self.hdType == 'NONE':
                 print("HD mesh same as base mesh:", ob.name)
@@ -318,7 +318,7 @@ class GeoNode(Node, SimNode):
                 print("  HD UVs added in %s seconds" % (t2-t1))
 
         if len(ob.data.uv_layers) > 0:
-            uvname = ob.data.uv_layers[0].name
+            uvname = ob.data.uv_layers.active.name
         else:
             uvname = "UV Layer"
         addUvLayer(uvname, self.highdef.uvs, self.highdef.faces, True)
