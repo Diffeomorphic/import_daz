@@ -194,7 +194,6 @@ class GeoNode(Node, SimNode):
                 self.hdType = addMultires(context, ob, hdob, False, self.data.SubDIALevel, self.data)
             if self.hdType in ['MULTIRES', 'HIGHDEF']:
                 if len(ob.data.uv_layers) > len(hdob.data.uv_layers):
-                    print("COPY UVS", ob.name, hdob.name)
                     copyUvLayers(context, ob, hdob)
             elif self.hdType == 'NONE':
                 print("HD mesh same as base mesh:", ob.name)
@@ -285,10 +284,10 @@ class GeoNode(Node, SimNode):
         me = bpy.data.meshes.new(HDName(ob.data.name))
         setModernProps(me)
         if GS.verbosity >= 3:
-            print("Build HD mesh for %s: %d verts, %d faces, %d edges" % (ob.name, nverts, len(faces), len(edges)))
+            print("  Build HD mesh for %s: %d verts, %d faces, %d edges" % (ob.name, nverts, len(faces), len(edges)))
         me.from_pydata(verts, edges, faces)
         if GS.verbosity >= 3:
-            print("HD mesh %s built" % me.name)
+            print("  HD mesh %s built" % me.name)
         me.polygons.foreach_set("material_index", mnums)
         me.polygons.foreach_set("use_smooth", nfaces*[True])
         self.data.setHairType(me)
@@ -310,13 +309,13 @@ class GeoNode(Node, SimNode):
             uvfaces = self.stripNegatives([f[1] for f in faces])
             uvlayer = makeNewUvLayer(hdob.data, uvname, setActive)
             if GS.verbosity >= 3:
-                print("Add HD UV layer %s to %s" % (uvlayer.name, hdob.name))
+                print("  Add HD UV layer %s to %s" % (uvlayer.name, hdob.name))
                 t1 = perf_counter()
             uvdata = [uvs[vn] for f in uvfaces for vn in f]
             uvlayer.data.foreach_set("uv", flatten(uvdata))
             if GS.verbosity >= 3:
                 t2 = perf_counter()
-                print("HD UVs added in %s seconds" % (t2-t1))
+                print("  HD UVs added in %s seconds" % (t2-t1))
 
         if len(ob.data.uv_layers) > 0:
             uvname = ob.data.uv_layers[0].name
@@ -774,6 +773,8 @@ class DAZ_OT_MakeMultires(DazPropsOperator, IsMesh):
 def copyUvLayers(context, src, trg, selection=None):
     from .finger import getFingerPrint
     if getFingerPrint(src) == getFingerPrint(trg):
+        if GS.verbosity >= 3:
+            print("  Copy UVs", ob.name, hdob.name)
         vnums = [list(f.vertices) for f in src.data.polygons]
         nverts = len(flatten(vnums))
         array = np.zeros(2*nverts, dtype=float)
@@ -785,8 +786,10 @@ def copyUvLayers(context, src, trg, selection=None):
                 trglayer = makeNewUvLayer(trg.data, srclayer.name, False)
                 srclayer.data.foreach_get("uv", array)
                 trglayer.data.foreach_set("uv", array)
+        if GS.verbosity >= 3:
+            print("  UVs copied")
     else:
-        print("Cannot copy UV layer to target mesh.")
+        print("  Cannot copy UV layer to target mesh.")
         from .transfer import transferUvLayers
         transferUvLayers(context, src, [trg])
 
