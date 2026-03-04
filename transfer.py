@@ -137,15 +137,25 @@ def transferVertexGroups(context, src, targets, threshold, useEdges=False):
 #----------------------------------------------------------
 
 def transferUvLayers(context, src, targets):
-    activateObject(context, src)
     for trg in targets:
+        activateObject(context, src)
         trg.select_set(True)
-    print("Transfer UV layers %s => %s" % (src.name, [trg.name for trg in targets]))
-    bpy.ops.object.data_transfer(
-        data_type = 'UV',
-        loop_mapping = 'NEAREST_POLYNOR',
-        layers_select_src = 'ALL',
-        layers_select_dst = 'NAME')
+        if GS.verbosity >= 3:
+            print("  Transfer UV layers %s => %s" % (src.name, trg.name))
+        active = src.data.uv_layers.active
+        for uvlayer in src.data.uv_layers:
+            if uvlayer.name not in trg.data.uv_layers.keys():
+                if GS.verbosity >= 3:
+                    print('      UV layer "%s"' % uvlayer.name)
+                src.data.uv_layers.active = uvlayer
+                bpy.ops.object.data_transfer(
+                    data_type = 'UV',
+                    loop_mapping = 'NEAREST_POLYNOR',
+                    layers_select_src = 'ACTIVE',
+                    layers_select_dst = 'NAME')
+        src.data.uv_layers.active = active
+        if GS.verbosity >= 3:
+            print("  UV layers transferred")
 
 #----------------------------------------------------------
 #   Morphs transfer
