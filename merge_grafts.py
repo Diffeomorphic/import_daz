@@ -682,6 +682,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
     def moveGraftVerts(self, graft, hum, cvgrps):
         from .modifier import getBasisShape
+        from .transfer import addShapekey
         cvgroups = dict([(vgrp.index, vgrp.name) for vgrp in hum.vertex_groups])
         averts = graft.data.vertices
         cverts = hum.data.vertices
@@ -703,7 +704,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             abasis,askeys,new = getBasisShape(graft)
             for cskey in cskeys.key_blocks:
                 if cskey.name not in askeys.key_blocks.keys():
-                    graft.shape_key_add(name = cskey.name)
+                    addShapekey(graft, cskey)
 
         # Move shapekey positions
         askeys = graft.data.shape_keys

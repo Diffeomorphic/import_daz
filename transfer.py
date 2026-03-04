@@ -707,7 +707,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
     def autoTransferExact(self, src, trg, hskey):
         cverts = trg.data.vertices
         hverts = src.data.vertices
-        cskey = trg.shape_key_add(name=hskey.name)
+        cskey = addShapekey(trg, hskey)
         if self.useSelectedOnly:
             for cvn,hvn,offset in self.match:
                 if cverts[cvn].select:
@@ -768,7 +768,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         dmax = np.max(dists)
         if dmax < self.eps:
             return False
-        cskey = trg.shape_key_add(name=hskey.name)
+        cskey = addShapekey(trg, hskey)
         if self.useSelectedOnly:
             cverts = trg.data.vertices
             selected = [cv.index for cv in cverts if cv.select]
@@ -851,6 +851,14 @@ class DAZ_OT_ApplyActiveShapekey(DazPropsOperator, IsShape):
 #----------------------------------------------------------
 #   Utility
 #----------------------------------------------------------
+
+def addShapekey(ob, skey):
+    nskey = ob.shape_key_add(name=skey.name)
+    nskey.slider_min = skey.slider_min
+    nskey.slider_max = skey.slider_max
+    nskey.vertex_group = skey.vertex_group
+    return nskey
+
 
 def checkObjectTransforms(ob):
     if (ob.location != Zero or
