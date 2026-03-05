@@ -774,7 +774,7 @@ def copyUvLayers(context, src, trg, selection=None):
     from .finger import getFingerPrint
     if getFingerPrint(src) == getFingerPrint(trg):
         if GS.verbosity >= 3:
-            print("  Copy UVs", ob.name, hdob.name)
+            print("  Copy UVs", src.name, trg.name)
         vnums = [list(f.vertices) for f in src.data.polygons]
         nverts = len(flatten(vnums))
         array = np.zeros(2*nverts, dtype=float)
