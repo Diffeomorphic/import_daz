@@ -830,10 +830,11 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
                     coll = rig.data.collections.get(layer)
                     if coll:
                         for bone in coll.bones:
-                            bone.color.palette = 'CUSTOM'
-                            bone.color.custom.normal = color
-                            bone.color.custom.select = (0.6, 0.9, 1.0)
-                            bone.color.custom.active = (1.0, 1.0, 0.8)
+                            if hasattr(bone, "color"):
+                               bone.color.palette = 'CUSTOM'
+                               bone.color.custom.normal = color
+                               bone.color.custom.select = (0.6, 0.9, 1.0)
+                               bone.color.custom.active = (1.0, 1.0, 0.8)
             for pb in rig.pose.bones:
                 if pb.custom_shape is None:
                     pb.bone.color.palette = 'DEFAULT'

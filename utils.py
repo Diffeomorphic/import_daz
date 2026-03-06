@@ -247,7 +247,7 @@ else:
                 rig.data.collections.remove(coll)
 
     def setBonegroup(pb, rig, bgname, color):
-        if GS.useBoneColors:
+        if GS.useBoneColors and hasattr(pb, "color"):
             pb.color.palette = 'CUSTOM'
             pb.color.custom.normal = color
             pb.color.custom.select = (0.6, 0.9, 1.0)

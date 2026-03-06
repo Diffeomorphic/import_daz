@@ -419,8 +419,9 @@ def copyBoneInfo(srcpb, trgpb, usePoseBone=True):
             if hasattr(srcpb, attr):
                 setattr(trgpb, attr, getattr(srcpb, attr))
     for attr in ["palette"]:
-        setattr(trgpb.bone.color, attr, getattr(srcpb.bone.color, attr))
-        setattr(trgpb.color, attr, getattr(srcpb.color, attr))
+        if hasattr(srcpb, "color"):
+            setattr(trgpb.bone.color, attr, getattr(srcpb.bone.color, attr))
+            setattr(trgpb.color, attr, getattr(srcpb.color, attr))
 
 #-------------------------------------------------------------
 #   Make bones posable
@@ -646,8 +647,9 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
                 copyPoseBone(drvb, pb, rig)
                 copyBoneInfo(drvb, pb)
                 drvb.custom_shape = None
-                drvb.bone.color.palette = 'THEME14'
-                drvb.color.palette = 'THEME14'
+                if hasattr(drvb, "color"):
+                    drvb.bone.color.palette = 'THEME14'
+                    drvb.color.palette = 'THEME14'
                 store.storeConstraints(drvb.name, drvb)
                 removeConstraints(drvb, onlyLimit=True)
                 addCopyConstraint(rig, bname, boneDrivers, sumDrivers)

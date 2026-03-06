@@ -56,8 +56,9 @@ def addErcBones(rig, useParents):
         pb = rig.pose.bones[bname]
         ercb = rig.pose.bones[ercBone(bname)]
         copyBoneInfo(pb, ercb)
-        ercb.bone.color.palette = 'THEME09'
-        ercb.color.palette = 'THEME09'
+        if hasattr(ercb, "color"):
+            ercb.bone.color.palette = 'THEME09'
+            ercb.color.palette = 'THEME09'
     coll = rig.data.collections.get(T_ERC)
     if coll:
         coll.is_visible = False
@@ -167,8 +168,9 @@ def updateErcBone(rig, pb, ercb):
     copyBoneLayers(pb, ercb, rig)
     enableBoneNumLayer(ercb.bone, rig, T_BONES)
     enableBoneNumLayer(pb.bone, rig, T_ERC)
-    pb.bone.color.palette = 'THEME04'
-    pb.color.palette = 'THEME04'
+    if hasattr(pb, "color"):
+        pb.bone.color.palette = 'THEME04'
+        pb.color.palette = 'THEME04'
     if drvb != pb:
         for channel in ["location", "rotation_euler", "rotation_quaternion", "scale"]:
             drvb.driver_remove(channel)
@@ -272,8 +274,9 @@ def addErcDrivers(context, rig):
             pb = rig.pose.bones[bname]
             drvb = rig.pose.bones[drvBone(bname)]
             drvb.driver_remove("location")
-            drvb.bone.color.palette = 'THEME14'
-            drvb.color.palette = 'THEME14'
+            if hasattr(ercb, "color"):
+                drvb.bone.color.palette = 'THEME14'
+                drvb.color.palette = 'THEME14'
             for idx in range(3):
                 fcu = drvb.driver_add("location", idx)
                 bname1, bname2 = getBoneNames(form, idx)
