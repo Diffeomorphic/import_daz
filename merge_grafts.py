@@ -313,7 +313,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             if attribute:
                 try:
                     attribute.data.foreach_set("value", list(paired_vert_list.values()))
-                except TypeError:
+                except (TypeError, RuntimeError):
                     print("Attribute mismatch:", graft.name, attribute.name)
 
         # Also select hum graft group. These will not be removed.
