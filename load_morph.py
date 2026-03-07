@@ -246,7 +246,7 @@ class LoadMorph(DriverUser):
                 else:
                     self.mesh.update_tag()
 
-        if GS.useOptimizedDrivers and self.rig:
+        if GS.useReducedDrivers and self.rig:
             from .driver import optimizeFurther
             ndeleted = optimizeFurther(self.rig)
             if not ES.easy:
@@ -679,7 +679,7 @@ class LoadMorph(DriverUser):
 
     def makeValueFormula(self, output, expr, drivers):
         output = self.getUniqueName(output)
-        if expr.props and not GS.useOptimizedDrivers:
+        if expr.props and not GS.useReducedDrivers:
             self.addNewProp(output)
             for target in expr.props:
                 prop = self.getUniqueName(target.key)

@@ -359,9 +359,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Default Drivers",
         description = "Create default drivers defined in the scene file")
 
-    useOptimizedDrivers : BoolProperty(
-        name = "Optimized Drivers",
-        description = "Optimize drivers by ignoring properties that driver other properties\nSome drivers do not work")
+    useReducedDrivers : BoolProperty(
+        name = "Reduced Drivers",
+        description = "Optimize drivers by ignoring properties that driver other properties\nThis breaks some drivers, and is incompatible with loading DAZ poses")
 
     onShapekeyDrivers : EnumProperty(
         items = [('REGULAR', "Regular", "Make regular, non-optimized drivers"),
@@ -794,7 +794,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "showFinalProps")
         box.prop(self, "showInTerminal")
         box.prop(self, "useFaceSubpanels")
-        box.prop(self, "useOptimizedDrivers")
+        box.prop(self, "useReducedDrivers")
         drawEnum(self, box, "onShapekeyDrivers")
         drawEnum(self, box, "ercMethod")
         box.prop(self, "useBakedMorphs")

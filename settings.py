@@ -107,7 +107,7 @@ class GlobalSettings:
         self.numpyMorphFraction = 0.20
         self.useStripCategory = False
         self.useDefaultDrivers = True
-        self.useOptimizedDrivers = False
+        self.useReducedDrivers = False
         self.onShapekeyDrivers = 'REGULAR'
         self.useRigidityAttributes = True
         self.useFaceGroupMasks = False
