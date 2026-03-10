@@ -188,22 +188,24 @@ class Fixer(DriverUser):
         setMode('EDIT')
         for prefix in ["l", "r"]:
             for bname in ["Carpal1", "Carpal2"]:
-                if prefix+bname in rig.data.edit_bones.keys():
-                    eb = rig.data.edit_bones[prefix+bname]
+                eb = rig.data.edit_bones.get("%s%s" % (prefix, bname))
+                if eb:
                     rig.data.edit_bones.remove(eb)
-            hand = rig.data.edit_bones[prefix+"Hand"]
-            hand.tail = 2*hand.tail - hand.head
-            for bname,cname in Carpals.items():
-                if prefix+cname in rig.data.edit_bones.keys():
-                    eb = makeBone("%s%s" % (prefix, bname), rig, hand.head, child.head, child.roll, T_BONES, hand, hand)
-                    child.parent = eb
-                    child.use_connect = True
+            hand = rig.data.edit_bones.get("%sHand" % prefix)
+            if hand:
+                hand.tail = 2*hand.tail - hand.head
+                for bname,cname in Carpals.items():
+                    child = rig.data.edit_bones.get("%s%s" % (prefix, cname))
+                    if child:
+                        eb = makeBone("%s%s" % (prefix, bname), rig, hand.head, child.head, child.roll, T_BONES, hand, hand)
+                        child.parent = eb
+                        child.use_connect = True
         setMode('OBJECT')
         for ob in getMeshChildren(rig):
             for prefix in ["l", "r"]:
-                for vgrp in ob.vertex_groups:
-                    if vgrp.name == prefix+"Carpal2":
-                        vgrp.name = prefix+"Carpal4"
+                vgrp = ob.vertex_groups.get("%sCarpal2" % prefix)
+                if vgrp:
+                    vgrp.name = "%sCarpal4" % prefix
 
 
     def removeVertexGroups(self, rig, grpnames):

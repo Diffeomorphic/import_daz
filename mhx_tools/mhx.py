@@ -1730,8 +1730,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             foot = rig.data.edit_bones["foot.%s" % suffix]
             toe = rig.data.edit_bones["toe.%s" % suffix]
             offs = Vector((0, 0, 0.5*toe.length))
-            if "heel.%s" % suffix in rig.data.edit_bones.keys():
-                heelTail = rig.data.edit_bones["heel.%s" % suffix]
+            heel = rig.data.edit_bones.get("heel.%s" % suffix)
+            if heel:
                 heelTail = heel.tail
                 heelFormula = heel
             else:
