@@ -104,9 +104,6 @@ if BLENDER3:
     def getBoneLayers(bone, rig):
         return list(bone.layers)
 
-    def setBoneLayers(bone, rig, layers):
-        bone.layers = layers
-
     def setBoneNumLayers(bone, rig, layers):
         bone.layers = layers
 
@@ -168,10 +165,6 @@ else:
 
     def getBoneLayers(bone, rig):
         return [coll for coll in rig.data.collections if bone.name in coll.bones]
-
-    def setBoneLayers(bone, rig, colls):
-        for coll in colls:
-            coll.assign(bone)
 
     def setBoneNumLayers(bone, rig, layers):
         for coll in rig.data.collections:

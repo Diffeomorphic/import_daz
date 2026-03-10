@@ -916,8 +916,9 @@ class DAZ_OT_ChangeArmature(DazPropsOperator, IsArmature):
             setMode('EDIT')
             for bname,data in extras.items():
                 head, tail, mat, layers, pname = data
-                eb = makeBone(bname, rig, head, tail, 0, layers[0], None, parent)
-                setBoneLayers(eb, rig, layers)
+                if not layers:
+                    layers = [T_HIDDEN]
+                eb = makeBone(bname, rig, head, tail, 0, layers[0], None)
                 if pname is not None:
                     eb.parent = rig.data.edit_bones[pname]
                 eb.matrix = mat
