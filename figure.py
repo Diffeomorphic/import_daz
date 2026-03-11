@@ -440,7 +440,7 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
                 if trg.data_path:
                     trg.data_path = replaceDataPathDrv(trg.data_path)
 
-    def correctScaleDriver(fcu, pb):
+    def correctScaleDriver(fcu, pb, bnames):
         for var in fcu.driver.variables:
             if var.name == "parscale":
                 for trg in var.targets:
@@ -536,7 +536,7 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
         removeDriverFCurves(sumFcus.values(), rig)
         return boneDrivers, sumDrivers
 
-    def restoreBoneSumDrivers(rig, drivers):
+    def restoreBoneSumDrivers(rig, drivers, bnames):
         for bname,bdrivers in drivers.items():
             pb = rig.pose.bones.get(drvBone(bname))
             if pb:
@@ -544,7 +544,7 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
                     fcu = drvuser.getTmpDriver(0)
                     driver.fill(fcu)
                     if driver.data_path.endswith(".scale"):
-                        correctScaleDriver(fcu, pb)
+                        correctScaleDriver(fcu, pb, bnames)
                     else:
                         correctDriver(fcu, rig)
                     fcu2 = rig.animation_data.drivers.from_existing(src_driver=fcu)
@@ -664,10 +664,10 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
 
         if not ES.easy:
             print("  Restore bone drivers")
-        restoreBoneSumDrivers(rig, boneDrivers)
+        restoreBoneSumDrivers(rig, boneDrivers, bnames)
         if not ES.easy:
             print("  Restore sum drivers")
-        restoreBoneSumDrivers(rig, sumDrivers)
+        restoreBoneSumDrivers(rig, sumDrivers, bnames)
         if not ES.easy:
             print("  Update scripted drivers")
         updateScriptedDrivers(rig.data, bnames)

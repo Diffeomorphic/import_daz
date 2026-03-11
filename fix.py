@@ -172,7 +172,8 @@ class Fixer(DriverUser):
                 toe.parent = toes
             for bname in drvnames:
                 eb = rig.data.edit_bones.get("%s%s" % (prefix, bname))
-                rig.data.edit_bones.remove(eb)
+                if eb:
+                    rig.data.edit_bones.remove(eb)
 
 
     def fixCarpals(self, rig):
