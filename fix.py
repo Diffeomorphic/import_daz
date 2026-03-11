@@ -209,6 +209,32 @@ class Fixer(DriverUser):
                     vgrp.name = "%sCarpal4" % prefix
 
 
+    def removeTwistBones(self, rig):
+        twnames = [pb.name for pb in rig.pose.bones if pb.name.endswith(".twist")]
+        if twnames:
+            for twname in twnames:
+                pb = rig.pose.bones.get(twname)
+                for cns in list(pb.constraints):
+                    pb.constraints.remove(cns)
+            for ob in getMeshChildren(rig):
+                for twname in twnames:
+                    vgrp = ob.vertex_groups.get(twname[:-6])
+                    tvgrp = ob.vertex_groups.get(twname)
+                    if vgrp and tvgrp:
+                        weights = getVertexWeights(ob, vgrp.index)
+                        if vgrp:
+                            ob.vertex_groups.remove(vgrp)
+                        tvgrp.name = twname[:-6]
+                        for v,w in weights:
+                            tvgrp.add([v.index], w, 'ADD')
+            setMode('EDIT')
+            for twname in twnames:
+                eb = rig.data.edit_bones.get(twname)
+                if eb:
+                    rig.data.edit_bones.remove(eb)
+            setMode('OBJECT')
+
+
     def removeVertexGroups(self, rig, grpnames):
         for ob in getMeshChildren(rig):
             for gname in grpnames:

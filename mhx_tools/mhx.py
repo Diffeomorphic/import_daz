@@ -313,6 +313,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         elif dazRna(rig).DazRig in ["genesis", "genesis2"]:
             self.fixPelvis(rig)
             self.fixCarpals(rig)
+            self.removeTwistBones(rig)
             connectToParent(rig, MHX.ConnectBendTwist)
             self.rename2Mhx(rig)
             self.fixGenesis2Problems(rig)
@@ -1101,6 +1102,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             forearm = self.setLayer("forearm.%s" % suffix, rig, L_HELP)
             hand0 = self.setLayer("hand.%s" % suffix, rig, L_DEF)
             if not (upper_arm and forearm and hand0):
+                setMode('OBJECT')
                 raise DazError("Rig missing arm bones")
             renameBone(hand0, "hand0.%s" % suffix)
             forearm.tail = hand0.head

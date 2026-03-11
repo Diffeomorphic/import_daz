@@ -323,6 +323,7 @@ class MetaMaker(RigifyCommon):
         if self.daz_rig == "genesis12":
             self.fixPelvis(rig)
             self.fixCarpals(rig)
+            self.removeTwistBones(rig)
             for bname,others in self.daz.split.items():
                 self.splitBone(rig, bname, others)
         elif self.daz_rig == "genesis38":
