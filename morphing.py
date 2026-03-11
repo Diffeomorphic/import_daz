@@ -1169,7 +1169,7 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
             n = len(ob.modifiers)
             mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
             ob.modifiers.move(n, 0)
-            mod.strength = -2*GS.scale
+            mod.strength = -4*GS.scale
             mod.mid_level = 0
             mod.vertex_group = vgrp.name
             mod.show_viewport = False
@@ -1181,6 +1181,7 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
             ob.vertex_groups.remove(vgrp)
 
     factor = 0.2/pi
+    eps = 0.5e-4
     rottypes = ["ROT_X", "ROT_Y", "ROT_Z"]
     for vgname,skey in bulges:
         bname,channel = vgname.rsplit(":",1)
@@ -1206,7 +1207,13 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
             neg = -tmp
         fcu = skey.driver_add("value")
         fcu.driver.type = 'SCRIPTED'
-        fcu.driver.expression = "%.4f*x if x > 0 else %.4f*x" % (pos, neg)
+        if abs(pos-neg) < eps:
+            expr = "%.4f*x" % pos
+        else:
+            pexpr = ("0" if abs(pos) < eps else "%.4f*x" % pos)
+            nexpr = ("0" if abs(neg) < eps else "%.4f*x" % neg)
+            expr = "%s if x > 0 else %s" % (pexpr, nexpr)
+        fcu.driver.expression = expr
         addTransformVar(fcu, "x", rottypes[idx], rig, rig, bname)
         removeModifiers(fcu)
 
