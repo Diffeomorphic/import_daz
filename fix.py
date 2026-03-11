@@ -198,6 +198,7 @@ class Fixer(DriverUser):
                     child = rig.data.edit_bones.get("%s%s" % (prefix, cname))
                     if child:
                         eb = makeBone("%s%s" % (prefix, bname), rig, hand.head, child.head, child.roll, T_BONES, hand, hand)
+                        eb.use_deform = True
                         child.parent = eb
                         child.use_connect = True
         setMode('OBJECT')
