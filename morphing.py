@@ -1169,7 +1169,7 @@ def createBulges(ob, rig, selection=None, ignoreFingers=True):
             n = len(ob.modifiers)
             mod = ob.modifiers.new(vgrp.name, 'DISPLACE')
             ob.modifiers.move(n, 0)
-            mod.strength = -4*GS.scale
+            mod.strength = -2*GS.scale
             mod.mid_level = 0
             mod.vertex_group = vgrp.name
             mod.show_viewport = False
