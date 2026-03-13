@@ -79,7 +79,18 @@ def getMorphs0(ob, morphset, sets, category):
         else:
             pg = getattr(dazRna(ob), "Daz%s" % morphset)
             prunePropGroup(ob, pg, morphset)
-            return [pg]
+            pgs = [pg]
+            if morphset == "Head":
+                for subset in MS.HeadGroups:
+                    pg = getattr(dazRna(ob), "DazHead%s" % subset)
+                    prunePropGroup(ob, pg, morphset)
+                    pgs.append(pg)
+            elif morphset == "Facs":
+                for subset in MS.FacsGroups:
+                    pg = getattr(dazRna(ob), "DazFacs%s" % subset)
+                    prunePropGroup(ob, pg, morphset)
+                    pgs.append(pg)
+            return pgs
     else:
         raise DazError("BUG get_morphs: %s %s" % (morphset, sets))
 
@@ -116,8 +127,8 @@ def clearAllMorphs(rig, frame, useInsertKeys):
 
 
 def getMorphList(ob, morphset, sets=None):
-    pgs = getMorphs0(ob, morphset, sets, None)
     mlist = []
+    pgs = getMorphs0(ob, morphset, sets, None)
     for pg in pgs:
         mlist += list(pg.values())
     mlist.sort()

@@ -72,12 +72,23 @@ class GeneralMorphSelector(Selector):
         self.morphset = "All"
         self.morphnames = {}
         self.morphnames["All"] = []
-        for morphset in MS.Standards:
-            theMorphEnums.append((morphset, morphset, morphset))
+
+        def addMorphSet(morphset, subset, rig):
             if rig:
-                pgs = getattr(dazRna(rig), "Daz%s" % morphset)
+                pgs = getattr(dazRna(rig), "Daz%s" % subset)
                 self.morphnames["All"] += list(pgs.keys())
-                self.morphnames[morphset] = pgs.keys()
+                self.morphnames[morphset] += list(pgs.keys())
+
+        for morphset in MS.Standards:
+            self.morphnames[morphset] = []
+            addMorphSet(morphset, morphset, rig)
+            if morphset == "Head":
+                for subset in MS.HeadGroups:
+                    addMorphSet("Head", "Head%s" % subset, rig)
+            elif morphset == "Facs":
+                for subset in MS.FacsGroups:
+                    addMorphSet("Facs", "Facs%s" % subset, rig)
+            theMorphEnums.append((morphset, morphset, morphset))
         theMorphEnums.append(("Custom", "Custom", "Custom"))
         self.catnames = {}
         self.catnames["All"] = []
