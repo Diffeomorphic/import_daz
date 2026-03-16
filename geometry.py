@@ -421,8 +421,10 @@ class GeoNode(Node, SimNode):
                 me.polygons.foreach_set("select", selection)
                 setMode('EDIT')
 
-            if smooth and GS.useSharpEdges and not self.isSubdivided():
-                activateObject(context, ob)
+            if (smooth and
+                GS.useSharpEdges and
+                not self.isSubdivided() and
+                activateObject(context, ob)):
                 if hasattr(ob.data, "use_auto_smooth"):
                     setMode('EDIT')
                     bpy.ops.mesh.reveal()
@@ -458,7 +460,9 @@ class GeoNode(Node, SimNode):
                         return mnum
 
             mnum = getInvisioMaterial(ob.data)
-            if GS.useDeleteHiddenFaces and mnum is not None:
+            if (GS.useDeleteHiddenFaces and
+                mnum is not None and
+                activateObject(context, ob)):
                 setMode('EDIT')
                 selectMaterialPolys(ob.data, mnum)
                 bpy.ops.mesh.delete(type='FACE')
