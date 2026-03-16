@@ -452,6 +452,18 @@ class GeoNode(Node, SimNode):
                         bpy.ops.mesh.set_sharpness_by_angle(angle=angle*D)
                     setMode('OBJECT')
 
+            def getInvisioMaterial(me):
+                for mnum,mat in enumerate(me.materials):
+                    if mat.name == "Invisio":
+                        return mnum
+
+            mnum = getInvisioMaterial(ob.data)
+            if GS.useDeleteHiddenFaces and mnum is not None:
+                setMode('EDIT')
+                selectMaterialPolys(ob.data, mnum)
+                bpy.ops.mesh.delete(type='FACE')
+                setMode('OBJECT')
+
             self.scaleEyeMoisture(context, ob, dazRna(ob).DazMesh)
             if GS.useMaterialsByName:
                 sortMaterialsByName(ob)
@@ -461,8 +473,6 @@ class GeoNode(Node, SimNode):
                     hduvlayer = hdob.data.uv_layers.get(uvlayer.name)
                     if hduvlayer:
                         hduvlayer.active = hduvlayer.active_render = True
-                #if GS.usePruneNodes:
-                #    pruneUvMaps(hdob)
                 self.scaleEyeMoisture(context, hdob, dazRna(ob).DazMesh)
                 if GS.useMaterialsByName:
                     sortMaterialsByName(hdob)
@@ -561,11 +571,23 @@ class GeoNode(Node, SimNode):
             self.setHideInfoMesh(ob)
             if hdob and hdob != ob:
                 self.setHideInfoMesh(hdob)
+            for key,struct in inst.conditional_grafts.items():
+                self.hideGraft(ob, key, struct)
             self.addLSMesh(ob, inst, LS.rigname)
             for extra in self.extra:
                 for favo in extra.get("favorites", []):
                     pg = dazRna(ob.data).DazFavorites.add()
                     pg.name = favo
+
+
+    def hideGraft(self, ob, key, struct):
+        from .matsel import makePermanentMaterial
+        nfaces = len(ob.data.polygons)
+        if struct["self_cull_target_poly_count"] == nfaces:
+            graft = struct["graft"]
+            cull = graft.get("self_cull_polys", {})
+            fnums = cull.get("values", [])
+            makePermanentMaterial(ob, "Invisio", (0.8,0.8,0.8,0), fnums)
 
 
     def copyHDMaterials(self, ob, hdob, context, inst):

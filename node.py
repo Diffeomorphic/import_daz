@@ -145,6 +145,7 @@ class Instance(Accessor, Channels, SimNode):
         self.instanceMode = 0   # "Node and Children"
         self.instances = []
         self.shellNode = None
+        self.conditional_grafts = {}
         self.hdobject = None
         #self.modifiers = {}
         self.attributes = copyElements(node.attributes)

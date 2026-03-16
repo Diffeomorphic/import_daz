@@ -583,6 +583,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Sharp Edges",
         description = "Set sharp edges if this is done In DAZ Studio")
 
+    useDeleteHiddenFaces : BoolProperty(
+        name = "Delete Hidden Faces",
+        description = "Delete conditional grafts")
+
     maxSubdivs : IntProperty(
         name = "Max Subdivision Level",
         description = "The maximum subdivision level.\nToo high a value can cause Blender to crash",
@@ -754,6 +758,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useHDArmature")
         box.prop(self, "useHairGuides")
         box.prop(self, "useSharpEdges")
+        box.prop(self, "useDeleteHiddenFaces")
         box.prop(self, "maxSubdivs")
         box.prop(self, "useInstancing")
         box.prop(self, "useRigidityAttributes")

@@ -367,7 +367,7 @@ def getInvisibleMaterial(mname="Invisio", color=(0.8,0.8,0.8,0)):
     return mat
 
 
-def makePermanentMaterial(ob, mname, color):
+def makePermanentMaterial(ob, mname, color, fnums=[]):
     perm = getInvisibleMaterial(mname, color)
     mnum = -1
     for mn,mat in enumerate(ob.data.materials):
@@ -377,9 +377,14 @@ def makePermanentMaterial(ob, mname, color):
     if mnum == -1:
         mnum = len(ob.data.materials)
         ob.data.materials.append(perm)
-    for f in ob.data.polygons:
-        if f.select:
-            f.material_index = mnum
+    faces = ob.data.polygons
+    if fnums:
+        for fn in fnums:
+            faces[fn].material_index = mnum
+    else:
+        for f in faces:
+            if f.select:
+                f.material_index = mnum
 
 #----------------------------------------------------------
 #   Initialize

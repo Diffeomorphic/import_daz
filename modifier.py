@@ -229,12 +229,14 @@ class ExtraAsset(Modifier, Channels):
         geonode = self.getGeoNode(inst)
         if geonode is None:
             return
-        if "studio_modifier_channels" in self.extras.keys():
-            #geonode.modifiers[self.name] = self
-            modchannels = self.extras["studio_modifier_channels"]
-            for cstruct in modchannels["channels"]:
+        struct = self.extras.get("studio_modifier_channels")
+        if struct:
+            for cstruct in struct["channels"]:
                 channel = cstruct["channel"]
                 self.setChannel(channel)
+        struct = self.extras.get("studio/modifier/conditional_graft")
+        if struct:
+            inst.conditional_grafts[self.name] = struct
         if "studio/modifier/push" in self.extras.keys():
             geonode.push = self.getValue(["Value"], 0)
 
