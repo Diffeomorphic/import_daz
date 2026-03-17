@@ -164,19 +164,6 @@ class DAZ_OT_DisplayCondGraftGroup(DisplayFaceGroup, IsMesh):
         name = "Group")
 
 # ---------------------------------------------------------------------
-#   Delete faces and face group
-# ---------------------------------------------------------------------
-
-class DAZ_OT_DeleteCondGrafts(DazOperator, IsMesh):
-    bl_idname = "daz.delete_cond_grafts"
-    bl_label = "Delete Conditional Grafts"
-
-    def run(self, context):
-        from ..geometry import deleteFaceGroup
-        for ob in getSelectedMeshes(context):
-            deleteFaceGroup(context, ob, "DazCondGraftGroup", range(1,100))
-
-# ---------------------------------------------------------------------
 #   Initialize
 # ---------------------------------------------------------------------
 
@@ -185,7 +172,6 @@ classes = [
     DAZ_OT_DisplayMaterialGroup,
     DAZ_OT_DisplayPolygonGroup,
     DAZ_OT_DisplayCondGraftGroup,
-    DAZ_OT_DeleteCondGrafts,
 ]
 
 def register():

@@ -454,9 +454,6 @@ class GeoNode(Node, SimNode):
                         bpy.ops.mesh.set_sharpness_by_angle(angle=angle*D)
                     setMode('OBJECT')
 
-            if GS.useDeleteCondGrafts:
-                deleteFaceGroup(context, ob, "DazCondGraft", range(1,100))
-
             self.scaleEyeMoisture(context, ob, dazRna(ob).DazMesh)
             if GS.useMaterialsByName:
                 sortMaterialsByName(ob)
@@ -651,24 +648,6 @@ class GeoNode(Node, SimNode):
                 if fgroup not in pgs.keys():
                     fgroup = self.data.mappings.get(fgroup)
                 addMaskFaceModifier(hdob, group, fgroup, True)
-
-#-------------------------------------------------------------
-#   Delete face groups
-#-------------------------------------------------------------
-
-def deleteFaceGroup(context, ob, group, values):
-    attr = ob.data.attributes.get(group)
-    if attr and activateObject(context, ob):
-        setMode('EDIT')
-        bpy.ops.mesh.select_mode(type='FACE')
-        bpy.ops.mesh.select_all(action='DESELECT')
-        setMode('OBJECT')
-        selection = [(attr.data[f.index].value in values) for f in ob.data.polygons]
-        ob.data.polygons.foreach_set("select", selection)
-        setMode('EDIT')
-        bpy.ops.mesh.delete(type='FACE')
-        setMode('OBJECT')
-        ob.data.attributes.remove(attr)
 
 #-------------------------------------------------------------
 #   Is empty
