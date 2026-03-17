@@ -28,10 +28,15 @@ class DAZ_OT_CopyAttributes(DazPropsOperator, IsMesh):
         name = "Polygon Groups",
         default = False)
 
+    useCondGraft : BoolProperty(
+        name = "Conditional Graft Groups",
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "useVertex")
         self.layout.prop(self, "useMaterial")
         self.layout.prop(self, "usePolygon")
+        self.layout.prop(self, "useCondGraft")
 
     def run(self, context):
         from ..finger import getFingerPrint
@@ -45,6 +50,8 @@ class DAZ_OT_CopyAttributes(DazPropsOperator, IsMesh):
             attrs.append(("DazMaterialGroup", 'INT', 'FACE'))
         if self.usePolygon:
             attrs.append(("DazPolygonGroup", 'INT', 'FACE'))
+        if self.useCondGraft:
+            attrs.append(("DazCondGraftGroup", 'INT', 'FACE'))
         for ob in getSelectedMeshes(context):
             fing = getFingerPrint(ob)
             if ob != src and fing == srcFing:
@@ -52,6 +59,7 @@ class DAZ_OT_CopyAttributes(DazPropsOperator, IsMesh):
                 dazRna(ob.data).DazFingerPrint = dazRna(src.data).DazFingerPrint
                 for aname, atype, domain in attrs:
                     self.copyAttributes(src, ob, aname, atype, domain)
+
 
     def copyAttributes(self, src, trg, aname, atype, domain):
         srcattr = src.data.attributes.get(aname)
@@ -87,6 +95,11 @@ def getMaterialGroups(scn, context):
 def getPolygonGroups(scn, context):
     ob = context.object
     return [(gname, gname, gname) for gname in dazRna(ob.data).DazPolygonGroup.keys()]
+
+
+def getCondGraftGroups(scn, context):
+    ob = context.object
+    return [(gname, gname, gname) for gname in dazRna(ob.data).DazCondGraftGroup.keys()]
 
 # ---------------------------------------------------------------------
 #   Display face group
@@ -139,6 +152,30 @@ class DAZ_OT_DisplayPolygonGroup(DisplayFaceGroup, IsMesh):
         items = getPolygonGroups,
         name = "Group")
 
+
+class DAZ_OT_DisplayCondGraftGroup(DisplayFaceGroup, IsMesh):
+    bl_idname = "daz.display_cond_graft_group"
+    bl_label = "Display Conditional Graft Group"
+
+    attr = "DazCondGraftGroup"
+
+    group : EnumProperty(
+        items = getCondGraftGroups,
+        name = "Group")
+
+# ---------------------------------------------------------------------
+#   Delete faces and face group
+# ---------------------------------------------------------------------
+
+class DAZ_OT_DeleteCondGrafts(DazOperator, IsMesh):
+    bl_idname = "daz.delete_cond_grafts"
+    bl_label = "Delete Conditional Grafts"
+
+    def run(self, context):
+        from ..geometry import deleteFaceGroup
+        for ob in getSelectedMeshes(context):
+            deleteFaceGroup(context, ob, "DazCondGraftGroup", range(1,100))
+
 # ---------------------------------------------------------------------
 #   Initialize
 # ---------------------------------------------------------------------
@@ -147,6 +184,8 @@ classes = [
     DAZ_OT_CopyAttributes,
     DAZ_OT_DisplayMaterialGroup,
     DAZ_OT_DisplayPolygonGroup,
+    DAZ_OT_DisplayCondGraftGroup,
+    DAZ_OT_DeleteCondGrafts,
 ]
 
 def register():

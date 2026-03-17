@@ -53,6 +53,8 @@ class DAZ_PT_Attributes(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.copy_attributes")
         self.layout.operator("daz.display_material_group")
         self.layout.operator("daz.display_polygon_group")
+        self.layout.operator("daz.display_cond_graft_group")
+        self.layout.operator("daz.delete_cond_grafts")
 
 
 class DAZ_PT_VertexGroups(DAZ_PT_SetupTab, bpy.types.Panel):

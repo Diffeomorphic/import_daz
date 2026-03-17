@@ -135,7 +135,7 @@ class GlobalSettings:
         self.keepBaseMesh = True
         self.useHDArmature = True
         self.useSharpEdges = True
-        self.useDeleteHiddenFaces = True
+        self.useDeleteCondGrafts = True
         self.maxSubdivs = 4
         self.useSimulation = True
         self.onScaleEyeMoisture = 'APPLY'

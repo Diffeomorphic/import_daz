@@ -583,9 +583,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Sharp Edges",
         description = "Set sharp edges if this is done In DAZ Studio")
 
-    useDeleteHiddenFaces : BoolProperty(
-        name = "Delete Hidden Faces",
-        description = "Delete conditional grafts")
+    useDeleteCondGrafts : BoolProperty(
+        name = "Delete Conditional Grafts",
+        description = "Delete conditional geografts")
 
     maxSubdivs : IntProperty(
         name = "Max Subdivision Level",
@@ -758,7 +758,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useHDArmature")
         box.prop(self, "useHairGuides")
         box.prop(self, "useSharpEdges")
-        box.prop(self, "useDeleteHiddenFaces")
+        box.prop(self, "useDeleteCondGrafts")
         box.prop(self, "maxSubdivs")
         box.prop(self, "useInstancing")
         box.prop(self, "useRigidityAttributes")

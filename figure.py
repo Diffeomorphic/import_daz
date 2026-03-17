@@ -81,7 +81,7 @@ class FigureInstance(Instance):
                 self.selectChildren(rig)
         if self.hiddenBones:
             for geonode in self.geometries:
-                geonode.hideFaceGroups(self.hiddenBones.keys())
+                geonode.hideFaceGroups(self.hiddenBones.keys(), "DazPolygonGroup")
 
 
     def copyParentPose(self, par, rig):

@@ -454,19 +454,8 @@ class GeoNode(Node, SimNode):
                         bpy.ops.mesh.set_sharpness_by_angle(angle=angle*D)
                     setMode('OBJECT')
 
-            def getInvisioMaterial(me):
-                for mnum,mat in enumerate(me.materials):
-                    if mat.name == "Invisio":
-                        return mnum
-
-            mnum = getInvisioMaterial(ob.data)
-            if (GS.useDeleteHiddenFaces and
-                mnum is not None and
-                activateObject(context, ob)):
-                setMode('EDIT')
-                selectMaterialPolys(ob.data, mnum)
-                bpy.ops.mesh.delete(type='FACE')
-                setMode('OBJECT')
+            if GS.useDeleteCondGrafts:
+                deleteFaceGroup(context, ob, "DazCondGraft", range(1,100))
 
             self.scaleEyeMoisture(context, ob, dazRna(ob).DazMesh)
             if GS.useMaterialsByName:
@@ -575,8 +564,7 @@ class GeoNode(Node, SimNode):
             self.setHideInfoMesh(ob)
             if hdob and hdob != ob:
                 self.setHideInfoMesh(hdob)
-            for key,struct in inst.conditional_grafts.items():
-                self.hideGraft(ob, key, struct)
+            self.makeCondGraftGroups(inst, ob)
             self.addLSMesh(ob, inst, LS.rigname)
             for extra in self.extra:
                 for favo in extra.get("favorites", []):
@@ -584,14 +572,25 @@ class GeoNode(Node, SimNode):
                     pg.name = favo
 
 
-    def hideGraft(self, ob, key, struct):
+    def makeCondGraftGroups(self, inst, ob):
         from .matsel import makePermanentMaterial
+        if len(inst.conditional_grafts) == 0:
+            return
         nfaces = len(ob.data.polygons)
-        if struct["self_cull_target_poly_count"] == nfaces:
-            graft = struct["graft"]
-            cull = graft.get("self_cull_polys", {})
-            fnums = cull.get("values", [])
-            makePermanentMaterial(ob, "Invisio", (0.8,0.8,0.8,0), fnums)
+        groups = ["Unassigned"]
+        idxs = np.zeros(nfaces, dtype=int)
+        idx = 0
+        for key,struct in inst.conditional_grafts.items():
+            if struct["self_cull_target_poly_count"] == nfaces:
+                idx += 1
+                graft = struct["graft"]
+                cull = graft.get("self_cull_polys", {})
+                fnums = cull.get("values", [])
+                groups.append(key)
+                idxs[fnums] = idx
+        if len(groups) > 1:
+            self.data.addFaceMap(ob, "DazCondGraftGroup", groups, idxs)
+            self.hideFaceGroups(groups[1:], "DazCondGraftGroup")
 
 
     def copyHDMaterials(self, ob, hdob, context, inst):
@@ -635,24 +634,45 @@ class GeoNode(Node, SimNode):
                 pair.b = pvn
 
 
-    def hideFaceGroups(self, hidden):
+    def hideFaceGroups(self, hidden, group):
         from .geonodes import addMaskFaceModifier
         if self.data is None:
             return
         ob = self.rna
-        pgs = dazRna(ob.data).DazPolygonGroup
+        pgs = getattr(dazRna(ob.data), group)
         for fgroup in hidden:
             if fgroup not in pgs.keys():
                 fgroup = self.data.mappings.get(fgroup)
-            addMaskFaceModifier(ob, "DazPolygonGroup", fgroup, True)
+            addMaskFaceModifier(ob, group, fgroup, True)
         hdob = self.hdobject
         if hdob and hdob != ob:
             pgs = dazRna(hdob.data).DazPolygonGroup
             for fgroup in hidden:
                 if fgroup not in pgs.keys():
                     fgroup = self.data.mappings.get(fgroup)
-                addMaskFaceModifier(hdob, "DazPolygonGroup", fgroup, True)
+                addMaskFaceModifier(hdob, group, fgroup, True)
 
+#-------------------------------------------------------------
+#   Delete face groups
+#-------------------------------------------------------------
+
+def deleteFaceGroup(context, ob, group, values):
+    attr = ob.data.attributes.get(group)
+    if attr and activateObject(context, ob):
+        setMode('EDIT')
+        bpy.ops.mesh.select_mode(type='FACE')
+        bpy.ops.mesh.select_all(action='DESELECT')
+        setMode('OBJECT')
+        selection = [(attr.data[f.index].value in values) for f in ob.data.polygons]
+        ob.data.polygons.foreach_set("select", selection)
+        setMode('EDIT')
+        bpy.ops.mesh.delete(type='FACE')
+        setMode('OBJECT')
+        ob.data.attributes.remove(attr)
+
+#-------------------------------------------------------------
+#   Is empty
+#-------------------------------------------------------------
 
 def isEmpty(vgrp, ob):
     idx = vgrp.index
@@ -1378,6 +1398,11 @@ class Geometry(Asset, Channels):
         if GS.verbosity >= 3:
             t1 = perf_counter()
             print("      Add face map '%s'" % aname)
+        attr = ob.data.attributes.get(aname)
+        if attr is not None:
+            if GS.verbosity >= 3:
+                print("     Face map '%s' already exists" % aname)
+            return
         pgs = getattr(dazRna(ob.data), aname)
         for group in groups:
             pg = pgs.add()
@@ -1875,6 +1900,7 @@ def clearMeshProps(ob, keepVertex=False):
     dazRna(ob).DazMorphUrls.clear()
     dazRna(me).DazMaterialGroup.clear()
     dazRna(me).DazPolygonGroup.clear()
+    dazRna(me).DazCondGraftGroup.clear()
 
     def clearAttribute(key):
         attr = me.attributes.get(key)
@@ -1883,6 +1909,7 @@ def clearMeshProps(ob, keepVertex=False):
 
     clearAttribute("DazMaterialGroup")
     clearAttribute("DazPolygonGroup")
+    clearAttribute("DazCondGraftGroup")
     if not keepVertex:
         clearAttribute("DazVertex")
         clearAttribute("DazGraft")

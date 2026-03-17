@@ -370,6 +370,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
         fixFaceGroup("DazPolygonGroup", graft, hum)
         fixFaceGroup("DazMaterialGroup", graft, hum)
+        fixFaceGroup("DazCondGraftGroup", graft, hum)
         if "DazGraft" in graft.data.attributes.keys():
             gattr = graft.data.attributes.get("DazGraft")
             for gdata in gattr.data.values():
