@@ -12,6 +12,7 @@ from .morphing import MorphSuffix, MorphTypeOptions, FavoOptions, PosableMaker
 from .merge_rigs import MergeRigsOptions
 from .merge_grafts import MergeGeograftOptions
 from .merge_uvs import UVLayerMergerOptions
+from .geometry import FinalizeOptions
 from .daz import MaterialMethodItems
 
 #------------------------------------------------------------------
@@ -647,7 +648,10 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
 #   Easy Import
 #------------------------------------------------------------------
 
-class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions, MorphTypeOptions, MorphSuffix, FavoOptions, PosableMaker):
+class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
+                    MergeGeograftOptions, UVLayerMergerOptions, MergeRigsOptions,
+                    MorphTypeOptions, MorphSuffix, FavoOptions,
+                    FinalizeOptions, PosableMaker):
     """Load a DAZ File and perform the most common opertations"""
     bl_idname = "daz.easy_import_daz"
     bl_label = "Easy Import DAZ"
@@ -797,6 +801,10 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
             self.subprop("keepOriginal")
         PosableMaker.draw(self, context)
         self.layout.prop(self, "useFinalOptimization")
+        if self.useFinalOptimization:
+            self.subprop("maxSubsurf")
+            self.subprop("keepVertex")
+
 
 
     def invoke(self, context, event):
@@ -1142,13 +1150,19 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions, MergeGeogr
             print("Transfer to face meshes")
             self.transferShapes(context, firstMesh, lashes, True, "All")
 
-        # Make all bones posable and final optimization
+        # Final mesh optimization
+        if self.useFinalOptimization:
+            from .geometry import finalizeMesh
+            for ob in meshes:
+                finalizeMesh(context, ob, self.maxSubsurf, self.keepVertex)
+            for hdob in hdmeshes:
+                finalizeMesh(context, hdob, self.maxSubsurf, self.keepVertex)
+
+        # Make all bones posable and final armature optimization
         if mainRig and activateObject(context, mainRig):
             if self.useUpdateErcBones and GS.ercMethod.startswith("ERC"):
                 from .erc import updateErcBones
                 updateErcBones(mainRig)
-            if self.useFinalOptimization:
-                bpy.ops.daz.finalize_meshes()
             self.makePosable(context, mainRig, useActivate=False, useEasy=True)
             if self.useFinalOptimization:
                 #bpy.ops.daz.optimize_drivers()

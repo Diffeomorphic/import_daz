@@ -78,7 +78,6 @@ class DAZ_PT_Modifiers(DAZ_PT_SetupTab, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.apply_subsurf")
         self.layout.operator("daz.apply_multires")
-        self.layout.operator("daz.apply_mask_modifiers")
         self.layout.operator("daz.apply_active_modifier")
         self.layout.operator("daz.copy_modifiers")
 

@@ -1822,12 +1822,7 @@ class DAZ_OT_PruneUvMaps(DazOperator, IsMesh):
 #   Finalize meshes
 #----------------------------------------------------------
 
-class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
-    bl_idname = "daz.finalize_meshes"
-    bl_label = "Finalize Meshes"
-    bl_description = "Remove internal properties from meshes.\nDisables some tools but may improve performance"
-    bl_options = {'UNDO'}
-
+class FinalizeOptions:
     maxSubsurf : IntProperty(
         name = "Maximal Subsurf Level",
         description = "Maximal subsurf level",
@@ -1839,29 +1834,40 @@ class DAZ_OT_FinalizeMeshes(DazPropsOperator, IsMeshArmature):
         description = "Keep information about original vertex numbers.\nNecessary to import morphs to modified meshes",
         default = True)
 
+
+class DAZ_OT_FinalizeMeshes(FinalizeOptions, DazPropsOperator, IsMeshArmature):
+    bl_idname = "daz.finalize_meshes"
+    bl_label = "Finalize Meshes"
+    bl_description = "Remove internal properties from meshes.\nDisables some tools but may improve performance"
+    bl_options = {'UNDO'}
+
     def draw(self, context):
         self.layout.prop(self, "maxSubsurf")
         self.layout.prop(self, "keepVertex")
 
-
     def run(self, context):
-        def finalizeMesh(ob):
-            from .finger import getFingerPrint
-            for mod in ob.modifiers:
-                if mod.type == 'SUBSURF':
-                    if mod.levels > self.maxSubsurf:
-                        mod.levels = self.maxSubsurf
-                    if mod.render_levels > self.maxSubsurf:
-                        mod.render_levels = self.maxSubsurf
-            clearMeshProps(ob, keepVertex=self.keepVertex)
+        meshes = getSelectedMeshes(context)
+        rig = context.object
+        if rig.type == 'RIG':
+            meshes += getMeshChildren(rig)
+        for ob in set(meshes):
+            finalizeMesh(context, ob, self.maxSubsurf, self.keepVertex)
 
-        ob = context.object
-        rig = getRigFromContext(context)
-        if rig:
-            for ob1 in getMeshChildren(rig):
-                finalizeMesh(ob1)
-        if ob.type == 'MESH':
-            finalizeMesh(ob)
+
+def finalizeMesh(context, ob, maxSubsurf, keepVertex):
+    from .finger import getFingerPrint
+    for mod in ob.modifiers:
+        if mod.type == 'SUBSURF':
+            if mod.levels > maxSubsurf:
+                mod.levels = maxSubsurf
+            if mod.render_levels > maxSubsurf:
+                mod.render_levels = maxSubsurf
+    mods = [mod for mod in ob.modifiers
+            if mod.type == 'NODES' and mod.node_group.name == "DAZ Mask Faces"]
+    if mods and activateObject(context, ob):
+        for mod in mods:
+            applyModifier(mod.name)
+    clearMeshProps(ob, keepVertex=keepVertex)
 
 
 def clearMeshProps(ob, keepVertex=False):

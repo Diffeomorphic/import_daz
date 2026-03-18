@@ -176,21 +176,6 @@ class DAZ_OT_ApplyActiveModifier(SubsurfApplier, DazPropsOperator, IsMesh):
             self.modifierType = mod.type
         return mod
 
-
-class DAZ_OT_ApplyMaskModifiers(SubsurfApplier, DazOperator, IsMesh):
-    bl_idname = "daz.apply_mask_modifiers"
-    bl_label = "Apply Mask Modifiers"
-    bl_description = "Apply face mask modifiers"
-    bl_options = {'UNDO'}
-
-    def run (self, context):
-        for ob in getSelectedMeshes(context):
-            activateObject(context, ob)
-            mods = [mod for mod in ob.modifiers
-                    if mod.type == 'NODES' and mod.node_group.name == "DAZ Mask Faces"]
-            for mod in mods:
-                applyModifier(mod.name)
-
 #----------------------------------------------------------
 #   Copy modifiers
 #----------------------------------------------------------
@@ -246,7 +231,6 @@ classes = [
     DAZ_OT_ApplySubsurf,
     DAZ_OT_ApplyMultires,
     DAZ_OT_ApplyActiveModifier,
-    DAZ_OT_ApplyMaskModifiers,
     DAZ_OT_CopyModifiers,
 ]
 
