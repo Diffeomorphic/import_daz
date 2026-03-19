@@ -330,21 +330,12 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             if hasNew:
                 enableRigNumLayer(rig, T_CUSTOM)
 
-        from .driver import copyProp, retargetDrivers
+        from .driver import copyProp
         from .morphing import copyCategories
         def copyProps(src, trg, ovr):
             for prop,value in src.items():
                 if prop[0:3] != "Daz":
                     copyProp(prop, src, trg, ovr)
-
-        def retargetMeshDrivers(submeshes, subrig, rig):
-            for submesh in submeshes:
-                skeys = submesh.data.shape_keys
-                if skeys:
-                    retargetDrivers(skeys, subrig, rig)
-                for mat in submesh.data.materials:
-                    if mat:
-                        retargetDrivers(mat.node_tree, subrig, rig)
 
         # Copy rig, armature and posebone properties and drivers
         for info,dups in zip(infos, dupss):
@@ -404,6 +395,27 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
         for obinfo in objects:
             obinfo.restore()
         return deletes
+
+#-------------------------------------------------------------
+#   Retarget mesh drivers. Used my merge_grafts.py.
+#-------------------------------------------------------------
+
+def retargetMeshDrivers(meshes, src, trg):
+    from .driver import retargetDrivers
+
+    def retargetMaterialDrivers(tree, src, trg):
+        retargetDrivers(tree, src, trg)
+        for node in tree.nodes:
+            if node.type == 'GROUP' and node.node_tree:
+                retargetMaterialDrivers(node.node_tree, src, trg)
+
+    for mesh in meshes:
+        skeys = mesh.data.shape_keys
+        if skeys:
+            retargetDrivers(skeys, src, trg)
+        for mat in mesh.data.materials:
+            if mat:
+                retargetMaterialDrivers(mat.node_tree, src, trg)
 
 #-------------------------------------------------------------
 #   Copy bone locations

@@ -364,9 +364,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             for gname in graftpgs.keys():
                 pg = pgs.add()
                 pg.name = gname
-            attr = graft.data.attributes[aname]
-            for data in attr.data.values():
-                data.value += n0
+            attr = graft.data.attributes.get(aname)
+            if attr:
+                for data in attr.data.values():
+                    data.value += n0
 
         fixFaceGroup("DazPolygonGroup", graft, hum)
         fixFaceGroup("DazMaterialGroup", graft, hum)
@@ -564,20 +565,14 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
 
     def retargetShellInfluence(self, hum, grafts, influs):
+        from .merge_rigs import retargetMeshDrivers
         for prop,value in influs.items():
             if prop not in hum.keys():
                 hum[prop] = value
                 setOverridable(hum, prop)
                 dazRna(hum).DazVisibilityDrivers = True
         for graft in grafts:
-            for mat in graft.data.materials:
-                if mat and mat.node_tree and mat.node_tree.animation_data:
-                    for fcu in mat.node_tree.animation_data.drivers:
-                        for var in fcu.driver.variables:
-                            for trg in var.targets:
-                                if trg.id_type == 'OBJECT' and getProp(trg.data_path) in influs.keys():
-                                    trg.id = hum
-
+            retargetMeshDrivers(grafts, graft, hum)
 
 
     def replaceTexco(self, ob, cuvname, force):

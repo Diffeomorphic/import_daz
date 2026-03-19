@@ -869,7 +869,9 @@ def retargetFcurve(fcu, rig1, rig2, force=False):
 def retargetDrivers(rna, rig1, rig2, force=False):
     if rna.animation_data is None:
         return
+    print("RR", rna.name, rig1.name, rig2.name)
     for fcu in rna.animation_data.drivers:
+        print("FF", fcu.data_path)
         fcu.mute = False
         retargetFcurve(fcu, rig1, rig2, force)
 
