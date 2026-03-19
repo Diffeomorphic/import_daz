@@ -952,11 +952,11 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMeshArma
             else:
                 return {}
 
-        items = self.getSelectedProps(rig, self.useLabels)
-        nitems = len(items)
+        pairs = self.getSelectedProps(rig, self.useLabels)
+        nitems = len(pairs)
         self.existing = {}
         for ob in meshes:
-            self.existing[ob.name] = getExistingShapes(ob, items)
+            self.existing[ob.name] = getExistingShapes(ob, pairs)
 
         def clearExisting(mname, skeys, existing):
             if skeys and mname in existing.keys():
@@ -966,13 +966,15 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMeshArma
                 existing[skey.name] = skey
 
         def clearUsed(skeys, existing):
-            for skey in skeys.key_blocks[1:]:
-                if skey.value != 0.0 and mname != skey.name:
-                    existing[skey.name] = skey
+            if skeys:
+                for skey in skeys.key_blocks[1:]:
+                    if skey.value != 0.0 and mname != skey.name:
+                        existing[skey.name] = skey
 
         startProgress("Convert morphs to shapekeys")
         t1 = t = perf_counter()
-        for n,pair in enumerate(items.items()):
+        nconv = 0
+        for n,pair in enumerate(pairs.items()):
             key,mname = pair
             showProgress(n, nitems)
             clearProp(rig, key)
@@ -987,12 +989,13 @@ class DAZ_OT_ConvertMorphsToShapes(DazOperator, GeneralMorphSelector, IsMeshArma
                     if activateObject(context, ob):
                         self.applyArmature(ob, rig, key, mname)
                 clearProp(rig, key)
+                nconv += 1
         t2 = perf_counter()
-        print("Converted %d morphs in %g seconds" % (n, t2-t1))
+        print("Converted %d morphs in %g seconds" % (nconv, t2-t1))
         updateRigDrivers(context, rig)
         if self.useAnimation and rig.animation_data:
             for ob in meshes:
-                self.convertFcurves(ob.data.shape_keys, rig.animation_data.action, items)
+                self.convertFcurves(ob.data.shape_keys, rig.animation_data.action, pairs)
 
         def deleteExisting(ob, existing):
             deleted = []
