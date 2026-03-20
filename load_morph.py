@@ -1104,7 +1104,7 @@ class LoadMorph(DriverUser):
                 self.obj[raw] = 0.0
             string += varname
 
-        string,rdrivers = self.addDriverVars(fcu, string, varname, drivers)
+        string,rdrivers = self.addDriverVars(fcu, string, varname, drivers, raw)
         if not string:
             if vvars:
                 fcu.driver.expression = string0
@@ -1173,17 +1173,20 @@ class LoadMorph(DriverUser):
         fcu.driver.type = 'SCRIPTED'
         removeModifiers(fcu)
         string = ""
-        string,rdrivers = self.addDriverVars(fcu, string, "a", drivers)
+        string,rdrivers = self.addDriverVars(fcu, string, "a", drivers, None)
         if string[0] == "-":
             string = string[1:]
         fcu.driver.expression = string
         self.removeUnusedVars(fcu)
 
 
-    def addDriverVars(self, fcu, string, varname, drivers):
+    def addDriverVars(self, fcu, string, varname, drivers, raw):
         channels = [var.targets[0].data_path for var in fcu.driver.variables]
         for subraw,target in drivers[0:MAX_TERMS2]:
             factor,points = self.getFactorPoints(target, subraw)
+            if subraw == raw:
+                print("Self-referencing morph: %s" % raw)
+                continue
             if factor == 0.0 and not points:
                 continue
             subraw = rawProp(subraw)
