@@ -469,6 +469,12 @@ class LoadMorph(DriverUser):
             prop = rawProp(self.getUniqueName(unquote(skey.name)))
             self.alias[prop] = skey.name
             skey.name = prop
+            pgs = dazRna(self.mesh).DazMorphNames
+            pg = pgs.get(prop)
+            if pg is None:
+                pg = pgs.add()
+                pg.name = prop
+            pg.s = asset.name
             self.setShapeLimits(skey, asset)
             self.shapekeys[prop] = skey
             if GS.ercMethod.startswith('TRANSLATION') and not self.disableErc:
