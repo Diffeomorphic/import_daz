@@ -2317,10 +2317,7 @@ class DAZ_OT_UpdateActiveMorphs(DazOperator, IsMeshArmature):
 
     def run(self, context):
         rig = getRigFromContext(context)
-        if rig is None:
-            return
-        if not hasattr(dazRna(rig), "DazActiveMorphs"):
-            GS.useFaceSubpanels = False
+        if rig is None or not hasattr(dazRna(rig), "DazActiveMorphs"):
             return
 
         def addMorphs(rig, path, morphs):

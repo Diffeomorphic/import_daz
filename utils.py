@@ -409,6 +409,11 @@ def setOverridable(rna, attr):
 #   Utility functions
 #-------------------------------------------------------------
 
+def getattrib(rna, attr):
+    if hasattr(rna, attr):
+        return getattr(rna, attr)
+
+
 def deleteObjects(context, objects):
     bpy.ops.object.select_all(action='DESELECT')
     for ob in objects:

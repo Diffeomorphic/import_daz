@@ -487,8 +487,7 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
 
     def hasTheseMorphs(self, rig):
-        prop = "Daz%s" % self.morphset
-        return (hasattr(dazRna(rig), prop) and getattr(dazRna(rig), prop))
+        return getattrib(dazRna(rig), "Daz%s" % self.morphset)
 
 
     def hasAdjustProp(self, rig):
@@ -587,7 +586,7 @@ class DAZ_PT_MorphGroup(DAZ_PT_Morphs, bpy.types.Panel):
         else:
             split = self.layout.split()
             split.operator("daz.disable_drivers")
-            if GS.useFaceSubpanels:
+            if GS.useFaceSubpanels and hasattr(dazRna(rig), "DazActiveMorphs"):
                 split.operator("daz.update_active_morphs")
             else:
                 split.prop(dazRna(scn), "DazUsedPropsOnly")
@@ -615,7 +614,8 @@ class DAZ_PT_ActiveMorphs(DAZ_PT_Morphs, bpy.types.Panel):
 
     @classmethod
     def poll(self, context):
-        return GS.useFaceSubpanels
+        rig = context.object
+        return (GS.useFaceSubpanels and rig and hasattr(dazRna(rig), "DazActiveMorphs"))
 
 
 class DAZ_UL_Standard(DAZ_UL_StandardMorphs):
@@ -679,7 +679,7 @@ class DAZ_PT_Head(DAZ_PT_Morphs, bpy.types.Panel):
             return True
         for group in MS.HeadGroups:
             attr = "DazHead%s" % group
-            if hasattr(dazRna(rig), attr) and getattr(dazRna(rig), attr):
+            if getattrib(dazRna(rig), attr):
                 return True
         return False
 
@@ -724,7 +724,7 @@ class DAZ_PT_Facs(DAZ_PT_Morphs, bpy.types.Panel):
             return True
         for group in MS.FacsGroups:
             attr = "DazFacs%s" % group
-            if hasattr(dazRna(rig), attr) and getattr(dazRna(rig), attr):
+            if getattrib(dazRna(rig), attr):
                 return True
         return False
 

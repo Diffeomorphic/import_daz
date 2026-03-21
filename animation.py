@@ -1426,10 +1426,9 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             self.dataRnas.add((rna, dtype))
             words = attrs.split(".")
             for attr in words[:-1]:
-                if hasattr(rna, attr):
-                    rna = getattr(rna, attr)
-                    if hasattr(rna, "animation_data"):
-                        self.dataRnas.add((rna, dtype))
+                rna = getattrib(rna, attr)
+                if rna and hasattr(rna, "animation_data"):
+                    self.dataRnas.add((rna, dtype))
             attr = words[-1]
             if hasattr(rna, attr):
                 setattr(rna, attr, value)
