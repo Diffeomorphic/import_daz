@@ -81,8 +81,8 @@ def addUdimsToUVs(ob, restore, udim, vdim):
                 ushift = udim - dazRna(mat).DazUDim
                 vshift = vdim - dazRna(mat).DazVDim
             for n in range(len(f.vertices)):
-                uvlayer.data[m].uv[0] += ushift
-                uvlayer.data[m].uv[1] += vshift
+                uv = getUv(uvlayer, m)
+                setUv(uvlayer, m, uv + Vector(ushift, vshift))
                 m += 1
 
 

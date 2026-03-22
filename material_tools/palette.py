@@ -95,10 +95,10 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
         for uvname in uvlayers.keys():
             uvlayer = me.uv_layers.new(name=uvname)
             for fn in range(nfaces):
-                uvlayer.data[fn*4].uv = (0,0)
-                uvlayer.data[fn*4+1].uv = (1,0)
-                uvlayer.data[fn*4+2].uv = (1,1)
-                uvlayer.data[fn*4+3].uv = (0,1)
+                setUv(uvlayer, fn*4, (0,0))
+                setUv(uvlayer, fn*4+1, (1,0))
+                setUv(uvlayer, fn*4+2, (1,1))
+                setUv(uvlayer, fn*4+3, (0,1))
 
 
     def makeCone(self, context, ob):
@@ -116,9 +116,9 @@ class DAZ_OT_MakePalette(DazPropsOperator, IsMesh):
         for uvname in uvlayers.keys():
             uvlayer = me.uv_layers.new(name=uvname)
             for fn in range(nfaces):
-                uvlayer.data[fn*3].uv = (0,0)
-                uvlayer.data[fn*3+1].uv = (1,0)
-                uvlayer.data[fn*3+2].uv = (0.5,1)
+                setUv(uvlayer, fn*3, (0,0))
+                setUv(uvlayer, fn*3+1, (1,0))
+                setUv(uvlayer, fn*3+2, (0.5,1))
 
 #----------------------------------------------------------
 #   Initialize

@@ -140,7 +140,7 @@ class TileFixer:
             ucoord = ucoords[mn]
             vcoord = vcoords[mn]
             for n in range(len(f.vertices)):
-                uv = uvlayer.data[m].uv
+                uv = getUv(uvlayer, m)
                 ucoord.append(uv[0])
                 vcoord.append(uv[1])
                 m += 1
@@ -224,7 +224,7 @@ class TileFixer:
             for fn,f in enumerate(hum.data.polygons):
                 if fn in fmasked and f.material_index == mn:
                     for j,vn in enumerate(f.vertices):
-                        uv = cuvlayer.data[m+j].uv
+                        uv = getUv(cuvlayer, m+j)
                         ucoord.append(uv[0])
                         vcoord.append(uv[1])
                 m += len(f.vertices)
@@ -267,7 +267,7 @@ class TileFixer:
             for f in graft.data.polygons:
                 if f.material_index == mn:
                     for j in range(len(f.vertices)):
-                        uvs = auvlayer.data[m+j].uv
+                        uvs = getUv(auvlayer, m+j)
                         uvs[0] += udim - int(uvs[0])
                         uvs[1] += vdim - int(uvs[1])
                 m += len(f.vertices)

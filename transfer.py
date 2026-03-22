@@ -360,7 +360,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                 filepath = findPathRecursiveFromObject(sname, trg, ["Morphs/", "Base/Morphs/"])
                 if filepath is None:
                     pg = dazRna(src).DazMorphNames.get(sname)
-                    if pg:
+                    if pg and pg.s != sname:
                         filepath = findPathRecursiveFromObject(pg.s, trg, ["Morphs/", "Base/Morphs/"])
             if filepath is not None:
                 cskey = self.loadMorph(filepath, src, trg, scn)

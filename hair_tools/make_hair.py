@@ -1196,7 +1196,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
     def findCenters(self, ob):
         vs = ob.data.vertices
-        uvs = ob.data.uv_layers.active.data
+        uvlayer = ob.data.uv_layers.active
         centers = {}
         uvcenters = {}
         m = 0
@@ -1206,12 +1206,12 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             if len(f.vertices) == 4:
                 vn0,vn1,vn2,vn3 = f.vertices
                 centers[fn] = (vs[vn0].co+vs[vn1].co+vs[vn2].co+vs[vn3].co)/4
-                uvcenters[fn] = (uvs[m].uv+uvs[m+1].uv+uvs[m+2].uv+uvs[m+3].uv)/4
+                uvcenters[fn] = (getUv(uvlayer, m) + getUv(uvlayer, m+1) + getUv(uvlayer, m+2) + getUv(uvlayer, m+3))/4
                 m += 4
             else:
                 vn0,vn1,vn2 = f.vertices
                 centers[fn] = (vs[vn0].co+vs[vn1].co+vs[vn2].co)/4
-                uvcenters[fn] = (uvs[m].uv+uvs[m+1].uv+uvs[m+2].uv)/4
+                uvcenters[fn] = (getUv(uvlayer, m) + getUv(uvlayer, m+1) + getUv(uvlayer, m+2))/3
                 m += 3
             f.select = False
         if self.strandOrientation == 'TOP':

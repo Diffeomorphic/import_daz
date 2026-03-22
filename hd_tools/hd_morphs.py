@@ -480,8 +480,8 @@ class Baker:
         m = 0
         for f in ob.data.polygons:
             n = len(f.vertices)
-            rx = sum([uvloop.data[k].uv[0] for k in f.loop_indices])/n
-            ry = sum([uvloop.data[k].uv[1] for k in f.loop_indices])/n
+            rx = sum([getUv(uvloop, k)[0] for k in f.loop_indices])/n
+            ry = sum([getUv(uvloop, k)[1] for k in f.loop_indices])/n
             i = max(0, int(round(rx-0.5)))
             j = max(0, int(round(ry-0.5)))
             tile = 1001 + 10*j + i
@@ -685,8 +685,8 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
         uvloop = ob.data.uv_layers[0]
         for f in ob.data.polygons:
             for n in f.loop_indices:
-                uvloop.data[n].uv[0] += dx
-                uvloop.data[n].uv[1] += dy
+                getUv(uvloop, n)[0] += dx
+                getUv(uvloop, n)[1] += dy
 
 #----------------------------------------------------------
 #   Load normal/displacement maps

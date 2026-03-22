@@ -382,7 +382,7 @@ def shiftUVs(mat, mn, ob, udim, vdim):
     for fn,f in enumerate(ob.data.polygons):
         if f.material_index == mn:
             for n in range(len(f.vertices)):
-                uv = uvlayer.data[m].uv
+                uv = getUv(uvlayer, m)
                 uv[0] += ushift
                 uv[1] += vshift
                 m += 1

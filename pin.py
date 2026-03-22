@@ -65,11 +65,11 @@ class Pinner:
             for v,w in getVertexWeights(ob, distgrp.index):
                 self.addWeight(vgrp, v.index, w)
         elif ob.data.uv_layers:
-            uvs = ob.data.uv_layers.active.data
+            uvlayer = ob.data.uv_layers.active
             m = 0
             for f in ob.data.polygons:
                 for n,vn in enumerate(f.vertices):
-                    self.addWeight(vgrp, vn, 1-uvs[m+n].uv[1])
+                    self.addWeight(vgrp, vn, 1-getUv(uvlayer, m+n)[1])
                 m += len(f.vertices)
         else:
             raise DazError("Cannot determine root distance")

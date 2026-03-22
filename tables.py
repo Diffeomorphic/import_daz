@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
+from .utils import *
 
 def getVertFaces(ob, verts=None, faces=None, faceverts=None):
     if verts is None:
@@ -100,7 +101,7 @@ def findTexVerts(ob, vertfaces):
                 if fn1 != fn2:
                     touches[fn1].append(fn2)
 
-    uvs = ob.data.uv_layers.active.data
+    uvlayer = ob.data.uv_layers.active
     uvindices = {}
     m = 0
     for f in ob.data.polygons:
@@ -118,11 +119,11 @@ def findTexVerts(ob, vertfaces):
         for m1 in uvindices[fn1]:
             test = False
             matched = False
-            uv1 = uvs[m1].uv
+            uv1 = getUv(uvlayer, m1)
             for fn2 in touches[fn1]:
                 if fn2 < fn1:
                     for m2 in uvindices[fn2]:
-                        uv2 = uvs[m2].uv
+                        uv2 = getUv(uvlayer, m2)
                         if (uv1-uv2).length < 2e-4:
                             if m2 < m1:
                                 vts[m1] = vts[m2]
@@ -132,7 +133,7 @@ def findTexVerts(ob, vertfaces):
                             #break
             if not matched:
                 vts[m1] = vt
-                texverts[vt] = uvs[m1].uv
+                texverts[vt] = getUv(uvlayer, m1)
                 vt += 1
             texface.append(vts[m1])
     return texverts, texfaces

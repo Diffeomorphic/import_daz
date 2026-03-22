@@ -23,9 +23,22 @@ DAZ_PROPS = True
 if BLENDER4:
     def P2B(pb):
         return pb.bone
+
+    def getUv(uvlayer, n):
+        return uvlayer.data[n].uv
+
+    def setUv(uvlayer, n, uv):
+        uvlayer.data[n].uv = uv
+
 else:
     def P2B(pb):
         return pb
+
+    def getUv(uvlayer, n):
+        return uvlayer.uv[n].vector
+
+    def setUv(uvlayer, n, uv):
+        uvlayer.uv[n].vector = uv
 
 #-------------------------------------------------------------
 #   Action slots

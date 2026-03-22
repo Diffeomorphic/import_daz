@@ -732,8 +732,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         for n,data in enumerate(me.uv_layers[0].data):
             if data.uv.length < 1e-6:
                 for uvloop in me.uv_layers[1:]:
-                    if uvloop.data[n].uv.length > 1e-6:
-                        data.uv = uvloop.data[n].uv
+                    if getUv(uvloop, n).length > 1e-6:
+                        data.uv = getUv(uvloop, n)
                         break
         for uvtex in list(me.uv_layers[1:]):
             if uvtex.name not in self.keepUv:
