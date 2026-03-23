@@ -253,7 +253,6 @@ class TileFixer:
                         uv = get_uv(auvlayer, m+j)
                         uv[0] += udim - int(uv[0])
                         uv[1] += vdim - int(uv[1])
-                        set_uv(auvlayer, m+j, uv)
                 m += len(f.vertices)
 
         for mn,mat in enumerate(graft.data.materials):

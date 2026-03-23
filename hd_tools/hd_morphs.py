@@ -682,11 +682,12 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
         i = (tile-1001-10*j)%10
         dx = sign*i
         dy = sign*j
+        duv = Vector((dx, dy))
         uvloop = ob.data.uv_layers[0]
         for f in ob.data.polygons:
             for n in f.loop_indices:
-                get_uv(uvloop, n)[0] += dx
-                get_uv(uvloop, n)[1] += dy
+                uv = get_uv(uvloop, n)
+                uv += duv
 
 #----------------------------------------------------------
 #   Load normal/displacement maps

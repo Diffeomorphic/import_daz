@@ -177,7 +177,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                     if key.endswith((":A", ":B")):
                         node = nodes.get(key[:-2])
                         found = False
-                        if node.image:
+                        if node and node.image:
                             basenames[node.image.filepath] = basename
                 if node and node.image:
                     img = node.image
@@ -382,7 +382,7 @@ def shiftUVs(mat, mn, ob, udim, vdim):
         if f.material_index == mn:
             for n in range(len(f.vertices)):
                 uv = get_uv(uvlayer, m)
-                set_uv(uvlayer, m, uv+uvshift)
+                uv += uvshift
                 m += 1
         else:
             m += len(f.vertices)

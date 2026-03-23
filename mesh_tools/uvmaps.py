@@ -83,7 +83,7 @@ def addUdimsToUVs(ob, restore, udim, vdim):
             uvshift = Vector((ushift, vshift))
             for n in range(len(f.vertices)):
                 uv = get_uv(uvlayer, m)
-                set_uv(uvlayer, m, uv + uvshift)
+                uv += uvshift
                 m += 1
 
 
