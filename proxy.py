@@ -378,7 +378,7 @@ class Proxifier(DriverUser):
         n = 0
         for uvface in uvfaces:
             for uv in uvface:
-                setUv(uvloop, n, uv)
+                set_uv(uvloop, n, uv)
                 n += 1
         for mat in mats:
             me.materials.append(mat)
@@ -631,7 +631,7 @@ def getUvData(ob):
     m = 0
     for fn,f in enumerate(ob.data.polygons):
         n = len(f.vertices)
-        uvdata[fn] = [getUv(uvloop, j) for j in range(m,m+n)]
+        uvdata[fn] = [get_uv(uvloop, j) for j in range(m,m+n)]
         m += n
     return uvtex,uvloop,uvdata
 
@@ -658,7 +658,7 @@ def deleteMidpoints(ob):
     m = 0
     for uvs in uvdata.values():
         for j,uv in enumerate(uvs):
-            setUv(uvloop, m+j, uv)
+            set_uv(uvloop, m+j, uv)
         m += len(uvs)
 
 

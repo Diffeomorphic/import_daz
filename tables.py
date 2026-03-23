@@ -119,11 +119,11 @@ def findTexVerts(ob, vertfaces):
         for m1 in uvindices[fn1]:
             test = False
             matched = False
-            uv1 = getUv(uvlayer, m1)
+            uv1 = get_uv(uvlayer, m1)
             for fn2 in touches[fn1]:
                 if fn2 < fn1:
                     for m2 in uvindices[fn2]:
-                        uv2 = getUv(uvlayer, m2)
+                        uv2 = get_uv(uvlayer, m2)
                         if (uv1-uv2).length < 2e-4:
                             if m2 < m1:
                                 vts[m1] = vts[m2]
@@ -133,7 +133,7 @@ def findTexVerts(ob, vertfaces):
                             #break
             if not matched:
                 vts[m1] = vt
-                texverts[vt] = getUv(uvlayer, m1)
+                texverts[vt] = get_uv(uvlayer, m1)
                 vt += 1
             texface.append(vts[m1])
     return texverts, texfaces

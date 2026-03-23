@@ -372,19 +372,17 @@ def getUVDims(tile):
 
 
 def shiftUVs(mat, mn, ob, udim, vdim):
-    ushift = udim - dazRna(mat).DazUDim
-    vshift = vdim - dazRna(mat).DazVDim
-    print(" Shift", mat.name, mn, ushift, vshift)
-    if ushift == 0 and vshift == 0:
+    uvshift = Vector((udim - dazRna(mat).DazUDim, vdim - dazRna(mat).DazVDim))
+    print(" Shift", mat.name, mn, uvshift)
+    if uvshift.length == 0:
         return
     uvlayer = ob.data.uv_layers.active
     m = 0
     for fn,f in enumerate(ob.data.polygons):
         if f.material_index == mn:
             for n in range(len(f.vertices)):
-                uv = getUv(uvlayer, m)
-                uv[0] += ushift
-                uv[1] += vshift
+                uv = get_uv(uvlayer, m)
+                set_uv(uvlayer, m, uv+uvshift)
                 m += 1
         else:
             m += len(f.vertices)

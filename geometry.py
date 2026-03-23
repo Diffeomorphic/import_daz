@@ -312,7 +312,7 @@ class GeoNode(Node, SimNode):
                 print("  Add HD UV layer %s to %s" % (uvlayer.name, hdob.name))
                 t1 = perf_counter()
             uvdata = [uvs[vn] for f in uvfaces for vn in f]
-            uvlayer.data.foreach_set("uv", flatten(uvdata))
+            foreach_set_uv(uvlayer, flatten(uvdata))
             if GS.verbosity >= 3:
                 t2 = perf_counter()
                 print("  HD UVs added in %s seconds" % (t2-t1))
@@ -809,8 +809,8 @@ def copyUvLayers(context, src, trg, selection=None):
                     print('UV layer "%s" already exists' % srclayer.name)
                     continue
                 trglayer = makeNewUvLayer(trg.data, srclayer.name, False)
-                srclayer.data.foreach_get("uv", array)
-                trglayer.data.foreach_set("uv", array)
+                foreach_get_uv(srclayer, array)
+                foreach_set_uv(trglayer, array)
         if GS.verbosity >= 3:
             print("  UVs copied")
     else:
@@ -1725,7 +1725,7 @@ class Uvset(Asset):
         nfaces = len(me.polygons)
         vnmax = len(self.uvs)
         uvs = [self.uvs[vn] for fn in range(nfaces) for vn in polyverts[fn]]
-        uvlayer.data.foreach_set("uv", flatten(uvs))
+        foreach_set_uv(uvlayer, flatten(uvs))
 
         nmats = len(geo.polygon_material_groups)
         uvcoords = [(geo.material_indices[fn], self.uvs[vn])

@@ -24,21 +24,33 @@ if BLENDER4:
     def P2B(pb):
         return pb.bone
 
-    def getUv(uvlayer, n):
+    def get_uv(uvlayer, n):
         return uvlayer.data[n].uv
 
-    def setUv(uvlayer, n, uv):
+    def set_uv(uvlayer, n, uv):
         uvlayer.data[n].uv = uv
+
+    def foreach_get_uv(uvlayer, array):
+        uvlayer.data.foreach_get("uv", array)
+
+    def foreach_set_uv(uvlayer, array):
+        uvlayer.data.foreach_set("uv", array)
 
 else:
     def P2B(pb):
         return pb
 
-    def getUv(uvlayer, n):
+    def get_uv(uvlayer, n):
         return uvlayer.uv[n].vector
 
-    def setUv(uvlayer, n, uv):
+    def set_uv(uvlayer, n, uv):
         uvlayer.uv[n].vector = uv
+
+    def foreach_get_uv(uvlayer, array):
+        uvlayer.uv.foreach_get("vector", array)
+
+    def foreach_set_uv(uvlayer, array):
+        uvlayer.uv.foreach_set("vector", array)
 
 #-------------------------------------------------------------
 #   Action slots

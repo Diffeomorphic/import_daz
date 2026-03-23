@@ -62,7 +62,7 @@ class DAZ_OT_LoadUV(DazOperator, DufFile, SingleFile, IsMesh):
             vnums = [polyverts[f.index] for f in me.polygons]
             vnums = flatten(vnums)
             uvs = [uvset.uvs[min(vn,vnmax)] for vn in vnums]
-            uvlayer.data.foreach_set("uv", flatten(uvs))
+            foreach_set_uv(uvlayer, flatten(uvs))
 
 #-------------------------------------------------------------
 #   Collaps UDims
@@ -80,9 +80,10 @@ def addUdimsToUVs(ob, restore, udim, vdim):
             else:
                 ushift = udim - dazRna(mat).DazUDim
                 vshift = vdim - dazRna(mat).DazVDim
+            uvshift = Vector((ushift, vshift))
             for n in range(len(f.vertices)):
-                uv = getUv(uvlayer, m)
-                setUv(uvlayer, m, uv + Vector(ushift, vshift))
+                uv = get_uv(uvlayer, m)
+                set_uv(uvlayer, m, uv + uvshift)
                 m += 1
 
 

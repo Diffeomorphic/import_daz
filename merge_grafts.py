@@ -56,7 +56,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         box = self.layout.box()
         box.label(text="UDIM Materials")
         box.prop(self, "useFixTiles")
-        box.prop(self, "useLastUdimTile")
         self.drawUVLayer(box)
 
 
@@ -726,28 +725,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 agrp.add([pair.a], g.weight, 'REPLACE')
 
 
-    def joinUvTextures(self, me):
-        if len(me.uv_layers) <= 1:
-            return
-        for n,data in enumerate(me.uv_layers[0].data):
-            if data.uv.length < 1e-6:
-                for uvloop in me.uv_layers[1:]:
-                    if getUv(uvloop, n).length > 1e-6:
-                        data.uv = getUv(uvloop, n)
-                        break
-        for uvtex in list(me.uv_layers[1:]):
-            if uvtex.name not in self.keepUv:
-                try:
-                    me.uv_layers.remove(uvtex)
-                except RuntimeError:
-                    print("Cannot remove texture layer '%s'" % uvtex.name)
-
-
     def removeMultires(self, ob):
         for mod in ob.modifiers:
             if mod.type == 'MULTIRES':
                 ob.modifiers.remove(mod)
-
 
 #----------------------------------------------------------
 #   Initialize

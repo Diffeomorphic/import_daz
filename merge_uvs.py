@@ -122,32 +122,22 @@ class UVLayerMerger:
 #----------------------------------------------------------
 
 class TileFixer:
-    useLastUdimTile : BoolProperty(
-        name = "Last UDIM Tile",
-        default = False)
-
-    def draw(self, context):
-        self.layout.prop(self, "useLastUdimTile")
-
 
     def findMatTiles(self, ob):
-        ucoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
-        vcoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
+        uvcoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
         uvlayer = ob.data.uv_layers.active
         m = 0
         for fn,f in enumerate(ob.data.polygons):
             mn = f.material_index
-            ucoord = ucoords[mn]
-            vcoord = vcoords[mn]
+            uvcoord = uvcoords[mn]
             for n in range(len(f.vertices)):
-                uv = getUv(uvlayer, m)
-                ucoord.append(uv[0])
-                vcoord.append(uv[1])
+                uv = get_uv(uvlayer, m)
+                uvcoord.append(uv)
                 m += 1
         self.mattiles = {}
         for mn,mat in enumerate(ob.data.materials):
             if mat:
-                tile,udim,vdim = self.getTile(ucoords[mn], vcoords[mn])
+                tile,udim,vdim = self.getTile(uvcoords[mn])
                 dazRna(mat).DazUDim = udim
                 dazRna(mat).DazVDim = vdim
                 self.mattiles[mn] = tile
@@ -156,8 +146,10 @@ class TileFixer:
             print("  %s: %d" % (mat.name, self.mattiles[mn]))
 
 
-    def getTile(self, ucoord, vcoord):
-        if ucoord:
+    def getTile(self, uvcoord):
+        if uvcoord:
+            ucoord = [uv[0] for uv in uvcoord]
+            vcoord = [uv[1] for uv in uvcoord]
             umax = max(ucoord)
             umin = min(ucoord)
             vmax = max(vcoord)
@@ -219,16 +211,14 @@ class TileFixer:
     def udimsFromGraft(self, graft, hum):
         def getUVcoords(mn):
             m = 0
-            ucoord = []
-            vcoord = []
+            uvcoord = []
             for fn,f in enumerate(hum.data.polygons):
                 if fn in fmasked and f.material_index == mn:
                     for j,vn in enumerate(f.vertices):
-                        uv = getUv(cuvlayer, m+j)
-                        ucoord.append(uv[0])
-                        vcoord.append(uv[1])
+                        uv = get_uv(cuvlayer, m+j)
+                        uvcoord.append(uv)
                 m += len(f.vertices)
-            return ucoord, vcoord
+            return uvcoord
 
         cuvlayer = hum.data.uv_layers.active
         if cuvlayer is None:
@@ -240,24 +230,17 @@ class TileFixer:
         vdims = {}
         for mn,mat in enumerate(hum.data.materials):
             if mat:
-                ucoord,vcoord = getUVcoords(mn)
-                if ucoord:
+                uvcoord = getUVcoords(mn)
+                if uvcoord:
                     mname = stripName(mat.name)
-                    tiles[mname], udims[mname], vdims[mname] = self.getTile(ucoord, vcoord)
+                    tiles[mname], udims[mname], vdims[mname] = self.getTile(uvcoord)
 
         if len(tiles) == 0:
             print("No UVs to shift")
             return
-        if self.useLastUdimTile:
-            ucoord = [data.uv[0] for data in cuvlayer.data]
-            vcoord = [data.uv[1] for data in cuvlayer.data]
-            tile, udefault, vdefault = self.getTile([max(ucoord)-0.01], [max(vcoord)-0.01])
-            tiledefault = tile+1
-            udefault += 1
-        else:
-            tiledefault = list(tiles.values())[0]
-            udefault = list(udims.values())[0]
-            vdefault = list(vdims.values())[0]
+        tiledefault = list(tiles.values())[0]
+        udefault = list(udims.values())[0]
+        vdefault = list(vdims.values())[0]
         auvlayer = graft.data.uv_layers.active
         if auvlayer is None:
             return
@@ -267,9 +250,10 @@ class TileFixer:
             for f in graft.data.polygons:
                 if f.material_index == mn:
                     for j in range(len(f.vertices)):
-                        uvs = getUv(auvlayer, m+j)
-                        uvs[0] += udim - int(uvs[0])
-                        uvs[1] += vdim - int(uvs[1])
+                        uv = get_uv(auvlayer, m+j)
+                        uv[0] += udim - int(uv[0])
+                        uv[1] += vdim - int(uv[1])
+                        set_uv(auvlayer, m+j, uv)
                 m += len(f.vertices)
 
         for mn,mat in enumerate(graft.data.materials):
