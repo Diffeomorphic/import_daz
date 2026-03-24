@@ -258,7 +258,7 @@ class TileFixer:
         for mn,mat in enumerate(graft.data.materials):
             if mat:
                 mname = stripName(mat.name)
-                if mname in tiles.keys() and not self.useLastUdimTile:
+                if mname in tiles.keys():
                     tile = tiles[mname]
                     udim = udims[mname]
                     vdim = vdims[mname]
