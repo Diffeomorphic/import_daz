@@ -5,6 +5,7 @@
 import json
 import gzip
 import os
+import bpy
 from mathutils import Vector, Color
 from .error import reportError, DazError
 
@@ -78,7 +79,7 @@ def loadJson(filepath, mustOpen=False, silent=False):
                     return "%s %s" % (string[:n], string[n1:])
         return None
 
-    filepath = os.path.expanduser(filepath)
+    filepath = bpy.path.resolve_ncase(os.path.expanduser(filepath))
     if not os.path.exists(filepath):
         msg = 'File does not exist:\n"%s"' % filepath
         if silent:
