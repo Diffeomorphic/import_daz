@@ -571,10 +571,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Keep Base Meshes",
         description = "Also keep base meshes if HD meshes are imported")
 
-    useHDShellUVs : BoolProperty(
-        name = "HD Shell UVs",
-        description = "Import HD shell UVs from dbz file.\nDisable if dbz file file was exported from  geometry editor")
-
     useHDArmature : BoolProperty(
         name = "Add HD Armatures",
         description = "Add armature modifier and vertex groups to HD and multires meshes")
@@ -755,7 +751,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useHighDef")
         box.prop(self, "useMultires")
         box.prop(self, "keepBaseMesh")
-        box.prop(self, "useHDShellUVs")
         box.prop(self, "useHDArmature")
         box.prop(self, "useHairGuides")
         box.prop(self, "useSharpEdges")
