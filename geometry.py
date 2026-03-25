@@ -322,6 +322,8 @@ class GeoNode(Node, SimNode):
         else:
             uvname = "UV Layer"
         addUvLayer(uvname, self.highdef.uvs, self.highdef.faces, True)
+        if not GS.useHDShellUVs:
+            return
         for hdshell in self.hdshells.values():
             uvname = LS.shellUvs.get(hdshell.label)
             if uvname is None:
