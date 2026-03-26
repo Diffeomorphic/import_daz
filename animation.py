@@ -811,6 +811,11 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
             addObjects(ob.parent, objects)
         for ob in getSelectedObjects(context):
             addObjects(ob, objects)
+        if self.useConvert:
+            for key,value in self.KnownRigs.items():
+                if value == self.srcCharacter:
+                    objects[key] = ob
+
         n = len("name://@selection/")
         figures = {}
         taken = {}
@@ -1230,28 +1235,28 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 from .morphing import clearAllMorphs
                 clearAllMorphs(rig, frame, self.useInsertKeys)
 
+    KnownRigs = {
+        "@selection" : "@selection",
+        "Genesis" : "genesis",
+        "GenesisFemale" : "genesis_2_female",
+        "GenesisMale" : "genesis_2_female",
+        "Genesis2" : "genesis_2",
+        "Genesis2Female" : "genesis_2_female",
+        "Genesis2Male" : "genesis_2_female",
+        "Genesis3" : "genesis_3",
+        "Genesis3Female" : "genesis_3_female",
+        "Genesis3Male" : "genesis_3_female",
+        "Genesis8" : "genesis_8",
+        "Genesis8Female" : "genesis_8_female",
+        "Genesis8Male" : "genesis_8_male",
+        "Genesis9" : "genesis9",
+    }
 
     def isObject(self, bname, ob):
-        KnownRigs = [
-            "@selection",
-            "Genesis",
-            "GenesisFemale",
-            "GenesisMale",
-            "Genesis2",
-            "Genesis2Female",
-            "Genesis2Male",
-            "Genesis3",
-            "Genesis3Female",
-            "Genesis3Male",
-            "Genesis8",
-            "Genesis8Female",
-            "Genesis8Male",
-            "Genesis9",
-        ]
         if self.assetType == "preset_hierarchical_pose":
             hparent = self.hparents.get(ob.name)
             return (hparent and bname == hparent[0])
-        elif bname in KnownRigs:
+        elif bname in self.KnownRigs.keys():
             return True
         else:
             return (bname != "_XTRA_" and
