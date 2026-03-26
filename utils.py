@@ -36,6 +36,8 @@ if BLENDER4:
     def foreach_set_uv(uvlayer, array):
         uvlayer.data.foreach_set("uv", array)
 
+    def uv_length(uvlayer):
+        return len(uvlayer.data)
 else:
     def P2B(pb):
         return pb
@@ -51,6 +53,9 @@ else:
 
     def foreach_set_uv(uvlayer, array):
         uvlayer.uv.foreach_set("vector", array)
+
+    def uv_length(uvlayer):
+        return len(uvlayer.uv)
 
 #-------------------------------------------------------------
 #   Action slots

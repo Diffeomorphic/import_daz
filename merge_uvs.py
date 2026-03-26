@@ -4,6 +4,7 @@
 
 import bpy
 import os
+import numpy as np
 from .utils import *
 from .error import *
 from .tree import getFromSocket, XSIZE, YSIZE, YSTEP
@@ -122,6 +123,12 @@ class UVLayerMerger:
 #----------------------------------------------------------
 
 class TileFixer:
+    useLastUdimTile : BoolProperty(
+        name = "Last UDIM Tile",
+        default = False)
+
+    def draw(self, context):
+        self.layout.prop(self, "useLastUdimTile")
 
     def findMatTiles(self, ob):
         uvcoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
@@ -238,9 +245,21 @@ class TileFixer:
         if len(tiles) == 0:
             print("No UVs to shift")
             return
-        tiledefault = list(tiles.values())[0]
-        udefault = list(udims.values())[0]
-        vdefault = list(vdims.values())[0]
+
+        if self.useLastUdimTile:
+            nuvs = uv_length(cuvlayer)
+            array = np.zeros(2*nuvs, dtype=float)
+            foreach_get_uv(cuvlayer, array)
+            array = array.reshape((nuvs, 2))
+            umax = np.max(array, axis=0)
+            tile, u, v = self.getTile([umax])
+            default = (tile+1, u+1, v)
+        else:
+            tile = list(tiles.values())[0]
+            u = list(udims.values())[0]
+            v = list(vdims.values())[0]
+            default = (tile, u, v)
+
         auvlayer = graft.data.uv_layers.active
         if auvlayer is None:
             return
@@ -256,16 +275,12 @@ class TileFixer:
                 m += len(f.vertices)
 
         for mn,mat in enumerate(graft.data.materials):
-            if mat:
+            if mat and mat.node_tree:
                 mname = stripName(mat.name)
-                if mname in tiles.keys():
-                    tile = tiles[mname]
-                    udim = udims[mname]
-                    vdim = vdims[mname]
+                if mname in tiles.keys() and not self.useLastUdimTile:
+                    tile,udim,vdim = (tiles[mname], udims[mname], vdims[mname])
                 else:
-                    tile = tiledefault
-                    udim = udefault
-                    vdim = vdefault
+                    tile,udim,vdim = default
             print("Move %s:%s UVs to tile %d" % (graft.name, mname, tile))
             moveUVs(mn, udim, vdim)
 
