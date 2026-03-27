@@ -845,20 +845,21 @@ class DAZ_OT_ApplyActiveShapekey(DazPropsOperator, IsShape):
         nverts = len(ob.data.vertices)
         skeys = ob.data.shape_keys
         skey = skeys.key_blocks[ob.active_shape_key_index]
-        aarr = np.zeros(3*nverts, dtype=float)
-        skey.data.foreach_get("co", aarr)
+        sarr = np.zeros(3*nverts, dtype=float)
+        skey.data.foreach_get("co", sarr)
+        varr = np.zeros(3*nverts, dtype=float)
+        ob.data.vertices.foreach_get("co", varr)
+        offset = skey.value*(sarr - varr)
+        ob.data.vertices.foreach_set("co", varr + offset)
         skey.driver_remove("value")
         skey.driver_remove("mute")
         skey.driver_remove("slider_min")
         skey.driver_remove("slider_max")
         ob.shape_key_remove(skey)
-        varr = np.zeros(3*nverts, dtype=float)
-        ob.data.vertices.foreach_get("co", varr)
-        ob.data.vertices.foreach_set("co", aarr)
         for skey in skeys.key_blocks:
             sarr = np.zeros(3*nverts, dtype=float)
             skey.data.foreach_get("co", sarr)
-            skey.data.foreach_set("co", sarr + aarr - varr)
+            skey.data.foreach_set("co", sarr + offset)
         t2 = perf_counter()
         print("Shapekey applied in %.1f seconds" % (t2-t1))
 
