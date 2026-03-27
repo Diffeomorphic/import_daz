@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
+import numpy as np
 from .error import *
 from .utils import *
 from .tree import Tree, NodeGroup, XSIZE, YSIZE
@@ -387,7 +388,7 @@ class MaskFacesGroup(GeoTree):
 # ---------------------------------------------------------------------
 
 def addMaskFaceModifier(ob, grpname, fgname):
-    if fgname is None or BLENDER3:
+    if fgname is None:
         return
     from .tree import addNodeGroup
     from .store import addModifierFirst
@@ -396,9 +397,25 @@ def addMaskFaceModifier(ob, grpname, fgname):
     if pgs and attr:
         pg = pgs.get(fgname)
         if pg:
-            mod = addModifierFirst(ob, "Mask FG %s" % fgname, 'NODES')
-            mod.node_group = addNodeGroup(MaskFacesGroup, "DAZ Mask Faces", [])
-            mod["Socket_1"] = grpname
-            mod["Socket_2"] = pgs[fgname].a
-            return mod
+            if BLENDER3:
+                from .matsel import getInvisibleMaterial
+                mat = getInvisibleMaterial()
+                mnum = len(ob.data.materials)
+                if ob.data.materials[-1] == mat:
+                    mnum -= 1
+                else:
+                    ob.data.materials.append(mat)
+                nfaces = len(ob.data.polygons)
+                marr = np.zeros(nfaces, dtype=int)
+                ob.data.polygons.foreach_get("material_index", marr)
+                faces = [(attr.data[f.index].value == pg.a) for f in ob.data.polygons]
+                marr[faces] = mnum
+                ob.data.polygons.foreach_set("material_index", marr)
+                return None
+            else:
+                mod = addModifierFirst(ob, "Mask FG %s" % fgname, 'NODES')
+                mod.node_group = addNodeGroup(MaskFacesGroup, "DAZ Mask Faces", [])
+                mod["Socket_1"] = grpname
+                mod["Socket_2"] = pgs[fgname].a
+                return mod
     print("%s attribute %s not found" % (grpname, fgname))
