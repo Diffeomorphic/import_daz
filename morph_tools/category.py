@@ -315,53 +315,7 @@ class DAZ_OT_JoinCategories(DazOperator, CategorySelector, CustomEnums, Category
             if key != self.custom:
                 dazRna(ob).DazMorphCats.remove(idx)
 
-#------------------------------------------------------------------------
-#   Apply morphs
-#------------------------------------------------------------------------
-
-def getShapeKeyCoords(ob):
-    coords = [v.co for v in ob.data.vertices]
-    skeys = []
-    if ob.data.shape_keys:
-        for skey in ob.data.shape_keys.key_blocks[1:]:
-            if abs(skey.value) > 1e-4:
-                coords = [co + skey.value*(skey.data[n].co - ob.data.vertices[n].co) for n,co in enumerate(coords)]
-            skeys.append(skey)
-    return skeys,coords
-
-
-def applyMorphs(rig, props):
-    for ob in getShapeChildren(rig):
-        basis = ob.data.shape_keys.key_blocks[0]
-        skeys,coords = getShapeKeyCoords(ob)
-        for skey in skeys:
-            path = 'key_blocks["%s"].value' % skey.name
-            getDrivingProps(ob.data.shape_keys, path, props)
-            ob.shape_key_remove(skey)
-        basis = ob.data.shape_keys.key_blocks[0]
-        ob.shape_key_remove(basis)
-        for vn,co in enumerate(coords):
-            ob.data.vertices[vn].co = co
-    print("Morphs applied")
-
-
-def getDrivingProps(rna, channel, props):
-    if rna.animation_data:
-        for fcu in rna.animation_data.drivers:
-            for var in fcu.driver.variables:
-                for trg in var.targets:
-                    prop = trg.data_path.split('"')[1]
-                    props[prop] = trg.id
-
-
-def removeDrivingProps(rig, props):
-    for prop,id in props.items():
-        if rig == id:
-            del rig[prop]
-    for cat in dazRna(rig).DazCategories:
-        dazRna(rig).DazCategories.remove(cat)
-
-#------------------------------------------------------------------
+------------------------------------------------------------------
 #   Remove all morph drivers
 #------------------------------------------------------------------
 
