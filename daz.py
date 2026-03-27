@@ -599,10 +599,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Rigidity Attributes",
         description = "Use attributes rather than vertex groups for rigidity info")
 
-    useFaceGroupMasks : BoolProperty(
-        name = "Face Group Masks",
-        description = "Use face groups for masking (experimental)")
-
     useSimulation : BoolProperty(
         name = "Simulation",
         description = "Add influence (pinning) vertex groups for simulation")
@@ -801,7 +797,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "numpyMorphFraction")
         box.prop(self, "useStripCategory")
         box.prop(self, "useDefaultDrivers")
-        box.prop(self, "useFaceGroupMasks")
 
         box = col.box()
         box.label(text = "Objects")

@@ -1040,7 +1040,7 @@ class LoadMorph(DriverUser):
         for output,drivers in self.hideDrivers.items():
             if drivers and self.mesh:
                 from .geonodes import addMaskFaceModifier
-                mod = addMaskFaceModifier(self.mesh, "DazPolygonGroup", output, GS.useFaceGroupMasks)
+                mod = addMaskFaceModifier(self.mesh, "DazPolygonGroup", output)
                 if mod:
                     self.buildGenericDriver(mod, "show_viewport", drivers)
                     self.buildGenericDriver(mod, "show_render", drivers)

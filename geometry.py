@@ -640,14 +640,14 @@ class GeoNode(Node, SimNode):
         for fgroup in hidden:
             if fgroup not in pgs.keys():
                 fgroup = self.data.mappings.get(fgroup)
-            addMaskFaceModifier(ob, group, fgroup, True)
+            addMaskFaceModifier(ob, group, fgroup)
         hdob = self.hdobject
         if hdob and hdob != ob:
             pgs = dazRna(hdob.data).DazPolygonGroup
             for fgroup in hidden:
                 if fgroup not in pgs.keys():
                     fgroup = self.data.mappings.get(fgroup)
-                addMaskFaceModifier(hdob, group, fgroup, True)
+                addMaskFaceModifier(hdob, group, fgroup)
 
 #-------------------------------------------------------------
 #   Is empty

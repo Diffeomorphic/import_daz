@@ -110,7 +110,6 @@ class GlobalSettings:
         self.useReducedDrivers = False
         self.onShapekeyDrivers = 'REGULAR'
         self.useRigidityAttributes = True
-        self.useFaceGroupMasks = False
 
         self.useArmature = True
         self.useQuaternions = False

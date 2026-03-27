@@ -1238,8 +1238,8 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     KnownRigs = {
         "@selection" : "@selection",
         "Genesis" : "genesis",
-        "GenesisFemale" : "genesis_2_female",
-        "GenesisMale" : "genesis_2_female",
+        "GenesisFemale" : "genesis_female",
+        "GenesisMale" : "genesis_female",
         "Genesis2" : "genesis_2",
         "Genesis2Female" : "genesis_2_female",
         "Genesis2Male" : "genesis_2_female",
