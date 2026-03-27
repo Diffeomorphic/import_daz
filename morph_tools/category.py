@@ -446,6 +446,7 @@ class DAZ_OT_BakeAllErcDrivers(DazPropsOperator, RemoveAll, DriverUser, IsArmatu
     bl_options = {'UNDO'}
 
     def runAll(self, context, rigs, meshes):
+        from ..apply import applyAllShapekeys
         self.bones = {}
         self.shapes = {}
         for rig in rigs:
@@ -481,25 +482,7 @@ class DAZ_OT_BakeAllErcDrivers(DazPropsOperator, RemoveAll, DriverUser, IsArmatu
                 for skey in skeys.key_blocks:
                     skey.value = shapes[skey.name]
                 if self.useDeleteShapekeys:
-                    bakeAllShapes(ob)
-
-
-def bakeAllShapes(ob):
-    skeys = ob.data.shape_keys
-    if skeys is None:
-        return
-    verts = ob.data.vertices
-    varr = np.array([v.co for v in verts])
-    tarr = varr.copy()
-    blocks = list(skeys.key_blocks)
-    for skey in blocks:
-        sarr = np.array([v.co for v in skey.data])
-        tarr += skey.value * (sarr - varr)
-    blocks.reverse()
-    for skey in blocks:
-        ob.shape_key_remove(skey)
-    for v,co in zip(verts, tarr):
-        v.co = co
+                    applyAllShapekeys(ob)
 
 #-------------------------------------------------------------
 #   Add driven value nodes

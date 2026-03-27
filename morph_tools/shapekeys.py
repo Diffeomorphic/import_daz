@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
+import numpy as np
 from ..error import *
 from ..utils import *
 from ..morphing import MS
@@ -107,8 +108,9 @@ class DAZ_OT_MeshToShape(DazOperator, IsMesh):
         if nsverts != ntverts:
             raise DazError("Vertex count mismatch:  \n%d != %d" % (nsverts, ntverts))
         skey = skeys.key_blocks[idx]
-        for v in src.data.vertices:
-            skey.data[v.index].co = v.co
+        varr = np.zeros(3*nsverts, dtype=float)
+        src.data.vertices.foreach_get("co", varr)
+        skey.data.foreach_set("co", varr)
 
 #-------------------------------------------------------------
 #   Apply all shapekeys
