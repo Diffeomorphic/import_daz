@@ -837,18 +837,24 @@ class LoadMorph(DriverUser):
             name = self.rig.name
             newArmatureModifier(name, ob, self.rig)
             eskey = skeys.key_blocks[-1]
-            earr = np.array([v.co for v in eskey.data])
+            nverts = len(ob.data.vertices)
+            earr = np.zeros(3*nverts, dtype=float)
+            eskey.data.foreach_get("co", earr)
             ob.shape_key_remove(eskey)
-            skey = skeys.key_blocks.get(prop)
+            try:
+                skey = skeys.key_blocks.get(prop)
+            except ReferenceError:
+                skey = None
             if skey:
-                bdata = skeys.key_blocks[0].data
-                sdata = skey.data
-                barr = np.array([v.co for v in bdata])
-                sarr = np.array([v.co for v in sdata])
+                basic = skeys.key_blocks[0]
+                barr = np.zeros(3*nverts, dtype=float)
+                basic.data.foreach_get("co", barr)
+                sarr = np.zeros(3*nverts, dtype=float)
+                skey.data.foreach_get("co", sarr)
                 arr = sarr + barr - earr
             else:
-                vdata = ob.data.vertices
-                varr = np.array([v.co for v in vdata])
+                varr = np.zeros(3*nverts, dtype=float)
+                ob.data.vertices.foreach_get("co", varr)
                 arr = 2*varr - earr
                 skey = ob.shape_key_add(name=prop)
                 self.addShapeDriver(skey, final)
@@ -856,13 +862,12 @@ class LoadMorph(DriverUser):
                 skey.slider_min = min
                 skey.slider_max = max
                 skey.mute = True
-            for data,co in zip(skey.data, arr):
-                data.co = co
+            skey.data.foreach_set("co", arr)
             for fcu,mute in fcus:
                 fcu.mute = mute
             self.rig[prop] = 0.0
-        for skey in skeys.key_blocks:
-            skey.mute = False
+        nskeys = len(skeys.key_blocks)
+        skeys.key_blocks.foreach_set("mute", nskeys*[False])
         for driver in drivers:
             driver.createDirect(skeys, {})
         updateDrivers(self.amt)
