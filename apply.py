@@ -305,17 +305,18 @@ def applyAllShapekeys(ob):
     applied = []
     if skeys:
         nverts = len(ob.data.vertices)
-        verts = np.array([v.co for v in ob.data.vertices])
-        coords = verts.copy()
+        varr = np.zeros(3*nverts, dtype=float)
+        ob.data.vertices.foreach_get("co", varr)
+        coords = varr.copy()
         for skey in skeys.key_blocks:
-            scoords = np.array([skey.data[n].co for n in range(nverts)])
-            coords += skey.value*(scoords - verts)
+            scoords = np.zeros(3*nverts, dtype=float)
+            skey.data.foreach_get("co", scoords)
+            coords += skey.value*(scoords - varr)
             applied.append(skey)
         applied.reverse()
         for skey in applied:
             ob.shape_key_remove(skey)
-        for v,co in zip(ob.data.vertices, coords):
-            v.co = co
+        ob.data.vertices.foreach_set("co", coords)
 
 #----------------------------------------------------------
 #   Initialize
