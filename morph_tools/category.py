@@ -315,7 +315,7 @@ class DAZ_OT_JoinCategories(DazOperator, CategorySelector, CustomEnums, Category
             if key != self.custom:
                 dazRna(ob).DazMorphCats.remove(idx)
 
-------------------------------------------------------------------
+#------------------------------------------------------------------
 #   Remove all morph drivers
 #------------------------------------------------------------------
 
