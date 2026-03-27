@@ -340,6 +340,7 @@ NodeSize = {
     "BOOLEAN_MATH" : 6,
     "CAPTURE_ATTRIBUTE" : 10,
     "MERGE_BY_DISTANCE" : 8,
+    "BAKE" : 7,
 
     "INPUT_ATTRIBUTE" : 5,
     "POSITION" : 3,

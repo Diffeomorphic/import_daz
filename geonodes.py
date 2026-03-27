@@ -227,8 +227,14 @@ class GeograftsGroup(GeoTree):
         self.links.new(last.outputs["Geometry"], merge.inputs["Geometry"])
         if useBake:
             bake = self.addNode("GeometryNodeBake", 7)
-            self.links.new(merge.outputs["Geometry"], bake.inputs["Geometry"])
-            self.links.new(bake.outputs["Geometry"], self.outputs.inputs["Geometry"])
+            if BLENDER4:
+                self.links.new(merge.outputs["Geometry"], bake.inputs["Geometry"])
+                self.links.new(bake.outputs["Geometry"], self.outputs.inputs["Geometry"])
+            else:
+                # Create and configure a bake item to set the input type to GEOMETRY
+                bake_item = bake.bake_items.new('GEOMETRY', 'Geometry')
+                self.links.new(merge.outputs["Geometry"], bake.inputs[0])
+                self.links.new(bake.outputs[0], self.outputs.inputs["Geometry"])
         else:
             self.links.new(merge.outputs["Geometry"], self.outputs.inputs["Geometry"])
 
