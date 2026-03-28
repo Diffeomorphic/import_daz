@@ -48,7 +48,7 @@ def invokeErrorMessage(value, warning=False, useDialog=False):
         LS.error = False
         LS.message = ""
     elif not warning:
-        LS.message = "ERROR (5.1.0.%04d):\n%s" % (BUILD, LS.message)
+        LS.message = "ERROR (5.2.0.%04d):\n%s" % (BUILD, LS.message)
         bpy.ops.daz.error('INVOKE_DEFAULT')
     elif useDialog:
         bpy.ops.daz.error('INVOKE_DEFAULT')
