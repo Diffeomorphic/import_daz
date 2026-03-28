@@ -35,8 +35,8 @@ class MergeGeograftOptions(UVLayerMergerOptions):
 
     useBakeGrafts: BoolProperty(
         name = "Bake Grafts",
-        description = "Add a bake node to the geometry node tree.\nThis must be baked in rest pose before posing",
-        default = False)
+        description = "Add a bake node to the geometry node tree and bake.\nThe figure must be in rest pose",
+        default = True)
 
 
 class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerger, TileFixer, DriverUser, IsMesh):
@@ -504,11 +504,12 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         graftgrp = GeograftsGroup()
         groupname = "Geografts:%s" % hum.name
         graftgrp.create(groupname)
-        graftgrp.addGrafts(grafts, hum.name, self.useBakeGrafts)
+        useBakeGrafts = (self.useBakeGrafts and bpy.app.version >= (4,4,0))
+        graftgrp.addGrafts(grafts, hum.name, useBakeGrafts)
 
         # Create the modifier
         from .store import addModifierFirst
-        mod = addModifierFirst(hum, groupname, 'NODES', second=(not self.useBakeGrafts))
+        mod = addModifierFirst(hum, groupname, 'NODES', second=(not useBakeGrafts))
         mod.node_group = graftgrp.group
 
         # Handle all the inputs generated from the geografts - Placed below the inputs that apply to the entire geonode group
@@ -538,10 +539,13 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     modifier_name=mod.name)
                 mod["Socket_%d_attribute_name" % (graft_socket_count*i+(socket_offset+2))] = "%s Mask" % graft.name
                 mod["Socket_%d" % (graft_socket_count*i+(socket_offset+3))] = True
-                mod["Socket_%d" % (graft_socket_count*i+(socket_offset+4))] = f"{graft.name} Edge"
+                mod["Socket_%d" % (graft_socket_count*i+(socket_offset+4))] = "%s Edge" % graft.name
                 bpy.ops.object.geometry_nodes_input_attribute_toggle(
                     input_name="Socket_%d" % (graft_socket_count*i+(socket_offset+4)),
                     modifier_name=mod.name)
+            if useBakeGrafts:
+                bake = mod.bakes[0]
+                bpy.ops.object.geometry_node_bake_single(session_uid=bake.id_data.session_uid, modifier_name=mod.name, bake_id=bake.bake_id)
 
         for graft in grafts:
             graft.hide_set(True)
