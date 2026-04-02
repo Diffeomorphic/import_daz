@@ -1334,13 +1334,10 @@ class SubsurfaceGroup(FacMixGroup):
         addGroupInput(self.group, "NodeSocketVector", "Normal")
         self.hideSlot("Normal")
 
-    def addNodes(self, args=None):
+    def addNodes(self, args):
         FacMixGroup.addNodes(self, args)
         sss = self.addNode("ShaderNodeSubsurfaceScattering", 1)
-        try:
-            sss.falloff = GS.sssMethod
-        except TypeError:
-            pass
+        sss.falloff = args[0]
         self.links.new(self.inputs.outputs["Color"], sss.inputs["Color"])
         self.links.new(self.inputs.outputs["Scale"], sss.inputs["Scale"])
         self.links.new(self.inputs.outputs["Radius"], sss.inputs["Radius"])
@@ -2093,7 +2090,7 @@ ShaderGroups = {
         "useTransparent" : (TransparentGroup, "DAZ Transparent", []),
         "useInvertNormalMap" : (InvertNormalMapGroup, "DAZ Invert NMap", []),
         "useTranslucent" : (TranslucentGroup, "DAZ Translucent", []),
-        "useSubsurface" : (SubsurfaceGroup, "DAZ Subsurface", []),
+        "useSubsurface" : (SubsurfaceGroup, "DAZ Subsurface Burley", ['BURLEY']),
         "useAltSSS" : (AltSSSGroup, "DAZ Alt SSS", []),
         "useFlakes" : (FlakesGroup, "DAZ Flakes", []),
         "useRayClip" : (RayClipGroup, "DAZ Ray Clip", []),

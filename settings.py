@@ -59,7 +59,10 @@ class GlobalSettings:
         self.sssMethod = 'BURLEY'
         self.displacementMethod = 'BOTH'
         self.toonMethod = 'FREESTYLE'
-        self.skinMethod = 'IRAY'
+        if bpy.app.version < (3,3,0):
+            self.skinMethod = 'IRAY'
+        else:
+            self.skinMethod = 'SSS'
         self.useSimplifiedCoat = False
         self.viewportColors = 'GUESS'
         self.skinColor0 = 0.6
@@ -600,13 +603,6 @@ class LocalSettings:
         self.ercDrivers = None
         self.ercFormulas = None
         self.ercMats = None
-
-        if bpy.app.version < (4,0,0):
-            if GS.sssMethod == 'RANDOM_WALK_SKIN':
-                GS.sssMethod = 'RANDOM_WALK'
-        else:
-            if GS.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
-                GS.sssMethod = 'RANDOM_WALK'
 
 
     def __repr__(self):

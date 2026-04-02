@@ -10,7 +10,11 @@ from .error import *
 def getMaterialType(mat, defaultType='CLOTHES'):
     if dazRna(mat).DazMaterialType:
         return dazRna(mat).DazMaterialType
+    else:
+        return getMatType(mat.name, defaultType)
 
+
+def getMatType(mname, defaultType='CLOTHES'):
     SkinMaterials = {
         "eyelash" : 'BLACK',
         "eyelashes" : 'BLACK',
@@ -61,7 +65,7 @@ def getMaterialType(mat, defaultType='CLOTHES'):
         "hands" : 'SKIN',
     }
 
-    mname = mat.name.lower().split("-")[0].split(".")[0].split(" ")[0].split("&")[0]
+    mname = mname.lower().split("-")[0].split(".")[0].split(" ")[0].split("&")[0]
     if mname in SkinMaterials.keys():
         return SkinMaterials[mname]
     mname2 = mname.rsplit("_", 2)[-1]

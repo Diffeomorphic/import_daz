@@ -646,8 +646,13 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Factor to multiply bump distance")
 
     skinMethod : EnumProperty(
-        items = [('IRAY', "IRAY", "Use translucency and volume nodes.\nUsually the most accurate conversion of volumetric skin materials,\nbut only works with Cycles and the BSDF material method"),
-                 ('SSS', "SSS", "Replace translucency and volume with subsurface scattering"),
+        items = [('IRAY', "IRAY", ("Use translucency and volume nodes.\n" +
+                                   "Usually the most accurate conversion of volumetric skin materials,\n" +
+                                   "but only works with Cycles and the BSDF material method.\n" +
+                                   "Has problems with skin map bleeding in Blender 3.3 and later,\n" +
+                                   "unless skin materials are replaced by a single UDIM material")),
+                 ('SSS', "SSS", ("Replace translucency and volume with subsurface scattering.\n" +
+                                 "Default method in Blender 3.3 and later")),
                  ('AltSSS', "Alternative SSS", "Alternative handling of SSS suggested by Midnight Arrow")],
         name = "Skin Method",
         description = "Conversion method for volumetric skin materials")
@@ -813,10 +818,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box = col.box()
         box.label(text = "Materials")
         drawEnum(self, box, "materialMethod")
+        drawEnum(self, box, "skinMethod")
         drawEnum(self, box, "sssMethod")
         drawEnum(self, box, "displacementMethod")
         drawEnum(self, box, "toonMethod")
-        drawEnum(self, box, "skinMethod")
         box.prop(self, "useSimplifiedCoat")
         drawEnum(self, box, "onHairMaterial")
         drawEnum(self, box, "viewportColors")

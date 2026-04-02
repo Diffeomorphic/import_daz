@@ -231,7 +231,7 @@ class PbrTree(CyclesTree):
     #-------------------------------------------------------------
 
     def buildBaseSubsurface(self):
-        from .cycles import findTextureNode
+        from .cycles import findTextureNode, getSSSMethod
         if not self.isEnabled("Diffuse"):
             color = WHITE
             tex = factex = None
@@ -288,7 +288,8 @@ class PbrTree(CyclesTree):
             else:
                 self.linkColor(tex, self.pbr, color, "Base Color")
 
-        self.pbr.subsurface_method = GS.sssMethod
+        sssMethod = getSSSMethod(self.owner.name)
+        self.pbr.subsurface_method = sssMethod
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
 
         radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
@@ -298,11 +299,11 @@ class PbrTree(CyclesTree):
             if rmax > 0:
                 radius /= rmax
             self.pbr.inputs["Subsurface Scale"].default_value = rmax
-            if GS.sssMethod != 'BURLEY':
+            if sssMethod != 'BURLEY':
                 self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
-            if GS.sssMethod == 'RANDOM_WALK_SKIN':
+            if sssMethod == 'RANDOM_WALK_SKIN':
                 self.pbr.inputs["Subsurface IOR"].default_value = ior
-        elif GS.sssMethod != 'BURLEY' and hasattr(self.pbr.inputs, "Subsurface IOR"):
+        elif sssMethod != 'BURLEY' and hasattr(self.pbr.inputs, "Subsurface IOR"):
             self.pbr.inputs["Subsurface IOR"].default_value = ior
             self.pbr.inputs["Subsurface Anisotropy"].default_value = aniso
         self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")

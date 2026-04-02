@@ -1399,7 +1399,9 @@ class CyclesTree(Tree):
             transtex = self.diffuseTex
         transwt,wttex,texslot = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
         sss,ssscolor,ssstex,sssmode = self.getSSSColor()
-        node = self.addGroup(SubsurfaceGroup, "DAZ Subsurface")
+        sssMethod = getSSSMethod(self.owner.name)
+        ssstype = sssMethod.rsplit("_", 1)[-1].capitalize()
+        node = self.addGroup(SubsurfaceGroup, "DAZ Subsurface %s" % ssstype, args=[sssMethod])
         node.inputs["Scale"].default_value = 1.0
         radius,radtex = self.getSSSRadius(transcolor, ssscolor, ssstex, sssmode)
         radius,ior,aniso = self.fixSSSRadius(radius)
@@ -1486,11 +1488,12 @@ class CyclesTree(Tree):
 
 
     def fixSSSRadius(self, radius):
-        if GS.sssMethod == 'BURLEY':
+        method = getSSSMethod(self.owner.name)
+        if method == 'BURLEY':
             return 0.25*radius, 0, 0
-        elif GS.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
+        elif method == 'RANDOM_WALK_FIXED_RADIUS':
             return 0.5*radius, 1.4, 0
-        elif GS.sssMethod == 'RANDOM_WALK_SKIN':
+        elif method == 'RANDOM_WALK_SKIN':
             return 0.1*radius, 1.4, 0.8
         elif BLENDER3: # Random walk = Random walk skin
             return 0.1*radius, 1.4, 0.8
@@ -2229,6 +2232,25 @@ class CyclesTree(Tree):
 #-------------------------------------------------------------
 #   Utilities
 #-------------------------------------------------------------
+
+def getSSSMethod(mname):
+    from .guess import getMatType
+    mtype = getMatType(mname)
+    if BLENDER3:
+        if mtype == 'SKIN':
+            return 'RANDOM_WALK'
+        elif GS.sssMethod == 'RANDOM_WALK_SKIN':
+            return 'RANDOM_WALK'
+        else:
+            return GS.sssMethod
+    else:
+        if mtype == 'SKIN':
+            return 'RANDOM_WALK_SKIN'
+        elif GS.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
+            return 'RANDOM_WALK'
+        else:
+            return GS.sssMethod
+
 
 def averageColor(value):
     if isVector(value):
