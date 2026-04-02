@@ -56,7 +56,7 @@ class GlobalSettings:
         self.website = ""
 
         self.materialMethod = 'SELECT'
-        self.sssMethod = 'BURLEY'
+        self.sssMethod = 'BURLEY_SKIN'
         self.displacementMethod = 'BOTH'
         self.toonMethod = 'FREESTYLE'
         if bpy.app.version < (3,3,0):

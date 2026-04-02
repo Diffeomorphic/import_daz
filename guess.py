@@ -11,10 +11,14 @@ def getMaterialType(mat, defaultType='CLOTHES'):
     if dazRna(mat).DazMaterialType:
         return dazRna(mat).DazMaterialType
     else:
-        return getMatType(mat.name, defaultType)
+        return getMatType(mat.name, None, defaultType)
 
 
-def getMatType(mname, defaultType='CLOTHES'):
+def getMatType(mname, geo, defaultType='CLOTHES'):
+    if (geo and
+        (len(geo.vertex_pairs) > 0 or geo.isShell)):
+        return 'SKIN'
+
     SkinMaterials = {
         "eyelash" : 'BLACK',
         "eyelashes" : 'BLACK',

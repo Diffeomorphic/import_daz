@@ -393,7 +393,8 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Material Method",
         default = 'SELECT')
 
-    enums = [('BURLEY', "Christensen-Burley", "Christensen-Burley"),
+    enums = [('BURLEY_SKIN', "Burley/Skin", "Use Random walk (skin) for skin materials,\nChristensen-Burley for other materials"),
+             ('BURLEY', "Christensen-Burley", "Christensen-Burley"),
              ('RANDOM_WALK', "Random Walk", "Random walk")]
     if BLENDER3:
         enums.append(('RANDOM_WALK_FIXED_RADIUS', "Random Walk (Fixed Radius)", "Random Walk (Fixed Radius)"))
@@ -401,7 +402,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         enums.append(('RANDOM_WALK_SKIN', "Random Walk (Skin)", "Random Walk (Skin)"))
     sssMethod : EnumProperty(
         items = enums,
-        name = "SSS",
+        name = "SSS Method",
         description = "Method for subsurface scattering")
 
     displacementMethod : EnumProperty(

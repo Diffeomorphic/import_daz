@@ -345,6 +345,32 @@ class Material(Asset, Channels):
         LS.shaders[shadername].append(self.name)
 
 
+
+    def getSSSMethod(self):
+        from .guess import getMatType
+        geonode = self.geometry
+        if geonode and geonode.data:
+            geo = geonode.data
+        else:
+            geo = None
+        if BLENDER3:
+            if GS.sssMethod == 'BURLEY_SKIN':
+                mtype = getMatType(self.name, geo)
+                return ('RANDOM_WALK' if mtype == 'SKIN' else 'BURLEY')
+            elif GS.sssMethod == 'RANDOM_WALK_SKIN':
+                return 'RANDOM_WALK'
+            else:
+                return GS.sssMethod
+        else:
+            if GS.sssMethod == 'BURLEY_SKIN':
+                mtype = getMatType(self.name, geo)
+                return ('RANDOM_WALK_SKIN' if mtype == 'SKIN' else 'BURLEY')
+            elif GS.sssMethod == 'RANDOM_WALK_FIXED_RADIUS':
+                return 'RANDOM_WALK'
+            else:
+                return GS.sssMethod
+
+
     def build(self, context):
         from .geometry import Geometry, GeoNode
         self.setupBasics()
