@@ -22,7 +22,7 @@ bl_info = {
     "location": "UI > DAZ Setup, DAZ Runtime",
     "description": "Importer for native DAZ files (.duf, .dsf)",
     "warning": "",
-    "doc_url": "https://bitbucket.org/Diffeomorphic/import_daz/wiki/Home",
+    "doc_url": "https://github.com/Diffeomorphic/import_daz/wiki",
     "tracker_url": "https://bitbucket.org/Diffeomorphic/import_daz/issues?status=new&status=open",
     "category": "Import-Export"}
 
