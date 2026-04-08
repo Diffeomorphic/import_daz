@@ -111,7 +111,7 @@ class MatchOperator(DazPropsOperator):
 
 def transferVertexGroups(context, src, targets, threshold, useEdges=False):
     activateObject(context, src)
-    if useEdges:
+    if useEdges or len(src.data.polygons) == 0:
         targets = [trg for trg in targets if trg.data.edges]
         vert_mapping = 'EDGEINTERP_NEAREST'
     else:
