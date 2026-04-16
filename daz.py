@@ -576,6 +576,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Add HD Armatures",
         description = "Add armature modifier and vertex groups to HD and multires meshes")
 
+    useTransferHDUVs : BoolProperty(
+        name = "Transfer HD UVs",
+        description = "Transfer UVs to HD meshes even if topology doesn't match")
+
     useMultires : BoolProperty(
         name = "Add Multires",
         description = "Add multires modifier to HD meshes and rebuild lower subdivision levels")
@@ -753,6 +757,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useHighDef")
         box.prop(self, "useMultires")
         box.prop(self, "keepBaseMesh")
+        box.prop(self, "useTransferHDUVs")
         box.prop(self, "useHDArmature")
         box.prop(self, "useHairGuides")
         box.prop(self, "useSharpEdges")

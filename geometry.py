@@ -815,8 +815,9 @@ def copyUvLayers(context, src, trg, selection=None):
             print("  UVs copied")
     else:
         print("  Cannot copy UV layer to target mesh.")
-        from .transfer import transferUvLayers
-        transferUvLayers(context, src, [trg])
+        if GS.useTransferHDUVs:
+            from .transfer import transferUvLayers
+            transferUvLayers(context, src, [trg])
 
 #-------------------------------------------------------------
 #   UnGeometry

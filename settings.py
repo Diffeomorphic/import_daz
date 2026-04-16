@@ -135,6 +135,7 @@ class GlobalSettings:
         self.useMultires = True
         self.useMultiShapes = True
         self.keepBaseMesh = False
+        self.useTransferHDUVs = True
         self.useHDArmature = True
         self.useSharpEdges = True
         self.maxSubdivs = 4
