@@ -797,20 +797,48 @@ class DAZ_OT_MakeMultires(DazPropsOperator, IsMesh):
 
 def copyUvLayers(context, src, trg, selection=None):
     from .finger import getFingerPrint
+
+    def getFid(f):
+        return tuple( sorted(list(f.vertices)) )
+
+    def setupLoopsMapping(trg):
+        loopsMapping = {}
+        for f in trg.data.polygons:
+            loops = dict([(vn, f.loop_indices[i]) for i,vn in enumerate(f.vertices)])
+            fid = getFid(f)
+            if fid in loopsMapping:
+                raise RuntimeError("duplicated face_id?")
+            loopsMapping[fid] = loops
+        return loopsMapping
+
+    def copyUvLayer(srclayer, trglayer, loopsMapping):
+        for f in src.data.polygons:
+            fid = getFid(f)
+            if fid not in loopsMapping:
+                msg =("Missing face_id: %s\nCannot copy UV layer to HD mesh.\nDisable Multiple UV Layers before importing" % (fid,))
+                raise DazError(msg)
+            for i,vn in enumerate(f.vertices):
+                if vn not in loopsMapping[fid]:
+                    print("Bad vert", vn)
+                    continue
+                trgloop = loopsMapping[fid][vn]
+                srcloop = f.loop_indices[i]
+                set_uv(trglayer, trgloop, get_uv(srclayer, srcloop))
+        return True
+
     if getFingerPrint(src) == getFingerPrint(trg):
         if GS.verbosity >= 3:
             print("  Copy UVs", src.name, trg.name)
-        vnums = [list(f.vertices) for f in src.data.polygons]
-        nverts = len(flatten(vnums))
-        array = np.zeros(2*nverts, dtype=float)
+        loopsMapping = setupLoopsMapping(trg)
         for srclayer in src.data.uv_layers:
             if selection is None or srclayer.name in selection:
                 if srclayer.name in trg.data.uv_layers.keys():
                     print('UV layer "%s" already exists' % srclayer.name)
                     continue
                 trglayer = makeNewUvLayer(trg.data, srclayer.name, False)
-                foreach_get_uv(srclayer, array)
-                foreach_set_uv(trglayer, array)
+                ok = copyUvLayer(srclayer, trglayer, loopsMapping)
+                if not ok:
+                    trg.data.uv_layers.remove(trglayer)
         if GS.verbosity >= 3:
             print("  UVs copied")
     else:
