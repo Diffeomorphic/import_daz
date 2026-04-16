@@ -35,7 +35,7 @@ function createDialog()
     var filepath = getScenePath();
     button1 = popup("Export HD", false, wDlg, oDlgWgt);
     button2 = popup("HD Convention", false, wDlg, oDlgWgt);
-    button3 = popup("Export HD UVs", false, wDlg, oDlgWgt);
+    button3 = popup("Export HD UVs", true, wDlg, oDlgWgt);
     button4 = popup("Default Location", true, wDlg, oDlgWgt);
     if ( wDlg.exec() ) {    
     	useExportHD = button1.checked;

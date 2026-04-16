@@ -479,6 +479,7 @@ def pruneNodeTree(tree,
                   useFixColorSpace = True,
                   useDazImages = True,
                   useBeautify = True,
+                  useSRGB = True,
                   useGroups = True,
                   ):
     marked = {}
@@ -502,6 +503,7 @@ def pruneNodeTree(tree,
                           useFixColorSpace,
                           (useDazImages and not isLie),
                           useBeautify,
+                          useSRGB,
                           useGroups)
             LS.protectedGroups.add(node.node_tree)
 
@@ -561,7 +563,9 @@ def pruneNodeTree(tree,
 
     from .material import setColorSpaceNone, setColorSpaceSRGB, isSRGBImage
     def protectImage(node, img, links):
-        if isSRGBImage(img):
+        if not useSRGB:
+            return
+        elif isSRGBImage(img):
             LS.protectedImages[img.name] = img
         else:
             for link in links:
@@ -693,31 +697,6 @@ def beautifyNodeTree(tree):
 #-------------------------------------------------------------
 #   Prune materials
 #-------------------------------------------------------------
-
-def pruneMaterials(ob,
-                   useDeleteUnusedNodes=True,
-                   useHideTexNodes=True,
-                   usePruneTexco=True,
-                   useHideOutputs=True,
-                   keepUnusedTextures=True,
-                   useFixColorSpace=True,
-                   useDazImages=True,
-                   useBeautify=False):
-    from .geometry import getActiveUvLayer
-    LS.__init__()
-    active = getActiveUvLayer(ob)
-    for mat in ob.data.materials:
-        if mat:
-            pruneNodeTree(mat.node_tree, active,
-                          useDeleteUnusedNodes,
-                          useHideTexNodes,
-                          usePruneTexco,
-                          useHideOutputs,
-                          keepUnusedTextures,
-                          useFixColorSpace,
-                          useDazImages,
-                          useBeautify)
-
 
 def getVectorSocket(sockets):
     socket = sockets.get("Vector")

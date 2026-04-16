@@ -7,7 +7,7 @@ import bpy
 from ..error import *
 from ..utils import *
 from ..fileutils import MultiFile, ImageFile, theImageExtensions
-from ..material import setColorSpaceNone
+from ..material import setColorSpaceNone, NORMAL
 from ..matsel import MaterialSelector
 
 #-------------------------------------------------------------
@@ -212,6 +212,7 @@ class DispAdder:
             if not self.useFileInTile(sname, mat):
                 continue
             img = self.getImage(filepath)
+            setColorSpaceNone(img)
             tex = tree.addTextureNode(0, img, sname, size)
             tex.parent = frame
             nodes.append(tex)
@@ -243,7 +244,7 @@ class DispAdder:
                 tree.links.new(last.outputs[0], node.inputs["Displacement"])
         tree.shiftNodes(nodes, -XSIZE, dy)
         if self.usePrune:
-            pruneNodeTree(tree)
+            pruneNodeTree(tree, useSRGB=False)
 
 
 class DAZ_OT_LoadScalarDisp(DazOperator, LoadMaps, DispAdder):
@@ -296,7 +297,6 @@ class NormalAdder:
         from ..driver import makePropDriver
         from ..tree import findNode, findLinksTo, XSIZE, pruneNodeTree
         from ..cycles import findTree
-        from ..material import NORMAL
 
         if not self.checkTileUsed(mat, args) or not GS.useNormalMap:
             return
@@ -339,6 +339,7 @@ class NormalAdder:
             if not self.useFileInTile(fname, mat):
                 continue
             img = self.getImage(filepath)
+            setColorSpaceNone(img)
             tex = tree.addTextureNode(0, img, fname, size)
             tex.parent = frame
             nodes.append(tex)
@@ -361,7 +362,7 @@ class NormalAdder:
             print("No link to normal map node")
         tree.shiftNodes(nodes, -XSIZE, dy)
         if self.usePrune:
-            pruneNodeTree(tree)
+            pruneNodeTree(tree, useSRGB=False)
 
 
 class DAZ_OT_LoadNormalMap(DazOperator, LoadMaps, NormalAdder):

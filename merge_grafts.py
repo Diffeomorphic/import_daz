@@ -435,9 +435,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 pair.a = dists[0][1]
 
         # Merge UV layers
-        from .tree import pruneMaterials
         self.mergeUvs(hum)
-        #pruneMaterials(hum)
 
     #
     # Based on ideas of Midnight Arrow

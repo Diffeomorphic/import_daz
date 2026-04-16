@@ -1985,6 +1985,11 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
         description = "Beautify node tree",
         default = True)
 
+    useSRGB : BoolProperty(
+        name = "SRGB",
+        description = "Convert images to sRGB",
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "useDeleteUnusedNodes")
         self.layout.prop(self, "useHideTexNodes")
@@ -1994,22 +1999,29 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
         self.layout.prop(self, "useFixColorSpace")
         self.layout.prop(self, "useDazImages")
         self.layout.prop(self, "useBeautify")
+        self.layout.prop(self, "useSRGB")
 
 
     def run(self, context):
-        from .tree import pruneMaterials
-        LS.__init__()
+        from .geometry import getActiveUvLayer
+        from .tree import pruneNodeTree
         for ob in getSelectedMeshes(context):
-            pruneMaterials(ob,
-                           self.useDeleteUnusedNodes,
-                           self.useHideTexNodes,
-                           self.usePruneTexco,
-                           self.useHideOutputs,
-                           self.keepUnusedTextures,
-                           self.useFixColorSpace,
-                           self.useDazImages,
-                           self.useBeautify,
-                           )
+            LS.__init__()
+            active = getActiveUvLayer(ob)
+            for mat in ob.data.materials:
+                if mat:
+                    pruneNodeTree(mat.node_tree,
+                                  active,
+                                  self.useDeleteUnusedNodes,
+                                  self.useHideTexNodes,
+                                  self.usePruneTexco,
+                                  self.useHideOutputs,
+                                  self.keepUnusedTextures,
+                                  self.useFixColorSpace,
+                                  self.useDazImages,
+                                  self.useBeautify,
+                                  self.useSRGB,
+                                  )
 
 #----------------------------------------------------------
 #   Utility
