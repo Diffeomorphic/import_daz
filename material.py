@@ -1985,11 +1985,6 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
         description = "Beautify node tree",
         default = True)
 
-    useSRGB : BoolProperty(
-        name = "SRGB",
-        description = "Convert images to sRGB",
-        default = False)
-
     def draw(self, context):
         self.layout.prop(self, "useDeleteUnusedNodes")
         self.layout.prop(self, "useHideTexNodes")
@@ -1999,7 +1994,6 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
         self.layout.prop(self, "useFixColorSpace")
         self.layout.prop(self, "useDazImages")
         self.layout.prop(self, "useBeautify")
-        self.layout.prop(self, "useSRGB")
 
 
     def run(self, context):
@@ -2020,7 +2014,6 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
                                   self.useFixColorSpace,
                                   self.useDazImages,
                                   self.useBeautify,
-                                  self.useSRGB,
                                   )
 
 #----------------------------------------------------------

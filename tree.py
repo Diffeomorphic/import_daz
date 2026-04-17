@@ -370,6 +370,8 @@ GroupSize = {
     "DAZ Invert NMap" : 10,
     "DAZ Translucent" : 8,
     "DAZ Subsurface" : 14,
+    "DAZ Subsurface Skin" : 14,
+    "DAZ Subsurface Burley" : 14,
     "DAZ Flakes" : 12,
     "DAZ Ray Clip" : 10,
     "DAZ Dual Lobe" : 10,
@@ -479,7 +481,6 @@ def pruneNodeTree(tree,
                   useFixColorSpace = True,
                   useDazImages = True,
                   useBeautify = True,
-                  useSRGB = True,
                   useGroups = True,
                   ):
     marked = {}
@@ -492,7 +493,7 @@ def pruneNodeTree(tree,
             useGroups and
             node.outputs and
             node.node_tree not in LS.protectedGroups):
-            isLie = node.node_tree.name.startswith("LIE")
+            isLie = node.node_tree.name.startswith(("LIE", "DIMG"))
             pruneNodeTree(node.node_tree,
                           None,
                           useDeleteUnusedNodes,
@@ -503,7 +504,6 @@ def pruneNodeTree(tree,
                           useFixColorSpace,
                           (useDazImages and not isLie),
                           useBeautify,
-                          useSRGB,
                           useGroups)
             LS.protectedGroups.add(node.node_tree)
 
@@ -563,9 +563,7 @@ def pruneNodeTree(tree,
 
     from .material import setColorSpaceNone, setColorSpaceSRGB, isSRGBImage
     def protectImage(node, img, links):
-        if not useSRGB:
-            return
-        elif isSRGBImage(img):
+        if isSRGBImage(img):
             LS.protectedImages[img.name] = img
         else:
             for link in links:
@@ -583,26 +581,27 @@ def pruneNodeTree(tree,
                 print("Image has been removed", img)
                 node.image = img
 
-    for node in list(tree.nodes):
-        if node.type == 'TEX_IMAGE':
-            links = node.outputs["Color"].links
-            img = node.image
-            if len(links) == 1 and img:
-                gamma = links[0].to_node
-                if (gamma.label == "Linear" and
-                    gamma.type == 'GAMMA'):
-                    if isSRGBImage(img) and img.name in LS.protectedImages.keys():
-                        if GS.verbosity >= 3:
-                            print("Protected image: %s" % img.name)
+    if useFixColorSpace:
+        for node in list(tree.nodes):
+            if node.type == 'TEX_IMAGE':
+                links = node.outputs["Color"].links
+                img = node.image
+                if len(links) == 1 and img:
+                    gamma = links[0].to_node
+                    if (gamma.label == "Linear" and
+                        gamma.type == 'GAMMA'):
+                        if isSRGBImage(img) and img.name in LS.protectedImages.keys():
+                            if GS.verbosity >= 3:
+                                print("Protected image: %s" % img.name)
+                        else:
+                            setColorSpaceNone(img)
+                            for link in gamma.outputs["Color"].links:
+                                tree.links.new(node.outputs["Color"], link.to_socket)
                     else:
-                        setColorSpaceNone(img)
-                        for link in gamma.outputs["Color"].links:
-                            tree.links.new(node.outputs["Color"], link.to_socket)
-                else:
+                        protectImage(node, img, links)
+                elif img:
                     protectImage(node, img, links)
-            elif img:
-                protectImage(node, img, links)
-            node.hide = useHideTexNodes
+                node.hide = useHideTexNodes
 
     if useDeleteUnusedNodes:
         outputs = []
