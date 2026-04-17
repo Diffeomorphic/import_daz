@@ -4,6 +4,7 @@
 
 import os
 import bpy
+import numpy as np
 from ..error import *
 from ..utils import *
 from ..fileutils import MultiFile, ImageFile, theImageExtensions
@@ -570,6 +571,7 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
 
 
     def run(self, context):
+        t1 = perf_counter()
         self.storeDefaultNames(context)
         LS.__init__()
         objects = [ob for ob in getSelectedMeshes(context) if getModifier(ob, 'MULTIRES')]
@@ -580,6 +582,8 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
                 self.bakeObject(context, ob)
             finally:
                 self.restoreMaterials(ob)
+        t2 = perf_counter()
+        print("Maps baked in %.3f seconds" % (t2-t1))
 
 
     def storeMaterials(self, ob):
@@ -683,12 +687,14 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
         i = (tile-1001-10*j)%10
         dx = sign*i
         dy = sign*j
-        duv = Vector((dx, dy))
-        uvloop = ob.data.uv_layers[0]
-        for f in ob.data.polygons:
-            for n in f.loop_indices:
-                uv = get_uv(uvloop, n)
-                uv += duv
+        uvlayer = ob.data.uv_layers[0]
+        nuvs = uv_length(uvlayer)
+        array = np.zeros(2*nuvs, dtype=float)
+        foreach_get_uv(uvlayer, array)
+        array = array.reshape((nuvs, 2))
+        array[:,0] += dx
+        array[:,1] += dy
+        foreach_set_uv(uvlayer, array.ravel())
 
 #----------------------------------------------------------
 #   Load normal/displacement maps
