@@ -991,7 +991,7 @@ class Morph(FormulaAsset):
         if sname in ob.data.shape_keys.key_blocks.keys():
             skey = ob.data.shape_keys.key_blocks[sname]
             ob.shape_key_remove(skey)
-        skey = ob.shape_key_add(name=sname)
+        skey = ob.shape_key_add(name=sname, from_mix=False)
         if self.value < skey.slider_min:
             skey.slider_min = self.value
         if self.value > skey.slider_max:
