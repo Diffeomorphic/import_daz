@@ -77,7 +77,7 @@ class DAZ_OT_AddPush(DazOperator, IsMesh):
         from ..modifier import getBasisShape
         for ob in getSelectedMeshes(context):
             basis,skeys,new = getBasisShape(ob)
-            skey = ob.shape_key_add(name="Push")
+            skey = ob.shape_key_add(name="Push", from_mix=False)
             scale = GS.scale
             for n,v in enumerate(ob.data.vertices):
                 skey.data[n].co += v.normal*scale

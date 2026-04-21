@@ -412,7 +412,7 @@ class Proxifier(DriverUser):
                 vgrps[gn].add([vn], w, 'REPLACE')
 
         for (sname, value, min, max, data) in skeys:
-            skey = ob.shape_key_add(name=sname)
+            skey = ob.shape_key_add(name=sname, from_mix=False)
             skey.slider_min = min
             skey.slider_max = max
             skey.value = value

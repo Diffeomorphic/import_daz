@@ -682,7 +682,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         if isZero:
             return False
 
-        cskey = trg.shape_key_add(name=hskey.name)
+        cskey = trg.shape_key_add(name=hskey.name, from_mix=False)
         if self.useSelectedOnly:
             verts = trg.data.vertices
             for n in range(3):
@@ -868,7 +868,7 @@ class DAZ_OT_ApplyActiveShapekey(DazPropsOperator, IsShape):
 #----------------------------------------------------------
 
 def addShapekey(ob, skey):
-    nskey = ob.shape_key_add(name=skey.name)
+    nskey = ob.shape_key_add(name=skey.name, from_mix=False)
     nskey.slider_min = skey.slider_min
     nskey.slider_max = skey.slider_max
     nskey.vertex_group = skey.vertex_group

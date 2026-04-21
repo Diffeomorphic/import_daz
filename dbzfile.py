@@ -610,7 +610,7 @@ class DAZ_OT_ImportDBZ(CollectionShower, DazOperator, DbzFile, MultiFile, PropDr
                 if GS.verbosity >= 3:
                     print("Try %s (%d verts)" % (dbz.name, len(verts)))
                 if len(verts) == len(ob.data.vertices):
-                    skey = ob.shape_key_add(name=sname)
+                    skey = ob.shape_key_add(name=sname, from_mix=False)
                     skey.data.foreach_set("co", flatten(verts))
                     skey.slider_min = self.min
                     skey.slider_max = self.max

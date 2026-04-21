@@ -856,7 +856,7 @@ class LoadMorph(DriverUser):
                 varr = np.zeros(3*nverts, dtype=float)
                 ob.data.vertices.foreach_get("co", varr)
                 arr = 2*varr - earr
-                skey = ob.shape_key_add(name=prop)
+                skey = ob.shape_key_add(name=prop, from_mix=False)
                 self.addShapeDriver(skey, final)
                 min,max,default,ovr = getPropMinMax(self.rig, prop, True)
                 skey.slider_min = min

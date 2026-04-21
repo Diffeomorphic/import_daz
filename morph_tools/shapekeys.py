@@ -289,7 +289,7 @@ class DAZ_OT_MixShapekeys(DazOperator, IsShape):
         if self.overwrite:
             skey = skey1
         else:
-            skey = ob.shape_key_add(name=self.newName)
+            skey = ob.shape_key_add(name=self.newName, from_mix=False)
         for n,co in enumerate(coords):
             skey.data[n].co = co
         if self.delete:

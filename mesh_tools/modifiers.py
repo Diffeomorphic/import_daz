@@ -122,7 +122,7 @@ def applyShape(ob, idx):
 
 
 def copyShape(src, trg, sname):
-    skey = trg.shape_key_add(name=sname)
+    skey = trg.shape_key_add(name=sname, from_mix=False)
     data = skey.data
     for vn,v in enumerate(src.data.vertices):
         data[vn].co = v.co.copy()
