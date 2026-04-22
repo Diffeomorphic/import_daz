@@ -164,15 +164,17 @@ class ChannelSetter:
     matSlots : CollectionProperty(type = EditSlotGroup)
     dirty = {}
 
+    def isDirty(self, ncomps, item):
+        origItem = self.origSlots[item.name]
+        return self.getItemsDiff(ncomps, item, origItem)
+
     def setChannelCycles(self, mat, item):
         nodeType, slot, ncomps = getTweakableChannel(item.name)
         if self.useChangedOnly:
-            value = self.getItemValue(ncomps, item)
-            origItem = self.origSlots[item.name]
-            origValue = self.getItemValue(ncomps, origItem)
-            if value == origValue and not self.dirty.get(item.name):
+            if self.isDirty(ncomps, item) or self.dirty.get(item.name):
+                self.dirty[item.name] = True
+            else:
                 return
-            self.dirty[item.name] = True
 
         for node in mat.node_tree.nodes.values():
             if self.matchingNode(node, nodeType, mat):
@@ -268,6 +270,19 @@ class ChannelSetter:
         elif ncomps == 4:
             item.color = self.getValue(value, 4)
 
+    def getItemsDiff(self, ncomps, item1, item2):
+        if item1.ncomps == 1:
+            val1 = self.getValue(item1.number, ncomps)
+            val2 = self.getValue(item2.number, ncomps)
+            return (abs(val1-val2) > 1e-6)
+        elif item1.ncomps == 3:
+            val1 = self.getValue(item1.vector, ncomps)
+            val2 = self.getValue(item2.vector, ncomps)
+            return ((Vector(val1) - Vector(val2)).length > 1e-6)
+        elif item1.ncomps == 4:
+            val1 = self.getValue(item1.color, ncomps)
+            val2 = self.getValue(item2.color, ncomps)
+            return ((Vector(val1) - Vector(val2)).length > 1e-6)
 
     def getEditChannel(self, ob, key):
         from ..cycles import isTexImage
@@ -360,6 +375,8 @@ class DAZ_OT_LaunchEditor(MaterialSelector, DazPropsOperator, ChannelSetter, IsM
     bl_description = "Edit materials of selected meshes"
     bl_options = {'UNDO'}
 
+    dialogWidth = 400
+
     shows : CollectionProperty(type = ShowGroup)
 
     useAllMaterials : BoolProperty(
@@ -381,17 +398,22 @@ class DAZ_OT_LaunchEditor(MaterialSelector, DazPropsOperator, ChannelSetter, IsM
         self.drawActive(context)
         group = None
         items = []
-        for key in TweakableChannels.keys():
+        for key,data in TweakableChannels.items():
             if TweakableChannels[key] is None:
                 if group:
                     self.drawGroup(group)
                 items = []
                 group = (key, items)
             elif key in self.matSlots.keys():
-                items.append( (key, self.matSlots[key]) )
+                ncomps = data[2]
+                slot = self.matSlots[key]
+                dirty = self.isDirty(ncomps, slot)
+                items.append( (key, slot, dirty) )
         if group:
             self.drawGroup(group)
-        self.layout.operator("daz.update_materials")
+        row = self.layout.row()
+        row.operator("daz.update_materials")
+        row.operator("daz.reset_materials")
 
 
     def drawGroup(self, group):
@@ -403,13 +425,14 @@ class DAZ_OT_LaunchEditor(MaterialSelector, DazPropsOperator, ChannelSetter, IsM
             return
         self.layout.prop(self.shows[section], "show", icon="DOWNARROW_HLT", emboss=False, text=section)
         nchars = len(section)
-        for key,item in items:
+        for key,item,dirty in items:
             row = self.layout.row()
             if key[0:nchars] == section:
                 text = item.name[nchars+1:]
             else:
                 text = item.name
-            row.label(text=text)
+            icon = ('CHECKBOX_HLT' if dirty else 'CHECKBOX_DEHLT')
+            row.label(text=text, icon=icon)
             if item.ncomps == 4:
                 row.prop(item, "color", text="")
             elif item.ncomps == 1:
