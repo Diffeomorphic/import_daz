@@ -142,6 +142,17 @@ class DAZ_OT_UpdateMaterials(bpy.types.Operator):
         theMaterialEditor.run(context)
         return {'PASS_THROUGH'}
 
+
+class DAZ_OT_RevertEditor(bpy.types.Operator):
+    bl_idname = "daz.revert_editor"
+    bl_label = "Revert Editor"
+    bl_description = "Revert Editor"
+
+    def execute(self, context):
+        global theMaterialEditor
+        theMaterialEditor.revert(context)
+        return {'PASS_THROUGH'}
+
 #-------------------------------------------------------------
 #   Select all and none
 #-------------------------------------------------------------
@@ -400,6 +411,7 @@ classes = [
     DAZ_OT_KeyShellInfluence,
     DAZ_OT_ToggleShellInfluence,
     DAZ_OT_UpdateMaterials,
+    DAZ_OT_RevertEditor,
 ]
 
 def register():

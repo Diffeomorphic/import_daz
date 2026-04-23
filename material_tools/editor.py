@@ -413,7 +413,7 @@ class DAZ_OT_LaunchEditor(MaterialSelector, DazPropsOperator, ChannelSetter, IsM
             self.drawGroup(group)
         row = self.layout.row()
         row.operator("daz.update_materials")
-        row.operator("daz.reset_materials")
+        row.operator("daz.revert_editor")
 
 
     def drawGroup(self, group):
@@ -461,10 +461,16 @@ class DAZ_OT_LaunchEditor(MaterialSelector, DazPropsOperator, ChannelSetter, IsM
 
 
     def run(self, context):
-        ob = context.object
-        for ob1 in getSelectedMeshes(context):
+        for ob in getSelectedMeshes(context):
             for item in self.matSlots:
-                self.setEditChannel(ob1, item)
+                self.setEditChannel(ob, item)
+
+
+    def revert(self, context):
+        for item in self.matSlots:
+            orig = self.origSlots[item.name]
+            value = self.getItemValue(orig.ncomps, orig)
+            self.setItemValue(item.ncomps, item, value)
 
 
     def setEditChannel(self, ob, item):
