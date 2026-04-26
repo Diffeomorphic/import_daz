@@ -108,7 +108,7 @@ class Light(Node):
                 setattr(light, attr, value)
         self.data = light
         Node.build(self, context, inst)
-        if usePhoto:
+        if usePhoto and BLENDER3:
             inst.material.rna = light
             inst.material.build(context)
 
@@ -152,7 +152,13 @@ class LightInstance(Instance):
         from .material import srgbToLinearCorrect
         color = self.getValue(["Color"], WHITE)
         light.color = srgbToLinearCorrect(color)
-        light.energy = self.getValue(["Intensity"], 1.0)
+        intens = self.getValue(["Intensity"], 1.0)
+        flux = self.getValue(["Flux"], 15000)
+        factor = (3 if light.type == 'POINT' else 1)
+        light.energy = intens * flux/15000 * factor
+        if hasattr(light, "temperature"):
+            light.use_temperature  = True
+            light.temperature = self.getValue(["Temperature"], 6500)
 
         if hasattr(light, "shadow_color"):
             light.shadow_color = self.getValue(["Shadow Color"], BLACK)
@@ -249,15 +255,10 @@ class LightTree(CyclesTree):
 
     def build(self):
         self.makeTree()
-
         blackbody = self.addNode("ShaderNodeBlackbody", 1)
         blackbody.inputs["Temperature"].default_value = self.getValue(["Temperature"], 6500)
-
         emit = self.addNode("ShaderNodeEmission", 2)
         self.links.new(blackbody.outputs["Color"], emit.inputs["Color"])
-        factor = self.owner.instance.fluxFactor / 15000
-        emit.inputs["Strength"].default_value = factor * self.getValue(["Flux"], 15000)
-
         output = self.addNode("ShaderNodeOutputLight", 3)
         self.links.new(emit.outputs[0], output.inputs["Surface"])
 
