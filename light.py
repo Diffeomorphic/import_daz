@@ -73,7 +73,6 @@ class Light(Node):
         if self.type == 'POINT':
             light = bpy.data.lights.new(self.name, "POINT")
             light.shadow_soft_size = height/2
-            inst.fluxFactor = 3
             self.twosided = False
         elif self.type == 'DIRECTIONAL':
             light = bpy.data.lights.new(self.name, "SUN")
@@ -108,9 +107,6 @@ class Light(Node):
                 setattr(light, attr, value)
         self.data = light
         Node.build(self, context, inst)
-        if usePhoto and BLENDER3:
-            inst.material.rna = light
-            inst.material.build(context)
 
 
     def postTransform(self):
@@ -135,12 +131,6 @@ class Light(Node):
 #-------------------------------------------------------------
 
 class LightInstance(Instance):
-    def __init__(self, fileref, node, struct):
-        Instance.__init__(self, fileref, node, struct)
-        self.material = LightMaterial(fileref, self)
-        self.fluxFactor = 1
-
-
     def buildChannels(self, context):
         Instance.buildChannels(self, context)
         light = self.rna.data
@@ -150,15 +140,41 @@ class LightInstance(Instance):
             light.cycles.cast_shadow = self.getValue(["Cast Shadows"], 0)
 
         from .material import srgbToLinearCorrect
-        color = self.getValue(["Color"], WHITE)
-        light.color = srgbToLinearCorrect(color)
         intens = self.getValue(["Intensity"], 1.0)
         flux = self.getValue(["Flux"], 15000)
         factor = (3 if light.type == 'POINT' else 1)
         light.energy = intens * flux/15000 * factor
+
+        color = self.getValue(["Color"], WHITE)
+        color = srgbToLinearCorrect(color)
+        temp = self.getValue(["Temperature"], 6500)
         if hasattr(light, "temperature"):
+            light.color = color
             light.use_temperature  = True
-            light.temperature = self.getValue(["Temperature"], 6500)
+            light.temperature = temp
+        else:
+            def kelvin_to_rgb(temperature):
+                T = temperature / 100
+                if T <= 66:
+                    red = 255
+                else:
+                    red = 329.698727446 * (T - 60)**-0.1332047592
+                if T <= 66:
+                    green = 99.4708025861 * math.log(T) - 161.1195681661
+                else:
+                    green = 288.1221695283 * (T - 60)**-0.0755148492
+                if T >= 66:
+                    blue = 255
+                elif T <= 19:
+                    blue = 0
+                else:
+                    blue = 138.5177312231 * math.log(T - 10) - 305.0447927307
+                return Vector([red, green, blue]) / 255
+
+            rgb = kelvin_to_rgb(temp)
+            for n,factor in enumerate(rgb):
+                color[n] *= factor
+            light.color = color
 
         if hasattr(light, "shadow_color"):
             light.shadow_color = self.getValue(["Shadow Color"], BLACK)
@@ -208,9 +224,8 @@ def getBlenderData(light, dazdata, btn, frame):
         elif key == "Flux":
             node = getNode('EMISSION')
             if node:
-                fluxFactor = (3 if light.type == 'POINT' else 1)
-                factor = fluxFactor / 15000
-                setNode(node, "Strength", factor*value)
+                factor = (3 if light.type == 'POINT' else 1)
+                setNode(node, "Strength", factor*value/15000)
         btn.olddata[key] = value
     return bdata
 
@@ -224,47 +239,6 @@ def getDazKeys():
         "falloff_type" : "Decay",
         'nodes["Emission"].inputs[1].default_value' : "Intensity",
     }
-
-#-------------------------------------------------------------
-#   Cycles Light Material
-#-------------------------------------------------------------
-
-class LightMaterial(CyclesMaterial):
-    def __init__(self, fileref, inst):
-        CyclesMaterial.__init__(self, fileref)
-        self.name = inst.name
-        self.channels = inst.channels
-        self.instance = inst
-
-    def guessColor(self):
-        return
-
-    def build(self, context):
-        self.setupBasics()
-        if self.dontBuild():
-            return False
-        self.tree = LightTree(self)
-        self.tree.build()
-
-
-class LightTree(CyclesTree):
-    def __init__(self, owner):
-        CyclesTree.__init__(self, owner)
-        self.type = 'LIGHT'
-
-
-    def build(self):
-        self.makeTree()
-        blackbody = self.addNode("ShaderNodeBlackbody", 1)
-        blackbody.inputs["Temperature"].default_value = self.getValue(["Temperature"], 6500)
-        emit = self.addNode("ShaderNodeEmission", 2)
-        self.links.new(blackbody.outputs["Color"], emit.inputs["Color"])
-        output = self.addNode("ShaderNodeOutputLight", 3)
-        self.links.new(emit.outputs[0], output.inputs["Surface"])
-
-
-    def addTexco(self, slot):
-        return
 
 #-------------------------------------------------------------
 #   Cycles World Material
