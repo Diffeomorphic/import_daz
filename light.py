@@ -172,6 +172,7 @@ class LightInstance(Instance):
                 return Vector([red, green, blue]) / 255
 
             rgb = kelvin_to_rgb(temp)
+            rgb = srgbToLinearCorrect(rgb)
             for n,factor in enumerate(rgb):
                 color[n] *= factor
             light.color = color
