@@ -63,17 +63,39 @@ class Light(Node):
 
 
     def build(self, context, inst):
-        lgeo = inst.getValue(["Light Geometry"], 0)
         self.twosided = inst.getValue(["Two Sided"], False)
         usePhoto = inst.getValue(["Photometric Mode"], False)
         width = inst.getValue(["Width"], 10) * GS.scale
         height = inst.getValue(["Height"], 10) * GS.scale
 
-        # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
+        def addSpotLight(inst, width, height):
+            lgeo = inst.getValue(["Light Geometry"], 0)
+            # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
+            if lgeo == 1:
+                light = bpy.data.lights.new(self.name, "AREA")
+                light.shape = 'RECTANGLE'
+                light.size = width
+                light.size_y = height
+            elif lgeo == 2:
+                light = bpy.data.lights.new(self.name, "AREA")
+                light.shape = 'DISK'
+                light.size = height
+            else:
+                light = bpy.data.lights.new(self.name, "POINT")
+                light.shadow_soft_size = height/2
+                self.twosided = False
+                return light
+            spread = inst.getValue(["Spread Angle"], 60) * D
+            beam = inst.getValue(["Beam Exponent"], 1)
+            light.spread = spread / (1 + (beam - 1) * 0.05)
+            return light
+
         if self.type == 'POINT':
             light = bpy.data.lights.new(self.name, "POINT")
             light.shadow_soft_size = height/2
             self.twosided = False
+        elif self.type == 'SPOT':
+            light = addSpotLight(inst, width, height)
         elif self.type == 'DIRECTIONAL':
             light = bpy.data.lights.new(self.name, "SUN")
             light.shadow_soft_size = height/2
@@ -88,19 +110,8 @@ class Light(Node):
             context.scene.world = self.rna = worldmat.rna
             return
         else:
-            light = bpy.data.lights.new(self.name, "AREA")
-            light.shape = ('RECTANGLE' if lgeo == 1 else 'DISK')
-            if lgeo == 0:
-                light.size = light.size_y = 0.1*GS.scale
-            else:
-                light.size = width
-                light.size_y = height
-            spread = inst.getValue(["Spread Angle"], 60) * D
-            beam = inst.getValue(["Beam Exponent"], 1)
-            light.spread = spread / (1 + (beam - 1) * 0.05)
-            if self.type not in ['light', 'SPOT']:
-                msg = ("Unknown light type: %s" % self.type)
-                reportError(msg, trigger=(1,5))
+            print("Unknown light type: %s" % self.type)
+            light = addSpotLight(inst, width, height)
 
         for attr,op,value in getMinLightSettings():
             if hasattr(light, attr):
