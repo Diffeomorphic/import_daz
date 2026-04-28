@@ -308,6 +308,7 @@ class MorphPaths:
                 if isinstance(folders, str):
                     folders = [folders]
                 self.morphPaths[char] += ["/%s" % canonicalPath(folder)[:-1].lower() for folder in folders]
+                taken = set()
                 for folder in folders:
                     for abspath in GS.getAbsPaths(folder):
                         files = list(os.listdir(abspath))
@@ -318,9 +319,11 @@ class MorphPaths:
                                 continue
                             isright,name = self.isRightType(fname, prefixes, strips, includes, excludes)
                             key = fname.lower()
-                            if isright and not typeFiles.get(name):
+                            lname = name.lower()
+                            if isright and not typeFiles.get(name) and not lname in taken:
                                 typeFiles[name] = canonicalPath("%s/%s" % (abspath, file))
                                 typeNames[key] = name
+                                taken.add(lname)
 
 
     def isRightType(self, fname, prefixes, strips, includes, excludes):
