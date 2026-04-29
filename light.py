@@ -67,15 +67,20 @@ class Light(Node):
         width = inst.getValue(["Width"], 10) * GS.scale
         height = inst.getValue(["Height"], 10) * GS.scale
 
-        def addLight(inst, width, height):
+        def addLight(inst, width, height, isPoint):
             lgeo = inst.getValue(["Light Geometry"], 0)
             # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
             if lgeo == 0:       # Point
-                light = bpy.data.lights.new(self.name, "POINT")
-                light.shadow_soft_size = 0
-                inst.twosided = False
-                inst.fluxfactor = 5
-                return light
+                if isPoint:
+                    light = bpy.data.lights.new(self.name, "POINT")
+                    light.shadow_soft_size = 0
+                    inst.twosided = False
+                    inst.fluxfactor = 5
+                    return light
+                else:
+                    light = bpy.data.lights.new(self.name, "AREA")
+                    light.shape = 'DISK'
+                    light.size = 0.1 * GS.scale
             elif lgeo == 1:     # Rectangle
                 light = bpy.data.lights.new(self.name, "AREA")
                 light.shape = 'RECTANGLE'
@@ -86,10 +91,15 @@ class Light(Node):
                 light.shape = 'DISK'
                 light.size = height
             elif lgeo == 3:     # Sphere
-                light = bpy.data.lights.new(self.name, "POINT")
-                light.shadow_soft_size = height/2
-                inst.twosided = False
-                return light
+                if isPoint:
+                    light = bpy.data.lights.new(self.name, "POINT")
+                    light.shadow_soft_size = height/2
+                    inst.twosided = False
+                    return light
+                else:
+                    light = bpy.data.lights.new(self.name, "AREA")
+                    light.shape = 'DISK'
+                    light.size = height
             elif lgeo == 4:     # Cylinder
                 light = bpy.data.lights.new(self.name, "AREA")
                 light.shape = 'RECTANGLE'
@@ -97,7 +107,6 @@ class Light(Node):
                 light.size_y = height
                 inst.fluxfactor = 1/3
                 inst.cylinder = True
-                return light
             else:
                 print("Unknown light geometry: %d" % lgeo)
                 return None
@@ -107,9 +116,12 @@ class Light(Node):
             return light
 
         if self.type == 'POINT':
-            light = addLight(inst, width, height)
+            light = addLight(inst, width, height, True)
         elif self.type == 'SPOT':
-            light = addLight(inst, width, height)
+            light = addLight(inst, width, height, False)
+            inst.twosided = False
+            inst.cylinder = False
+            inst.fluxfactor = 1.0
         elif self.type == 'DIRECTIONAL':
             light = bpy.data.lights.new(self.name, "SUN")
             light.shadow_soft_size = height/2
