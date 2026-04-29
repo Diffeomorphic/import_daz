@@ -642,6 +642,11 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Emission",
         description = "Use emission")
 
+    LPW : FloatProperty(
+        name = "Lumen Per Watt",
+        description = "Conversion factor for imported lights",
+        min = 1.0)
+
     useGhostLights : BoolProperty(
         name = "Ghost Lights",
         description = "Mimics the iray ghost light bug, that is fixed in DS 4.20.\nDo not use to mimic DS 4.20")
@@ -855,6 +860,8 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useVolume")
         box.prop(self, "useGhostLights")
         box.prop(self, "bumpMultiplier")
+        box.separator()
+        box.prop(self, "LPW")
 
     def run(self, context):
         GS.fromDialog(self)

@@ -177,12 +177,10 @@ class LightInstance(Instance):
         else:
             light.cycles.cast_shadow = self.getValue(["Cast Shadows"], 0)
 
-        LPW = 7500
-
         from .material import srgbToLinearCorrect
         intens = self.getValue(["Intensity"], 1.0)
-        flux = self.getValue(["Flux"], LPW)
-        light.energy = intens * flux/LPW * self.fluxfactor
+        flux = self.getValue(["Flux"], GS.LPW)
+        light.energy = intens * flux/GS.LPW * self.fluxfactor
 
         color = self.getValue(["Color"], WHITE)
         color = srgbToLinearCorrect(color)
