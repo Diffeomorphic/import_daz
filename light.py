@@ -32,7 +32,6 @@ class Light(Node):
         self.info = {}
         self.presentation = {}
         self.data = None
-        self.twosided = False
 
 
     def __repr__(self):
@@ -63,43 +62,58 @@ class Light(Node):
 
 
     def build(self, context, inst):
-        self.twosided = inst.getValue(["Two Sided"], False)
+        inst.twosided = inst.getValue(["Two Sided"], False)
         usePhoto = inst.getValue(["Photometric Mode"], False)
         width = inst.getValue(["Width"], 10) * GS.scale
         height = inst.getValue(["Height"], 10) * GS.scale
 
-        def addSpotLight(inst, width, height):
+        def addLight(inst, width, height):
             lgeo = inst.getValue(["Light Geometry"], 0)
             # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
-            if lgeo == 1:
+            if lgeo == 0:       # Point
+                light = bpy.data.lights.new(self.name, "POINT")
+                light.shadow_soft_size = height/2
+                inst.twosided = False
+                inst.fluxfactor = 5
+                return light
+            elif lgeo == 1:     # Rectangle
                 light = bpy.data.lights.new(self.name, "AREA")
                 light.shape = 'RECTANGLE'
                 light.size = width
                 light.size_y = height
-            elif lgeo == 2:
+            elif lgeo == 2:     # Disc
                 light = bpy.data.lights.new(self.name, "AREA")
                 light.shape = 'DISK'
                 light.size = height
-            else:
+            elif lgeo == 3:     # Sphere
                 light = bpy.data.lights.new(self.name, "POINT")
                 light.shadow_soft_size = height/2
-                self.twosided = False
+                inst.twosided = False
                 return light
+            elif lgeo == 4:     # Cylinder
+                light = bpy.data.lights.new(self.name, "AREA")
+                light.shape = 'RECTANGLE'
+                light.size = width*2
+                light.size_y = height
+                inst.fluxfactor = 1/3
+                inst.cylinder = True
+                return light
+            else:
+                print("Unknown light geometry: %d" % lgeo)
+                return None
             spread = inst.getValue(["Spread Angle"], 60) * D
             beam = inst.getValue(["Beam Exponent"], 1)
             light.spread = spread / (1 + (beam - 1) * 0.05)
             return light
 
         if self.type == 'POINT':
-            light = bpy.data.lights.new(self.name, "POINT")
-            light.shadow_soft_size = height/2
-            self.twosided = False
+            light = addLight(inst, width, height)
         elif self.type == 'SPOT':
-            light = addSpotLight(inst, width, height)
+            light = addLight(inst, width, height)
         elif self.type == 'DIRECTIONAL':
             light = bpy.data.lights.new(self.name, "SUN")
             light.shadow_soft_size = height/2
-            self.twosided = False
+            inst.twosided = False
             if LS.distantLight is None:
                 LS.distantLight = self
         elif self.type in [
@@ -111,7 +125,7 @@ class Light(Node):
             return
         else:
             print("Unknown light type: %s" % self.type)
-            light = addSpotLight(inst, width, height)
+            light = addLight(inst, width, height)
 
         for attr,op,value in getMinLightSettings():
             if hasattr(light, attr):
@@ -125,36 +139,38 @@ class Light(Node):
             ob = self.rna
             ob.rotation_euler[0] += pi/2
 
-
-    def postbuild(self, context, inst):
-        Node.postbuild(self, context, inst)
-        if self.twosided:
-            if inst.rna:
-                ob = inst.rna
-                activateObject(context, ob)
-                bpy.ops.object.duplicate_move()
-                nob = getActiveObject(context)
-                nob.data = ob.data
-                nob.scale = -ob.scale
-
 #-------------------------------------------------------------
 #   LightInstance
 #-------------------------------------------------------------
 
 class LightInstance(Instance):
-    def buildChannels(self, context):
-        Instance.buildChannels(self, context)
-        light = self.rna.data
+
+    def __init__(self, fileref, node, struct):
+        Instance.__init__(self, fileref, node, struct)
+        self.fluxfactor = 1
+        self.twosided = False
+        self.cylinder = False
+        self.sublights = []
+
+
+    def __repr__(self):
+        return "<LightInstance %s L:%s R: %s>" % (self.id, self.label, self.rna)
+
+
+    def buildChannels(self, ob):
+        Instance.buildChannels(self, ob)
+        light = ob.data
         if hasattr(light, "use_shadow"):
             light.use_shadow = self.getValue(["Cast Shadows"], 0)
         else:
             light.cycles.cast_shadow = self.getValue(["Cast Shadows"], 0)
 
+        LPW = 7500
+
         from .material import srgbToLinearCorrect
         intens = self.getValue(["Intensity"], 1.0)
-        flux = self.getValue(["Flux"], 15000)
-        factor = (3 if light.type == 'POINT' else 1)
-        light.energy = intens * flux/15000 * factor
+        flux = self.getValue(["Flux"], LPW)
+        light.energy = intens * flux/LPW * self.fluxfactor
 
         color = self.getValue(["Color"], WHITE)
         color = srgbToLinearCorrect(color)
@@ -196,6 +212,36 @@ class LightInstance(Instance):
             value = self.getValue(["Decay"], 2)
             dtypes = ['CONSTANT', 'INVERSE_LINEAR', 'INVERSE_SQUARE']
             light.falloff_type = dtypes[value]
+
+        for ob in self.sublights:
+            Instance.buildChannels(self, ob)
+
+
+    def postbuild(self, context):
+        def addNewLight(context, ob):
+            activateObject(context, ob)
+            bpy.ops.object.duplicate_move()
+            nob = getActiveObject(context)
+            nob.data = ob.data
+            context.view_layer.objects.active = ob
+            bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+            return nob
+
+        Instance.postbuild(self, context)
+        ob = self.rna
+        if ob:
+            if self.cylinder:
+                nob1 = addNewLight(context, ob)
+                nob1.rotation_euler.x = ob.rotation_euler.x + 90*D
+                nob2 = addNewLight(context, ob)
+                nob2.rotation_euler.x = ob.rotation_euler.x + 180*D
+                nob3 = addNewLight(context, ob)
+                nob3.rotation_euler.x = ob.rotation_euler.x - 90*D
+                self.sublights = [nob1, nob2, nob3]
+            elif self.twosided:
+                nob = addNewLight(context, ob)
+                nob.scale = -ob.scale
+                self.sublights = [nob]
 
 #-------------------------------------------------------------
 #   For animation

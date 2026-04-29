@@ -71,8 +71,8 @@ class CameraInstance(Instance):
                 print("Unknown camera prop: '%s' %s" % (key, value))
 
 
-    def buildChannels(self, context):
-        camera = self.rna.data
+    def buildChannels(self, ob):
+        camera = ob.data
         camera.sensor_fit = 'VERTICAL'
         persp = None
         length = None
