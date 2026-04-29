@@ -72,7 +72,7 @@ class Light(Node):
             # [ "Point", "Rectangle", "Disc", "Sphere", "Cylinder" ]
             if lgeo == 0:       # Point
                 light = bpy.data.lights.new(self.name, "POINT")
-                light.shadow_soft_size = height/2
+                light.shadow_soft_size = 0
                 inst.twosided = False
                 inst.fluxfactor = 5
                 return light
@@ -101,7 +101,7 @@ class Light(Node):
             else:
                 print("Unknown light geometry: %d" % lgeo)
                 return None
-            spread = inst.getValue(["Spread Angle"], 60) * D
+            spread = inst.getValue(["Spread Angle"], 180) * D
             beam = inst.getValue(["Beam Exponent"], 1)
             light.spread = spread / (1 + (beam - 1) * 0.05)
             return light
