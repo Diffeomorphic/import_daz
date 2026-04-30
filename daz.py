@@ -137,6 +137,7 @@ class DAZ_OT_LoadRootPaths(bpy.types.Operator, SingleFile, JsonFile):
                 return {'FINISHED'}
         else:
             print("No root paths found in", self.filepath)
+        return {'FINISHED'}
         return {'PASS_THROUGH'}
 
 #-------------------------------------------------------------
@@ -864,8 +865,12 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "LPW")
 
     def run(self, context):
-        GS.fromDialog(self)
-        GS.saveSettings(context)
+        try:
+            GS.fromDialog(self)
+            GS.saveSettings(context)
+        finally:
+            global theGlobalDialog
+            theGlobalDialog = None
 
     def invoke(self, context, event):
         global theGlobalDialog
@@ -886,6 +891,8 @@ def drawEnum(self, box,  prop):
 #-------------------------------------------------------------
 #   Initialize
 #-------------------------------------------------------------
+
+theGlobalDialog = None
 
 classes = [
     DAZ_OT_SetSilentMode,
