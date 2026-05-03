@@ -1593,6 +1593,8 @@ class Rigifier(RigifyCommon):
         rname = self.getRigifyBone(pb.name, gen.data.bones)
         if rname is None:
             return
+        if rname.startswith("DEF-palm"):
+            rname = "ORG-%s" % rname[4:]
         rb = gen.pose.bones.get(rname)
         if rb is None:
             return
