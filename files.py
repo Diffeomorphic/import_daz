@@ -151,54 +151,6 @@ class FileAsset(Asset):
         return self
 
 
-    def makeLocalNode(self, struct):
-        from .asset import storeAsset
-        if "preview" in struct.keys():
-            preview = struct["preview"]
-        else:
-            return None
-        if preview["type"] == "figure":
-            from .figure import Figure
-            asset = Figure(self.fileref)
-        elif preview["type"] == "bone":
-            from .bone import Bone
-            asset = Bone(self.fileref)
-        else:
-            from .node import Node
-            asset = Node(self.fileref)
-        head = asset.attributes["center_point"] = Vector(preview["center_point"])
-        tail = asset.attributes["end_point"] = Vector(preview["end_point"])
-        xaxis = (tail-head).normalized()
-        yaxis = Vector((0,1,0))
-        zaxis = -xaxis.cross(yaxis).normalized()
-        omat = Matrix((xaxis,yaxis,zaxis)).transposed()
-        orient = Vector(omat.to_euler())
-        tail = asset.attributes["orientation"] = orient
-        asset.rotation_order = preview["rotation_order"]
-
-        asset.parse(struct)
-        asset.update(struct)
-        self.saveAsset(struct, asset)
-        if "url" in struct.keys():
-            url = struct["url"]
-            storeAsset(asset, url)
-        if "geometries" in struct.keys():
-            geos = struct["geometries"]
-            for n,geonode in enumerate(asset.geometries):
-                storeAsset(geonode, geonode.id)
-                inst = geonode.makeInstance(self.fileref, geos[n])
-                self.instances[inst.id] = inst
-                self.nodes.append((geonode, inst))
-                geo = geonode.data
-                if geo:
-                    for mname in geo.polygon_material_groups:
-                        ref = self.fileref + "#" + mname
-                        dmat = self.getAsset(ref)
-                        if dmat and dmat not in self.materials:
-                            self.materials.append(dmat)
-        return asset
-
-
     def parseRender(self, scene):
         if "current_camera" in scene.keys():
             self.camera = self.getAsset(scene["current_camera"])
