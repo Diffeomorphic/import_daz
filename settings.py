@@ -508,6 +508,7 @@ class GlobalSettings:
 
 class LocalSettings:
     def __init__(self):
+        self.visited = []
         self.button = None
         self.message = ""
         self.errorLines = []

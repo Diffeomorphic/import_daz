@@ -31,6 +31,7 @@ class FileAsset(Asset):
 
 
     def parse(self, struct):
+        LS.visited.append(self.fileref)
         msg = ("+FILE %s" % self.fileref)
         LS.trace.append(msg)
         if GS.verbosity >= 4:
@@ -49,7 +50,7 @@ class FileAsset(Asset):
         if LS.useGeometries and "geometry_library" in struct.keys():
             from .geometry import Geometry
             for gstruct in struct["geometry_library"]:
-                asset = self.parseTypedAsset(gstruct, Geometry)
+                geo = self.parseTypedAsset(gstruct, Geometry)
 
         if LS.useNodes and "node_library" in struct.keys():
             from .node import parseNode
@@ -65,6 +66,11 @@ class FileAsset(Asset):
             from .cycles import CyclesMaterial
             for mstruct in struct["material_library"]:
                 asset = self.parseTypedAsset(mstruct, CyclesMaterial)
+
+        if LS.useModifiers and "modifier_library" in struct.keys():
+            from .modifier import parseModifierAsset
+            for mstruct in struct["modifier_library"]:
+                asset = parseModifierAsset(self, mstruct)
 
         scene = struct.get("scene")
         if scene:
@@ -88,12 +94,6 @@ class FileAsset(Asset):
                     elif asset is not None:
                         msg = ("Expected node but got\n%s" % asset)
                         reportError(msg)
-
-        # Import modifier library after nodes to avoid duplicate geometry definitions
-        if LS.useModifiers and "modifier_library" in struct.keys():
-            from .modifier import parseModifierAsset
-            for mstruct in struct["modifier_library"]:
-                asset = parseModifierAsset(self, mstruct)
 
         if scene:
             if LS.useMaterials and "materials" in scene.keys():
@@ -226,8 +226,10 @@ class FileAsset(Asset):
             asset = getAssetFromStruct(struct, self.fileref)
             if asset:
                 if isinstance(asset, Geometry):
-                    msg = ("Duplicate geometry definition:\n  %s" % asset)
-                    #reportError(msg)
+                    msg = ("Duplicate geometry definition:\n" +
+                           "  ID: %s\n" % struct.get("id") +
+                           "  %s\n" % asset)
+                    reportError(msg, trigger=(3,5))
                 return asset
             else:
                 asset = typedAsset(self.fileref)
