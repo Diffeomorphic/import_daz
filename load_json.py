@@ -14,7 +14,7 @@ from .error import reportError, DazError
 #-------------------------------------------------------------
 
 class JsonLoader:
-    useCache = [
+    cacheable = [
         "genesis.dsf",
         "genesis2female.dsf",
         "genesis2male.dsf",
@@ -30,13 +30,13 @@ class JsonLoader:
     def __init__(self):
         self.cached = {}
 
-    def load(self, filepath, mustOpen=False, silent=False):
+    def load(self, filepath, mustOpen=False, silent=False, useCache=False):
         key = os.path.basename(filepath).lower()
         struct = self.cached.get(key)
-        if struct:
+        if struct and useCache:
             return struct
         struct = loadJson(filepath, mustOpen, silent)
-        if key in self.useCache:
+        if key in self.cacheable:
             self.cached[key] = struct
         return struct
 
