@@ -31,6 +31,12 @@ class FileAsset(Asset):
 
 
     def parse(self, struct):
+        from .asset import normalizeRef
+
+        if self.fileref in LS.visited:
+            if GS.verbosity >= 3:
+                print("Already visited: %s" % self.fileref)
+            return
         LS.visited.append(self.fileref)
         msg = ("+FILE %s" % self.fileref)
         LS.trace.append(msg)
@@ -38,8 +44,12 @@ class FileAsset(Asset):
             print(msg)
 
         sources = []
-        if "asset_info" in struct.keys():
-            Asset.parse(self, struct["asset_info"])
+        ainfo = struct.get("asset_info")
+        if ainfo:
+            Asset.parse(self, ainfo)
+            fileref = normalizeRef(ainfo.get("id", self.fileref))
+            if fileref != self.fileref:
+                print("asset_info mismatch:\n %s != %s" % (fileref, self.fileref))
 
         if LS.useUV and "uv_set_library" in struct.keys():
             from .geometry import Uvset
