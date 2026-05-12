@@ -7,6 +7,7 @@ import gzip
 import os
 import bpy
 from mathutils import Vector, Color
+from .utils import *
 from .error import reportError, DazError
 
 #-------------------------------------------------------------
@@ -14,30 +15,30 @@ from .error import reportError, DazError
 #-------------------------------------------------------------
 
 class JsonLoader:
-    cacheable = [
-        "genesis.dsf",
-        "genesis2female.dsf",
-        "genesis2male.dsf",
-        "genesis3female.dsf",
-        "genesis3male.dsf",
-        "genesis8female.dsf",
-        "genesis8male.dsf",
-        "genesis8_1female.dsf",
-        "genesis8_1male.dsf",
-        "genesis9.dsf",
-    ]
+    cacheable = (
+        "/data/daz 3d/genesis/base/genesis.dsf",
+        "/data/daz 3d/genesis 2/female/genesis2female.dsf",
+        "/data/daz 3d/genesis 2/male/genesis2male.dsf",
+        "/data/daz 3d/genesis 3/female/genesis3female.dsf",
+        "/data/daz 3d/genesis 3/male/genesis3male.dsf",
+        "/data/daz 3d/genesis 8/female/genesis8female.dsf",
+        "/data/daz 3d/genesis 8/male/genesis8male.dsf",
+        "/data/daz 3d/genesis 8/female 8_1/genesis8_1female.dsf",
+        "/data/daz 3d/genesis 8/male 8_1/genesis8_1male.dsf",
+        "/data/daz 3d/genesis 9/base/genesis9.dsf",
+    )
 
     def __init__(self):
         self.cached = {}
 
-    def load(self, filepath, mustOpen=False, silent=False, useCache=False):
-        key = os.path.basename(filepath).lower()
-        struct = self.cached.get(key)
-        if struct and useCache:
+    def load(self, filepath, mustOpen=False, silent=False, useCache=True):
+        struct = self.cached.get(filepath)
+        if struct:
             return struct
         struct = loadJson(filepath, mustOpen, silent)
-        if key in self.cacheable:
-            self.cached[key] = struct
+        lpath = canonicalPath(filepath).lower()
+        if useCache and lpath.endswith(self.cacheable):
+            self.cached[filepath] = struct
         return struct
 
 
