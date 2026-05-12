@@ -401,7 +401,7 @@ def addMaskFaceModifier(ob, grpname, fgname):
                 from .matsel import getInvisibleMaterial
                 mat = getInvisibleMaterial()
                 mnum = len(ob.data.materials)
-                if ob.data.materials[-1] == mat:
+                if len(ob.data.materials) > 0 and ob.data.materials[-1] == mat:
                     mnum -= 1
                 else:
                     ob.data.materials.append(mat)

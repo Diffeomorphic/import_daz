@@ -385,11 +385,12 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
 
     def removeOutlineMat(self, ob):
-        mat = ob.data.materials[-1]
-        if mat and mat.name == "DAZ Toon Outline":
-            ob.data.materials.pop()
-            if self.outlineMat is None:
-                self.outlineMat = mat
+        if len(ob.data.materials) > 0:
+            mat = ob.data.materials[-1]
+            if mat and mat.name == "DAZ Toon Outline":
+                ob.data.materials.pop()
+                if self.outlineMat is None:
+                    self.outlineMat = mat
 
 
     def restoreOutlineMat(self, hum):
