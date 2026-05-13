@@ -382,7 +382,6 @@ class GeoNode(Node, SimNode):
         from .matsel import driveShellInfluence
         geo = self.data
         ob = self.rna
-        print("FIN", ob.name, ob.scale)
         if ob is None:
             return
 

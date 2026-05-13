@@ -68,8 +68,10 @@ class FigureInstance(Instance):
                     dazRna(mesh).DazMesh = char
         if rig:
             inst = self.getConformInstance()
-            if inst:
+            if inst and inst.rna:
                 self.copyParentPose(inst.rna, rig)
+                rig.matrix_parent_inverse = rig.matrix_parent_inverse @ rig.matrix_basis
+                rig.matrix_basis = Matrix()
         Instance.finalize(self, context)
         if rig:
             for child in self.children.values():
