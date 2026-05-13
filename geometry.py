@@ -382,6 +382,7 @@ class GeoNode(Node, SimNode):
         from .matsel import driveShellInfluence
         geo = self.data
         ob = self.rna
+        print("FIN", ob.name, ob.scale)
         if ob is None:
             return
 
@@ -483,6 +484,8 @@ class GeoNode(Node, SimNode):
         if LS.fitFile and ob.type == 'MESH':
             shiftMesh(ob, inst)
             if hdob and hdob.data != ob.data:
+                hdob.matrix_basis = ob.matrix_basis
+                hdob.matrix_parent_inverse = ob.matrix_parent_inverse
                 shiftMesh(hdob, inst)
 
 
