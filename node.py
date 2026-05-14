@@ -1220,9 +1220,3 @@ def flipAxes(vec, pb):
     return fvec
 
 
-def isUnitMatrix(mat):
-    diff = mat - Matrix()
-    maxelt = max([abs(diff[i][j]) for i in range(3) for j in range(4)])
-    return (maxelt < 0.01*GS.scale)  # Ignore shifts < 0.1 mm
-
-

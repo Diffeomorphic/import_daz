@@ -39,7 +39,6 @@ class FigureInstance(Instance):
 
 
     def shiftBones(self, context, rig, mat):
-        from .node import isUnitMatrix
         if isUnitMatrix(mat):
             return
         activateObject(context, rig)
@@ -53,7 +52,6 @@ class FigureInstance(Instance):
 
     def finalize(self, context):
         from .finger import getFingeredCharacters
-        from .node import isUnitMatrix
         from .bone import BoneInstance
         rig,meshes,chars,modded = getFingeredCharacters(self.rna, False)
         if rig and meshes:
@@ -71,10 +69,8 @@ class FigureInstance(Instance):
             inst = self.getConformInstance()
             if inst and inst.rna:
                 self.copyParentPose(inst.rna, rig)
-                rig.matrix_basis = rig.matrix_parent_inverse @ rig.matrix_basis
-                if isUnitMatrix(rig.matrix_basis):
-                    rig.matrix_basis = Matrix()
-                rig.matrix_parent_inverse = Matrix()
+                clearParentInverse(rig)
+        rig.matrix_parent_inverse = Matrix()
         Instance.finalize(self, context)
         if rig:
             for child in self.children.values():

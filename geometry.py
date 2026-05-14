@@ -474,7 +474,6 @@ class GeoNode(Node, SimNode):
                 self.buildShells(context)
 
         def shiftMesh(ob, inst):
-            from .node import isUnitMatrix
             if not isUnitMatrix(inst.worldmat):
                 mat = inst.worldmat.inverted()
                 for v in ob.data.vertices:

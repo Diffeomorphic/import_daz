@@ -484,6 +484,19 @@ def trunc2Default(ob, attr, default, eps):
     setattr(ob, attr, vec)
 
 
+def isUnitMatrix(mat):
+    diff = mat - Matrix()
+    maxelt = max([abs(diff[i][j]) for i in range(3) for j in range(4)])
+    return (maxelt < 0.01*GS.scale)  # Ignore shifts < 0.1 mm
+
+
+def clearParentInverse(ob):
+    ob.matrix_basis = ob.matrix_parent_inverse @ ob.matrix_basis
+    if isUnitMatrix(ob.matrix_basis):
+        ob.matrix_basis = Matrix()
+    ob.matrix_parent_inverse = Matrix()
+
+
 def getEpsilon(channel):
     if channel == "location":
         return GS.scale * 1e-4

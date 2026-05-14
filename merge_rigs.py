@@ -100,6 +100,7 @@ class ObjectInfo:
         ob.parent_type = self.partype
         ob.parent_bone = self.parbone
         setWorldMatrix(ob, self.wmat)
+        clearParentInverse(ob)
         ob.hide_viewport = self.hide1
         ob.hide_set(self.hide2)
         if ob.type == 'MESH':
@@ -314,7 +315,6 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             activateObject(context, rig)
             if rig.parent_type != 'BONE':
                 bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-                safeTransformApply()
             setMode('EDIT')
             for subrig,subbones,_submeshes in info[1:]:
                 for bname,binfo in subbones.items():
