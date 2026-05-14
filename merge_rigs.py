@@ -41,7 +41,7 @@ class BoneInfo:
         self.pb = pb
         self.index = 0
         self.matrix = pb.matrix.copy()
-        self.matrix_world = wmat
+        self.matrix_world = (wmat.copy() if wmat else None)
         self.parentBone = parentBone
 
 
@@ -242,9 +242,10 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                         widgets.append(rig)
                     if conforms:
                         parentBone = rig.parent_bone
-                        wmat = rig.matrix_world.copy()
+                        wmat = rig.matrix_world
                 else:
                     conforms = True
+                    wmat = rig.parent.matrix_world
                 if not conforms:
                     parent = rig
                     info = []
