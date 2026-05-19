@@ -303,23 +303,15 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         trgbox = self.computeObjectBox(trg)
 
         if "Rigidity" in trg.vertex_groups.keys() and not self.ignoreRigidity:
-            if GS.useRigidityAttributes:
-                def getVertsFromGroup(ob, gname):
-                    attr = ob.data.attributes.get(gname)
-                    if attr:
-                        return [vn for vn,data in enumerate(attr.data) if data.value]
-                    else:
-                        return []
-            else:
-                def getVertsFromGroup(ob, gname):
-                    vgrp = ob.vertex_groups.get(gname)
-                    if vgrp:
-                        idx = vgrp.index
-                        obverts = ob.data.vertices
-                        verts = [v.index for v in ob.data.vertices for g in v.groups if g.group == idx]
-                        return verts
-                    else:
-                        return []
+            def getVertsFromGroup(ob, gname):
+                vgrp = ob.vertex_groups.get(gname)
+                if vgrp:
+                    idx = vgrp.index
+                    obverts = ob.data.vertices
+                    verts = [v.index for v in ob.data.vertices for g in v.groups if g.group == idx]
+                    return verts
+                else:
+                    return []
 
             rigidity_table = dict([(vgrp.index, {}) for vgrp in trg.vertex_groups])
             for v in trg.data.vertices:

@@ -1570,13 +1570,8 @@ class Geometry(Asset, Channels):
             def addRigid(prefix, rgroup, key):
                 aname = "%s:%s" % (prefix, rgroup.id)
                 verts = group[key]["values"]
-                if GS.useRigidityAttributes:
-                    rigidattr = ob.data.attributes.new(aname, 'BOOLEAN', 'POINT')
-                    nverts = len(ob.data.vertices)
-                    rigidattr.data.foreach_set("value", nverts*[True])
-                else:
-                    weights = [(vn, 1.0) for vn in verts]
-                    buildVertexGroup(ob, aname, weights)
+                weights = [(vn, 1.0) for vn in verts]
+                buildVertexGroup(ob, aname, weights)
                 setattr(rgroup, key, aname)
 
             strange = False
