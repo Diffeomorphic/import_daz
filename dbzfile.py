@@ -56,7 +56,8 @@ class DBZInfo:
             entry = getFromStruct(inst, struct)
         if entry:
             return entry
-        print('No DBZ data: %s "%s" "%s" "%s"' % (attr, quote(key), quote(inst.label), quote(inst.name)))
+        if GS.verbosity >= 3:
+            print('No DBZ data: %s "%s" "%s" "%s"' % (attr, quote(key), quote(inst.label), quote(inst.name)))
 
 
     def addEntry(self, attr, key, label, entry):
@@ -75,7 +76,8 @@ class DBZInfo:
         from .figure import FigureInstance
         from .bone import BoneInstance
         if dbzrig is None:
-            print("Cannot fit %s" % inst)
+            if GS.verbosity >= 3:
+                print("Cannot fit %s" % inst)
             return
         inst.restdata = dbzrig.restdata["NODE"]
         for child in inst.children.values():
@@ -362,7 +364,8 @@ def fitToFile(filepath, nodes):
     unfitted = []
     for node,inst in nodes:
         if inst is None:
-            print("fitToFile inst is None:\n  ", node)
+            if GS.verbosity >= 3:
+                print("fitToFile inst is None:\n  ", node)
             continue
         if isinstance(inst, FigureInstance):
             dbzrig = dbz.getEntry("rigs", inst.node.name, inst)
@@ -397,19 +400,20 @@ def fitToFile(filepath, nodes):
                             print("HD mesh", highdef, len(highdef.verts))
                             print("HD shells", list(hdshells.values()))
                 if base is None:
-                    print("Cannot fit: %s" % inst)
+                    if GS.verbosity >= 3:
+                        print("Cannot fit: %s" % inst)
                     unfitted.append(node)
                 elif isinstance(geo, UnGeometry):
                     makeMeshFromDbz(base, geonode, False)
                 elif subsurfaced:
-                    if len(verts) < len(geo.verts):
-                        msg = ("Mismatch %s, %s: %d < %d" % (node.name, geo.name, len(base.verts), len(geo.verts)))
-                        print(msg)
-                    else:
+                    if len(verts) >= len(geo.verts):
                         geonode.verts = verts[0:len(geo.verts)]
                         geonode.center = base.center
                         geonode.highdef = highdef
                         geonode.hdshells = hdshells
+                    elif GS.verbosity >= 3:
+                        msg = ("Mismatch %s, %s: %d < %d" % (node.name, geo.name, len(base.verts), len(geo.verts)))
+                        print(msg)
                 else:
                     if len(base.verts) != len(geo.verts):
                         ok = False
@@ -434,9 +438,8 @@ def fitToFile(filepath, nodes):
             else:
                 unfitted.append(node)
 
-    if unfitted:
-        print("The following nodes were not found")
-        print("and must be fitted manually:")
+    if unfitted and GS.verbosity >= 3:
+        print("The following nodes were not found and must be fitted manually:")
         for node in unfitted:
             print('    "%s"' % node.name)
         print("The following nodes were fitted:")

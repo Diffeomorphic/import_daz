@@ -283,7 +283,11 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         from .morphing import MP
         from .modifier import getBasisShape
 
-        startProgress("Transfer morphs %s => %s" %(src.name, trg.name))
+        hskeys = src.data.shape_keys
+        if hskeys is None:
+            return
+        nshapesTransferred = 0
+        startProgress("Transfer %d shapekeys %s => %s" %(len(hskeys.key_blocks), src.name, trg.name))
         t1 = perf_counter()
         scn = context.scene
         GS.setRootPaths()
@@ -291,7 +295,6 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         self.projection = MP.getProjection(trg)
         if not self.findMatch(src, trg):
             return False
-        hskeys = src.data.shape_keys
         cbasis,cskeys,new = getBasisShape(trg)
         if src.active_shape_key_index < 0:
             src.active_shape_key_index = 0
@@ -399,6 +402,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
                     fcu = self.driverPaths.get(path)
                     if fcu:
                         self.copyDriver(fcu, cskeys)
+                nshapesTransferred += 1
             else:
                 printName(" -", sname)
 
@@ -411,7 +415,7 @@ class DAZ_OT_TransferShapekeys(JCMSelector, MatchOperator, DriverUser, RigidTran
         t2 = perf_counter()
         if not ES.easy:
             print("")
-        print("Morphs transferred in %.1f seconds" % (t2-t1))
+        print("%d shapekeys transferred in %.1f seconds" % (nshapesTransferred, t2-t1))
         return True
 
 
