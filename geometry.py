@@ -209,7 +209,8 @@ class GeoNode(Node, SimNode):
             if ignoreHDGraft():
                 print("Ignore HD graft %s" % ob.name)
             else:
-                print("No HD object, use base mesh %s" %  ob.name)
+                if GS.verbosity >= 3:
+                    print("No HD object, use base mesh %s" %  ob.name)
                 hdob = self.buildHDObject(context, ob, inst, ob.data)
         if ob and self.data:
             if not self.conform_target:
@@ -298,7 +299,8 @@ class GeoNode(Node, SimNode):
     def addHDUvs(self, ob, hdob):
         if not self.highdef.uvs:
             if hdob.name not in LS.hdUvMissing:
-                print("No HD UVs for %s" % hdob.name)
+                if GS.verbosity >= 3:
+                    print("No HD UVs for %s" % hdob.name)
                 LS.hdUvMissing.append(hdob.name)
             return
 
