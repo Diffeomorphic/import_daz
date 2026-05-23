@@ -253,20 +253,28 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                         return "%s:%s" % (link.to_node.type, sname)
             return None
 
+        def addTexNodes(tree, mat, texnodes):
+            hasmaps = False
+            for node in tree.nodes:
+                if node.type == 'TEX_IMAGE' and node.image:
+                    if node.image.source == "TILED":
+                        raise DazError("Material %s is already an UDIM material" % mat.name)
+                    channel = getChannel(node, tree.links)
+                    links = node.inputs["Vector"].links
+                    if links and links[0].from_node.type == 'MAPPING':
+                        hasmaps = True
+                    elif channel in texnodes.keys():
+                        print("Duplicate channel: %s" % channel)
+                    else:
+                        texnodes[channel] = node
+                elif (node.type == 'GROUP' and
+                      not node.name.startswith("DAZ ") and
+                      node.node_tree.name.startswith(("LIE", "DIMG"))):
+                      hasgrp = addTexNodes(node.node_tree, mat, texnodes)
+                      hasmaps = (hasmaps or hasgrp)
+
         texnodes = {}
-        hasmaps = False
-        for node in mat.node_tree.nodes:
-            if node.type == 'TEX_IMAGE' and node.image:
-                if node.image.source == "TILED":
-                    raise DazError("Material %s is already an UDIM material" % mat.name)
-                channel = getChannel(node, mat.node_tree.links)
-                links = node.inputs["Vector"].links
-                if links and links[0].from_node.type == 'MAPPING':
-                    hasmaps = True
-                elif channel in texnodes.keys():
-                    print("Duplicate channel: %s" % channel)
-                else:
-                    texnodes[channel] = node
+        hasmaps = addTexNodes(mat.node_tree, mat, texnodes)
         return texnodes, hasmaps
 
 
