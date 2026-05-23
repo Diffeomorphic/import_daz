@@ -272,6 +272,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                       node.node_tree.name.startswith(("LIE", "DIMG"))):
                       hasgrp = addTexNodes(node.node_tree, mat, texnodes)
                       hasmaps = (hasmaps or hasgrp)
+            return hasmaps
 
         texnodes = {}
         hasmaps = addTexNodes(mat.node_tree, mat, texnodes)

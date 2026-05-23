@@ -730,17 +730,18 @@ def makeDazImages(tree):
                     getAfter(link.to_node)
 
     dazimgs = []
-    for node in tree.nodes:
-        if node.type == 'TEX_IMAGE':
-            before = []
-            after = []
-            linear = []
-            getBefore(node)
-            getAfter(node)
-            if (before or
-                len(after) > 1 or
-                (after and len(linear) == 0)):
-                dazimgs.append((node, after, before))
+    if not GS.useUdimOptimized:
+        for node in tree.nodes:
+            if node.type == 'TEX_IMAGE':
+                before = []
+                after = []
+                linear = []
+                getBefore(node)
+                getAfter(node)
+                if (before or
+                    len(after) > 1 or
+                    (after and len(linear) == 0)):
+                    dazimgs.append((node, after, before))
 
     deletes = []
     for tex,after,before in dazimgs:
