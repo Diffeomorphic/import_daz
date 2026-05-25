@@ -452,9 +452,9 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "World",
         description = "When to create a world material")
 
-    useUdimOptimized : BoolProperty(
-        name = "UDIM Optimized",
-        description = "Materials are optimized for UDIM.\nDIMG groups are not generated")
+    useDazImages : BoolProperty(
+        name = "DAZ Image Groups",
+        description = "Combine textures, mapping and gamma nodes into DIMG groups")
 
     useMaterialsByIndex : BoolProperty(
         name = "Materials By Index",
@@ -840,7 +840,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         row.prop(self, "skinColor")
         row.prop(self, "clothesColor")
         drawEnum(self, box, "worldMethod")
-        box.prop(self, "useUdimOptimized")
+        box.prop(self, "useDazImages")
         box.prop(self, "useMaterialsByIndex")
         box.prop(self, "useMaterialsByName")
         box.prop(self, "useStoreMaterialMapping")

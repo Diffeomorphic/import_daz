@@ -80,7 +80,7 @@ class GlobalSettings:
         self.useFakeCaustics = False
         self.onRenderSettings = "UPDATE"
         self.onLightSettings = "WARN"
-        self.useUdimOptimized = False
+        self.useDazImages = True
         self.useVolume = True
         self.useBump = True
         self.useNormalMap = True

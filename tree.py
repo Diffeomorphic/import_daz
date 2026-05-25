@@ -730,7 +730,7 @@ def makeDazImages(tree):
                     getAfter(link.to_node)
 
     dazimgs = []
-    if not GS.useUdimOptimized:
+    if GS.useDazImages:
         for node in tree.nodes:
             if node.type == 'TEX_IMAGE':
                 before = []

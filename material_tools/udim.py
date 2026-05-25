@@ -52,18 +52,11 @@ class DAZ_OT_FixTextureTiles(DazOperator, LocalTextureSaver, TileFixer):
 #   Make UDIM materials
 #----------------------------------------------------------
 
-def getTargetMaterial(scn, context):
-    ob = context.object
-    return [(mat.name, mat.name, mat.name) for mat in ob.data.materials]
-
-
 class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSelector, TileFixer):
     bl_idname = "daz.make_udim_materials"
     bl_label = "Make UDIM Materials"
     bl_description = "Combine materials of selected mesh into a single UDIM material.\nGeografts must be merged first"
     bl_options = {'UNDO'}
-
-    trgmat : EnumProperty(items=getTargetMaterial, name="Active")
 
     useGuessMissing : BoolProperty(
         name = "Guess Missing Textures",
@@ -101,7 +94,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         self.layout.prop(self, "useMergeMaterials")
         if self.useMergeMaterials:
             self.layout.prop(self, "useStackShells")
-        self.layout.prop(self, "trgmat")
+        self.drawActive(context)
         self.layout.prop(self, "useGuessMissing")
         self.layout.label(text="Materials To Merge")
         MaterialSelector.draw(self, context)
@@ -125,7 +118,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 raise DazError("Save local textures first")
         if self.useFixTextures:
             self.findMatTiles(ob)
-            self.fixTextures(ob, self.trgmat)
+            self.fixTextures(ob, ob.active_material.name)
 
         mats = []
         mnums = []
@@ -135,7 +128,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 mat = ob.data.materials[umat.name]
                 mats.append(mat)
                 mnums.append(mn)
-                if actmat is None or mat.name == self.trgmat:
+                if actmat is None or mat.name == ob.active_material.name:
                     actmat = mat
                     amnum = mn
                     acttile = 1001 + dazRna(mat).DazUDim
