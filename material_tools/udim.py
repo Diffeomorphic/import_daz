@@ -153,6 +153,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                     shells[tname] = data
 
         basenames = {}
+        usedtiles = {}
         for key,actnode in texnodes[actmat.name].items():
             actnode.image.source = "TILED"
             actnode.extension = "CLIP"
@@ -184,6 +185,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                         node.name = basename
 
             img = actnode.image
+            usedtiles[key] = udims.keys()
             if bpy.app.version >= (3, 1, 0):
                 path2,ext2 = os.path.splitext(img.filepath)
                 tile,base = getTileBase(path2)
@@ -196,6 +198,20 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                     tile0.label = mname
                 else:
                     img.tiles.new(tile_number=1001+udim, label=mname)
+
+        ntiles = 0
+        usedtiles = {}
+        for tiles in usedtiles.values():
+            ntiles = max(ntiles, len(tiles))
+        print("NTIL", ntiles)
+        for key,tiles in usedtiles.items():
+            print("KK", key, tiles)
+            if len(tiles) < ntiles:
+                node = texnodes[actmat.name][key]
+                print("AA", actnode)
+                node.image.source = "FILE"
+                node.extension = "CLIP"
+                node.image.name = node.label = node.label[2:]
 
         for mat in mats:
             self.addSkipZeroUvs(mat)
