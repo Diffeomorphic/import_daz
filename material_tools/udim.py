@@ -116,6 +116,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 self.saveLocalTextures(context)
             else:
                 raise DazError("Save local textures first")
+        if ob.active_material is None:
+            raise DazError("No active material")
         if self.useFixTextures:
             self.findMatTiles(ob)
             self.fixTextures(ob, ob.active_material.name)
@@ -155,6 +157,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         basenames = {}
         usedtiles = {}
         for key,actnode in texnodes[actmat.name].items():
+            if key is None:
+                continue
             actnode.image.source = "TILED"
             actnode.extension = "CLIP"
             if actnode.image:
@@ -199,15 +203,22 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 else:
                     img.tiles.new(tile_number=1001+udim, label=mname)
 
-        ntiles = 0
-        ntiles = max([len(tiles) for tiles in usedtiles.values()])
-        for key,tiles in usedtiles.items():
-            if ntiles > 1 and len(tiles) == 1 and tiles[0] == 0:
+        used = []
+        for tiles in usedtiles.values():
+            if len(tiles) > len(used):
+                used = list(tiles)
+        if len(used) > 1:
+            for key,tiles in usedtiles.items():
                 node = texnodes[actmat.name][key]
-                node.image.source = "FILE"
-                node.extension = "CLIP"
-                node.image.name = node.label = node.label[2:]
-                print("Texture %s only on tile 1001" % node.label)
+                if len(tiles) == 1 and tiles[0] == 0:
+                    node.image.source = "FILE"
+                    node.extension = "CLIP"
+                    node.image.name = node.label = node.label[2:]
+                    print("Texture %s only on tile 1001" % node.label)
+                elif len(tiles) < len(used):
+                    for tile in used:
+                        if tile not in tiles:
+                            self.addImage(node.image, tile, key)
 
         for mat in mats:
             self.addSkipZeroUvs(mat)
@@ -241,6 +252,36 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
     def makeImageName(self, basename, tile, img):
         return "%s%s" % (basename, os.path.splitext(img.name)[1])
+
+
+    def addImage(self, actimg, tile, key):
+        from ..material import setColorSpaceNone
+        basename = self.getBaseName(actimg.name, tile)
+        if key.endswith(("Value", "Fac")):
+            color = (0,0,0,1)
+        elif key.startswith("NORMAL_MAP:Color"):
+            color = (0.5, 0.5, 1.0, 1)
+        elif key.endswith(("Color:A", "Color:B", "Color")):
+            color = (1,1,1,1)
+        elif key.startswith(("BUMP:Height")):
+            color = (0.5, 0.5, 0.5, 1)
+        elif key.startswith(("PBR:Base Color")):
+            color = (1,1,1,1)
+        elif "Roughness" in key:
+            color = (0.5, 0.5, 0.5, 1)
+        else:
+            print("Unknown key when adding UDIM image:", key)
+            color = (0,0,0,1)
+
+        imgname = self.makeImageName(basename, tile, actimg)
+        src,trg = self.getTargetPath(actimg, basename, tile)
+        img = bpy.data.images.new(imgname, 64, 64)
+        img.generated_color = color
+        setColorSpaceNone(img)
+        img.filepath = trg
+        img.save()
+        udim = 1001+tile
+        actimg.tiles.new(tile_number=udim, label=str(udim))
 
 
     def getTextureNodes(self, mat):
@@ -292,6 +333,11 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
 
     def updateImage(self, img, basename, udim):
+        src,trg = self.getTargetPath(img, basename, udim)
+        self.changeImage(src, trg, img)
+
+
+    def getTargetPath(self, img, basename, udim):
         src = bpy.path.abspath(img.filepath)
         src = bpy.path.reduce_dirs([src])[0]
         folder = os.path.dirname(src)
@@ -299,7 +345,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         if fname[-6:] == '<UDIM>':
             src = os.path.join(folder, "%s%d%s" % (fname[:-6], 1001+udim, ext))
         trg = os.path.join(folder, "%s_%d%s" % (basename, 1001+udim, ext))
-        self.changeImage(src, trg, img)
+        return src, trg
 
 
     def findBestMatch(self, key, img, mat, actnodes, basenames):
