@@ -257,7 +257,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         from ..material import setColorSpaceNone
         basename = self.getBaseName(actimg.name, tile)
         if key.endswith(("Factor:Value", "Fac")):
-            color = (0,0,0,1)
+            color = (1,1,1,1)
         elif key.startswith("NORMAL_MAP:Color"):
             color = (0.5, 0.5, 1.0, 1)
         elif key.endswith(("Color:A", "Color:B", "Color")):
@@ -267,7 +267,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         elif key.startswith(("PBR:Base Color")):
             color = (1,1,1,1)
         elif "Roughness" in key:
-            color = (0.5, 0.5, 0.5, 1)
+            color = (1,1,1,1)
         else:
             print("Unknown key when adding UDIM image:", key)
             color = (0,0,0,1)
