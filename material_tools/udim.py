@@ -131,7 +131,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 mat = ob.data.materials[umat.name]
                 mats.append(mat)
                 mnums.append(mn)
-                usedtiles.add(mattiles[mn]-1001)
+                if mn in mattiles.keys():
+                    usedtiles.add(mattiles[mn]-1001)
                 if actmat is None or mat.name == ob.active_material.name:
                     actmat = mat
                     amnum = mn
