@@ -45,8 +45,8 @@ class DAZ_OT_FixTextureTiles(DazOperator, LocalTextureSaver, TileFixer):
 
     def run(self, context):
         ob = context.object
-        self.findMatTiles(ob)
-        self.fixTextures(ob, ob.active_material.name)
+        mattiles = self.findMatTiles(ob)
+        self.fixTextures(ob, ob.active_material.name, mattiles)
 
 #----------------------------------------------------------
 #   Make UDIM materials
@@ -118,18 +118,20 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 raise DazError("Save local textures first")
         if ob.active_material is None:
             raise DazError("No active material")
+        mattiles = self.findMatTiles(ob)
         if self.useFixTextures:
-            self.findMatTiles(ob)
-            self.fixTextures(ob, ob.active_material.name)
+            self.fixTextures(ob, ob.active_material.name, mattiles)
 
         mats = []
         mnums = []
+        usedtiles = set()
         actmat = None
         for mn,umat in enumerate(self.umats):
             if umat.bool:
                 mat = ob.data.materials[umat.name]
                 mats.append(mat)
                 mnums.append(mn)
+                usedtiles.add(mattiles[mn]-1001)
                 if actmat is None or mat.name == ob.active_material.name:
                     actmat = mat
                     amnum = mn
@@ -155,7 +157,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                     shells[tname] = data
 
         basenames = {}
-        usedtiles = {}
+        keytiles = {}
         for key,actnode in texnodes[actmat.name].items():
             if key is None:
                 continue
@@ -189,7 +191,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                         node.name = basename
 
             img = actnode.image
-            usedtiles[key] = list(udims.keys())
+            keytiles[key] = list(udims.keys())
             if bpy.app.version >= (3, 1, 0):
                 path2,ext2 = os.path.splitext(img.filepath)
                 tile,base = getTileBase(path2)
@@ -203,20 +205,16 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 else:
                     img.tiles.new(tile_number=1001+udim, label=mname)
 
-        used = []
-        for tiles in usedtiles.values():
-            if len(tiles) > len(used):
-                used = list(tiles)
-        if len(used) > 1:
-            for key,tiles in usedtiles.items():
+        if len(usedtiles) > 1:
+            for key,tiles in keytiles.items():
                 node = texnodes[actmat.name][key]
                 if len(tiles) == 1 and tiles[0] == 0:
                     node.image.source = "FILE"
                     node.extension = "CLIP"
                     node.image.name = node.label = node.label[2:]
                     print("Texture %s only on tile 1001" % node.label)
-                elif len(tiles) < len(used):
-                    for tile in used:
+                elif len(tiles) < len(usedtiles):
+                    for tile in usedtiles:
                         if tile not in tiles:
                             self.addImage(node.image, tile, key)
 
@@ -257,7 +255,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
     def addImage(self, actimg, tile, key):
         from ..material import setColorSpaceNone
         basename = self.getBaseName(actimg.name, tile)
-        if key.endswith(("Value", "Fac")):
+        if key.endswith(("Factor:Value", "Fac")):
             color = (0,0,0,1)
         elif key.startswith("NORMAL_MAP:Color"):
             color = (0.5, 0.5, 1.0, 1)

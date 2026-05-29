@@ -141,16 +141,17 @@ class TileFixer:
                 uv = get_uv(uvlayer, m)
                 uvcoord.append(uv)
                 m += 1
-        self.mattiles = {}
+        mattiles = {}
         for mn,mat in enumerate(ob.data.materials):
             if mat:
                 tile,udim,vdim = self.getTile(uvcoords[mn])
                 dazRna(mat).DazUDim = udim
                 dazRna(mat).DazVDim = vdim
-                self.mattiles[mn] = tile
+                mattiles[mn] = tile
         print("Tile assignment:")
         for mn,mat in enumerate(ob.data.materials):
-            print("  %s: %d" % (mat.name, self.mattiles[mn]))
+            print("  %s: %d" % (mat.name, mattiles[mn]))
+        return mattiles
 
 
     def getTile(self, uvcoord):
@@ -169,7 +170,7 @@ class TileFixer:
         return tile, udim, vdim
 
 
-    def fixTextures(self, ob, matname):
+    def fixTextures(self, ob, matname, mattiles):
         def getFolder(ob, matname):
             for mat in ob.data.materials:
                 if mat.name == matname:
@@ -186,7 +187,7 @@ class TileFixer:
             tree = mat.node_tree
             if tree is None:
                 continue
-            mattile = self.mattiles.get(mn)
+            mattile = mattiles.get(mn)
             if mattile is None:
                 continue
             inform = True
