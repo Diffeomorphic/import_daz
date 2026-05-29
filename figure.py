@@ -69,8 +69,8 @@ class FigureInstance(Instance):
             inst = self.getConformInstance()
             if inst and inst.rna:
                 self.copyParentPose(inst.rna, rig)
-                clearParentInverse(rig)
-        rig.matrix_parent_inverse = Matrix()
+                #clearParentInverse(rig)
+        #rig.matrix_parent_inverse = Matrix()
         Instance.finalize(self, context)
         if rig:
             for child in self.children.values():
