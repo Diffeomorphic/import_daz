@@ -59,7 +59,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "selector", "propgroups", "daz", "apply", "fileutils", "asset", "channels", "formula",
            "rig_utils", "bone_data", "transform", "node", "figure", "bone", "geometry",
            "store", "modifier", "load_morph", "morphing", "slider", "baked",
-           "animation", "fix", "dbzfile", "panel", "erc",
+           "animation", "neighbor", "fix", "dbzfile", "panel", "erc",
            "tree", "material", "cycles", "cgroup", "pbr", "brick", "toon", "hair_material",
            "render", "camera", "light", "visibility",
            "guess", "convert", "files", "finger", "locks", "bone_chains",
@@ -297,7 +297,7 @@ class DAZ_OT_DisableAllFeatures(bpy.types.Operator):
 
 Regnames = ["propgroups", "daz", "uilist", "driver", "selector",
             "figure", "geometry", "dbzfile",
-            "fix", "animation", "morphing", "slider", "panel", "erc",
+            "fix", "animation", "neighbor", "morphing", "slider", "panel", "erc",
             "material", "cgroup", "render", "visibility",
             "guess", "main", "finger", "locks",
             "matsel", "proxy",

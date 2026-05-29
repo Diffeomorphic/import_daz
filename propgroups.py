@@ -334,6 +334,9 @@ if DAZ_PROPS:
             subtype = 'FILE_PATH',
             default = "")
 
+        DazLastImportedPose : StringProperty()
+        DazLastImportedExpression : StringProperty()
+
 
     class DAZ_OT_UpdateDazProperties(DazPropsOperator):
         bl_idname = "daz.update_daz_properties"
@@ -668,6 +671,9 @@ def registerDazProperties():
         description = "Path to decal mask texture",
         subtype = 'FILE_PATH',
         default = "")
+
+    bpy.types.Scene.DazLastImportedPose = StringProperty()
+    bpy.types.Scene.DazLastImportedExpression = StringProperty()
 
 
 def unregister():
