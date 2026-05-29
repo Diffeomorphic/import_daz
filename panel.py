@@ -405,7 +405,12 @@ class DAZ_PT_Posing(DAZ_PT_RuntimeTab, bpy.types.Panel):
     bl_label = "Posing"
 
     def draw(self, context):
-        self.layout.operator("daz.import_pose")
+        row = self.layout.row(align=True)
+        op = row.operator("daz.import_neighbor_pose", text="", icon='TRIA_LEFT')
+        op.step = -1
+        row.operator("daz.import_pose")
+        op = row.operator("daz.import_neighbor_pose", text="", icon='TRIA_RIGHT')
+        op.step = 1
         self.layout.operator("daz.import_expression")
         self.layout.operator("daz.import_asset")
         self.layout.operator("daz.import_action")
