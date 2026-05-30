@@ -17,25 +17,25 @@ def getNeighborDazFile(step, lastpath):
     lastpath = bpy.path.resolve_ncase(lastpath)
     folder = os.path.dirname(lastpath)
     if not os.path.isdir(folder):
-        raise DazError("Pose folder not found:\n%s" % folder)
+        raise DazError("DAZ folder not found:\n%s" % folder)
 
-    posefiles = []
+    dazfiles = []
     for fname in os.listdir(folder):
         path = os.path.join(folder, fname)
         ext = os.path.splitext(fname)[1].lower()
         if os.path.isfile(path) and ext in [".duf", ".dsf"]:
-            posefiles.append(path)
+            dazfiles.append(path)
 
-    if not posefiles:
-        raise DazError("No .duf/.dsf pose files found in:\n%s" % folder)
+    if not dazfiles:
+        raise DazError("No .duf/.dsf files found in:\n%s" % folder)
 
-    posefiles.sort(key=lambda path: os.path.basename(path).lower())
-    lowerpaths = [path.lower() for path in posefiles]
+    dazfiles.sort(key=lambda path: os.path.basename(path).lower())
+    lowerpaths = [path.lower() for path in dazfiles]
     try:
         idx = lowerpaths.index(lastpath.lower())
     except ValueError:
         idx = 0
-    return posefiles[(idx + step) % len(posefiles)]
+    return dazfiles[(idx + step) % len(dazfiles)]
 
 #-------------------------------------------------------------
 #  Neighbor tools

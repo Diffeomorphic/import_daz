@@ -182,10 +182,11 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                             basenames[node.image.filepath] = basename
                 if node and node.image:
                     img = node.image
+                    tile = dazRna(mat).DazUDim
                     if found:
-                        self.updateImage(img, basename, dazRna(mat).DazUDim)
-                    if dazRna(mat).DazUDim not in udims.keys():
-                        udims[dazRna(mat).DazUDim] = mat.name
+                        self.updateImage(img, basename, tile)
+                    if tile not in udims.keys():
+                        udims[tile] = mat.name
                     if mat == actmat:
                         img.name = self.makeImageName(basename, acttile, img)
                         node.label = basename
@@ -284,27 +285,29 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
 
     def getTextureNodes(self, mat):
-        def getChannel(node, links):
+        def getChannel(node, links, grpname):
             for link in links:
                 if link.from_node == node:
                     sname = link.to_socket.name
                     if link.to_node.type in ['MIX_RGB', 'MIX', 'MATH', 'GAMMA']:
-                        return "%s:%s" % (getChannel(link.to_node, links), sname)
+                        return "%s:%s" % (getChannel(link.to_node, links, grpname), sname)
                     elif link.to_node.type == 'BSDF_PRINCIPLED':
                         return "PBR:%s" % sname
                     elif link.to_node.type == 'GROUP':
                         return "%s:%s" % (link.to_node.node_tree.name, sname)
+                    elif link.to_node.type == 'GROUP_OUTPUT' and grpname:
+                        return "%s:%s" % (grpname, sname)
                     else:
                         return "%s:%s" % (link.to_node.type, sname)
             return None
 
-        def addTexNodes(tree, mat, texnodes):
+        def addTexNodes(tree, mat, texnodes, grpname):
             hasmaps = False
             for node in tree.nodes:
                 if node.type == 'TEX_IMAGE' and node.image:
                     if node.image.source == "TILED":
                         raise DazError("Material %s is already an UDIM material" % mat.name)
-                    channel = getChannel(node, tree.links)
+                    channel = getChannel(node, tree.links, grpname)
                     links = node.inputs["Vector"].links
                     if links and links[0].from_node.type == 'MAPPING':
                         hasmaps = True
@@ -315,12 +318,13 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 elif (node.type == 'GROUP' and
                       not node.name.startswith("DAZ ") and
                       node.node_tree.name.startswith(("LIE", "DIMG"))):
-                      hasgrp = addTexNodes(node.node_tree, mat, texnodes)
-                      hasmaps = (hasmaps or hasgrp)
+                        channel = getChannel(node, tree.links, grpname)
+                        hasgrp = addTexNodes(node.node_tree, mat, texnodes, channel)
+                        hasmaps = (hasmaps or hasgrp)
             return hasmaps
 
         texnodes = {}
-        hasmaps = addTexNodes(mat.node_tree, mat, texnodes)
+        hasmaps = addTexNodes(mat.node_tree, mat, texnodes, None)
         return texnodes, hasmaps
 
 
@@ -333,7 +337,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
     def updateImage(self, img, basename, udim):
         src,trg = self.getTargetPath(img, basename, udim)
-        self.changeImage(src, trg, img)
+        return self.changeImage(src, trg, img, strict=False)
 
 
     def getTargetPath(self, img, basename, udim):

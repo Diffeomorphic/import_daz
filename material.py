@@ -1064,12 +1064,15 @@ class LocalTextureSaver(HiddenTextureUser):
             self.changeImage(src, trg, img)
 
 
-    def changeImage(self, src, trg, img):
+    def changeImage(self, src, trg, img, strict=True):
         from shutil import copyfile
         if not os.path.exists(src):
             msg = "Missing texture file:\n%s" % src
             print(msg)
-            raise DazError(msg)
+            if strict:
+                raise DazError(msg)
+            else:
+                return None
         if src != trg and not os.path.exists(trg):
             print("Copy %s\n=> %s" % (src, trg))
             try:
