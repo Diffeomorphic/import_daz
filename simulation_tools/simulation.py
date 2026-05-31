@@ -207,13 +207,15 @@ def setGnClothCollisionCollection(group, collision):
             node.inputs["Collection"].default_value = collision
 
 
-def ensureGnSoftbodyWrapper():
-    ensureGnDynamicsAssets([GnClothGroup])
+def ensureGnSoftbodyWrapper(collision=None):
+    ensureGnDynamicsAssets([GnClothGroup, GnColliderGroup])
     group = bpy.data.node_groups.get(GnSoftbodyWrapper)
     if (group and
         hasGnGroupNode(group, GnClothGroup) and
+        hasGnGroupNode(group, GnColliderGroup) and
         not hasGnInput(group, "Area of Effect")):
         setGnSoftbodyInvertPin(group)
+        setGnSoftbodyCollisionCollection(group, collision)
         return group
     elif group:
         bpy.data.node_groups.remove(group)
@@ -234,8 +236,17 @@ def ensureGnSoftbodyWrapper():
     cloth = nodes.new("GeometryNodeGroup")
     cloth.node_tree = bpy.data.node_groups[GnClothGroup]
     cloth.inputs["Invert Pin Group"].default_value = False
+    collinfo = nodes.new("GeometryNodeCollectionInfo")
+    collinfo.inputs["Collection"].default_value = collision
+    collider = nodes.new("GeometryNodeGroup")
+    collider.node_tree = bpy.data.node_groups[GnColliderGroup]
+    bundle = nodes.new("NodeCombineBundle")
+    bundle.bundle_items.new('BUNDLE', "Collider")
     inp.location = (-520, 0)
     attr.location = (-520, -180)
+    collinfo.location = (-520, -360)
+    collider.location = (-260, -360)
+    bundle.location = (0, -360)
     cloth.location = (-180, 0)
     out.location = (180, 0)
 
@@ -243,8 +254,17 @@ def ensureGnSoftbodyWrapper():
     links.new(attr.outputs["Attribute"], cloth.inputs["Pin Group"])
     links.new(inp.outputs["Stretchiness"], cloth.inputs["Stretchiness"])
     links.new(inp.outputs["Bendiness"], cloth.inputs["Bendiness"])
+    links.new(collinfo.outputs["Instances"], collider.inputs["Geometry"])
+    links.new(collider.outputs["Collider"], bundle.inputs["Collider"])
+    links.new(bundle.outputs["Bundle"], cloth.inputs["Effectors"])
     links.new(cloth.outputs["Geometry"], out.inputs["Geometry"])
     return group
+
+
+def setGnSoftbodyCollisionCollection(group, collision):
+    for node in group.nodes:
+        if node.bl_idname == "GeometryNodeCollectionInfo":
+            node.inputs["Collection"].default_value = collision
 
 
 def setGnSoftbodyInvertPin(group):
@@ -277,11 +297,11 @@ class GeometryNodesSimulation:
         mod = addGnModifierBeforeSubsurf(ob, GnClothWrapper)
         mod.node_group = group
 
-    def addGnSoftBody(self, ob):
+    def addGnSoftBody(self, ob, collision=None):
         self.requireGeonodes()
         removeModifiers(ob, 'SOFT_BODY')
         mod = ob.modifiers.new(GnSoftbodyWrapper, 'NODES')
-        mod.node_group = ensureGnSoftbodyWrapper()
+        mod.node_group = ensureGnSoftbodyWrapper(collision)
 
 #-------------------------------------------------------------
 #   Collision
@@ -478,12 +498,14 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, GeometryNodesSimulat
         collcoll = self.addCollection(context, "Softbody Collisions")
 
         col = self.addObject("COLLISION", struct["collision"], hum, hstruct, collcoll)
+        collision = None
         if col:
             makePermanentMaterial(col, "DazGreenInvis", (0,1,0,1))
             collcoll.objects.link(col)
             self.addArmature(col)
             if self.useGeonodes:
                 self.linkGnCollision(col, collcoll)
+                collision = collcoll
             else:
                 self.addCollision(col)
 
@@ -523,7 +545,7 @@ class DAZ_OT_AddSoftbody(DazPropsOperator, SoftbodyOptions, GeometryNodesSimulat
             makePermanentMaterial(softbody, "DazRedInvis", (1,0,0,1))
             self.addArmature(softbody)
             if self.useGeonodes:
-                self.addGnSoftBody(softbody)
+                self.addGnSoftBody(softbody, collision)
             else:
                 self.addSoftBody(softbody, context, collcoll)
             self.addCorrSmooth(softbody, "", 2, 'SIMPLE')
