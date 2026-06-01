@@ -181,29 +181,21 @@ class TileFixer:
                                 return os.path.dirname(path)
             return None
 
-        folder = getFolder(ob, matname)
-        images = {}
-        for mn,mat in enumerate(ob.data.materials):
-            tree = mat.node_tree
+        def fixTreeTextures(tree):
             if tree is None:
-                continue
-            mattile = mattiles.get(mn)
-            if mattile is None:
-                continue
-            inform = True
+                return
             for node in tree.nodes:
                 if node.type == 'TEX_IMAGE' and node.image:
                     path = bpy.path.abspath(node.image.filepath)
                     file = os.path.basename(path)
                     fname,ext = os.path.splitext(file)
-                    tile,base = getTileBase(node.image.name)
+                    tile,base = getTileBase(fname)
                     if not base:
                         continue
                     if tile != mattile:
-                        if inform:
-                            print("Fix %s textures for tile %d" % (mat.name, mattile))
-                            inform = False
-                        newpath = os.path.join(folder, "%s_%d%s" % (base, mattile, ext))
+                        newfile = "%s_%d%s" % (base, mattile, ext)
+                        print("Copy %s => %s" % (file, newfile))
+                        newpath = os.path.join(folder, newfile)
                         src = bpy.path.abspath(path)
                         if src in images.keys():
                             img = images[src]
@@ -214,6 +206,18 @@ class TileFixer:
                             images[src] = img
                         node.image = img
                         node.label = "%s_%d" % (base, mattile)
+                elif (node.type == 'GROUP' and
+                      not node.name.startswith("DAZ ") and
+                      node.node_tree.name.startswith(("LIE", "DIMG"))):
+                    fixTreeTextures(node.node_tree)
+
+        folder = getFolder(ob, matname)
+        images = {}
+        for mn,mat in enumerate(ob.data.materials):
+            mattile = mattiles.get(mn)
+            if mattile is None:
+                continue
+            fixTreeTextures(mat.node_tree)
 
 
     def udimsFromGraft(self, graft, hum):
