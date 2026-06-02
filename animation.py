@@ -477,7 +477,7 @@ class MorphOptions(PosableMaker):
     useClearMorphs : BoolProperty(
         name = "Clear Morphs",
         description = "Clear all active morphs before loading new ones",
-        default = False)
+        default = True)
 
     useShapekeys : BoolProperty(
         name = "Load To Shapekeys",

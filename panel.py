@@ -37,12 +37,16 @@ class DAZ_PT_Setup(DAZ_PT_SetupTab, bpy.types.Panel):
     def draw(self, context):
         scn = context.scene
         self.layout.operator("daz.easy_import_daz")
-        self.layout.prop(dazRna(scn), "DazFavoPath")
+        split = self.layout.split(factor=0.15)
+        split.label(text="Favorites:")
+        split.prop(dazRna(scn), "DazFavoPath", text="")
         self.layout.separator()
         self.layout.operator("daz.import_daz_manually")
         self.layout.separator()
         self.layout.operator("daz.global_settings")
-        self.layout.prop(dazRna(scn), "DazPreferredRoot")
+        split = self.layout.split(factor=0.15)
+        split.label(text="Root:")
+        split.prop(dazRna(scn), "DazPreferredRoot", text="")
 
 #----------------------------------------------------------
 #   Corrections
@@ -392,10 +396,17 @@ class DAZ_PT_Runtime(DAZ_PT_RuntimeTab, bpy.types.Panel):
 
     def draw(self, context):
         scn = context.scene
+        ob = context.object
         self.layout.operator("daz.render_frames")
         self.layout.separator()
         self.layout.operator("daz.global_settings")
-        self.layout.prop(dazRna(scn), "DazPreferredRoot")
+        split = self.layout.split(factor=0.15)
+        split.label(text="Root:")
+        split.prop(dazRna(scn), "DazPreferredRoot", text="")
+        split = self.layout.split(factor=0.15)
+        split.label(text="URL:")
+        if ob:
+            split.prop(dazRna(ob), "DazUrl", text="")
 
 #----------------------------------------------------------
 #   Posing panel
