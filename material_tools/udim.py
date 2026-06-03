@@ -168,6 +168,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
                 imgname = actnode.image.name
             else:
                 imgname = actnode.name
+            imgname = os.path.splitext(imgname)[0]
             basename = "T_%s" % self.getBaseName(imgname, dazRna(mat).DazUDim)
             udims = {}
             for mat in mats:
