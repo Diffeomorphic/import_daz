@@ -1130,6 +1130,28 @@ class DAZ_OT_SaveLocalTextures(LocalTextureSaver, DazPropsOperator):
         self.saveLocalTextures(context)
 
 #-------------------------------------------------------------
+#   Local texture user
+#-------------------------------------------------------------
+
+class LocalTextureUser(LocalTextureSaver):
+    keepDirs = True
+
+    useSaveLocalTextures : BoolProperty(
+        name = "Save Local Textures",
+        description = "Save local textures if not already done",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useSaveLocalTextures")
+
+    def checkLocalTextures(self, context, ob):
+        if not dazRna(ob).DazLocalTextures:
+            if self.useSaveLocalTextures:
+                self.saveLocalTextures(context)
+            else:
+                raise DazError("Save local textures first")
+
+#-------------------------------------------------------------
 #   Merge identical materials
 #-------------------------------------------------------------
 

@@ -7,7 +7,7 @@ import os
 from ..error import *
 from ..utils import *
 from ..fileutils import MultiFile, ImageFile
-from ..material import LocalTextureSaver
+from ..material import LocalTextureSaver, LocalTextureUser
 from ..matsel import MaterialSelector
 from ..tree import getFromSocket, XSIZE, YSIZE, YSTEP
 from ..merge_uvs import TileFixer, getTileBase
@@ -52,7 +52,7 @@ class DAZ_OT_FixTextureTiles(DazOperator, LocalTextureSaver, TileFixer):
 #   Make UDIM materials
 #----------------------------------------------------------
 
-class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSelector, TileFixer):
+class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelector, TileFixer):
     bl_idname = "daz.make_udim_materials"
     bl_label = "Make UDIM Materials"
     bl_description = "Combine materials of selected mesh into a single UDIM material.\nGeografts must be merged first"
@@ -62,13 +62,6 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         name = "Guess Missing Textures",
         description = "Search for UDIM textures that almost match location in node tree",
         default = True)
-
-    useSaveLocalTextures : BoolProperty(
-        name = "Save Local Textures",
-        description = "Save local textures if not already done",
-        default = True)
-
-    keepDirs = True
 
     useFixTextures : BoolProperty(
         name = "Fix Textures",
@@ -89,7 +82,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
         default = True)
 
     def draw(self, context):
-        self.layout.prop(self, "useSaveLocalTextures")
+        LocalTextureUser.draw(self, context)
         self.layout.prop(self, "useFixTextures")
         self.layout.prop(self, "useMergeMaterials")
         if self.useMergeMaterials:
@@ -111,11 +104,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureSaver, MaterialSele
 
     def run(self, context):
         ob = context.object
-        if not dazRna(ob).DazLocalTextures:
-            if self.useSaveLocalTextures:
-                self.saveLocalTextures(context)
-            else:
-                raise DazError("Save local textures first")
+        self.checkLocalTextures(context, ob)
         if ob.active_material is None:
             raise DazError("No active material")
         mattiles = self.findMatTiles(ob)
