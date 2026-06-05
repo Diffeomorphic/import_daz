@@ -83,9 +83,9 @@ class DAZ_PT_SetupMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.save_local_textures")
         self.layout.operator("daz.resize_textures")
+        self.layout.operator("daz.bake_lie")
         self.layout.separator()
         self.layout.operator("daz.merge_materials")
-        self.layout.operator("daz.bake_lie")
         self.layout.operator("daz.change_colors")
 
 #----------------------------------------------------------
