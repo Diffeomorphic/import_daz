@@ -890,6 +890,15 @@ def applyModifierAsShape(mname):
         print(err)
 
 
+def stripUuid(string):
+    from uuid import UUID
+    if len(string) > 39:
+        try:
+            UUID(string[-38:-2])
+            return "%s%s" % (string[:-39], string[-2:])
+        except ValueError:
+            pass
+    return string
 
 #-------------------------------------------------------------
 #   DAZ props

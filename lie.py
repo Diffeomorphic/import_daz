@@ -38,26 +38,32 @@ def bakeLieGroups(context, ob, bake):
 
     def makeBakeImage(node, img, folder):
         width,height = img.size
-        bakeimg = bpy.data.images.new(node.name, width, height)
+        name = stripUuid(node.name)
+        bakeimg = bpy.data.images.new(name, width, height)
         bakeimg.colorspace_settings.name = img.colorspace_settings.name
         words = os.path.splitext(img.filepath)
         if len(words) == 2:
             ext = words[1]
         else:
             ext = ".png"
-        bakeimg.filepath = os.path.join(folder, "%s%s" % (bakeimg.name, ext))
+        bakeimg.filepath = os.path.join(folder, "%s%s" % (name, ext))
         return bakeimg
 
-    def makeBakeTree(node, baketree, bakeimg):
+    def makeBakeTree(node, baketree, bakeimg, uvname):
         baketree.nodes.clear()
+        uvmap = baketree.nodes.new(type="ShaderNodeUVMap")
+        uvmap.location = (0,0)
+        uvmap.uv_map = uvname
+        uvmap.label = uvname
         lie = baketree.nodes.new(type="ShaderNodeGroup")
-        lie.location = (0,0)
+        lie.location = (200,0)
         lie.node_tree = node.node_tree
+        baketree.links.new(uvmap.outputs["UV"], lie.inputs["Vector"])
         emission = baketree.nodes.new(type="ShaderNodeEmission")
-        emission.location = (200, 0)
+        emission.location = (400, 0)
         baketree.links.new(lie.outputs["Color"], emission.inputs["Color"])
         output = baketree.nodes.new(type="ShaderNodeOutputMaterial")
-        output.location = (400, 0)
+        output.location = (600, 0)
         baketree.links.new(emission.outputs["Emission"], output.inputs["Surface"])
         tex = baketree.nodes.new(type="ShaderNodeTexImage")
         tex.location = (0, -200)
@@ -67,7 +73,7 @@ def bakeLieGroups(context, ob, bake):
         tex.extension = 'CLIP'
         baketree.nodes.active = tex
 
-    def bakeMaterial(tree, baketree, folder):
+    def bakeMaterial(tree, baketree, folder, uvname):
         lies = []
         for node in tree.nodes:
             if (node.type == 'GROUP' and
@@ -75,7 +81,7 @@ def bakeLieGroups(context, ob, bake):
                 tex,img = findTexImage(node.node_tree)
                 if img:
                     bakeimg = makeBakeImage(node, img, folder)
-                    makeBakeTree(node, baketree, bakeimg)
+                    makeBakeTree(node, baketree, bakeimg, uvname)
                     print('Bake %s %s image\n  "%s"' %
                         (tuple(bakeimg.size), bakeimg.colorspace_settings.name, bakeimg.filepath))
                     width,height = img.size
@@ -114,9 +120,10 @@ def bakeLieGroups(context, ob, bake):
     scn.render.bake.target = 'IMAGE_TEXTURES'
     scn.render.bake.use_clear = True
 
+    uvname = plane.data.uv_layers.active.name
     for mat in ob.data.materials:
         if mat and mat.node_tree:
-            bakeMaterial(mat.node_tree, bakemat.node_tree, folder)
+            bakeMaterial(mat.node_tree, bakemat.node_tree, folder, uvname)
 
     return bake
 
