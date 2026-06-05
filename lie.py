@@ -108,6 +108,8 @@ def bakeLieGroups(context, ob, bake):
         plane = context.object
         activateObject(context, plane)
         bakemat = bpy.data.materials.new("LIE Bake")
+        if BLENDER5:
+            bakemat.use_nodes = True
         plane.data.materials.append(bakemat)
         bake = (plane, bakemat)
     else:
