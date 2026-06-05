@@ -7,7 +7,7 @@ import os
 from ..error import *
 from ..utils import *
 from ..fileutils import MultiFile, ImageFile
-from ..material import LocalTextureSaver, LocalTextureUser
+from ..material import LocalTextureUser
 from ..matsel import MaterialSelector
 from ..tree import getFromSocket, XSIZE, YSIZE, YSTEP
 from ..merge_uvs import TileFixer, getTileBase
@@ -32,19 +32,15 @@ class DAZ_OT_TilesFromGraft(DazPropsOperator, TileFixer, IsMesh):
 #   Fix Texture Tiles
 #----------------------------------------------------------
 
-class DAZ_OT_FixTextureTiles(DazOperator, LocalTextureSaver, TileFixer):
+class DAZ_OT_FixTextureTiles(DazPropsOperator, LocalTextureUser, TileFixer):
     bl_idname = "daz.fix_texture_tiles"
     bl_label = "Fix Texture Tiles"
     bl_description = "Copy textures to the right directory and correct tile numbers.\nTo fix incorrect Genesis 8.1 material names"
     bl_options = {'UNDO'}
 
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and dazRna(ob).DazLocalTextures)
-
     def run(self, context):
         ob = context.object
+        self.checkLocalTextures(self, ob)
         mattiles = self.findMatTiles(ob)
         self.fixTextures(ob, ob.active_material.name, mattiles)
 
