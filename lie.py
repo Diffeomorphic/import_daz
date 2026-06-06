@@ -113,7 +113,10 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
                             (tuple(bakeimg.size), bakeimg.colorspace_settings.name, bakeimg.filepath))
                         width,height = img.size
                         bpy.ops.object.bake(type='EMIT', width=width, height=height)
-                        bakeimg.save()
+                        if self.useSaveLocalTextures:
+                            bakeimg.save()
+                        else:
+                            bakeimg.pack()
                         lies.append((node, tex, img, bakeimg))
             for node,tex,img,bakeimg in lies:
                 newTex = tree.nodes.new(type="ShaderNodeTexImage")

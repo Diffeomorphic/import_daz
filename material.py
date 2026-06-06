@@ -1149,7 +1149,8 @@ class LocalTextureUser(LocalTextureSaver):
             if self.useSaveLocalTextures:
                 self.saveLocalTextures(context)
             else:
-                raise DazError("Save local textures first")
+                pass
+                #raise DazError("Save local textures first")
 
 #-------------------------------------------------------------
 #   Merge identical materials

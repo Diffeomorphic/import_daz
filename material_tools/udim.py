@@ -276,7 +276,10 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         img.generated_color = color
         setColorSpaceNone(img)
         img.filepath = trg
-        img.save()
+        if self.useSaveLocalTextures:
+            img.save()
+        else:
+            img.pack()
         udim = 1001+tile
         actimg.tiles.new(tile_number=udim, label=str(udim))
 
