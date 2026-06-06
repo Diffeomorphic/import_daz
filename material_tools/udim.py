@@ -144,6 +144,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
         basenames = {}
         keytiles = {}
+        origpaths = {}
+        self.updatedImages = {}
         for key,actnode in texnodes[actmat.name].items():
             if key is None:
                 continue
@@ -154,7 +156,9 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             else:
                 imgname = actnode.name
             imgname = os.path.splitext(imgname)[0]
-            basename = "T_%s" % self.getBaseName(imgname, dazRna(mat).DazUDim)
+            basename = self.getBaseName(imgname, dazRna(mat).DazUDim)
+            if not basename.startswith("T_"):
+                basename = "T_%s" % basename
             udims = {}
             for mat in mats:
                 nodes = texnodes[mat.name]
@@ -184,7 +188,9 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
                 path2,ext2 = os.path.splitext(img.filepath)
                 tile,base = getTileBase(path2)
                 if base:
-                    img.filepath = "%s_<UDIM>%s" % (base,ext2)
+                    udimpath = "%s_<UDIM>%s" % (base,ext2)
+                    origpaths[udimpath] = str(img.filepath)
+                    img.filepath = udimpath
             tile0 = img.tiles[0]
             for udim,mname in udims.items():
                 if udim == 0:
@@ -197,9 +203,14 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             for key,tiles in keytiles.items():
                 node = texnodes[actmat.name][key]
                 if len(tiles) == 1 and tiles[0] == 0:
-                    node.image.source = "FILE"
+                    img = node.image
+                    if img.filepath in origpaths.keys():
+                        img.filepath = origpaths[img.filepath]
+                    if img.filepath in self.updatedImages.keys():
+                        img.filepath = self.updatedImages[img.filepath]
+                    img.source = "FILE"
                     node.extension = "CLIP"
-                    node.image.name = node.label = node.label[2:]
+                    img.name = node.label = node.label[2:]
                     print("Texture %s only on tile 1001" % node.label)
                 elif len(tiles) < len(usedtiles):
                     for tile in usedtiles:
@@ -323,6 +334,9 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
     def updateImage(self, img, basename, udim):
         src,trg = self.getTargetPath(img, basename, udim)
+        src1 = bpy.path.relpath(src)
+        trg1 = bpy.path.relpath(trg)
+        self.updatedImages[trg1] = src1
         return self.changeImage(src, trg, img, strict=False)
 
 
