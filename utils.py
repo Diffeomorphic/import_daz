@@ -891,13 +891,15 @@ def applyModifierAsShape(mname):
 
 
 def stripUuid(string):
-    from uuid import UUID
-    if len(string) > 39:
-        try:
-            UUID(string[-38:-2])
-            return "%s%s" % (string[:-39], string[-2:])
-        except ValueError:
-            pass
+    if len(string) > 39 and GS.useStripUuid:
+        from uuid import UUID
+        words = string.rsplit("_", 1)
+        if len(words) == 2 and len(words[1]) > 36:
+            try:
+                UUID(words[1][:36])
+                return "%s%s" % (words[0], words[1][36:])
+            except ValueError:
+                pass
     return string
 
 #-------------------------------------------------------------

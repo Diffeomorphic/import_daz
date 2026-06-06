@@ -99,6 +99,7 @@ class GlobalSettings:
         self.useLayeredInflu = False
         self.useLayeredShells = True
         self.useStoreMaterialMapping = False
+        self.useStripUuid = True
 
         self.onStrengthAdjusters = 'NONE'
         self.useDazLimits = True

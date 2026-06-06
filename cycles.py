@@ -2005,7 +2005,7 @@ class CyclesTree(Tree):
             name = unquote(channel["image"])
             if name[0] == "#":
                 name = name[1:]
-            name = "LIE %s" % name
+            name = "LIE %s" % stripUuid(name)
             node = self.layeredGroups.get(name)
         else:
             name = "LIE Layered"

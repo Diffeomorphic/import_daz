@@ -468,6 +468,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Store Material Mapping",
         description = "Store original material mapping as custom properties")
 
+    useStripUuid : BoolProperty(
+        name = "Strip UUID",
+        description = "Strip UUID strings from layered images")
+
     onRenderSettings : EnumProperty(
         items = [("IGNORE", "Ignore", "Ignore insufficient render settings"),
                  ("WARN", "Warn", "Warn about insufficient render settings"),
@@ -844,6 +848,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.prop(self, "useMaterialsByIndex")
         box.prop(self, "useMaterialsByName")
         box.prop(self, "useStoreMaterialMapping")
+        box.prop(self, "useStripUuid")
         if bpy.app.version < (3,4,0):
             box.prop(self, "useFakeCaustics")
         drawEnum(self, box, "imageInterpolation")
