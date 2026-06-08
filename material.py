@@ -12,8 +12,6 @@ from .asset import Asset
 from .channels import Channels
 from .utils import *
 from .error import *
-from .fileutils import SingleFile, MultiFile, ImageFile, JsonFile
-from .animation import theImageExtensions
 from mathutils import Vector, Matrix
 
 WHITE = Vector((1.0,1.0,1.0))
@@ -1007,6 +1005,9 @@ class HiddenTextureUser:
         description = "Also save textures from hidden meshes",
         default = True)
 
+    def draw(self, context):
+        self.layout.prop(self, "useHiddenMeshes")
+
     def getMeshes(self, context):
         if self.useHiddenMeshes:
             return [ob for ob in bpy.data.objects if ob.type == 'MESH']
@@ -1017,10 +1018,30 @@ class HiddenTextureUser:
 #   Save local textures
 #-------------------------------------------------------------
 
-class LocalTextureSaver(HiddenTextureUser):
+class LocalTextureUser:
     @classmethod
     def poll(self, context):
         return (bpy.data.filepath and context.object and context.object.type == 'MESH')
+
+    useSaveLocalTextures : BoolProperty(
+        name = "Save Local Textures",
+        description = "Save local textures if not already done",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useSaveLocalTextures")
+
+
+    def getMeshes(self, context):
+        return getSelectedMeshes(context)
+
+
+    def checkLocalTextures(self, context, ob):
+        if not dazRna(ob).DazLocalTextures:
+            if self.useSaveLocalTextures:
+                self.saveLocalTextures(context)
+            else:
+                raise DazError("Save local textures first")
 
     def saveLocalTextures(self, context):
         folder = normalizePath(os.path.dirname(bpy.data.filepath))
@@ -1050,8 +1071,7 @@ class LocalTextureSaver(HiddenTextureUser):
                 continue
             file = bpy.path.basename(src)
             srclower = normalizePath(src).lower()
-            if (self.keepDirs and
-                "/textures/" in srclower and
+            if ("/textures/" in srclower and
                 "/textures/original/" not in srclower):
                 subpath = os.path.dirname(srclower.rsplit("/textures/",1)[1])
                 folder = "%s/%s" % (self.texpath, subpath)
@@ -1112,45 +1132,17 @@ class LocalTextureSaver(HiddenTextureUser):
                     self.saveImage(tex.image)
 
 
-class DAZ_OT_SaveLocalTextures(LocalTextureSaver, DazPropsOperator):
+class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperator):
     bl_idname = "daz.save_local_textures"
     bl_label = "Save Local Textures"
     bl_description = "Copy textures to the textures subfolder in the blend file's directory"
 
-    keepDirs : BoolProperty(
-        name = "Keep Directories",
-        description = "Keep the directory tree from Daz Studio, otherwise flatten the directory structure",
-        default = True)
-
     def draw(self, context):
-        self.layout.prop(self, "keepDirs")
-        self.layout.prop(self, "useHiddenMeshes")
+        LocalTextureUser.draw(self, context)
+        HiddenTextureUser.draw(self, context)
 
     def run(self, context):
         self.saveLocalTextures(context)
-
-#-------------------------------------------------------------
-#   Local texture user
-#-------------------------------------------------------------
-
-class LocalTextureUser(LocalTextureSaver):
-    keepDirs = True
-
-    useSaveLocalTextures : BoolProperty(
-        name = "Save Local Textures",
-        description = "Save local textures if not already done",
-        default = True)
-
-    def draw(self, context):
-        self.layout.prop(self, "useSaveLocalTextures")
-
-    def checkLocalTextures(self, context, ob):
-        if not dazRna(ob).DazLocalTextures:
-            if self.useSaveLocalTextures:
-                self.saveLocalTextures(context)
-            else:
-                pass
-                #raise DazError("Save local textures first")
 
 #-------------------------------------------------------------
 #   Merge identical materials
@@ -1644,21 +1636,21 @@ class DAZ_OT_CopyMaterials(DazPropsOperator, IsMesh):
 #   Resize textures
 # ---------------------------------------------------------------------
 
-class ChangeResolution(HiddenTextureUser):
+class ChangeResolution:
     steps : IntProperty(
         name = "Steps",
         description = "Resize original images with this number of steps",
         min = 0, max = 8,
         default = 2)
 
-    resizeAll : BoolProperty(
-        name = "Resize All",
-        description = "Resize all textures of the selected meshes",
-        default = True)
+    resizeAll = True
+
+    def draw(self, context):
+        self.layout.prop(self, "steps")
 
     def initResolution(self):
         self.filenames = []
-        self.images = {}
+        self.typedImages = {}
 
     def getFileNames(self, paths):
         for path in paths:
@@ -1667,8 +1659,9 @@ class ChangeResolution(HiddenTextureUser):
 
 
     def getAllTextures(self, context, resolveUDIM):
-        paths = {}
+        paths = set()
         for ob in self.getMeshes(context):
+            self.checkLocalTextures(context, ob)
             for mat in ob.data.materials:
                 if mat:
                     self.getTreeTextures(mat.node_tree, paths, resolveUDIM)
@@ -1680,7 +1673,7 @@ class ChangeResolution(HiddenTextureUser):
     def getSlotTextures(self, mat, paths):
         for mtex in mat.texture_slots:
             if mtex and mtex.texture.type == 'IMAGE':
-                paths[mtex.texture.image.filepath] = True
+                paths.add(normPath(mtex.texture.image.filepath))
 
 
     def getTreeTextures(self, tree, paths, resolveUDIM):
@@ -1698,16 +1691,15 @@ class ChangeResolution(HiddenTextureUser):
                                 path = os.path.join(folder, "%s%s%s" % (fname1[:-4], "<UDIM>", ext1))
                             else:
                                 path = os.path.join(folder, "%s%s" % (fname1, ext1))
-                            paths[path] = True
+                            paths.add(normPath(path))
                 else:
-                    paths[img.filepath] = True
+                    paths.add(normPath(img.filepath))
             elif node.type == 'GROUP':
                 self.getTreeTextures(node.node_tree, paths, resolveUDIM)
 
 
     def getTiledPath(self, filepath):
-        path = bpy.path.abspath(filepath)
-        path = bpy.path.reduce_dirs([path])[0]
+        path = normPath(filepath)
         folder = os.path.dirname(path)
         fname,ext = os.path.splitext(bpy.path.basename(path))
         if fname[-6:] == "<UDIM>":
@@ -1777,9 +1769,9 @@ class ChangeResolution(HiddenTextureUser):
         if img is None:
             return None
         colorSpace = img.colorspace_settings.name
-        if colorSpace not in self.images.keys():
-            self.images[colorSpace] = {}
-        images = self.images[colorSpace]
+        if colorSpace not in self.typedImages.keys():
+            self.typedImages[colorSpace] = {}
+        images = self.typedImages[colorSpace]
 
         path = self.getBasePath(img.filepath)
         filename = bpy.path.basename(path)
@@ -1859,6 +1851,7 @@ class ChangeResolution(HiddenTextureUser):
         else:
             msg = 'Illegal path: %s' % path
             print(msg)
+            hlat
             raise DazError(msg)
 
 
@@ -1879,7 +1872,13 @@ class ChangeResolution(HiddenTextureUser):
         return newname, newpath
 
 
-class DAZ_OT_ChangeResolution(DazOperator, ChangeResolution):
+def normPath(path):
+    path = bpy.path.abspath(path)
+    path = bpy.path.reduce_dirs([path])[0]
+    return path
+
+
+class DAZ_OT_ChangeResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser, ChangeResolution):
     bl_idname = "daz.change_resolution"
     bl_label = "Change Resolution"
     bl_description = (
@@ -1887,54 +1886,34 @@ class DAZ_OT_ChangeResolution(DazOperator, ChangeResolution):
         "The resized textures must already exist.")
     bl_options = {'UNDO'}
 
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and dazRna(ob).DazLocalTextures)
+    useSaveLocalTextures = False
 
     def draw(self, context):
-        self.layout.prop(self, "steps")
-        self.layout.prop(self, "useHiddenMeshes")
-
-    def invoke(self, context, event):
-        context.window_manager.invoke_props_dialog(self)
-        return {'RUNNING_MODAL'}
+        HiddenTextureUser.draw(self, context)
+        ChangeResolution.draw(self, context)
 
     def run(self, context):
         self.initResolution()
         self.overwrite = False
         paths = self.getAllTextures(context, True)
-        self.getFileNames(paths.keys())
+        self.getFileNames(paths)
         self.replaceTextures(context)
 
 
-class DAZ_OT_ResizeTextures(DazOperator, ImageFile, MultiFile, ChangeResolution):
+class DAZ_OT_ResizeTextures(DazPropsOperator, HiddenTextureUser, LocalTextureUser, ChangeResolution):
     bl_idname = "daz.resize_textures"
     bl_label = "Resize Textures"
     bl_description = "Replace all textures of selected meshes with resized versions"
     bl_options = {'UNDO'}
 
-    @classmethod
-    def poll(self, context):
-        ob = context.object
-        return (ob and dazRna(ob).DazLocalTextures)
-
     def draw(self, context):
-        self.layout.prop(self, "steps")
-        self.layout.prop(self, "resizeAll")
-        self.layout.prop(self, "useHiddenMeshes")
-
-    def invoke(self, context, event):
-        texpath = os.path.join(os.path.dirname(bpy.data.filepath), "textures/")
-        self.properties.filepath = texpath
-        return MultiFile.invoke(self, context, event)
+        LocalTextureUser.draw(self, context)
+        HiddenTextureUser.draw(self, context)
+        ChangeResolution.draw(self, context)
 
     def run(self, context):
         self.initResolution()
-        if self.resizeAll:
-            paths = self.getAllTextures(context, False)
-        else:
-            paths = self.getMultiFiles(theImageExtensions)
+        paths = self.getAllTextures(context, False)
         self.getFileNames(paths)
 
         scale = int(2**self.steps)

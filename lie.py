@@ -50,11 +50,13 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
         if BLENDER5:
             bakemat.use_nodes = True
         bakeplane.data.materials.append(bakemat)
-        for ob in meshes:
-            self.checkLocalTextures(context, ob)
-            self.bakeLieGroups(context, ob, bakeplane, bakemat)
-        deleteObjects(context, [bakeplane])
-        bpy.data.materials.remove(bakemat)
+        try:
+            for ob in meshes:
+                self.checkLocalTextures(context, ob)
+                self.bakeLieGroups(context, ob, bakeplane, bakemat)
+        finally:
+            deleteObjects(context, [bakeplane])
+            bpy.data.materials.remove(bakemat)
 
 
     def bakeLieGroups(self, context, ob, bakeplane, bakemat):
