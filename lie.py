@@ -6,8 +6,7 @@ import os
 import bpy
 from .utils import *
 from .error import *
-from .material import LocalTextureUser
-
+from .localtex import LocalTextureUser
 
 #----------------------------------------------------------
 #   Bake LIE

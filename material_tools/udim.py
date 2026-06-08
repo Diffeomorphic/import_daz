@@ -7,7 +7,7 @@ import os
 from ..error import *
 from ..utils import *
 from ..fileutils import MultiFile, ImageFile
-from ..material import LocalTextureUser
+from ..localtex import LocalTextureUser
 from ..matsel import MaterialSelector
 from ..tree import getFromSocket, XSIZE, YSIZE, YSTEP
 from ..merge_uvs import TileFixer, getTileBase
