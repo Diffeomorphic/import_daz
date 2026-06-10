@@ -88,7 +88,6 @@ class GlobalSettings:
         self.useEmission = True
         self.bumpMultiplier = 1.0
         self.worldMethod = 'DOME'
-        self.useLowerResFolders = True
         self.useMaterialsByIndex = False
         self.useMaterialsByName = False
         self.imageInterpolation = 'Cubic'

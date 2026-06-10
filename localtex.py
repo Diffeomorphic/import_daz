@@ -32,6 +32,7 @@ class HiddenTextureUser:
 
 class LocalTextureUser:
     useLocals = True
+    useSaveLoaded = False
 
     @classmethod
     def poll(self, context):
@@ -72,10 +73,6 @@ class LocalTextureUser:
 
     def saveLocalTextures(self, context):
         folder = normalizePath(os.path.dirname(bpy.data.filepath))
-        if GS.useLowerResFolders:
-            self.subdir = "/textures/original"
-        else:
-            self.subdir = "/textures"
         self.texpath = "%s%s" % (folder, self.subdir)
         self.basepath = "%s/textures" % folder
         print('Save textures to "%s"' % self.texpath)
@@ -90,8 +87,9 @@ class LocalTextureUser:
             for psys in ob.particle_systems:
                 self.saveTextureSlots(psys.settings)
             dazRna(ob).DazLocalTextures = True
-
+        return
         for src,img in self.images:
+            print("IMG", src, img.has_data)
             if src.startswith(self.basepath):
                 print("Already local: %s" % src)
                 continue
@@ -117,30 +115,49 @@ class LocalTextureUser:
     def printLocalImages(self):
         print("Loaded images")
         for path,img in self.loadedImages.items():
-            print("  ", path)
-            print("  ", img)
+            print("  ", path, img.has_data)
         print("Copied images")
         for path,img in self.copiedImages.items():
-            print("  ", path)
-            print("  ", img)
+            print("  ", path, img.has_data)
         print("Removed images")
         for path in self.removedImages:
             print("  ", path)
 
 
     def saveLocalImages(self):
+        def getRelPath(lpath):
+            words = path.rsplit("/runtime/textures/res", 1)
+            if len(words) == 2:
+                return words[1][2:]
+            words = path.rsplit("/runtime/textures/", 1)
+            if len(words) == 2:
+                return words[1]
+            words = path.rsplit("/textures/original/", 1)
+            if len(words) == 2:
+                return words[1]
+            words = path.rsplit("/textures/res", 1)
+            if len(words) == 2:
+                return words[1][2:]
+
         if not self.useLocals:
             return
         elif self.useSaveGenerated:
-            for path,img in self.copiedImages.items():
+            if self.useSaveLoaded:
+                images = list(self.loadedImages.items()) + list(self.copiedImages.items())
+            else:
+                images = self.copiedImages.items()
+            for path,img in images:
                 if path not in self.removedImages:
-                    words = path.lower().rsplit("/textures/", 1)
-                    if len(words) == 2:
-                        locpath = "%s/%s" % (self.texpath, words[1])
-                        print("SAVE", locpath)
-                        print("GLOB", path)
+                    relpath = getRelPath(path.lower())
+                    if relpath:
+                        locpath = "%s/%s" % (self.texpath, relpath)
                         img.filepath_raw = locpath
-                        img.save()
+                        if not img.has_data:
+                            img.update()
+                        if img.has_data:
+                            img.save()
+                        else:
+                            print("Failed to update image:", img.filepath)
         else:
             for path,img in self.copiedImages.items():
                 if path not in self.removedImages:
@@ -196,7 +213,7 @@ class LocalTextureUser:
         if img is None:
             img = bpy.data.images.load(path)
             self.loadedImages[path] = img
-            print("LOAD", path)
+            print("LOAD", path, img.has_data)
         return img
 
 
@@ -213,12 +230,14 @@ class LocalTextureUser:
                 img = self.loadImage(trg)
             self.copiedImages[trg] = img
             self.removedImages.add(src)
-        img.filepath = bpy.path.relpath(trg)
+        img.filepath_raw = bpy.path.relpath(trg)
         return img
 
 
     def saveImage(self, img, isnew):
         if img:
+            if not img.has_data:
+                img.update()
             path = bpy.path.abspath(img.filepath)
             path = bpy.path.reduce_dirs([path])[0]
             path = normalizePath(path)
@@ -250,8 +269,16 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
     bl_label = "Save Local Textures"
     bl_description = "Copy textures to the textures subfolder in the blend file's directory"
 
+    useSaveLoaded = True
+    useSaveGenerated = True
+    subdir = "/textures/original"
+
     def run(self, context):
+        self.useSaveGenerated = True
+        self.initLocalImages()
         self.saveLocalTextures(context)
+        self.printLocalImages()
+        self.saveLocalImages()
 
 # ---------------------------------------------------------------------
 #   Resize textures
@@ -272,6 +299,7 @@ class ChangeResolution:
     def initResolution(self):
         self.filenames = []
         self.typedImages = {}
+        self.subdir = "/textures/res%d" % self.steps
 
     def getFileNames(self, paths):
         for path in paths:
@@ -360,10 +388,9 @@ class ChangeResolution:
 
     def getBasePath(self, path):
         path = self.getBasePathNames(normalizePath(path))
-        if GS.useLowerResFolders:
-            words = path.split("/textures/res", 1)
-            if len(words) == 2:
-                path = "%s/textures/original%s" % (words[0], words[1][1:])
+        words = path.split("/textures/res", 1)
+        if len(words) == 2:
+            path = "%s/textures/original%s" % (words[0], words[1][1:])
         return path
 
 
@@ -447,7 +474,7 @@ class ChangeResolution:
                         tile.number = udim
                         if bpy.app.version >= (3,1,0):
                             path2,ext2 = os.path.splitext(newimg.filepath)
-                            newimg.filepath = "%s%s%s" % (path2[:-4],"<UDIM>",ext2)
+                            newimg.filepath_raw = "%s%s%s" % (path2[:-4],"<UDIM>",ext2)
                             newimg.name=basename[:-1]
                     else:
                         newimg.tiles.new(tile_number = udim)
@@ -479,8 +506,7 @@ class ChangeResolution:
 
 
     def getNewPath(self, path):
-        if GS.useLowerResFolders:
-            path = self.getNewPathFolders(path)
+        path = self.getNewPathFolders(path)
         base,ext = os.path.splitext(path)
         if self.steps == 0:
             newbase = base
