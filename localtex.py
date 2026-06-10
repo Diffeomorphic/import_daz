@@ -31,17 +31,28 @@ class HiddenTextureUser:
 #-------------------------------------------------------------
 
 class LocalTextureUser:
+    useLocals = True
+
     @classmethod
     def poll(self, context):
         return (bpy.data.filepath and context.object and context.object.type == 'MESH')
 
-    useSaveLocalTextures : BoolProperty(
-        name = "Save Local Textures",
-        description = "Save local textures if not already done",
-        default = True)
+    if useLocals:
+        useSaveGenerated : BoolProperty(
+            name = "Save Generated Images",
+            description = "Save generated images to disk.\nPack them in blend file if this option is disabled",
+            default = False)
 
-    def draw(self, context):
-        self.layout.prop(self, "useSaveLocalTextures")
+        def draw(self, context):
+            self.layout.prop(self, "useSaveGenerated")
+    else:
+        useSaveLocalTextures : BoolProperty(
+            name = "Save Local Textures",
+            description = "Save local textures if not already done",
+            default = True)
+
+        def draw(self, context):
+            self.layout.prop(self, "useSaveLocalTextures")
 
 
     def getMeshes(self, context):
@@ -49,11 +60,15 @@ class LocalTextureUser:
 
 
     def checkLocalTextures(self, context, ob):
-        if not dazRna(ob).DazLocalTextures:
+        self.initLocalImages()
+        if self.useLocals:
+            self.saveLocalTextures(context)
+        elif not dazRna(ob).DazLocalTextures:
             if self.useSaveLocalTextures:
                 self.saveLocalTextures(context)
             else:
                 raise DazError("Save local textures first")
+
 
     def saveLocalTextures(self, context):
         folder = normalizePath(os.path.dirname(bpy.data.filepath))
@@ -64,8 +79,7 @@ class LocalTextureUser:
         self.texpath = "%s%s" % (folder, self.subdir)
         self.basepath = "%s/textures" % folder
         print('Save textures to "%s"' % self.texpath)
-        if not os.path.exists(self.texpath):
-            os.makedirs(self.texpath)
+        self.ensureExists(self.texpath)
 
         self.images = []
         for ob in self.getMeshes(context):
@@ -87,51 +101,138 @@ class LocalTextureUser:
                 "/textures/original/" not in srclower):
                 subpath = os.path.dirname(srclower.rsplit("/textures/",1)[1])
                 folder = "%s/%s" % (self.texpath, subpath)
-                if not os.path.exists(folder):
-                    print("Make %s" % folder)
-                    os.makedirs(folder)
+                self.ensureExists(folder)
                 trg = "%s/%s" % (folder, file)
             else:
                 trg = "%s/%s" % (self.texpath, file)
             self.changeImage(src, trg, img)
 
 
-    def changeImage(self, src, trg, img, strict=True):
-        from shutil import copyfile
-        if not os.path.exists(src):
-            msg = "Missing texture file:\n%s" % src
+    def initLocalImages(self):
+        self.loadedImages = {}
+        self.copiedImages = {}
+        self.removedImages = set()
+
+
+    def printLocalImages(self):
+        print("Loaded images")
+        for path,img in self.loadedImages.items():
+            print("  ", path)
+            print("  ", img)
+        print("Copied images")
+        for path,img in self.copiedImages.items():
+            print("  ", path)
+            print("  ", img)
+        print("Removed images")
+        for path in self.removedImages:
+            print("  ", path)
+
+
+    def saveLocalImages(self):
+        if not self.useLocals:
+            return
+        elif self.useSaveGenerated:
+            for path,img in self.copiedImages.items():
+                if path not in self.removedImages:
+                    words = path.lower().rsplit("/textures/", 1)
+                    if len(words) == 2:
+                        locpath = "%s/%s" % (self.texpath, words[1])
+                        print("SAVE", locpath)
+                        print("GLOB", path)
+                        img.filepath_raw = locpath
+                        img.save()
+        else:
+            for path,img in self.copiedImages.items():
+                if path not in self.removedImages:
+                    print("PACK", img)
+                    #img.pack()
+
+
+    def checkImage(self, path, strict=False):
+        if not self.imageExists(path):
+            msg = "Missing texture file:\n%s" % path
             print(msg)
             if strict:
                 raise DazError(msg)
-            else:
-                return None
-        if src != trg and not os.path.exists(trg):
-            print("Copy %s\n=> %s" % (src, trg))
+
+
+    def imageExists(self, path):
+        if self.useLocals:
+            return (self.loadedImages.get(path) or self.copiedImages.get(path))
+        else:
+            return os.path.exists(path)
+
+
+    def ensureExists(self, folder):
+        if not self.useLocals:
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+
+
+    def copyImage(self, src, trg):
+        print("Copy %s\n=> %s" % (src, trg))
+        if self.useLocals:
+            img = self.loadImage(src)
+            img2 = img.copy()
+            img2.name = os.path.basename(trg)
+            img2.filepath = trg
+            #self.loadedImages[trg] = img2
+            self.copiedImages[trg] = img2
+            self.removedImages.add(src)
+        else:
+            from shutil import copyfile
             try:
                 copyfile(src, trg)
+                return True
             except:
                 print("Copying failed")
+                return False
+
+
+    def loadImage(self, path):
+        img = self.loadedImages.get(path)
+        if img is None:
+            img = self.copiedImages.get(path)
+        if img is None:
+            img = bpy.data.images.load(path)
+            self.loadedImages[path] = img
+            print("LOAD", path)
+        return img
+
+
+    def changeImage(self, src, trg, img, strict=True):
+        if not self.checkImage(src):
+            return None
+        if src != trg and not self.imageExists(trg):
+            if not self.copyImage(src, trg):
                 return None
         if img is None:
             if trg in bpy.data.images.keys():
                 img = bpy.data.images[trg]
             else:
-                img = bpy.data.images.load(trg)
+                img = self.loadImage(trg)
+            self.copiedImages[trg] = img
+            self.removedImages.add(src)
         img.filepath = bpy.path.relpath(trg)
         return img
 
 
-    def saveImage(self, img):
+    def saveImage(self, img, isnew):
         if img:
             path = bpy.path.abspath(img.filepath)
             path = bpy.path.reduce_dirs([path])[0]
-            self.images.append((normalizePath(path), img))
+            path = normalizePath(path)
+            self.images.append((path, img))
+            if isnew:
+                self.copiedImages[path] = img
+            else:
+                self.loadedImages[path] = img
 
 
     def saveNodesInTree(self, tree):
         for node in tree.nodes.values():
             if node.type == 'TEX_IMAGE':
-                self.saveImage(node.image)
+                self.saveImage(node.image, False)
             elif node.type == 'GROUP':
                 self.saveNodesInTree(node.node_tree)
 
@@ -141,7 +242,7 @@ class LocalTextureUser:
             if mtex:
                 tex = mtex.texture
                 if hasattr(tex, "image") and tex.image:
-                    self.saveImage(tex.image)
+                    self.saveImage(tex.image, False)
 
 
 class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperator):
@@ -337,7 +438,7 @@ class ChangeResolution:
                 fname1,ext1 = os.path.splitext(file1)
                 if fname1[:-4] == basename and ext1 == ext:
                     path = os.path.join(folder, file1)
-                    img = bpy.data.images.load(path)
+                    img = self.loadImage(path)
                     udim = int(fname1[-4:])
                     if newimg is None:
                         newimg = img
@@ -353,11 +454,14 @@ class ChangeResolution:
                     print('  "%s"' % file1)
             return newimg
         else:
-            return bpy.data.images.load(newpath)
+            print("XXX", newpath)
+            newimg = self.loadImage(newpath)
+            print("YYY", newimg)
+            return newimg
 
 
     def getNewPathFolders(self, path):
-        if self.steps == 0:
+        if self.steps == 0 or not self.useLocals:
             return path
         words = path.split("/textures/original/", 1)
         if len(words) != 2:
@@ -365,14 +469,13 @@ class ChangeResolution:
         if len(words) == 2:
             newpath = "%s/textures/res%d/%s" % (words[0], self.steps, words[1])
             folder = getProperPath(os.path.dirname(newpath))
-            if not os.path.exists(folder):
-                os.makedirs(folder)
+            self.ensureExists(folder)
             return newpath
         else:
             msg = 'Illegal path: %s' % path
             print(msg)
-            hlat
-            raise DazError(msg)
+            #raise DazError(msg)
+            return path
 
 
     def getNewPath(self, path):
@@ -434,6 +537,7 @@ class DAZ_OT_ResizeTextures(DazPropsOperator, HiddenTextureUser, LocalTextureUse
     def run(self, context):
         self.initResolution()
         paths = self.getAllTextures(context, False)
+        self.printLocalImages()
         self.getFileNames(paths)
 
         scale = int(2**self.steps)
@@ -441,21 +545,23 @@ class DAZ_OT_ResizeTextures(DazPropsOperator, HiddenTextureUser, LocalTextureUse
             path = getProperPath(path)
             base = self.getBasePath(path)
             _,newpath = self.getNewPath(base)
-            if not os.path.exists(newpath) and os.path.exists(base):
-                img = bpy.data.images.load(base)
+            if not self.imageExists(newpath) and self.imageExists(base):
+                img = self.loadImage(base)
                 if img is None:
                     print("Could not load %s" % base)
                     continue
                 x,y = img.size
                 img.scale(int(x/scale), int(y/scale))
                 img.filepath_raw = newpath
+                img.name = os.path.splitext(os.path.basename(newpath))[0]
                 print("%s => %s: %s => %s" % (os.path.basename(path), os.path.basename(newpath), (x,y), tuple(img.size)))
-                img.save()
-                img.buffers_free()
+                self.saveImage(img, True)
             else:
                 print("Skip", newpath)
 
         self.replaceTextures(context)
+        self.printLocalImages()
+        self.saveLocalImages()
 
 #----------------------------------------------------------
 #   Utility
