@@ -203,7 +203,6 @@ class TileFixer:
                             trg = self.getLocalPath(bpy.path.abspath(newpath))
                             img = self.changeImage(src, trg, None, node.image)
                             images[src] = img
-                            print("AAA", img, img.has_data)
                         node.image = img
                         node.label = "%s_%d" % (base, mattile)
                 elif (node.type == 'GROUP' and

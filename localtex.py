@@ -154,7 +154,6 @@ class LocalTextureUser:
         else:
             for path,img in self.copiedImages.items():
                 if path not in self.removedImages:
-                    print("PACK", img)
                     try:
                         img.pack()
                     except RuntimeError:
@@ -186,13 +185,10 @@ class LocalTextureUser:
         img = self.loadImage(src)
         img2 = img.copy()
         if len(img2.pixels) == 0:
-            width, height = img.size
-            img2name = img2.name
-            img2 = bpy.data.images.new(img2.name, width, height)
-            img2.name = img2name
-            print("IMG2", img2.name, img2.size, len(img2.pixels))
-            img2.pixels = img.pixels
-        print("KK", img.has_data, img2.has_data, len(img.pixels), len(img2.pixels), img.source, img2.source)
+            img2 = img
+            print("Reusing source image")
+            if img.filepath_raw in self.loadedImages.keys():
+                del self.loadedImages[img.filepath_raw]
         img2.name = os.path.basename(trg)
         img2.filepath_raw = trg
         img2.update()
@@ -204,9 +200,6 @@ class LocalTextureUser:
 
 
     def loadImage(self, path):
-        print("LOAD", path)
-        if "\\" in path:
-            halt
         path = normalizePath(path)
         img = self.loadedImages.get(path)
         if img is None:
@@ -220,7 +213,6 @@ class LocalTextureUser:
             print("UUU", path)
             img = bpy.data.images.load(path)
             self.loadedImages[path] = img
-        print("IMG", img, img.has_data)
         if not img.has_data:
             self.printLocalImages()
         img.update()
@@ -232,7 +224,6 @@ class LocalTextureUser:
         #    return None
         if src != trg and not self.imageExists(trg):
             img = self.copyImage(src, trg)
-            print("CPY", img.filepath_raw, img.has_data)
         if img is None:
             img = img2.copy()
             img.update()

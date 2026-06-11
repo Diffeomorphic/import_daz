@@ -105,13 +105,9 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         self.checkLocalTextures(context, ob)
         if ob.active_material is None:
             raise DazError("No active material")
-        self.printLocalImages()
-        print("AA")
         mattiles = self.findMatTiles(ob)
         if self.useFixTextures:
             self.fixTextures(ob, ob.active_material.name, mattiles)
-        self.printLocalImages()
-        print("BB")
 
         mats = []
         mnums = []
@@ -147,31 +143,30 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             for tname,data in shells0.items():
                 if tname not in actshells.keys():
                     shells[tname] = data
-        self.printLocalImages()
-        print("CC")
 
         basenames = {}
         keytiles = {}
         origpaths = {}
         self.updatedImages = {}
         acttile = dazRna(actmat).DazUDim
+        tiledImages = set()
         for key,actnode in texnodes[actmat.name].items():
             if key is None:
                 continue
             img = actnode.image
             filepath = str(img.filepath)
             imgname = os.path.splitext(img.name)[0]
-            basename = self.getBaseName(imgname, dazRna(mat).DazUDim)
+            tile,basename = getTileBase(imgname)
+            #basename = self.getBaseName(imgname, dazRna(mat).DazUDim)
             if not basename.startswith("T_"):
                 basename = "T_%s" % basename
             img = self.updateImage(img, basename, acttile)
-            print("TCC", img.name, img.has_data)
             width, height = img.size
             actimg = bpy.data.images.new(basename, width, height)
             actimg.source = "TILED"
             actimg.filepath_raw = filepath
+            tiledImages.add(actimg)
             actnode.image = actimg
-            print("UUU", actimg.name, actimg.has_data, actimg.filepath_raw)
             actnode.extension = "CLIP"
             udims = {}
             for mat in mats:
@@ -260,7 +255,10 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
                             node.label = actnode.label
                             node.name = actnode.name
         self.printLocalImages()
-        #self.saveLocalImages()
+        self.saveLocalImages()
+        for img in tiledImages:
+            print("REL", img)
+            img.reload()
 
 
     def makeImageName(self, basename, tile, img):
@@ -269,7 +267,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
     def addImage(self, actimg, tile, key):
         from ..material import setColorSpaceNone
-        basename = self.getBaseName(actimg.name, tile)
+        #basename = self.getBaseName(actimg.name, tile)
+        tile,basename = getTileBase(actimg.name)
         if key.endswith(("Factor:Value", "Fac")):
             color = (1,1,1,1)
         elif key.startswith("NORMAL_MAP:Color"):
@@ -351,8 +350,6 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
     def updateImage(self, img, basename, udim):
         src,trg = self.getTargetPath(img, basename, udim)
         trg = self.getLocalPath(trg)
-        print("UPD", src)
-        print("TRG", trg)
         self.updatedImages[trg] = src
         return self.changeImage(src, trg, img, strict=False)
 
