@@ -18,6 +18,8 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
     bl_description = "Bake layered images of selected meshes to simple textures"
     bl_options = {'UNDO'}
 
+    subdir = "/textures/LIE"
+
     def storeState(self, context):
         DazPropsOperator.storeState(self, context)
         scn = context.scene
@@ -64,7 +66,7 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
                 if node.type == 'TEX_IMAGE' and node.image:
                     return node, node.image
 
-        def makeBakeImage(node, img, folder):
+        def makeBakeImage(node, img):
             width,height = img.size
             name = stripUuid(node.name)
             bakeimg = bpy.data.images.new(name, width, height)
@@ -74,7 +76,7 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
                 ext = words[1]
             else:
                 ext = ".png"
-            bakeimg.filepath = os.path.join(folder, "%s%s" % (name, ext))
+            bakeimg.filepath = os.path.join(self.texpath, "%s%s" % (name, ext))
             return bakeimg
 
         def makeBakeTree(node, baketree, bakeimg, uvname):
@@ -101,20 +103,20 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
             tex.extension = 'CLIP'
             baketree.nodes.active = tex
 
-        def bakeMaterial(tree, baketree, folder, uvname):
+        def bakeMaterial(tree, baketree, uvname):
             lies = []
             for node in tree.nodes:
                 if (node.type == 'GROUP' and
                     node.node_tree.name.startswith("LIE")):
                     tex,img = findTexImage(node.node_tree)
                     if img:
-                        bakeimg = makeBakeImage(node, img, folder)
+                        bakeimg = makeBakeImage(node, img)
                         makeBakeTree(node, baketree, bakeimg, uvname)
                         print('Bake %s %s image\n  "%s"' %
                             (tuple(bakeimg.size), bakeimg.colorspace_settings.name, bakeimg.filepath))
                         width,height = img.size
                         bpy.ops.object.bake(type='EMIT', width=width, height=height)
-                        if self.useSaveLocalTextures:
+                        if self.useSaveGenerated:
                             bakeimg.save()
                         else:
                             bakeimg.pack()
@@ -134,11 +136,10 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
                 newTex.hide = True
                 tree.nodes.remove(node)
 
-        folder = os.path.join(os.path.dirname(bpy.data.filepath), "textures", "LIE")
         uvname = bakeplane.data.uv_layers.active.name
         for mat in ob.data.materials:
             if mat and mat.node_tree:
-                bakeMaterial(mat.node_tree, bakemat.node_tree, folder, uvname)
+                bakeMaterial(mat.node_tree, bakemat.node_tree, uvname)
 
 #-------------------------------------------------------------
 #   Initialize

@@ -38,22 +38,13 @@ class LocalTextureUser:
     def poll(self, context):
         return (bpy.data.filepath and context.object and context.object.type == 'MESH')
 
-    if useLocals:
-        useSaveGenerated : BoolProperty(
-            name = "Save Generated Images",
-            description = "Save generated images to disk.\nPack them in blend file if this option is disabled",
-            default = False)
+    useSaveGenerated : BoolProperty(
+        name = "Save Generated Images",
+        description = "Save generated images to disk.\nPack them in blend file if this option is disabled",
+        default = False)
 
-        def draw(self, context):
-            self.layout.prop(self, "useSaveGenerated")
-    else:
-        useSaveLocalTextures : BoolProperty(
-            name = "Save Local Textures",
-            description = "Save local textures if not already done",
-            default = True)
-
-        def draw(self, context):
-            self.layout.prop(self, "useSaveLocalTextures")
+    def draw(self, context):
+        self.layout.prop(self, "useSaveGenerated")
 
 
     def getMeshes(self, context):
@@ -62,13 +53,7 @@ class LocalTextureUser:
 
     def checkLocalTextures(self, context, ob):
         self.initLocalImages()
-        if self.useLocals:
-            self.saveLocalTextures(context)
-        elif not dazRna(ob).DazLocalTextures:
-            if self.useSaveLocalTextures:
-                self.saveLocalTextures(context)
-            else:
-                raise DazError("Save local textures first")
+        self.saveLocalTextures(context)
 
 
     def saveLocalTextures(self, context):
@@ -87,9 +72,8 @@ class LocalTextureUser:
             for psys in ob.particle_systems:
                 self.saveTextureSlots(psys.settings)
             dazRna(ob).DazLocalTextures = True
-        return
+
         for src,img in self.images:
-            print("IMG", src, img.has_data)
             if src.startswith(self.basepath):
                 print("Already local: %s" % src)
                 continue
@@ -124,7 +108,7 @@ class LocalTextureUser:
             print("  ", path)
 
 
-    def saveLocalImages(self):
+    def getLocalPath(self, path):
         def getRelPath(lpath):
             words = path.rsplit("/runtime/textures/res", 1)
             if len(words) == 2:
@@ -139,18 +123,27 @@ class LocalTextureUser:
             if len(words) == 2:
                 return words[1][2:]
 
-        if not self.useLocals:
-            return
-        elif self.useSaveGenerated:
+        path = normalizePath(path)
+        if path.endswith("<UDIM>"):
+            print("UDD", path)
+            halt
+        relpath = getRelPath(path.lower())
+        if relpath:
+            return "%s/%s" % (self.texpath, relpath)
+        else:
+            return path
+
+
+    def saveLocalImages(self):
+        if self.useSaveGenerated:
             if self.useSaveLoaded:
                 images = list(self.loadedImages.items()) + list(self.copiedImages.items())
             else:
                 images = self.copiedImages.items()
             for path,img in images:
                 if path not in self.removedImages:
-                    relpath = getRelPath(path.lower())
-                    if relpath:
-                        locpath = "%s/%s" % (self.texpath, relpath)
+                    locpath = self.getLocalPath(path)
+                    if locpath:
                         img.filepath_raw = locpath
                         if not img.has_data:
                             img.update()
@@ -162,7 +155,10 @@ class LocalTextureUser:
             for path,img in self.copiedImages.items():
                 if path not in self.removedImages:
                     print("PACK", img)
-                    #img.pack()
+                    try:
+                        img.pack()
+                    except RuntimeError:
+                        print("FAIL", img.filepath, img.has_data)
 
 
     def checkImage(self, path, strict=False):
@@ -174,10 +170,7 @@ class LocalTextureUser:
 
 
     def imageExists(self, path):
-        if self.useLocals:
-            return (self.loadedImages.get(path) or self.copiedImages.get(path))
-        else:
-            return os.path.exists(path)
+        return (self.loadedImages.get(path) or self.copiedImages.get(path))
 
 
     def ensureExists(self, folder):
@@ -187,50 +180,66 @@ class LocalTextureUser:
 
 
     def copyImage(self, src, trg):
+        src = normalizePath(src)
+        trg = normalizePath(trg)
         print("Copy %s\n=> %s" % (src, trg))
-        if self.useLocals:
-            img = self.loadImage(src)
-            img2 = img.copy()
-            img2.name = os.path.basename(trg)
-            img2.filepath = trg
-            #self.loadedImages[trg] = img2
-            self.copiedImages[trg] = img2
-            self.removedImages.add(src)
-        else:
-            from shutil import copyfile
-            try:
-                copyfile(src, trg)
-                return True
-            except:
-                print("Copying failed")
-                return False
+        img = self.loadImage(src)
+        img2 = img.copy()
+        if len(img2.pixels) == 0:
+            width, height = img.size
+            img2name = img2.name
+            img2 = bpy.data.images.new(img2.name, width, height)
+            img2.name = img2name
+            print("IMG2", img2.name, img2.size, len(img2.pixels))
+            img2.pixels = img.pixels
+        print("KK", img.has_data, img2.has_data, len(img.pixels), len(img2.pixels), img.source, img2.source)
+        img2.name = os.path.basename(trg)
+        img2.filepath_raw = trg
+        img2.update()
+        self.copiedImages[trg] = img2
+        self.removedImages.add(src)
+        if "Public" in trg:
+            halt
+        return img2
 
 
     def loadImage(self, path):
+        print("LOAD", path)
+        if "\\" in path:
+            halt
+        path = normalizePath(path)
         img = self.loadedImages.get(path)
         if img is None:
             img = self.copiedImages.get(path)
         if img is None:
+            imgname = os.path.splitext(os.path.basename(path))[0]
+            img = bpy.data.images.get(imgname)
+            self.loadedImages[path] = img
+        if img is None:
+            print("BBII", bpy.data.images.keys())
+            print("UUU", path)
             img = bpy.data.images.load(path)
             self.loadedImages[path] = img
-            print("LOAD", path, img.has_data)
+        print("IMG", img, img.has_data)
+        if not img.has_data:
+            self.printLocalImages()
+        img.update()
         return img
 
 
-    def changeImage(self, src, trg, img, strict=True):
-        if not self.checkImage(src):
-            return None
+    def changeImage(self, src, trg, img, img2=None, strict=True):
+        #if not self.checkImage(src):
+        #    return None
         if src != trg and not self.imageExists(trg):
-            if not self.copyImage(src, trg):
-                return None
+            img = self.copyImage(src, trg)
+            print("CPY", img.filepath_raw, img.has_data)
         if img is None:
-            if trg in bpy.data.images.keys():
-                img = bpy.data.images[trg]
-            else:
-                img = self.loadImage(trg)
+            img = img2.copy()
+            img.update()
+            img.colorspace_settings.name = img2.colorspace_settings.name
             self.copiedImages[trg] = img
-            self.removedImages.add(src)
-        img.filepath_raw = bpy.path.relpath(trg)
+            #self.removedImages.add(src)
+        img.filepath_raw = trg
         return img
 
 
@@ -499,6 +508,7 @@ class ChangeResolution:
             self.ensureExists(folder)
             return newpath
         else:
+            path = self.getLocalPath(path)
             msg = 'Illegal path: %s' % path
             print(msg)
             #raise DazError(msg)
@@ -524,7 +534,7 @@ class ChangeResolution:
 def normPath(path):
     path = bpy.path.abspath(path)
     path = bpy.path.reduce_dirs([path])[0]
-    return path
+    return normalizePath(path)
 
 
 class DAZ_OT_ChangeResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser, ChangeResolution):
