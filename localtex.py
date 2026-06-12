@@ -100,8 +100,9 @@ class LocalTextureUser:
 
         path = normalizePath(path)
         if path.endswith("<UDIM>"):
-            print("UDD", path)
-            halt
+            msg = ("Bad local path: %s" % path)
+            print(msg)
+            raise DazError(msg)
         relpath = getRelPath(path.lower())
         if relpath:
             return "%s/%s" % (self.texpath, relpath)
@@ -163,7 +164,9 @@ class LocalTextureUser:
         print("Copied %s %s" % (tuple(img.size), trg))
         self.copiedImages[trg] = img
         if "Public" in trg:
-            halt
+            msg = "Expected local image: %s" % trg
+            print(msg)
+            raise DazError(msg)
         return img
 
 
@@ -179,17 +182,19 @@ class LocalTextureUser:
         if img is None:
             img = self.deletedImages.get(path)
             if img:
-                print("DELETED", path)
-                halt
+                msg = "Image was deleted: %s" % path
+                print(msg)
+                raise DazError(msg)
         if img is None:
             imgname = os.path.splitext(os.path.basename(path))[0]
             img = bpy.data.images.get(imgname)
             self.loadedImages[path] = img
         if img is None:
-            print("BBII", bpy.data.images.keys())
-            print("UUU", path)
-            halt
             img = bpy.data.images.load(path)
+            if img is None:
+                msg = ("Image not found: %s" % path)
+                print(msg)
+                raise DazError(msg)
             self.loadedImages[path] = img
         if not img.has_data:
             self.printLocalImages()
