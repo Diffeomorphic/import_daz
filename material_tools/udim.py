@@ -40,7 +40,8 @@ class DAZ_OT_FixTextureTiles(DazPropsOperator, LocalTextureUser, TileFixer):
 
     def run(self, context):
         ob = context.object
-        self.checkLocalTextures(self, ob)
+        self.initLocalImages()
+        self.saveLocalTextures(context)
         mattiles = self.findMatTiles(ob)
         self.fixTextures(ob, ob.active_material.name, mattiles)
 
@@ -101,10 +102,11 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
     def run(self, context):
         self.useSaveGenerated = True
+        self.initLocalImages()
         ob = context.object
-        self.checkLocalTextures(context, ob)
         if ob.active_material is None:
             raise DazError("No active material")
+        self.saveLocalTextures(context)
         mattiles = self.findMatTiles(ob)
         if self.useFixTextures:
             self.fixTextures(ob, ob.active_material.name, mattiles)
@@ -165,6 +167,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             actimg = bpy.data.images.new(basename, width, height)
             actimg.source = "TILED"
             actimg.filepath_raw = filepath
+            actimg.colorspace_settings.name = img.colorspace_settings.name
             tiledImages.add(actimg)
             actnode.image = actimg
             actnode.extension = "CLIP"
@@ -268,7 +271,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
     def addImage(self, actimg, tile, key):
         from ..material import setColorSpaceNone
         #basename = self.getBaseName(actimg.name, tile)
-        tile,basename = getTileBase(actimg.name)
+        _,basename = getTileBase(actimg.name)
         if key.endswith(("Factor:Value", "Fac")):
             color = (1,1,1,1)
         elif key.startswith("NORMAL_MAP:Color"):

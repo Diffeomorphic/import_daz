@@ -44,6 +44,8 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
 
     def run(self, context):
         meshes = getSelectedMeshes(context)
+        self.initLocalImages()
+        self.saveLocalTextures(context)
         bpy.ops.mesh.primitive_plane_add(size=1)
         bakeplane = context.object
         activateObject(context, bakeplane)
@@ -53,7 +55,6 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
         bakeplane.data.materials.append(bakemat)
         try:
             for ob in meshes:
-                self.checkLocalTextures(context, ob)
                 self.bakeLieGroups(context, ob, bakeplane, bakemat)
         finally:
             deleteObjects(context, [bakeplane])

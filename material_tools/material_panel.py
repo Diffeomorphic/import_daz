@@ -41,8 +41,6 @@ class DAZ_PT_MoreMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.find_missing_textures")
         self.layout.operator("daz.activate_diffuse")
-        self.layout.separator()
-        self.layout.operator("daz.change_resolution")
 
 
 class DAZ_PT_DebugMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
