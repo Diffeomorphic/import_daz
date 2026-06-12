@@ -236,7 +236,6 @@ if DAZ_PROPS:
         DazAlias : CollectionProperty(type = DazStringGroup)
         DazActivated : CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
         DazMorphCats : CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
-        DazLocalTextures : BoolProperty()
         DazVisibilityDrivers : BoolProperty()
         DazVisibilityCollections : BoolProperty()
         DazTiedRig : StringProperty()
@@ -269,6 +268,7 @@ if DAZ_PROPS:
 
 
     class DazImporterMesh(DazImporterGroup):
+        DazTexLevel : IntProperty(min=0, max=2)
         DazRigidityGroups : CollectionProperty(type = DazRigidityGroup)
         DazFingerPrint : StringProperty(name = "Original Fingerprint", default="")
         DazGraftGroup : CollectionProperty(type = DazPairGroup)
@@ -584,7 +584,6 @@ def registerDazProperties():
     bpy.types.Object.DazAlias = CollectionProperty(type = DazStringGroup)
     bpy.types.Object.DazActivated = CollectionProperty(type = DazActiveGroup, override={'LIBRARY_OVERRIDABLE'})
     bpy.types.Object.DazMorphCats = CollectionProperty(type = DazCategory, override={'LIBRARY_OVERRIDABLE'})
-    bpy.types.Object.DazLocalTextures = BoolProperty()
     bpy.types.Object.DazVisibilityDrivers = BoolProperty()
     bpy.types.Object.DazVisibilityCollections = BoolProperty()
     bpy.types.Object.DazTiedRig = StringProperty()
@@ -609,6 +608,7 @@ def registerDazProperties():
     bpy.types.Armature.DazMergedRigs = CollectionProperty(type = DazStringBoolGroup)
     bpy.types.Armature.DazRigidityScaleFactors = bpy.props.CollectionProperty(type=DazRigidityScaleFactor)
 
+    bpy.types.Mesh.DazTexLevel = IntProperty(min=0, max=2)
     bpy.types.Mesh.DazRigidityGroups = CollectionProperty(type = DazRigidityGroup)
     bpy.types.Mesh.DazFingerPrint = StringProperty(name = "Original Fingerprint", default="")
     bpy.types.Mesh.DazGraftGroup = CollectionProperty(type = DazPairGroup)

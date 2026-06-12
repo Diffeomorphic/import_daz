@@ -216,14 +216,14 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
                 node = texnodes[actmat.name][key]
                 if len(tiles) == 1 and tiles[0] == 0:
                     img = node.image
-                    if img.filepath in origpaths.keys():
-                        img.filepath = origpaths[img.filepath]
-                    if img.filepath in self.updatedImages.keys():
-                        img.filepath = self.updatedImages[img.filepath]
+                    udimpath = origpaths.get(img.filepath, img.filepath)
+                    origpath = self.updatedImages.get(udimpath, udimpath)
+                    self.changeImage(udimpath, origpath, img)
                     img.source = "FILE"
                     node.extension = "CLIP"
+                    img.filepath = origpath
                     img.name = node.label = node.label[2:]
-                    print("Texture %s only on tile 1001" % node.label)
+                    print("Texture %s only on tile 1001" % origpath)
                 elif len(tiles) < len(usedtiles):
                     for tile in usedtiles:
                         if tile not in tiles:
@@ -260,7 +260,6 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         self.printLocalImages()
         self.saveLocalImages()
         for img in tiledImages:
-            print("REL", img)
             img.reload()
 
 

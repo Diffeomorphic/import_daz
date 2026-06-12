@@ -31,12 +31,17 @@ class HiddenTextureUser:
 #-------------------------------------------------------------
 
 class LocalTextureUser:
-    useLocals = True
     useSaveLoaded = False
+    maxTexLevel = 2
+    minTexLevel = 0
 
     @classmethod
     def poll(self, context):
-        return (bpy.data.filepath and context.object and context.object.type == 'MESH')
+        ob = context.object
+        return (bpy.data.filepath and
+                ob and ob.type == 'MESH' and
+                dazRna(ob.data).DazTexLevel <= self.maxTexLevel and
+                dazRna(ob.data).DazTexLevel >= self.minTexLevel)
 
     useSaveGenerated : BoolProperty(
         name = "Save Generated Images",
@@ -56,25 +61,25 @@ class LocalTextureUser:
         self.texpath = "%s%s" % (folder, self.subdir)
         self.basepath = "%s/textures" % folder
         print('Save textures to "%s"' % self.texpath)
-        self.ensureExists(self.texpath)
         self.loadedImages = {}
         self.copiedImages = {}
         self.deletedImages = {}
 
 
     def printLocalImages(self):
+        return
         print("Loaded images")
         for path,img in self.loadedImages.items():
             if img:
-                print("  ", path, img.has_data, img.get("DazFilePath"))
+                print("  ", path, img.has_data)
         print("Copied images")
         for path,img in self.copiedImages.items():
             if img:
-                print("  ", path, img.has_data, img.get("DazFilePath"))
+                print("  ", path, img.has_data,)
         print("Removed images")
         for path,img in self.deletedImages.items():
             if img:
-                print("  ", path, img.has_data, img.get("DazFilePath"))
+                print("  ", path, img.has_data)
 
 
     def getLocalPath(self, path):
@@ -137,12 +142,6 @@ class LocalTextureUser:
 
     def imageExists(self, path):
         return (self.loadedImages.get(path) or self.copiedImages.get(path))
-
-
-    def ensureExists(self, folder):
-        if not self.useLocals:
-            if not os.path.exists(folder):
-                os.makedirs(folder)
 
 
     def copyImage(self, src, trg):
@@ -223,20 +222,22 @@ class LocalTextureUser:
                 self.loadedImages[path] = img
 
 
+    def isIrrelevant(self, path):
+        return False
+
+
     def saveLocalTextures(self, context):
         meshes = self.getMeshes(context)
         self.getAllImages(meshes)
         for src,img in self.images:
-            if src.startswith(self.basepath):
-                print("Already local: %s" % src)
+            if self.isIrrelevant(src):
                 continue
             file = bpy.path.basename(src)
             srclower = normalizePath(src).lower()
-            if ("/textures/" in srclower and
+            if (False and "/textures/" in srclower and
                 "/textures/original/" not in srclower):
                 subpath = os.path.dirname(srclower.rsplit("/textures/",1)[1])
                 folder = "%s/%s" % (self.texpath, subpath)
-                self.ensureExists(folder)
                 trg = "%s/%s" % (folder, file)
             else:
                 trg = "%s/%s" % (self.texpath, file)
@@ -276,6 +277,7 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
     bl_label = "Save Local Textures"
     bl_description = "Copy textures to the textures subfolder in the blend file's directory"
 
+    maxTexLevel = 0
     useSaveLoaded = True
     subdir = "/textures/original"
 
@@ -283,11 +285,21 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
         HiddenTextureUser.draw(self, context)
 
     def run(self, context):
+        meshes = self.getMeshes(context)
         self.useSaveGenerated = True
         self.initLocalImages()
         self.saveLocalTextures(context)
         self.printLocalImages()
         self.saveLocalImages()
+        for ob in meshes:
+            dazRna(ob.data).DazTexLevel = 1
+
+
+    def isIrrelevant(self, path):
+        if path.startswith(self.basepath):
+            print("Already local: %s" % path)
+            return True
+        return False
 
 # ---------------------------------------------------------------------
 #   Restore textures
@@ -298,6 +310,7 @@ class DAZ_OT_RestoreOriginalTextures(HiddenTextureUser, LocalTextureUser, DazPro
     bl_label = "Restore Original Textures"
     bl_description = "Restore the original textures"
 
+    minTexLevel = 1
     subdir = ""
 
     def draw(self, context):
@@ -311,6 +324,8 @@ class DAZ_OT_RestoreOriginalTextures(HiddenTextureUser, LocalTextureUser, DazPro
             filepath = img.get("DazFilePath")
             if filepath and os.path.exists(filepath):
                 img.filepath = filepath
+        for ob in meshes:
+            dazRna(ob.data).DazTexLevel = 0
 
 # ---------------------------------------------------------------------
 #   Resize textures
@@ -323,6 +338,7 @@ class DAZ_OT_ResizeTextures(DazPropsOperator, HiddenTextureUser, LocalTextureUse
     bl_options = {'UNDO'}
 
     resizeAll = True
+    maxTexLevel = 1
 
     steps : IntProperty(
         name = "Steps",
@@ -338,10 +354,13 @@ class DAZ_OT_ResizeTextures(DazPropsOperator, HiddenTextureUser, LocalTextureUse
 
     def run(self, context):
         self.subdir = "/textures/res%d" % self.steps
+        meshes = self.getMeshes(context)
         self.initLocalImages()
         self.saveLocalTextures(context)
         self.printLocalImages()
         self.saveLocalImages()
+        for ob in meshes:
+            dazRna(ob.data).DazTexLevel = 2
 
 
     def modifyImage(self, path, img):
