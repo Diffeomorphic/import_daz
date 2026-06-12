@@ -315,14 +315,23 @@ def getVisibleArmatures(context):
         if ob.type == 'ARMATURE' and not (ob.hide_get() or ob.hide_viewport)]
 
 def getSelectedObjects(context):
+    ob = context.object
+    if ob:
+        ob.select_set(True)
     return [ob for ob in context.view_layer.objects
-        if ob.select_get() and not (ob.hide_get() or ob.hide_viewport)]
+            if ob.select_get() and not (ob.hide_get() or ob.hide_viewport)]
 
 def getSelectedMeshes(context):
+    ob = context.object
+    if ob and ob.type == 'MESH':
+        ob.select_set(True)
     return [ob for ob in context.view_layer.objects
             if ob.select_get() and ob.type == 'MESH' and not (ob.hide_get() or ob.hide_viewport)]
 
 def getSelectedArmatures(context):
+    ob = context.object
+    if ob and ob.type == 'ARMATURE':
+        ob.select_set(True)
     return [ob for ob in context.view_layer.objects
             if ob.select_get() and ob.type == 'ARMATURE' and not (ob.hide_get() or ob.hide_viewport)]
 

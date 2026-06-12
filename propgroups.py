@@ -268,7 +268,7 @@ if DAZ_PROPS:
 
 
     class DazImporterMesh(DazImporterGroup):
-        DazTexLevel : IntProperty(min=0, max=2)
+        DazTexLevel : IntProperty(min=0, max=3)
         DazRigidityGroups : CollectionProperty(type = DazRigidityGroup)
         DazFingerPrint : StringProperty(name = "Original Fingerprint", default="")
         DazGraftGroup : CollectionProperty(type = DazPairGroup)
@@ -608,7 +608,7 @@ def registerDazProperties():
     bpy.types.Armature.DazMergedRigs = CollectionProperty(type = DazStringBoolGroup)
     bpy.types.Armature.DazRigidityScaleFactors = bpy.props.CollectionProperty(type=DazRigidityScaleFactor)
 
-    bpy.types.Mesh.DazTexLevel = IntProperty(min=0, max=2)
+    bpy.types.Mesh.DazTexLevel = IntProperty(min=0, max=3)
     bpy.types.Mesh.DazRigidityGroups = CollectionProperty(type = DazRigidityGroup)
     bpy.types.Mesh.DazFingerPrint = StringProperty(name = "Original Fingerprint", default="")
     bpy.types.Mesh.DazGraftGroup = CollectionProperty(type = DazPairGroup)

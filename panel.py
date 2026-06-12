@@ -81,6 +81,8 @@ class DAZ_PT_SetupMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
     def draw(self, context):
         self.layout.operator("daz.import_daz_materials")
         self.layout.separator()
+        if not bpy.data.filepath:
+            self.layout.label(text = "Save blend file first")
         self.layout.operator("daz.save_local_textures")
         self.layout.operator("daz.restore_original_textures")
         self.layout.operator("daz.resize_textures")

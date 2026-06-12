@@ -193,8 +193,8 @@ class TileFixer:
                     if not base:
                         continue
                     if tile != mattile:
+                        folder = os.path.dirname(path)
                         newfile = "%s_%d%s" % (base, mattile, ext)
-                        print("Copy %s => %s" % (file, newfile))
                         newpath = os.path.join(folder, newfile)
                         src = bpy.path.abspath(path)
                         if src in images.keys():

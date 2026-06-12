@@ -261,6 +261,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         self.saveLocalImages()
         for img in tiledImages:
             img.reload()
+        dazRna(ob.data).DazTexLevel = 3
 
 
     def makeImageName(self, basename, tile, img):

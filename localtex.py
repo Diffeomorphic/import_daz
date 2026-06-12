@@ -34,6 +34,7 @@ class LocalTextureUser:
     useSaveLoaded = False
     maxTexLevel = 2
     minTexLevel = 0
+    debugging = False
 
     @classmethod
     def poll(self, context):
@@ -147,7 +148,8 @@ class LocalTextureUser:
     def copyImage(self, src, trg):
         src = normalizePath(src)
         trg = normalizePath(trg)
-        print("Copy %s\n=> %s" % (src, trg))
+        if self.debugging:
+            print("Copy %s" % src)
         img = self.loadImage(src)
         if src in self.loadedImages.keys():
             del self.loadedImages[src]
@@ -158,6 +160,7 @@ class LocalTextureUser:
         img.filepath_raw = trg
         img.update()
         trg,img = self.modifyImage(trg, img)
+        print("Copied %s %s" % (tuple(img.size), trg))
         self.copiedImages[trg] = img
         if "Public" in trg:
             halt
@@ -367,7 +370,6 @@ class DAZ_OT_ResizeTextures(DazPropsOperator, HiddenTextureUser, LocalTextureUse
         scale = int(2**self.steps)
         x,y = img.size
         img.scale(int(x/scale), int(y/scale))
-        print("Scale %s: %s => %s" % (path, (x,y), tuple(img.size)))
         return path, img
 
 #----------------------------------------------------------
