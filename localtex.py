@@ -66,15 +66,15 @@ class LocalTextureUser:
         print("Loaded images")
         for path,img in self.loadedImages.items():
             if img:
-                print("  ", path, img.has_data)
+                print("  ", path, img.has_data, img.get("DazFilePath"))
         print("Copied images")
         for path,img in self.copiedImages.items():
             if img:
-                print("  ", path, img.has_data)
+                print("  ", path, img.has_data, img.get("DazFilePath"))
         print("Removed images")
         for path,img in self.deletedImages.items():
             if img:
-                print("  ", path, img.has_data)
+                print("  ", path, img.has_data, img.get("DazFilePath"))
 
 
     def getLocalPath(self, path):
@@ -224,16 +224,8 @@ class LocalTextureUser:
 
 
     def saveLocalTextures(self, context):
-        self.images = []
-        for ob in self.getMeshes(context):
-            for mat in ob.data.materials:
-                if mat:
-                    if not BLENDER5 or mat.use_nodes:
-                        self.saveNodesInTree(mat.node_tree)
-            for psys in ob.particle_systems:
-                self.saveTextureSlots(psys.settings)
-            dazRna(ob).DazLocalTextures = True
-
+        meshes = self.getMeshes(context)
+        self.getAllImages(meshes)
         for src,img in self.images:
             if src.startswith(self.basepath):
                 print("Already local: %s" % src)
@@ -251,21 +243,33 @@ class LocalTextureUser:
             self.changeImage(src, trg, img)
 
 
-    def saveNodesInTree(self, tree):
-        for node in tree.nodes.values():
-            if node.type == 'TEX_IMAGE':
-                self.saveImage(node.image, False)
-            elif node.type == 'GROUP':
-                self.saveNodesInTree(node.node_tree)
+    def getAllImages(self, meshes):
+        def getNodesInTree(tree):
+            for node in tree.nodes.values():
+                if node.type == 'TEX_IMAGE':
+                    self.saveImage(node.image, False)
+                elif node.type == 'GROUP':
+                    getNodesInTree(node.node_tree)
 
+        def getTextureSlots(mat):
+            for mtex in mat.texture_slots:
+                if mtex:
+                    tex = mtex.texture
+                    if hasattr(tex, "image") and tex.image:
+                        self.saveImage(tex.image, False)
 
-    def saveTextureSlots(self, mat):
-        for mtex in mat.texture_slots:
-            if mtex:
-                tex = mtex.texture
-                if hasattr(tex, "image") and tex.image:
-                    self.saveImage(tex.image, False)
+        self.images = []
+        for ob in meshes:
+            for mat in ob.data.materials:
+                if mat:
+                    if not BLENDER5 or mat.use_nodes:
+                        getNodesInTree(mat.node_tree)
+            for psys in ob.particle_systems:
+                getTextureSlots(psys.settings)
 
+# ---------------------------------------------------------------------
+#   Save local textures
+# ---------------------------------------------------------------------
 
 class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperator):
     bl_idname = "daz.save_local_textures"
@@ -284,6 +288,29 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
         self.saveLocalTextures(context)
         self.printLocalImages()
         self.saveLocalImages()
+
+# ---------------------------------------------------------------------
+#   Restore textures
+# ---------------------------------------------------------------------
+
+class DAZ_OT_RestoreOriginalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperator):
+    bl_idname = "daz.restore_original_textures"
+    bl_label = "Restore Original Textures"
+    bl_description = "Restore the original textures"
+
+    subdir = ""
+
+    def draw(self, context):
+        HiddenTextureUser.draw(self, context)
+
+    def run(self, context):
+        self.initLocalImages()
+        meshes = self.getMeshes(context)
+        self.getAllImages(meshes)
+        for _,img in self.images:
+            filepath = img.get("DazFilePath")
+            if filepath and os.path.exists(filepath):
+                img.filepath = filepath
 
 # ---------------------------------------------------------------------
 #   Resize textures
@@ -345,6 +372,7 @@ def normPath(path):
 
 classes = [
     DAZ_OT_SaveLocalTextures,
+    DAZ_OT_RestoreOriginalTextures,
     DAZ_OT_ResizeTextures,
 ]
 

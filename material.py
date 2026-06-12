@@ -767,6 +767,7 @@ def getImage(url):
             return None
         imgname = os.path.splitext(os.path.basename(filepath))[0]
         img.name = unquote(bpy.path.clean_name(imgname))
+        img["DazFilePath"] = filepath
         LS.images[url] = img
     return img
 
