@@ -770,6 +770,7 @@ class CyclesTree(Tree):
             else:
                 tex = self.multiplyTexs(tex, wttex)
                 self.bump = self.buildBumpMap(weight, tex)
+                self.bumpval, self.bumptex = weight, tex
                 self.linkNormal(self.bump)
         elif mode == 1 and GS.useNormalMap:
             # Normal Map
@@ -793,6 +794,7 @@ class CyclesTree(Tree):
                     self.links.new(colorOutput(tex), self.normal.inputs["Color"])
             else:
                 self.normal = self.buildNormalMap(weight, tex, uvname)
+                self.normalval, self.normaltex = weight, tex
                 if wttex:
                     self.links.new(colorOutput(wttex), self.normal.inputs["Strength"])
                 if self.bump:
