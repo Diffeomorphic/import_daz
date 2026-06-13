@@ -12,19 +12,19 @@ from .error import *
 #-------------------------------------------------------------
 
 class HiddenTextureUser:
-    useHiddenMeshes : BoolProperty(
-        name = "Also Hidden Meshes",
-        description = "Also save textures from hidden meshes",
-        default = True)
+    useAllMeshes : BoolProperty(
+        name = "All Meshes",
+        description = "Affect textures from all meshes in scene, including hidden ones",
+        default = False)
 
     def draw(self, context):
-        self.layout.prop(self, "useHiddenMeshes")
+        self.layout.prop(self, "useAllMeshes")
 
     def getMeshes(self, context):
-        if self.useHiddenMeshes:
+        if self.useAllMeshes:
             return [ob for ob in bpy.data.objects if ob.type == 'MESH']
         else:
-            return getVisibleMeshes(context)
+            return getSelectedMeshes(context)
 
 #-------------------------------------------------------------
 #   Save local textures
