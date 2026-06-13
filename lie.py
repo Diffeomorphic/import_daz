@@ -27,10 +27,14 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
         self.view_from = scn.render.bake.view_from
         self.bake_target = scn.render.bake.target
         self.bake_use_clear = scn.render.bake.use_clear
+        self.samples = scn.cycles.samples
+        self.use_denoising = scn.cycles.use_denoising
         scn.cycles.bake_type = 'EMIT'
         scn.render.bake.view_from = 'ABOVE_SURFACE'
         scn.render.bake.target = 'IMAGE_TEXTURES'
         scn.render.bake.use_clear = True
+        scn.cycles.samples = 1
+        scn.cycles.use_denoising = False
 
 
     def restoreState(self, context):
@@ -39,6 +43,8 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
         scn.render.bake.view_from = self.view_from
         scn.render.bake.target = self.bake_target
         scn.render.bake.use_clear = self.bake_use_clear
+        scn.cycles.samples = self.samples
+        scn.cycles.use_denoising = self.use_denoising
         DazPropsOperator.restoreState(self, context)
 
 
@@ -76,7 +82,8 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
                 ext = words[1]
             else:
                 ext = ".png"
-            bakeimg.filepath = os.path.join(self.texpath, "%s%s" % (name, ext))
+            path = os.path.join(self.texpath, "%s%s" % (name, ext))
+            bakeimg.filepath = normalizePath(path)
             return bakeimg
 
         def makeBakeTree(node, baketree, bakeimg, uvname):
