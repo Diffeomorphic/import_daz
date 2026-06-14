@@ -34,7 +34,6 @@ class LocalTextureUser:
     useSaveLoaded = False
     maxTexLevel = 2
     minTexLevel = 0
-    debugging = False
 
     @classmethod
     def poll(self, context):
@@ -77,33 +76,34 @@ class LocalTextureUser:
         for path,img in self.copiedImages.items():
             if img:
                 print("  ", path, img.has_data,)
-        print("Removed images")
+        print("Deleted images")
         for path,img in self.deletedImages.items():
             if img:
                 print("  ", path, img.has_data)
 
 
     def getLocalPath(self, path):
-        def getRelPath(lpath):
-            words = path.rsplit("/runtime/textures/res", 1)
+        def getRelPath(path, lpath):
+            if lpath.startswith(self.basepath.lower()):
+                for string in ["/textures/original/", "/textures/udim/", "/textures/lie/"]:
+                    words = lpath.rsplit(string, 1)
+                    if len(words) == 2:
+                        return path[-len(words[1]):]
+                words = lpath.rsplit("/textures/res", 1)
+                if len(words) == 2:
+                    return path[-len(words[1]):]
+            words = lpath.rsplit("/runtime/textures/", 1)
             if len(words) == 2:
-                return words[1][2:]
-            words = path.rsplit("/runtime/textures/", 1)
-            if len(words) == 2:
-                return words[1]
-            words = path.rsplit("/textures/original/", 1)
-            if len(words) == 2:
-                return words[1]
-            words = path.rsplit("/textures/res", 1)
-            if len(words) == 2:
-                return words[1][2:]
+                return path[-len(words[1]):]
+            print("NO REL PATH", lpath, self.basepath.lower())
 
         path = normalizePath(path)
-        if path.endswith("<UDIM>"):
+        words = path.split(".jpg")
+        if len(words) > 2 or path.endswith("<UDIM>"):
             msg = ("Bad local path: %s" % path)
             print(msg)
             raise DazError(msg)
-        relpath = getRelPath(path.lower())
+        relpath = getRelPath(path, path.lower())
         if relpath:
             return "%s/%s" % (self.texpath, relpath)
         else:
@@ -130,8 +130,18 @@ class LocalTextureUser:
             for path,img in self.copiedImages.items():
                 try:
                     img.pack()
-                except RuntimeError:
-                    print("FAIL", img.filepath, img.has_data)
+                except RuntimeError as err:
+                    print(err)
+                    #print("FAIL", img.filepath, img.has_data)
+
+
+    def deleteCopiedImages(self):
+        for img in self.copiedImages.values():
+            path = img.filepath_raw
+            if (path.startswith(self.texpath) and
+                os.path.exists(path)):
+                print("Delete", path)
+                os.remove(path)
 
 
     def checkImage(self, path, strict=False):
@@ -149,8 +159,6 @@ class LocalTextureUser:
     def copyImage(self, src, trg):
         src = normalizePath(src)
         trg = normalizePath(trg)
-        if self.debugging:
-            print("Copy %s" % src)
         img = self.loadImage(src)
         if src in self.loadedImages.keys():
             del self.loadedImages[src]
@@ -179,18 +187,16 @@ class LocalTextureUser:
         img = self.loadedImages.get(path)
         if img is None:
             img = self.copiedImages.get(path)
-        if img is None:
-            img = self.deletedImages.get(path)
-            if img:
-                msg = "Image was deleted: %s" % path
-                print(msg)
-                raise DazError(msg)
-        if img is None:
+        if path in self.deletedImages.keys():
+            print("Image was deleted: %s" % path)
+        if False and img is None:
             imgname = os.path.splitext(os.path.basename(path))[0]
             img = bpy.data.images.get(imgname)
             self.loadedImages[path] = img
         if img is None:
             img = bpy.data.images.load(path)
+            print("RELOAD", path)
+            print(img)
             if img is None:
                 msg = ("Image not found: %s" % path)
                 print(msg)
@@ -240,15 +246,7 @@ class LocalTextureUser:
         for src,img in self.images:
             if self.isIrrelevant(src):
                 continue
-            file = bpy.path.basename(src)
-            srclower = normalizePath(src).lower()
-            if (False and "/textures/" in srclower and
-                "/textures/original/" not in srclower):
-                subpath = os.path.dirname(srclower.rsplit("/textures/",1)[1])
-                folder = "%s/%s" % (self.texpath, subpath)
-                trg = "%s/%s" % (folder, file)
-            else:
-                trg = "%s/%s" % (self.texpath, file)
+            trg = self.getLocalPath(src)
             self.changeImage(src, trg, img)
 
 

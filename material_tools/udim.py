@@ -10,7 +10,7 @@ from ..fileutils import MultiFile, ImageFile
 from ..localtex import LocalTextureUser, normPath
 from ..matsel import MaterialSelector
 from ..tree import getFromSocket, XSIZE, YSIZE, YSTEP
-from ..merge_uvs import TileFixer, getTileBase
+from ..merge_uvs import TileFixer
 
 #----------------------------------------------------------
 #   Tiles From Graft
@@ -81,6 +81,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         default = True)
 
     def draw(self, context):
+        LocalTextureUser.draw(self, context)
         self.layout.prop(self, "useFixTextures")
         self.layout.prop(self, "useMergeMaterials")
         if self.useMergeMaterials:
@@ -101,7 +102,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
 
     def run(self, context):
-        self.useSaveGenerated = True
+        #self.useSaveGenerated = True
         self.initLocalImages()
         ob = context.object
         if ob.active_material is None:
@@ -158,7 +159,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             img = actnode.image
             filepath = str(img.filepath)
             imgname = os.path.splitext(img.name)[0]
-            tile,basename = getTileBase(imgname)
+            tile,basename = self.getTileBase(imgname)
             #basename = self.getBaseName(imgname, dazRna(mat).DazUDim)
             if not basename.startswith("T_"):
                 basename = "T_%s" % basename
@@ -198,7 +199,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             keytiles[key] = list(udims.keys())
             if bpy.app.version >= (3, 1, 0):
                 path2,ext2 = os.path.splitext(img.filepath)
-                tile,base = getTileBase(path2)
+                tile,base = self.getTileBase(path2)
                 if base:
                     udimpath = "%s_<UDIM>%s" % (base,ext2)
                     origpaths[udimpath] = str(img.filepath)
@@ -258,9 +259,17 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
                             node.label = actnode.label
                             node.name = actnode.name
         self.printLocalImages()
+        useSaveGenerated = self.useSaveGenerated
+        self.useSaveGenerated = True
         self.saveLocalImages()
         for img in tiledImages:
             img.reload()
+        if not useSaveGenerated:
+            self.useSaveGenerated = False
+            self.saveLocalImages()
+            for img in tiledImages:
+                img.pack()
+            self.deleteCopiedImages()
         dazRna(ob.data).DazTexLevel = 3
 
 
@@ -271,7 +280,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
     def addImage(self, actimg, tile, key):
         from ..material import setColorSpaceNone
         #basename = self.getBaseName(actimg.name, tile)
-        _,basename = getTileBase(actimg.name)
+        _,basename = self.getTileBase(actimg.name)
         if key.endswith(("Factor:Value", "Fac")):
             color = (1,1,1,1)
         elif key.startswith("NORMAL_MAP:Color"):
@@ -343,11 +352,9 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         return texnodes, hasmaps
 
 
-    def getBaseName(self, path, udim):
-        tile,base = getTileBase(os.path.splitext(path)[0])
-        if tile == 1001+udim:
-            return base
-        return path
+    def getTileBase(self, path):
+        from ..merge_uvs import getTileBase
+        return getTileBase(os.path.splitext(path)[0])
 
 
     def updateImage(self, img, basename, udim):
