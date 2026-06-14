@@ -88,13 +88,16 @@ class LocalTextureUser:
                 for string in ["/textures/original/", "/textures/udim/", "/textures/lie/"]:
                     words = lpath.rsplit(string, 1)
                     if len(words) == 2:
-                        return path[-len(words[1]):]
+                        n = len(words[1])
+                        return path[-n:]
                 words = lpath.rsplit("/textures/res", 1)
                 if len(words) == 2:
-                    return path[-len(words[1]):]
+                    n = len(words[1])
+                    return path[-n+2:]
             words = lpath.rsplit("/runtime/textures/", 1)
             if len(words) == 2:
-                return path[-len(words[1]):]
+                n = len(words[1])
+                return path[-n:]
             print("NO REL PATH", lpath, self.basepath.lower())
 
         path = normalizePath(path)
@@ -282,6 +285,7 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
     bl_idname = "daz.save_local_textures"
     bl_label = "Save Local Textures"
     bl_description = "Copy textures to the textures subfolder in the blend file's directory"
+    bl_options = {'UNDO'}
 
     maxTexLevel = 0
     useSaveLoaded = True
@@ -315,21 +319,34 @@ class DAZ_OT_RestoreOriginalTextures(HiddenTextureUser, LocalTextureUser, DazPro
     bl_idname = "daz.restore_original_textures"
     bl_label = "Restore Original Textures"
     bl_description = "Restore the original textures"
+    bl_options = {'UNDO'}
 
     minTexLevel = 1
-    subdir = ""
+    subdir = "/textures/restore"
 
     def draw(self, context):
         HiddenTextureUser.draw(self, context)
 
     def run(self, context):
+        def getOrigPath(img):
+            path = img.get("DazFilePath")
+            if path:
+                return path
+            path = self.getLocalPath(img.filepath)
+            path = "/runtime/textures/%s" % path[nstrip:]
+            return GS.getAbsPath(path)
+
         self.initLocalImages()
+        nstrip = len(self.texpath)
         meshes = self.getMeshes(context)
         self.getAllImages(meshes)
         for _,img in self.images:
-            filepath = img.get("DazFilePath")
+            filepath = getOrigPath(img)
             if filepath and os.path.exists(filepath):
+                if img.packed_file:
+                    img.unpack()
                 img.filepath = filepath
+                img.reload()
         for ob in meshes:
             dazRna(ob.data).DazTexLevel = 0
 
