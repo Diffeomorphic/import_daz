@@ -48,8 +48,14 @@ class LocalTextureUser:
         description = "Save generated images to disk.\nPack them in blend file if this option is disabled",
         default = False)
 
+    reuseExisting : BoolProperty(
+        name = "Reuse Existing Images",
+        description = "Reuse existing local textures instead of regenerating them",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useSaveGenerated")
+        self.layout.prop(self, "reuseExisting")
 
 
     def getMeshes(self, context):
@@ -59,11 +65,12 @@ class LocalTextureUser:
     def initLocalImages(self):
         folder = normalizePath(os.path.dirname(bpy.data.filepath))
         self.texpath = "%s%s" % (folder, self.subdir)
-        self.basepath = "%s/textures" % folder
+        self.basepath = ("%s/textures" % folder).lower()
         print('Save textures to "%s"' % self.texpath)
         self.loadedImages = {}
         self.copiedImages = {}
         self.deletedImages = {}
+        self.ignoredImages = set()
 
 
     def printLocalImages(self):
@@ -84,7 +91,7 @@ class LocalTextureUser:
 
     def getLocalPath(self, path):
         def getRelPath(path, lpath):
-            if lpath.startswith(self.basepath.lower()):
+            if lpath.startswith(self.basepath):
                 for string in ["/textures/original/", "/textures/udim/", "/textures/lie/"]:
                     words = lpath.rsplit(string, 1)
                     if len(words) == 2:
@@ -98,7 +105,7 @@ class LocalTextureUser:
             if len(words) == 2:
                 n = len(words[1])
                 return path[-n:]
-            print("NO REL PATH", lpath, self.basepath.lower())
+            print("NO REL PATH", lpath, self.basepath)
 
         path = normalizePath(path)
         words = path.split(".jpg")
@@ -120,6 +127,10 @@ class LocalTextureUser:
             else:
                 images = self.copiedImages.items()
             for path,img in images:
+                if path in self.ignoredImages:
+                    continue
+                if self.reuseExisting and os.path.exists(path):
+                    continue
                 locpath = self.getLocalPath(path)
                 if locpath:
                     img.filepath_raw = locpath
@@ -131,6 +142,9 @@ class LocalTextureUser:
                         print("Failed to update image:", img.filepath)
         else:
             for path,img in self.copiedImages.items():
+                if path in self.ignoredImages:
+                    print("IGNO", path)
+                    continue
                 try:
                     img.pack()
                 except RuntimeError as err:
@@ -163,26 +177,34 @@ class LocalTextureUser:
         src = normalizePath(src)
         trg = normalizePath(trg)
         img = self.loadImage(src)
+        if self.reuseExisting and os.path.exists(trg):
+            mod,img = self.modifyImage(img, True)
+            img.filepath_raw = trg
+            img.update()
+        else:
+            mod,img = self.modifyImage(img, False)
+            if not mod:
+                self.ignoredImages.add(trg)
+                return False, img
+            img.filepath_raw = trg
+            img.update()
+        img.name = os.path.basename(trg)
         if src in self.loadedImages.keys():
             del self.loadedImages[src]
         if src in self.copiedImages.keys():
             del self.copiedImages[src]
-        self.deletedImages[src] = img
-        img.name = os.path.basename(trg)
-        img.filepath_raw = trg
-        img.update()
-        trg,img = self.modifyImage(trg, img)
         print("Copied %s %s" % (tuple(img.size), trg))
         self.copiedImages[trg] = img
+        self.deletedImages[src] = img
         if "Public" in trg:
             msg = "Expected local image: %s" % trg
             print(msg)
             raise DazError(msg)
-        return img
+        return True, img
 
 
-    def modifyImage(self, path, img):
-        return path, img
+    def modifyImage(self, img, force):
+        return True, img
 
 
     def loadImage(self, path):
@@ -215,7 +237,9 @@ class LocalTextureUser:
         #if not self.checkImage(src):
         #    return None
         if src != trg and not self.imageExists(trg):
-            img = self.copyImage(src, trg)
+            mod,img = self.copyImage(src, trg)
+            if not mod:
+                return img
         if img is None:
             img = img2.copy()
             img.update()
@@ -292,6 +316,7 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
     subdir = "/textures/original"
 
     def draw(self, context):
+        self.layout.prop(self, "reuseExisting")
         HiddenTextureUser.draw(self, context)
 
     def run(self, context):
@@ -306,7 +331,7 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
 
 
     def isIrrelevant(self, path):
-        if path.startswith(self.basepath):
+        if path.lower().startswith(self.basepath):
             print("Already local: %s" % path)
             return True
         return False
@@ -354,29 +379,32 @@ class DAZ_OT_RestoreOriginalTextures(HiddenTextureUser, LocalTextureUser, DazPro
 #   Resize textures
 # ---------------------------------------------------------------------
 
-class DAZ_OT_ResizeTextures(DazPropsOperator, HiddenTextureUser, LocalTextureUser):
-    bl_idname = "daz.resize_textures"
-    bl_label = "Resize Textures"
+class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser):
+    bl_idname = "daz.set_resolution"
+    bl_label = "Set Resolution"
     bl_description = "Replace all textures of selected meshes with resized versions"
     bl_options = {'UNDO'}
 
     resizeAll = True
-    maxTexLevel = 1
+    maxTexLevel = 2
 
-    steps : IntProperty(
-        name = "Steps",
-        description = "Resize original images with this number of steps",
-        min = 1, max = 8,
+    level : IntProperty(
+        name = "Resolution Level",
+        description = "Resize images to this resolution level",
+        min = 0, max = 8,
         default = 2)
 
     def draw(self, context):
         LocalTextureUser.draw(self, context)
         HiddenTextureUser.draw(self, context)
-        self.layout.prop(self, "steps")
+        self.layout.prop(self, "level")
 
 
     def run(self, context):
-        self.subdir = "/textures/res%d" % self.steps
+        if self.level == 0:
+            self.subdir = "/textures/original"
+        else:
+            self.subdir = "/textures/res%d" % self.level
         meshes = self.getMeshes(context)
         self.initLocalImages()
         self.saveLocalTextures(context)
@@ -386,11 +414,33 @@ class DAZ_OT_ResizeTextures(DazPropsOperator, HiddenTextureUser, LocalTextureUse
             dazRna(ob.data).DazTexLevel = 2
 
 
-    def modifyImage(self, path, img):
-        scale = int(2**self.steps)
-        x,y = img.size
-        img.scale(int(x/scale), int(y/scale))
-        return path, img
+    def getLevel(self, path):
+        lpath = path.lower()
+        if lpath.startswith(self.basepath):
+            lpath = lpath[len(self.basepath):]
+            for string in ["/res", "/udim/res", "/lie/res"]:
+                if lpath.startswith(string):
+                    n = int(len(string))
+                    return int(lpath[n])
+            for string in ["/original", "/udim", "/lie"]:
+                return 0
+        return 0
+
+
+    def modifyImage(self, img, force):
+        level = self.getLevel(img.filepath)
+        if level < self.level:
+            scale = int(2**(self.level-level))
+            x,y = img.size
+            img.scale(int(x/scale), int(y/scale))
+            return True, img
+        elif force:
+            scale = int(2**(level-self.level))
+            x,y = img.size
+            img.scale(int(x*scale), int(y*scale))
+            return True, img
+        else:
+            return False, img
 
 #----------------------------------------------------------
 #   Utility
@@ -414,7 +464,7 @@ def normPath(path):
 classes = [
     DAZ_OT_SaveLocalTextures,
     DAZ_OT_RestoreOriginalTextures,
-    DAZ_OT_ResizeTextures,
+    DAZ_OT_SetResolution,
 ]
 
 def register():
