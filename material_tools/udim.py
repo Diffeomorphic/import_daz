@@ -108,14 +108,14 @@ class GenesisTiles:
 
                 "irises" : 4,
                 "lacrimals" : 4,
-                "eyereflection" : 4,
                 "pupils" : 4,
                 "cornea" : 4,
                 "sclera" : 4,
 
-                "eyelashes" : 5,
+                "eyereflection" : 5,
+                "tear" : 5,
 
-                "tear" : 6,
+                "eyelashes" : 6,
             }
 
             nfaces = len(ob.data.polygons)
