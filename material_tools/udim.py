@@ -4,6 +4,7 @@
 
 import bpy
 import os
+import numpy as np
 from ..error import *
 from ..utils import *
 from ..fileutils import MultiFile, ImageFile
@@ -65,9 +66,9 @@ class GenesisTiles:
     def addGenesisTiles(self, ob):
         if (not dazRna(ob.data).DazUdimsGenerated and
             dazRna(ob).DazUrl.lower()) in [
+                "/data/daz 3d/genesis/base/genesis.dsf#geometry",
                 "/data/daz 3d/genesis 2/female/genesis2female.dsf#genesisfemale-1",
-                "/data/daz 3d/genesis 2/male/genesis2male.dsf#genesismale-1"]:
-            print("TYP", dazRna(ob).DazUrl)
+                "/data/daz 3d/genesis 2/male/genesis2male.dsf#genesis2male"]:
             tiles = {
                 "face" : 0,
                 "nostrils" : 0,
@@ -93,7 +94,6 @@ class GenesisTiles:
                 "tongue" : 3,
                 "innermouth" : 3,
 
-                "tear" : 4,
                 "irises" : 4,
                 "lacrimals" : 4,
                 "eyereflection" : 4,
@@ -101,6 +101,8 @@ class GenesisTiles:
                 "sclera" : 4,
 
                 "eyelashes" : 5,
+
+                "tear" : 6,
             }
             uvlayer = ob.data.uv_layers.active
             if uvlayer is None:
@@ -114,7 +116,11 @@ class GenesisTiles:
             for mn,mat in enumerate(ob.data.materials):
                 if mat and mat.node_tree:
                     key = mat.name.lower().split("-", 1)[0]
-                    tile = tiles.get(key)
+                    words = key.split("_", 1)
+                    if len(words) == 2 and words[0].isdigit():
+                        tile = int(words[0]) - 1
+                    else:
+                        tile = tiles.get(key)
                     if tile is not None:
                         loops = [f.loop_indices for f in ob.data.polygons if f.material_index == mn]
                         loops = flatten(loops)
@@ -191,7 +197,6 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
 
     def run(self, context):
-        #self.useSaveGenerated = True
         self.initLocalImages()
         ob = context.object
         if ob.active_material is None:

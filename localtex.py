@@ -83,7 +83,7 @@ class LocalTextureUser:
 
 
     def printLocalImages(self):
-        #return
+        return
         print("Loaded images")
         for path,img in self.loadedImages.items():
             if img:
