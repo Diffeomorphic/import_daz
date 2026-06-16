@@ -109,6 +109,7 @@ class GenesisTiles:
                 "irises" : 4,
                 "lacrimals" : 4,
                 "eyereflection" : 4,
+                "pupils" : 4,
                 "cornea" : 4,
                 "sclera" : 4,
 
@@ -126,7 +127,9 @@ class GenesisTiles:
                         tile = int(words[0]) - 1
                     else:
                         tile = tiles.get(key)
-                    if tile is not None:
+                    if tile is None:
+                        print("Material has no tile: %s" % mat.name)
+                    else:
                         loops = [f.loop_indices for f in ob.data.polygons if f.material_index == mn]
                         loops = flatten(loops)
                         array[loops,0] += tile
