@@ -84,7 +84,7 @@ class DAZ_PT_SetupMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         if not bpy.data.filepath:
             self.layout.label(text = "Save blend file first")
         self.layout.operator("daz.save_local_textures")
-        self.layout.operator("daz.restore_original_textures")
+        self.layout.operator("daz.reload_textures")
         self.layout.operator("daz.set_resolution")
         self.layout.operator("daz.bake_lie")
         self.layout.separator()

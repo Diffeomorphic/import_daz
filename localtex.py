@@ -363,19 +363,48 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
 #   Restore textures
 # ---------------------------------------------------------------------
 
-class DAZ_OT_RestoreOriginalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperator):
-    bl_idname = "daz.restore_original_textures"
-    bl_label = "Restore Original Textures"
-    bl_description = "Restore the original textures"
+class DAZ_OT_ReloadTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperator):
+    bl_idname = "daz.reload_textures"
+    bl_label = "Reload Textures"
+    bl_description = "Reload textures from disk, optionally restore original textures"
     bl_options = {'UNDO'}
 
-    minTexLevel = 1
-    subdir = "/textures/restore"
+    useOriginal : BoolProperty(
+        name = "Restore Original Textures",
+        description = "Restore original textures instead of reloading current textures",
+        default = False)
+
+    useUnpack : BoolProperty(
+        name = "Unpack Images",
+        description = "Unpack packed images before reloading",
+        default = False)
 
     def draw(self, context):
+        self.layout.prop(self, "useOriginal")
+        if not self.useOriginal:
+            self.layout.prop(self, "useUnpack")
         HiddenTextureUser.draw(self, context)
 
     def run(self, context):
+        ob = context.object
+        meshes = self.getMeshes(context)
+        if self.useOriginal:
+            self.restoreOriginal(meshes)
+        else:
+            self.initLocalImages()
+            self.getAllImages(meshes)
+            for _,img in self.foundImages:
+                filepath = bpy.path.abspath(img.filepath)
+                if filepath and os.path.exists(filepath):
+                    if img.packed_file:
+                        if not self.useUnpack:
+                            continue
+                        img.unpack()
+                    img.filepath = filepath
+                    img.update()
+
+
+    def restoreOriginal(self, meshes):
         def getOrigPath(img):
             path = img.get("DazFilePath")
             if path:
@@ -386,7 +415,6 @@ class DAZ_OT_RestoreOriginalTextures(HiddenTextureUser, LocalTextureUser, DazPro
 
         self.initLocalImages()
         nstrip = len(self.texpath)
-        meshes = self.getMeshes(context)
         self.getAllImages(meshes)
         for _,img in self.foundImages:
             filepath = getOrigPath(img)
@@ -470,7 +498,7 @@ def normPath(path):
 
 classes = [
     DAZ_OT_SaveLocalTextures,
-    DAZ_OT_RestoreOriginalTextures,
+    DAZ_OT_ReloadTextures,
     DAZ_OT_SetResolution,
 ]
 
