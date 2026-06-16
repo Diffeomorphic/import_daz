@@ -52,6 +52,7 @@ class DAZ_PT_DebugMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.update_render_settings")
         self.layout.separator()
         self.layout.operator("daz.tiles_from_geograft")
+        self.layout.operator("daz.add_genesis_tiles")
         self.layout.operator("daz.fix_texture_tiles")
         self.layout.operator("daz.set_udims")
         self.layout.separator()

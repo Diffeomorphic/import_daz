@@ -38,6 +38,10 @@ class DAZ_OT_FixTextureTiles(DazPropsOperator, LocalTextureUser, TileFixer):
     bl_description = "Copy textures to the right directory and correct tile numbers.\nTo fix incorrect Genesis 8.1 material names"
     bl_options = {'UNDO'}
 
+    def draw(self, context):
+        LocalTextureUser.draw(self, context)
+        TileFixer.draw(self, context)
+
     def run(self, context):
         ob = context.object
         self.initLocalImages()
@@ -46,10 +50,94 @@ class DAZ_OT_FixTextureTiles(DazPropsOperator, LocalTextureUser, TileFixer):
         self.fixTextures(ob, ob.active_material.name, mattiles)
 
 #----------------------------------------------------------
+#   Add Genesis tiles
+#----------------------------------------------------------
+
+class GenesisTiles:
+    useGenesisTiles : BoolProperty(
+        name = "Add Genesis 1,2 Tiles",
+        description = "Add UDIM tiles for Genesis and Genesis 2 characters",
+        default = True)
+
+    def draw(self, context):
+        self.layout.prop(self, "useGenesisTiles")
+
+    def addGenesisTiles(self, ob):
+        if (not dazRna(ob.data).DazUdimsGenerated and
+            dazRna(ob).DazUrl.lower()) in [
+                "/data/daz 3d/genesis 2/female/genesis2female.dsf#genesisfemale-1",
+                "/data/daz 3d/genesis 2/male/genesis2male.dsf#genesismale-1"]:
+            print("TYP", dazRna(ob).DazUrl)
+            tiles = {
+                "face" : 0,
+                "nostrils" : 0,
+                "lips" : 0,
+
+                "head" : 1,
+                "ears" : 1,
+                "neck" : 1,
+                "hips" : 1,
+                "torso" : 1,
+                "nipples" : 1,
+
+                "shoulders" : 2,
+                "toenails" : 2,
+                "hands" : 2,
+                "fingernails" : 2,
+                "legs" : 2,
+                "forearms" : 2,
+                "feet" : 2,
+
+                "gums" : 3,
+                "teeth" : 3,
+                "tongue" : 3,
+                "innermouth" : 3,
+
+                "tear" : 4,
+                "irises" : 4,
+                "lacrimals" : 4,
+                "eyereflection" : 4,
+                "cornea" : 4,
+                "sclera" : 4,
+
+                "eyelashes" : 5,
+            }
+            uvlayer = ob.data.uv_layers.active
+            if uvlayer is None:
+                return
+            nuvs = uv_length(uvlayer)
+            array = np.zeros(2*nuvs, dtype=float)
+            foreach_get_uv(uvlayer, array)
+            array = array.reshape((nuvs, 2))
+
+            nfaces = len(ob.data.polygons)
+            for mn,mat in enumerate(ob.data.materials):
+                if mat and mat.node_tree:
+                    key = mat.name.lower().split("-", 1)[0]
+                    tile = tiles.get(key)
+                    if tile is not None:
+                        loops = [f.loop_indices for f in ob.data.polygons if f.material_index == mn]
+                        loops = flatten(loops)
+                        array[loops,0] += tile
+            foreach_set_uv(uvlayer, array.ravel())
+            dazRna(ob.data).DazUdimsGenerated = True
+
+
+class DAZ_OT_AddGenesisTiles(DazOperator, GenesisTiles):
+    bl_idname = "daz.add_genesis_tiles"
+    bl_label = "Add Genesis Tiles"
+    bl_description = "Add UDIM tiles to Genesis and Genesis 2 characters"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        ob = context.object
+        self.addGenesisTiles(ob)
+
+#----------------------------------------------------------
 #   Make UDIM materials
 #----------------------------------------------------------
 
-class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelector, TileFixer):
+class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelector, TileFixer, GenesisTiles):
     bl_idname = "daz.make_udim_materials"
     bl_label = "Make UDIM Materials"
     bl_description = "Combine materials of selected mesh into a single UDIM material.\nGeografts must be merged first"
@@ -82,6 +170,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
     def draw(self, context):
         LocalTextureUser.draw(self, context)
+        GenesisTiles.draw(self, context)
         self.layout.prop(self, "useFixTextures")
         self.layout.prop(self, "useMergeMaterials")
         if self.useMergeMaterials:
@@ -107,6 +196,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         ob = context.object
         if ob.active_material is None:
             raise DazError("No active material")
+        if self.useGenesisTiles:
+            self.addGenesisTiles(ob)
         self.saveLocalTextures(context)
         mattiles = self.findMatTiles(ob)
         if self.useFixTextures:
@@ -518,6 +609,7 @@ class DAZ_OT_SetUDims(DazPropsOperator, MaterialSelector):
 classes = [
     DAZ_OT_TilesFromGraft,
     DAZ_OT_FixTextureTiles,
+    DAZ_OT_AddGenesisTiles,
     DAZ_OT_MakeUdimMaterials,
     DAZ_OT_SetUDims,
 ]

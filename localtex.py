@@ -34,6 +34,8 @@ class LocalTextureUser:
     useSaveLoaded = False
     maxTexLevel = 2
     minTexLevel = 0
+    level = 0
+    subdir = "/textures/original"
 
     @classmethod
     def poll(self, context):
@@ -62,6 +64,13 @@ class LocalTextureUser:
         return getSelectedMeshes(context)
 
 
+    def setResSubdir(self):
+        if self.level == 0:
+            self.subdir = "/textures/original"
+        else:
+            self.subdir = "/textures/res%d" % self.level
+
+
     def initLocalImages(self):
         folder = normalizePath(os.path.dirname(bpy.data.filepath))
         self.texpath = "%s%s" % (folder, self.subdir)
@@ -74,7 +83,7 @@ class LocalTextureUser:
 
 
     def printLocalImages(self):
-        return
+        #return
         print("Loaded images")
         for path,img in self.loadedImages.items():
             if img:
@@ -401,10 +410,7 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
 
 
     def run(self, context):
-        if self.level == 0:
-            self.subdir = "/textures/original"
-        else:
-            self.subdir = "/textures/res%d" % self.level
+        self.setResSubdir()
         meshes = self.getMeshes(context)
         self.initLocalImages()
         self.saveLocalTextures(context)

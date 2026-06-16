@@ -18,8 +18,6 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
     bl_description = "Bake layered images of selected meshes to simple textures"
     bl_options = {'UNDO'}
 
-    subdir = "/textures/LIE"
-
     def storeState(self, context):
         DazPropsOperator.storeState(self, context)
         scn = context.scene
@@ -49,6 +47,7 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
 
 
     def run(self, context):
+        self.setResSubdir()
         self.initLocalImages()
         meshes = getSelectedMeshes(context)
         bpy.ops.mesh.primitive_plane_add(size=1)

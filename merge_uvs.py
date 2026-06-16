@@ -322,6 +322,93 @@ class TileFixer:
                 ctree.links.new(skip.outputs["Influence"], node.inputs["Influence"])
 
 
+    def addGenesisTiles(self, ob):
+        def addUdim(tree, udim):
+            if tree is None:
+                return
+            for node in tree.nodes:
+                if node.type == 'TEX_IMAGE' and node.image:
+                    path = normalizePath(bpy.path.abspath(node.image.filepath))
+                    file = os.path.basename(path)
+                    fname,ext = os.path.splitext(file)
+                    tile,base = getTileBase(fname)
+                    if tile is None and base:
+                        folder = os.path.dirname(path)
+                        newfile = "%s_%d%s" % (base, udim, ext)
+                        newpath = normalizePath(os.path.join(folder, newfile))
+                        src = bpy.path.abspath(path)
+                        trg = self.getLocalPath(bpy.path.abspath(newpath))
+                        img = self.changeImage(src, trg, None, node.image)
+                        node.image = img
+                        node.label = "%s_%d" % (base, udim)
+                elif (node.type == 'GROUP' and
+                      node.node_tree.name.startswith(("LIE", "DIMG"))):
+                    addUdim(node.node_tree, udim)
+
+        print("KK", dazRna(ob).DazUrl.lower())
+
+        if (self.useGenesisTiles and
+            not dazRna(ob.data).DazUdimsGenerated and
+            dazRna(ob).DazUrl.lower()) in [
+                "/data/daz 3d/genesis 2/female/genesis2female.dsf#genesisfemale-1",
+                "/data/daz 3d/genesis 2/male/genesis2male.dsf#genesismale-1"]:
+            print("TYP", dazRna(ob).DazUrl)
+            tiles = {
+                "face" : 0,
+                "nostrils" : 0,
+                "lips" : 0,
+
+                "head" : 1,
+                "ears" : 1,
+                "neck" : 1,
+                "hips" : 1,
+                "torso" : 1,
+                "nipples" : 1,
+
+                "shoulders" : 2,
+                "toenails" : 2,
+                "hands" : 2,
+                "fingernails" : 2,
+                "legs" : 2,
+                "forearms" : 2,
+                "feet" : 2,
+
+                "gums" : 3,
+                "teeth" : 3,
+                "tongue" : 3,
+                "innermouth" : 3,
+
+                "tear" : 4,
+                "irises" : 4,
+                "lacrimals" : 4,
+                "eyereflection" : 4,
+                "cornea" : 4,
+                "sclera" : 4,
+
+                "eyelashes" : 5,
+            }
+            uvlayer = ob.data.uv_layers.active
+            if uvlayer is None:
+                return
+            nuvs = uv_length(uvlayer)
+            array = np.zeros(2*nuvs, dtype=float)
+            foreach_get_uv(uvlayer, array)
+            array = array.reshape((nuvs, 2))
+
+            nfaces = len(ob.data.polygons)
+            for mn,mat in enumerate(ob.data.materials):
+                if mat and mat.node_tree:
+                    key = mat.name.lower().split("-", 1)[0]
+                    tile = tiles.get(key)
+                    if tile is not None:
+                        loops = [f.loop_indices for f in ob.data.polygons if f.material_index == mn]
+                        loops = flatten(loops)
+                        array[loops,0] += tile
+                        #addUdim(mat.node_tree, 1001+tile)
+            foreach_set_uv(uvlayer, array.ravel())
+            dazRna(ob.data).DazUdimsGenerated = True
+
+
 def getTileBase(string):
     def getTileBaseFromList(words):
         words.reverse()
