@@ -64,11 +64,23 @@ class GenesisTiles:
         self.layout.prop(self, "useGenesisTiles")
 
     def addGenesisTiles(self, ob):
-        if (not dazRna(ob.data).DazUdimsGenerated and
-            dazRna(ob).DazUrl.lower()) in [
+        if dazRna(ob).DazUrl.lower() in [
                 "/data/daz 3d/genesis/base/genesis.dsf#geometry",
                 "/data/daz 3d/genesis 2/female/genesis2female.dsf#genesisfemale-1",
                 "/data/daz 3d/genesis 2/male/genesis2male.dsf#genesis2male"]:
+            uvlayer = ob.data.uv_layers.active
+            if uvlayer is None:
+                return
+            nuvs = uv_length(uvlayer)
+            array = np.zeros(2*nuvs, dtype=float)
+            foreach_get_uv(uvlayer, array)
+            uvmin = np.min(array)
+            uvmax = np.max(array)
+            if uvmin < 0 or uvmax > 1:
+                print("%s already has tiles" % ob.name)
+                return
+            array = array.reshape((nuvs, 2))
+
             tiles = {
                 "face" : 0,
                 "nostrils" : 0,
@@ -104,13 +116,6 @@ class GenesisTiles:
 
                 "tear" : 6,
             }
-            uvlayer = ob.data.uv_layers.active
-            if uvlayer is None:
-                return
-            nuvs = uv_length(uvlayer)
-            array = np.zeros(2*nuvs, dtype=float)
-            foreach_get_uv(uvlayer, array)
-            array = array.reshape((nuvs, 2))
 
             nfaces = len(ob.data.polygons)
             for mn,mat in enumerate(ob.data.materials):
@@ -126,7 +131,6 @@ class GenesisTiles:
                         loops = flatten(loops)
                         array[loops,0] += tile
             foreach_set_uv(uvlayer, array.ravel())
-            dazRna(ob.data).DazUdimsGenerated = True
 
 
 class DAZ_OT_AddGenesisTiles(DazOperator, GenesisTiles):

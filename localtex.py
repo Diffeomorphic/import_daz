@@ -64,11 +64,24 @@ class LocalTextureUser:
         return getSelectedMeshes(context)
 
 
-    def setResSubdir(self):
-        if self.level == 0:
+    def setResSubdir(self, level):
+        if level == 0:
             self.subdir = "/textures/original"
         else:
-            self.subdir = "/textures/res%d" % self.level
+            self.subdir = "/textures/res%d" % level
+
+
+    def getResLevel(self, path):
+        lpath = path.lower()
+        if lpath.startswith(self.basepath):
+            lpath = lpath[len(self.basepath):]
+            for string in ["/res", "/udim/res", "/lie/res"]:
+                if lpath.startswith(string):
+                    n = int(len(string))
+                    return int(lpath[n])
+            for string in ["/original", "/udim", "/lie"]:
+                return 0
+        return 0
 
 
     def initLocalImages(self):
@@ -76,6 +89,7 @@ class LocalTextureUser:
         self.texpath = "%s%s" % (folder, self.subdir)
         self.basepath = ("%s/textures" % folder).lower()
         print('Save textures to "%s"' % self.texpath)
+        self.foundImages = []
         self.loadedImages = {}
         self.copiedImages = {}
         self.deletedImages = {}
@@ -265,7 +279,7 @@ class LocalTextureUser:
             path = bpy.path.abspath(img.filepath)
             path = bpy.path.reduce_dirs([path])[0]
             path = normalizePath(path)
-            self.images.append((path, img))
+            self.foundImages.append((path, img))
             if isnew:
                 self.copiedImages[path] = img
             else:
@@ -279,7 +293,7 @@ class LocalTextureUser:
     def saveLocalTextures(self, context):
         meshes = self.getMeshes(context)
         self.getAllImages(meshes)
-        for src,img in self.images:
+        for src,img in self.foundImages:
             if self.isIrrelevant(src):
                 continue
             trg = self.getLocalPath(src)
@@ -301,7 +315,7 @@ class LocalTextureUser:
                     if hasattr(tex, "image") and tex.image:
                         self.saveImage(tex.image, False)
 
-        self.images = []
+        self.foundImages = []
         for ob in meshes:
             for mat in ob.data.materials:
                 if mat:
@@ -374,7 +388,7 @@ class DAZ_OT_RestoreOriginalTextures(HiddenTextureUser, LocalTextureUser, DazPro
         nstrip = len(self.texpath)
         meshes = self.getMeshes(context)
         self.getAllImages(meshes)
-        for _,img in self.images:
+        for _,img in self.foundImages:
             filepath = getOrigPath(img)
             if filepath and os.path.exists(filepath):
                 if img.packed_file:
@@ -410,7 +424,7 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
 
 
     def run(self, context):
-        self.setResSubdir()
+        self.setResSubdir(self.level)
         meshes = self.getMeshes(context)
         self.initLocalImages()
         self.saveLocalTextures(context)
@@ -420,21 +434,8 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
             dazRna(ob.data).DazTexLevel = 2
 
 
-    def getLevel(self, path):
-        lpath = path.lower()
-        if lpath.startswith(self.basepath):
-            lpath = lpath[len(self.basepath):]
-            for string in ["/res", "/udim/res", "/lie/res"]:
-                if lpath.startswith(string):
-                    n = int(len(string))
-                    return int(lpath[n])
-            for string in ["/original", "/udim", "/lie"]:
-                return 0
-        return 0
-
-
     def modifyImage(self, img, force):
-        level = self.getLevel(img.filepath)
+        level = self.getResLevel(img.filepath)
         if level < self.level:
             scale = int(2**(self.level-level))
             x,y = img.size

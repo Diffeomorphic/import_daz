@@ -47,9 +47,15 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
 
 
     def run(self, context):
-        self.setResSubdir()
-        self.initLocalImages()
         meshes = getSelectedMeshes(context)
+        self.initLocalImages()
+        self.getAllImages(meshes)
+        if not self.foundImages:
+            return
+        path,img = self.foundImages[0]
+        level = self.getResLevel(path)
+        self.setResSubdir(level)
+        self.initLocalImages()
         bpy.ops.mesh.primitive_plane_add(size=1)
         bakeplane = context.object
         activateObject(context, bakeplane)

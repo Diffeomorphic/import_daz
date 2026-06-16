@@ -291,7 +291,6 @@ if DAZ_PROPS:
         DazFullyRigid : BoolProperty()
         DazOptimizedDrivers : BoolProperty()
         DazBulges : CollectionProperty(type = DazBulgeGroup)
-        DazUdimsGenerated : BoolProperty()
 
 
     class DazImporterScene(DazImporterGroup):
@@ -632,7 +631,6 @@ def registerDazProperties():
     bpy.types.Mesh.DazFullyRigid = BoolProperty()
     bpy.types.Mesh.DazOptimizedDrivers = BoolProperty()
     bpy.types.Mesh.DazBulges = CollectionProperty(type = DazBulgeGroup)
-    bpy.types.Mesh.DazUdimsGenerated = BoolProperty()
 
     bpy.types.Scene.DazPreferredRoot = EnumProperty(
         items = getRootEnums,
