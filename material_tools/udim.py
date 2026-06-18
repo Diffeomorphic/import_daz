@@ -171,9 +171,14 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             "or for textures without tile info"),
         default = True)
 
-    useMergeMaterials : BoolProperty(
-        name = "Merge Materials",
-        description = "Merge materials and not only textures.\nThis may cause some information loss.\nIf not, Merge Materials can be called afterwards",
+    useOverwrite : BoolProperty(
+        name = "Overwrite Materials",
+        description = "Overwrite selected materials",
+        default = False)
+
+    useSelectedOnly : BoolProperty(
+        name = "Only Selected Materials",
+        description = "Only create udim textures for selected materials",
         default = False)
 
     useStackShells : BoolProperty(
@@ -185,13 +190,15 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         LocalTextureUser.draw(self, context)
         GenesisTiles.draw(self, context)
         self.layout.prop(self, "useFixTextures")
-        self.layout.prop(self, "useMergeMaterials")
-        if self.useMergeMaterials:
-            self.layout.prop(self, "useStackShells")
         self.drawActive(context)
         self.layout.prop(self, "useGuessMissing")
-        self.layout.label(text="Materials To Merge")
-        MaterialSelector.draw(self, context)
+        self.layout.prop(self, "useSelectedOnly")
+        self.layout.prop(self, "useOverwrite")
+        if self.useOverwrite:
+            self.layout.prop(self, "useStackShells")
+            self.layout.label(text = "Materials to overwrite")
+        if self.useSelectedOnly or self.useOverwrite:
+            MaterialSelector.draw(self, context)
 
 
     def invoke(self, context, event):
@@ -220,10 +227,11 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         usedtiles = set()
         actmat = None
         for mn,umat in enumerate(self.umats):
-            if umat.bool:
+            if umat.bool or not self.useSelectedOnly:
                 mat = ob.data.materials[umat.name]
                 mats.append(mat)
-                mnums.append(mn)
+                if umat.bool:
+                    mnums.append(mn)
                 if mn in mattiles.keys():
                     usedtiles.add(mattiles[mn]-1001)
                 if actmat is None or mat.name == ob.active_material.name:
@@ -242,7 +250,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             if mat == actmat:
                 hasmapping = hasmaps
 
-        if self.useMergeMaterials and self.useStackShells:
+        if self.useOverwrite and self.useStackShells:
             shells0 = self.getShells(mats)
             actshells = self.getShells([actmat])
             shells = {}
@@ -336,7 +344,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         for mat in mats:
             self.addSkipZeroUvs(mat)
 
-        if self.useMergeMaterials:
+        if self.useOverwrite:
             for f in ob.data.polygons:
                 if f.material_index in mnums:
                     f.material_index = amnum

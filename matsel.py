@@ -58,7 +58,6 @@ class MaterialSelector:
         ob = context.object
         box = self.layout.box()
         box.label(text="Active Material: %s" % ob.active_material.name)
-        self.layout.separator()
 
 
     def invoke(self, context, event):
