@@ -73,9 +73,14 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
 
     def bakeLieGroups(self, context, ob, bakeplane, bakemat):
         def findTexImage(tree):
+            images = []
             for node in tree.nodes:
                 if node.type == 'TEX_IMAGE' and node.image:
-                    return node, node.image
+                    images.append((node, node.image))
+            if images:
+                return images[0]
+            else:
+                return None, None
 
         def makeBakeImage(node, img):
             width,height = img.size
@@ -87,7 +92,8 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
                 ext = words[1]
             else:
                 ext = ".png"
-            path = os.path.join(self.texpath, "%s%s" % (name, ext))
+            path = self.getLocalPath(img.filepath)
+            path = os.path.join(os.path.dirname(path), "%s%s" % (name, ext))
             bakeimg.filepath = normalizePath(path)
             return bakeimg
 
