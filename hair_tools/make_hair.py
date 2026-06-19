@@ -1017,14 +1017,14 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
             
             if bpy.app.version >= (5,2,0):
                 if mod:
-                    getattr(mod.properties.inputs, "Input_3").value = self.hairRadius * 1e-3
-                    getattr(mod.properties.inputs, "Input_2").value = self.hairShape
+                    mod.properties.inputs.Input_3.value = self.hairRadius * 1e-3
+                    mod.properties.inputs.Input_2.value = self.hairShape
                 if len(strands) < self.childThreshold and self.nRenderChildren > 0:
                     mod = addMod(ob, "Duplicate Hair Curves")
                     if mod:
-                        getattr(mod.properties.inputs, "Input_2").value = self.nRenderChildren
-                        getattr(mod.properties.inputs, "Input_4").value = self.viewFactor
-                        getattr(mod.properties.inputs, "Input_5").value = self.childRadius * 1e-3
+                        mod.properties.inputs.Input_2.value = self.nRenderChildren
+                        mod.properties.inputs.Input_4.value = self.viewFactor
+                        mod.properties.inputs.Input_5.value = self.childRadius * 1e-3
             else:
                 if mod:
                     socket = ("Input" if "Input_2" in mod.keys() else "Socket")
