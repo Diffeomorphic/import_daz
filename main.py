@@ -1032,8 +1032,6 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
                 useExpressions = (self.useUnits or self.useExpressions or self.useVisemes)
                 if (useExpressions or self.useFacs or self.useJcms):
                     bpy.ops.daz.import_baked_correctives(
-                        onMorphSuffix = self.onMorphSuffix,
-                        morphSuffix = self.morphSuffix,
                         useExpressions = useExpressions,
                         useFacs = self.useFacs,
                         useJcms = self.useJcms,
