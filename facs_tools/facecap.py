@@ -51,7 +51,7 @@ class DAZ_OT_ImportFaceCap(HeadUser, FACSImporter, SingleFile, DazOperator):
                 elif line[0:5] == "info,":
                     pass
                 else:
-                    raise DazError("Illegal syntax:\%s     " % line)
+                    raise DazError("Illegal syntax:\n  %s" % line)
 
 #----------------------------------------------------------
 #   Initialize

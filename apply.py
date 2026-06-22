@@ -4,6 +4,7 @@
 
 import bpy
 import numpy as np
+import bmesh
 from .utils import *
 from .error import *
 
@@ -19,7 +20,7 @@ class DAZ_OT_ApplyTransforms(DazOperator):
 
     def run(self, context):
         objects = getSelectedObjectAndChildren(context)
-        applyTransforms(objects)
+        applyTransforms(context, objects)
 
 
 def getSelectedObjectAndChildren(context):
@@ -34,36 +35,83 @@ def getSelectedObjectAndChildren(context):
     return set(objects)
 
 
-def applyTransforms(objects):
+def applyTransforms(context, objects):
     print("Apply transforms")
     objects = set(objects)
-    bpy.ops.object.select_all(action='DESELECT')
     wmats = []
-    vpmats = []
+    rigidFollow = {}
+    applies = []
     status = []
     for ob in objects:
         try:
             status.append((ob, ob.hide_get(), ob.hide_select))
             ob.hide_set(False)
             ob.hide_select = False
-            if ob.parent and ob.parent_type == 'BONE':
+            par = ob.parent
+            if par and ob.parent_type == 'BONE':
                 wmats.append((ob, ob.matrix_world.copy()))
-            elif ob.parent and ob.parent_type.startswith('VERTEX'):
-                vpmats.append((ob, ob.parent.matrix_basis.copy()))
+            elif par and ob.parent_type.startswith('VERTEX'):
+                follows = rigidFollow.get(par.name)
+                if follows is None:
+                    follows = rigidFollow[par.name] = (par, [])
+                follows[1].append((ob, tuple(ob.parent_vertices)))
             elif ob.type in ['MESH', 'ARMATURE']:
-                selectSet(ob, True)
+                applies.append(ob)
         except ReferenceError:
             pass
 
     removeObjectDrivers(objects)
+    if rigidFollow:
+        bpy.ops.object.select_all(action='DESELECT')
+        for par,follow in rigidFollow.values():
+            for ob,pverts in follow:
+                selectSet(ob, True)
+        bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+    bpy.ops.object.select_all(action='DESELECT')
+    for ob in applies:
+        selectSet(ob, True)
     safeTransformApply()
     for ob,wmat in wmats:
         setWorldMatrix(ob, wmat)
-    for ob,vpmat in vpmats:
-        ob.matrix_basis = vpmat.inverted() @ ob.matrix_basis
+    for mesh,data in rigidFollow.values():
+        makeRigidFollow(context, mesh, data, False)
     for ob,hide,select in status:
         ob.hide_set(hide)
         ob.hide_select = select
+
+
+def makeRigidFollow(context, mesh, data, clear=True):
+    if not data:
+        return
+    objects = [ob for ob,refverts in data]
+    hides = unhide(objects)
+    if clear and activateObject(context, objects[0]):
+        for ob in objects:
+            ob.select_set(True)
+        bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+    if activateObject(context, mesh):
+        for ob,refverts in data:
+            ob.select_set(True)
+            if not refverts:
+                print("No refverts", ob.name, mesh.name)
+                bpy.ops.object.parent_set(type='VERTEX_TRI')
+            else:
+                setVertexParent(mesh, refverts)
+            ob.select_set(False)
+    rehide(hides)
+
+
+def setVertexParent(mesh, refverts):
+    setMode('EDIT')
+    bpy.ops.mesh.select_all(action='DESELECT')
+    bm = bmesh.from_edit_mesh(mesh.data)
+    bm.verts.ensure_lookup_table()
+    for vn in refverts:
+        bm.verts[vn].select = True
+    bmesh.update_edit_mesh(mesh.data)
+    bm.free()
+    bpy.ops.object.vertex_parent_set()
+    setMode('OBJECT')
 
 #-------------------------------------------------------------
 #   Apply rest pose
@@ -99,7 +147,7 @@ class DAZ_OT_ApplyRestPoses(CollectionShower, DazPropsOperator, IsArmature):
         rig = context.object
         objects = getSelectedObjectAndChildren(context)
         if self.useApplyTransforms:
-            applyTransforms(objects)
+            applyTransforms(context, objects)
         tied = applyRestPoses(context, rig, self.useMergeTiedBones)
         if self.useApplyShapekeys:
             for ob in objects:

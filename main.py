@@ -182,7 +182,8 @@ class DazLoader:
             asset.postbuild()
 
         for inst,mesh,objects in LS.rigidFollow.values():
-            inst.makeRigidFollow(context, mesh, objects)
+            from .apply import makeRigidFollow
+            makeRigidFollow(context, mesh, objects)
 
         from .node import finishNodeInstances
         finishNodeInstances(context)
@@ -914,7 +915,7 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
 
         if self.useApplyTransforms:
             from .apply import applyTransforms
-            applyTransforms(objects + hdmeshes)
+            applyTransforms(context, objects + hdmeshes)
 
         if mainRig and activateObject(context, mainRig):
             if self.useEliminateEmpties:

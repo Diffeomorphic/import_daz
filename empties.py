@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-import bmesh
 from .utils import *
 from .error import *
 
@@ -74,6 +73,7 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
 
 
     def eliminateEmpties(self, empty, context, sub, coll):
+        from .apply import setVertexParent
         deletes = []
         elim = self.doEliminate(empty)
         if elim:
@@ -119,16 +119,7 @@ class DAZ_OT_EliminateEmpties(DazPropsOperator):
                         parverts = empty.parent_vertices
                     else:
                         parverts = [empty.parent_vertices[0]]
-                    setMode('EDIT')
-                    bpy.ops.mesh.select_all(action='DESELECT')
-                    bm = bmesh.from_edit_mesh(par.data)
-                    bm.verts.ensure_lookup_table()
-                    for vn in parverts:
-                        bm.verts[vn].select = True
-                    bmesh.update_edit_mesh(par.data)
-                    bm.free()
-                    bpy.ops.object.vertex_parent_set()
-                    setMode('OBJECT')
+                    setVertexParent(par, parverts)
             else:
                 raise DazError("Unknown parent type: %s %s" % (child.name, empty.parent_type))
         for empty in set(deletes):

@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
-import bmesh
 import numpy as np
 from mathutils import Matrix, Vector, Euler
 from collections import OrderedDict
@@ -552,35 +551,6 @@ class Instance(Accessor, Channels, SimNode):
         if self.dynhairflw:
             self.dynhairflw.build(context)
 
-
-    def makeRigidFollow(self, context, mesh, data):
-        if not data:
-            return
-        objects = [ob for ob,refverts in data]
-        hides = unhide(objects)
-        if activateObject(context, objects[0]):
-            for ob in objects:
-                ob.select_set(True)
-            bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
-        if activateObject(context, mesh):
-            for ob,refverts in data:
-                ob.select_set(True)
-                if not refverts:
-                    print("No refverts", ob.name, mesh.name)
-                    bpy.ops.object.parent_set(type='VERTEX_TRI')
-                else:
-                    setMode('EDIT')
-                    bpy.ops.mesh.select_all(action='DESELECT')
-                    bm = bmesh.from_edit_mesh(mesh.data)
-                    bm.verts.ensure_lookup_table()
-                    for vn in refverts:
-                        bm.verts[vn].select = True
-                    bmesh.update_edit_mesh(mesh.data)
-                    bm.free()
-                    bpy.ops.object.vertex_parent_set()
-                    setMode('OBJECT')
-                ob.select_set(False)
-        rehide(hides)
 
     def formulate(self, key, value):
         pass
