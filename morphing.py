@@ -497,6 +497,8 @@ class MorphLoader(LoadMorph, PosableMaker):
     category = ""
     adjuster = None
     bodypart = "Face"
+    onMorphSuffix = 'NONE'
+    morphSuffix = ""
 
     useAdjusters : BoolProperty(
         name = "Use Adjusters",
@@ -1487,7 +1489,7 @@ class DAZ_OT_ImportStandardMorphs(DazPropsOperator, StandardMorphLoader, MorphTy
 #   Custom Morph Loader
 #------------------------------------------------------------------------
 
-class CustomMorphLoader(MorphSuffix, MorphLoader):
+class CustomMorphLoader(MorphLoader):
     morphset = "Custom"
     hideable = True
     category = ""
@@ -1601,7 +1603,7 @@ class PropDrivers:
 #   Import custom morphs
 #------------------------------------------------------------------------
 
-class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, CustomMorphLoader, DazFile, MultiFile, IsMeshArmature):
+class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, MorphSuffix, CustomMorphLoader, DazFile, MultiFile, IsMeshArmature):
     bl_idname = "daz.import_custom_morphs"
     bl_label = "Import Custom Morphs"
     bl_description = "Import selected morphs from native DAZ files (*.duf, *.dsf)"
@@ -1988,7 +1990,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
         self.layout.prop(self, "useFacs")
         self.layout.prop(self, "useJcms")
         self.layout.prop(self, "ignoreStandardMorphs")
-        MorphSuffix.draw(self, context)
+        #MorphSuffix.draw(self, context)
 
     excluded = [folder.lower() for folder in []]
         #["/data/DAZ 3D/Genesis 9/Base/Morphs/DAZ 3D/Base Proportion"]]
@@ -2201,7 +2203,7 @@ class RigidTransfer:
             self.layout.prop(self, "ignoreRigidity")
 
 
-class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, CustomMorphLoader, RigidTransfer, IsMeshArmature):
+class DAZ_OT_ImportDazFavoMorphs(DazPropsOperator, ScanFinder, MorphSuffix, CustomMorphLoader, RigidTransfer, IsMeshArmature):
     bl_idname = "daz.import_daz_favorites"
     bl_label = "Import DAZ Favorites"
     bl_description = "Import custom morphs marked as favorites in DAZ Studio"
