@@ -913,14 +913,14 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
                 mainMesh = None
             print(msg)
 
+        if self.useEliminateEmpties and mainRig and activateObject(context, mainRig):
+            bpy.ops.daz.eliminate_empties(useAllEmpties = False)
+
         if self.useApplyTransforms:
             from .apply import applyTransforms
             applyTransforms(context, objects + hdmeshes)
 
         if mainRig and activateObject(context, mainRig):
-            if self.useEliminateEmpties:
-                bpy.ops.daz.eliminate_empties(useAllEmpties = False)
-
             # Merge rigs
             # Rigs must be merged before finding face meshes
             for rig in rigs[1:]:

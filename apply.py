@@ -4,7 +4,6 @@
 
 import bpy
 import numpy as np
-import bmesh
 from .utils import *
 from .error import *
 
@@ -38,7 +37,19 @@ def getSelectedObjectAndChildren(context):
 def applyTransforms(context, objects):
     print("Apply transforms")
     objects = set(objects)
+    parents = set()
+    for ob in objects:
+        try:
+            if ob.parent:
+                parents.add(ob.parent)
+        except ReferenceError as err:
+            print(err)
+            pass
+    vparents = set([par for par in parents if par.parent and par.parent_type.startswith('VERTEX')])
+    if vparents:
+        objects = set(list(objects) + list(vparents))
     wmats = []
+    vpmats = {}
     rigidFollow = {}
     applies = []
     status = []
@@ -55,6 +66,7 @@ def applyTransforms(context, objects):
                 if follows is None:
                     follows = rigidFollow[par.name] = (par, [])
                 follows[1].append((ob, tuple(ob.parent_vertices)))
+                vpmats[ob.name] = ob.matrix_world.copy()
             elif ob.type in ['MESH', 'ARMATURE']:
                 applies.append(ob)
         except ReferenceError:
@@ -102,13 +114,14 @@ def makeRigidFollow(context, mesh, data, clear=True):
 
 
 def setVertexParent(mesh, refverts):
+    from bmesh import from_edit_mesh, update_edit_mesh
     setMode('EDIT')
     bpy.ops.mesh.select_all(action='DESELECT')
-    bm = bmesh.from_edit_mesh(mesh.data)
+    bm = from_edit_mesh(mesh.data)
     bm.verts.ensure_lookup_table()
     for vn in refverts:
         bm.verts[vn].select = True
-    bmesh.update_edit_mesh(mesh.data)
+    update_edit_mesh(mesh.data)
     bm.free()
     bpy.ops.object.vertex_parent_set()
     setMode('OBJECT')

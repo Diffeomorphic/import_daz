@@ -463,6 +463,9 @@ def deleteObjects(context, objects):
                 users = ob.data.users
             else:
                 users = 0
+            for child in list(ob.children):
+                print("DELP", child, ob)
+                child.parent = None
             unlinkAll(ob, True)
             bpy.data.objects.remove(ob)
             if users == 1:

@@ -5,7 +5,6 @@
 from mathutils import Vector, Matrix
 import os
 import bpy
-import bmesh
 import numpy as np
 from collections import OrderedDict
 from .asset import Asset, normalizeRef
@@ -1462,6 +1461,7 @@ class Geometry(Asset, Channels):
 
     def creaseEdges(self, context, ob):
         if self.edge_weights:
+            from bmesh import from_edit_mesh, update_edit_mesh
             from .tables import getVertEdges
             vertedges = getVertEdges(ob)
             weights = {}
@@ -1474,7 +1474,7 @@ class Geometry(Asset, Channels):
             if not BLENDER3:
                 bpy.ops.geometry.attribute_add(name='crease_edge', domain='EDGE')
             setMode('EDIT')
-            bm = bmesh.from_edit_mesh(ob.data)
+            bm = from_edit_mesh(ob.data)
             bm.edges.ensure_lookup_table()
             if BLENDER3:
                 crease = bm.edges.layers.crease.verify()
@@ -1483,7 +1483,7 @@ class Geometry(Asset, Channels):
             for en,w in weights.items():
                 e = bm.edges[en]
                 e[crease] = min(1.0, w/level)
-            bmesh.update_edit_mesh(ob.data)
+            update_edit_mesh(ob.data)
             setMode('OBJECT')
             self.edge_weights = []
 

@@ -868,9 +868,6 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
                 nanim = { "url" : url, "keys" : anim["keys"] }
                 nanims[obname].append(nanim)
 
-        #for obname,anims in nanims.items():
-        #    print("OB", obname, len(anims))
-
         return objects, nanims
 
 
