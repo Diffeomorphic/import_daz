@@ -99,14 +99,13 @@ class PbrTree(CyclesTree):
     def buildLayer(self, uvname):
         self.column = 3
         self.buildNormal(uvname)
-        if LS.materialMethod != 'FBX_COMPATIBLE':
+        if LS.materialMethod == 'EXTENDED_PRINCIPLED':
             self.buildBump(uvname)
+            self.buildDetail(uvname)
         self.pbr = self.diffuse = self.addNode("ShaderNodeBsdfPrincipled", col=5)
         self.cycles = self.pbr
         self.linkPBRNormal(self.pbr)
         self.column = 4
-        if LS.materialMethod == 'EXTENDED_PRINCIPLED':
-            self.buildDetail(uvname)
         self.buildPBRNode(uvname)
         self.postPBR = False
         self.column = 7

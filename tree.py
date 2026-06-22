@@ -309,7 +309,7 @@ NodeSize = {
     "FRESNEL" : 6,
     "MAPPING" : 15,
     "BEVEL" : 7,
-    "NORMAL_MAP" : 7,
+    "NORMAL_MAP" : 9,
     "BUMP" : 8,
     "NEW_GEOMETRY" : 7,
     "HUE_SAT" : 7,
