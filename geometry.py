@@ -689,25 +689,22 @@ def addMultires(context, ob, hdob, strict, subdivlevel, geo):
     mod = hdob.modifiers.new("Multires", 'MULTIRES')
     for n in range(nmods-1):
         bpy.ops.object.modifier_move_up(modifier=mod.name)
-    ok = True
     nlevels = 0
     if subdivlevel is None:
         try:
             bpy.ops.object.multires_rebuild_subdiv(modifier="Multires")
             nlevels = mod.levels
         except RuntimeError:
-            ok = False
+            pass
     else:
-        for n in range(subdivlevel):
+        nverts = len(ob.data.vertices)
+        while len(hdob.data.vertices) > nverts:
             try:
                 bpy.ops.object.multires_unsubdivide(modifier="Multires")
-                nlevels = n+1
+                nlevels += 1
             except RuntimeError:
-                ok = False
-            if not ok:
-                print("Failed to unsubdive %d of %d levels" % (n, subdivlevel))
-                break
-    if ok:
+                pass
+    if nlevels > 0:
         hdfinger = getFingerPrint(hdob)
         if hdfinger == finger or not strict:
             if GS.verbosity >= 3:
