@@ -287,19 +287,26 @@ def buildBakedMorph(inst, ref, value):
         file = unquote(file)
         raw = rawProp(raw)
         final = finalProp(raw)
-        rig.data[final] = value
+        rig.data[final] = value + rig.data.get(final, 0.0)
         if file not in dazRna(rig).DazBakedFiles.keys():
             pg = dazRna(rig).DazBakedFiles.add()
             pg.name = file
             pg.f = value
             if GS.verbosity > 2 and not ES.easy:
                 print("Baked morph file (%s): %s" % (rig.name, file))
-        pg = dazRna(rig).DazBaked.add()
-        pg.name = raw
-        pg.text = raw
-        pg = dazRna(rig).DazBakedValue.add()
-        pg.name = raw
-        pg.f = value
+        pgs = dazRna(rig).DazBaked
+        if raw not in pgs.keys():
+            pg = pgs.add()
+            pg.name = raw
+            pg.text = raw
+        pgs = dazRna(rig).DazBakedValue
+        pg = pgs.get(raw)
+        if pg is None:
+            pg = pgs.add()
+            pg.name = raw
+            pg.f = value
+        else:
+            pg.f += value
 
 #-------------------------------------------------------------
 #   Formula
