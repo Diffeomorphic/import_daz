@@ -247,11 +247,18 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         description = "Add shell groups to UDIM material",
         default = True)
 
+    imageSize : IntProperty(
+        name = "Image Size",
+        description = "2-log of size of generated images",
+        min = 0, max = 13,
+        default = 6)
+
     def draw(self, context):
         LocalTextureUser.draw(self, context)
         GenesisTiles.draw(self, context)
         self.layout.prop(self, "useFixTextures")
         self.drawActive(context)
+        self.layout.prop(self, "imageSize")
         self.layout.prop(self, "useGuessMissing")
         self.layout.prop(self, "useSelectedOnly")
         self.layout.prop(self, "useOverwrite")
@@ -446,7 +453,8 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
         imgname = self.makeImageName(basename, tile, actimg)
         src,trg = self.getTargetPath(actimg, basename, tile)
-        img = bpy.data.images.new(imgname, 64, 64)
+        size = 2**self.imageSize
+        img = bpy.data.images.new(imgname, size, size)
         img.generated_color = color
         setColorSpaceNone(img)
         img.filepath_raw = trg
