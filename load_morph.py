@@ -1541,8 +1541,7 @@ class LoadMorph(DriverUser):
             for var in propDriver.variables:
                 var.create(fcu.driver.variables.new())
         if (not string.startswith(("clamp", "smoothstep")) and
-            self.currentAsset and
-            bpy.app.version >= (2,93,0)):
+            self.currentAsset):
             words = string.split("else ")
             if len(words) == 3:
                 words = words[1].split(" if")

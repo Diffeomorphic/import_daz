@@ -147,10 +147,71 @@ class DAZ_OT_AddGenesisTiles(DazOperator, GenesisTiles):
         self.addGenesisTiles(ob)
 
 #----------------------------------------------------------
+#   Overwrite materials
+#----------------------------------------------------------
+
+class Overwriter:
+    def getMaterials(self, ob, mattiles):
+        mats = []
+        mnums = []
+        usedtiles = set()
+        actmat = None
+        for mn,umat in enumerate(self.umats):
+            if umat.bool or not self.useSelectedOnly:
+                mat = ob.data.materials[umat.name]
+                mats.append(mat)
+                if umat.bool:
+                    mnums.append(mn)
+                if mn in mattiles.keys():
+                    usedtiles.add(mattiles[mn]-1001)
+                if actmat is None or mat.name == ob.active_material.name:
+                    actmat = mat
+                    actmnum = mn
+                    acttile = 1001 + dazRna(mat).DazUDim
+        if actmat is None:
+            raise DazError("No materials selected")
+        return actmat, actmnum, acttile, mats, mnums, usedtiles
+
+
+    def overwrite(self, ob, actmnum, mnums):
+        for f in ob.data.polygons:
+            if f.material_index in mnums:
+                f.material_index = actmnum
+        mnums.reverse()
+        for mn in mnums:
+            if mn != actmnum:
+                ob.data.materials.pop(index=mn)
+
+
+class DAZ_OT_OverwriteMaterials(DazPropsOperator, MaterialSelector, Overwriter):
+    bl_idname = "daz.overwrite_materials"
+    bl_label = "Overwrite Materials"
+    bl_description = "Overwrite selected materials with the active material"
+    bl_options = {'UNDO'}
+
+    useSelectedOnly = True
+
+    def draw(self, context):
+        self.drawActive(context)
+        MaterialSelector.draw(self, context)
+
+    def invoke(self, context, event):
+        self.setupMaterialSelector(context)
+        return DazPropsOperator.invoke(self, context, event)
+
+    def isDefaultActive(self, mat, ob):
+        return self.isSkinRedMaterial(mat)
+
+    def run(self, context):
+        ob = context.object
+        actmat, actmnum, acttile, mats, mnums, usedtiles = self.getMaterials(ob, {})
+        self.overwrite(ob, actmnum, mnums)
+
+#----------------------------------------------------------
 #   Make UDIM materials
 #----------------------------------------------------------
 
-class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelector, TileFixer, GenesisTiles):
+class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelector, TileFixer, GenesisTiles, Overwriter):
     bl_idname = "daz.make_udim_materials"
     bl_label = "Make UDIM Materials"
     bl_description = "Combine materials of selected mesh into a single UDIM material.\nGeografts must be merged first"
@@ -195,7 +256,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         self.layout.prop(self, "useSelectedOnly")
         self.layout.prop(self, "useOverwrite")
         if self.useOverwrite:
-            self.layout.prop(self, "useStackShells")
+            #self.layout.prop(self, "useStackShells")
             self.layout.label(text = "Materials to overwrite")
         if self.useSelectedOnly or self.useOverwrite:
             MaterialSelector.draw(self, context)
@@ -222,25 +283,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         if self.useFixTextures:
             self.fixTextures(ob, ob.active_material.name, mattiles)
 
-        mats = []
-        mnums = []
-        usedtiles = set()
-        actmat = None
-        for mn,umat in enumerate(self.umats):
-            if umat.bool or not self.useSelectedOnly:
-                mat = ob.data.materials[umat.name]
-                mats.append(mat)
-                if umat.bool:
-                    mnums.append(mn)
-                if mn in mattiles.keys():
-                    usedtiles.add(mattiles[mn]-1001)
-                if actmat is None or mat.name == ob.active_material.name:
-                    actmat = mat
-                    amnum = mn
-                    acttile = 1001 + dazRna(mat).DazUDim
-
-        if actmat is None:
-            raise DazError("No materials selected")
+        actmat, actmnum, acttile, mats, mnums, usedtiles = self.getMaterials(ob, mattiles)
 
         texnodes = {}
         hasmapping = False
@@ -345,14 +388,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             self.addSkipZeroUvs(mat)
 
         if self.useOverwrite:
-            for f in ob.data.polygons:
-                if f.material_index in mnums:
-                    f.material_index = amnum
-
-            mnums.reverse()
-            for mn in mnums:
-                if mn != amnum:
-                    ob.data.materials.pop(index=mn)
+            self.overwrite(ob, actmnum, mnums)
             if self.useStackShells:
                 self.addShells(actmat, shells)
         else:
@@ -631,6 +667,7 @@ classes = [
     DAZ_OT_FixTextureTiles,
     DAZ_OT_AddGenesisTiles,
     DAZ_OT_MakeUdimMaterials,
+    DAZ_OT_OverwriteMaterials,
     DAZ_OT_SetUDims,
 ]
 
