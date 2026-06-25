@@ -165,6 +165,34 @@ class Overwriter:
         return actmat, actmnum, acttile, mats, mnums, usedtiles
 
 
+    def getShells(self, mats):
+        from ..tree import getFromNode
+        from ..matsel import isShellNode
+        nodes = {}
+        for mat in mats:
+            if mat.node_tree:
+                n = len(mat.name)
+                for node in mat.node_tree.nodes:
+                    if isShellNode(node):
+                        tree = node.node_tree
+                        if tree.name[-n:] == mat.name:
+                            shname = tree.name[:-n-1]
+                            uvmap = getFromNode(node.inputs["UV"])
+                            if uvmap:
+                                nodes[shname] = (node, uvmap.uv_map)
+        return nodes
+
+
+    def getAllShells(self, actmat, mats):
+        shells0 = self.getShells(mats)
+        actshells = self.getShells([actmat])
+        shells = {}
+        for tname,data in shells0.items():
+            if tname not in actshells.keys():
+                shells[tname] = data
+        return actshells, shells
+
+
     def overwrite(self, ob, actmnum, mnums):
         for f in ob.data.polygons:
             if f.material_index in mnums:
@@ -173,6 +201,47 @@ class Overwriter:
         for mn in mnums:
             if mn != actmnum:
                 ob.data.materials.pop(index=mn)
+
+
+    def addShells(self, mat, shells):
+        if not shells:
+            return
+        from ..cycles import makeCyclesTree
+        from ..cgroup import SkipZeroUvGroup
+        from ..tree import findNodes
+        ctree = makeCyclesTree(mat)
+        for outp in findNodes(mat.node_tree, 'OUTPUT_MATERIAL'):
+            x,y = outp.location
+            outp.location = (x+2*XSIZE, y)
+            ssocket = getFromSocket(outp.inputs["Surface"])
+            dsocket = getFromSocket(outp.inputs["Displacement"])
+            for tname,data in shells.items():
+                template,uvname = data
+                uvmap = ctree.addNode("ShaderNodeUVMap")
+                uvmap.uv_map = uvname
+                uvmap.label = uvname
+                uvmap.hide = True
+                uvmap.location = (x,y-6*YSTEP)
+                skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
+                skip.location = (x,y)
+                ctree.links.new(uvmap.outputs["UV"], skip.inputs["UV"])
+                shell = ctree.addNode("ShaderNodeGroup")
+                shell.location = (x+XSIZE, y)
+                shell.node_tree = template.node_tree
+                shell.label = template.label
+                ctree.links.new(skip.outputs["Influence"], shell.inputs["Influence"])
+                ctree.links.new(uvmap.outputs["UV"], shell.inputs["UV"])
+                if ssocket:
+                    ctree.links.new(ssocket, shell.inputs["BSDF"])
+                if dsocket:
+                    ctree.links.new(dsocket, shell.inputs["Displacement"])
+                ssocket = shell.outputs["BSDF"]
+                dsocket = shell.outputs["Displacement"]
+                y -= YSIZE
+            if ssocket:
+               ctree.links.new(ssocket, outp.inputs["Surface"])
+            if dsocket:
+                ctree.links.new(dsocket, outp.inputs["Displacement"])
 
 
 class DAZ_OT_OverwriteMaterials(DazPropsOperator, MaterialSelector, Overwriter):
@@ -195,7 +264,9 @@ class DAZ_OT_OverwriteMaterials(DazPropsOperator, MaterialSelector, Overwriter):
     def run(self, context):
         ob = context.object
         actmat, actmnum, acttile, mats, mnums, usedtiles = self.getMaterials(ob, {})
+        actshells, shells = self.getAllShells(actmat, mats)
         self.overwrite(ob, actmnum, mnums)
+        self.addShells(actmat, shells)
 
 #----------------------------------------------------------
 #   Make UDIM materials
@@ -270,12 +341,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
                 hasmapping = hasmaps
 
         if self.useOverwrite and self.useStackShells:
-            shells0 = self.getShells(mats)
-            actshells = self.getShells([actmat])
-            shells = {}
-            for tname,data in shells0.items():
-                if tname not in actshells.keys():
-                    shells[tname] = data
+            actshells, shells = self.getAllShells(actmat, mats)
 
         basenames = {}
         keytiles = {}
@@ -365,8 +431,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
         if self.useOverwrite:
             self.overwrite(ob, actmnum, mnums)
-            if self.useStackShells:
-                self.addShells(actmat, shells)
+            self.addShells(actmat, shells)
         else:
             actnodes = texnodes[actmat.name]
             for mat in mats:
@@ -516,65 +581,6 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
                         self.updateImage(img, basename, dazRna(mat).DazUDim)
                     return actnode
         return None
-
-
-    def getShells(self, mats):
-        from ..tree import getFromNode
-        from ..matsel import isShellNode
-        nodes = {}
-        for mat in mats:
-            if mat.node_tree:
-                n = len(mat.name)
-                for node in mat.node_tree.nodes:
-                    if isShellNode(node):
-                        tree = node.node_tree
-                        if tree.name[-n:] == mat.name:
-                            shname = tree.name[:-n-1]
-                            uvmap = getFromNode(node.inputs["UV"])
-                            if uvmap:
-                                nodes[shname] = (node, uvmap.uv_map)
-        return nodes
-
-
-    def addShells(self, mat, shells):
-        if not shells:
-            return
-        from ..cycles import makeCyclesTree
-        from ..cgroup import SkipZeroUvGroup
-        from ..tree import findNodes
-        ctree = makeCyclesTree(mat)
-        for outp in findNodes(mat.node_tree, 'OUTPUT_MATERIAL'):
-            x,y = outp.location
-            outp.location = (x+2*XSIZE, y)
-            ssocket = getFromSocket(outp.inputs["Surface"])
-            dsocket = getFromSocket(outp.inputs["Displacement"])
-            for tname,data in shells.items():
-                template,uvname = data
-                uvmap = ctree.addNode("ShaderNodeUVMap")
-                uvmap.uv_map = uvname
-                uvmap.label = uvname
-                uvmap.hide = True
-                uvmap.location = (x,y-6*YSTEP)
-                skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
-                skip.location = (x,y)
-                ctree.links.new(uvmap.outputs["UV"], skip.inputs["UV"])
-                shell = ctree.addNode("ShaderNodeGroup")
-                shell.location = (x+XSIZE, y)
-                shell.node_tree = template.node_tree
-                shell.label = template.label
-                ctree.links.new(skip.outputs["Influence"], shell.inputs["Influence"])
-                ctree.links.new(uvmap.outputs["UV"], shell.inputs["UV"])
-                if ssocket:
-                    ctree.links.new(ssocket, shell.inputs["BSDF"])
-                if dsocket:
-                    ctree.links.new(dsocket, shell.inputs["Displacement"])
-                ssocket = shell.outputs["BSDF"]
-                dsocket = shell.outputs["Displacement"]
-                y -= YSIZE
-            if ssocket:
-               ctree.links.new(ssocket, outp.inputs["Surface"])
-            if dsocket:
-                ctree.links.new(dsocket, outp.inputs["Displacement"])
 
 #----------------------------------------------------------
 #   Shift UVs
