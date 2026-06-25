@@ -282,7 +282,6 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
     useFixTextures = True
     useGenesisTiles = True
-    useStackShells  = True
 
     useGuessMissing : BoolProperty(
         name = "Guess Missing Textures",
@@ -340,7 +339,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             if mat == actmat:
                 hasmapping = hasmaps
 
-        if self.useOverwrite and self.useStackShells:
+        if self.useOverwrite:
             actshells, shells = self.getAllShells(actmat, mats)
 
         basenames = {}

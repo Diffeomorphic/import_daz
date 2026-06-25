@@ -66,7 +66,7 @@ class CameraInstance(Instance):
             elif key == "focal_distance" :
                 camera.dof.focus_distance = value * GS.scale
             elif key == "fstop" :
-                camera.dof.aperture_fstop = value
+                camera.dof.aperture_fstop = value / 10
             else:
                 print("Unknown camera prop: '%s' %s" % (key, value))
 
