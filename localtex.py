@@ -180,7 +180,8 @@ class LocalTextureUser:
             path = img.filepath_raw
             if (path.startswith(self.texpath) and
                 os.path.exists(path)):
-                print("Delete", path)
+                if GS.verbosity >= 3:
+                    print("Delete %s" % path)
                 os.remove(path)
 
 
@@ -216,7 +217,8 @@ class LocalTextureUser:
             del self.loadedImages[src]
         if src in self.copiedImages.keys():
             del self.copiedImages[src]
-        print("Copied %s %s" % (tuple(img.size), trg))
+        if GS.verbosity >= 3:
+            print("Copied %s %s" % (tuple(img.size), trg))
         self.copiedImages[trg] = img
         self.deletedImages[src] = img
         if "Public" in trg:
@@ -241,7 +243,7 @@ class LocalTextureUser:
             imgname = os.path.splitext(os.path.basename(path))[0]
             img = bpy.data.images.get(imgname)
             self.loadedImages[path] = img
-        if img is None:
+        if img is None and os.path.exists(path):
             img = bpy.data.images.load(path)
             print("RELOAD", path)
             print(img)

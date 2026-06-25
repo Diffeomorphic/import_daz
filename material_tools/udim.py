@@ -437,16 +437,22 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             for link in links:
                 if link.from_node == node:
                     sname = link.to_socket.name
-                    if link.to_node.type in ['MIX_RGB', 'MIX', 'MATH', 'GAMMA']:
-                        return "%s:%s" % (getChannel(link.to_node, links, grpname), sname)
-                    elif link.to_node.type == 'BSDF_PRINCIPLED':
+                    tonode = link.to_node
+                    if tonode.type in ['MIX_RGB', 'MIX', 'MATH', 'GAMMA']:
+                        return "%s:%s" % (getChannel(tonode, links, grpname), sname)
+                    elif (tonode.type == 'GROUP' and
+                          tonode.name in ["DAZ Color Effect"]):
+                        return "%s:%s" % (getChannel(tonode, links, grpname), sname)
+                    elif tonode.type == 'BSDF_PRINCIPLED':
                         return "PBR:%s" % sname
-                    elif link.to_node.type == 'GROUP':
-                        return "%s:%s" % (link.to_node.node_tree.name, sname)
-                    elif link.to_node.type == 'GROUP_OUTPUT' and grpname:
+                    elif tonode.type == 'GROUP' and tonode.node_tree.name.startswith("DAZ "):
+                        return "%s:%s" % (tonode.node_tree.name, sname)
+                    elif tonode.type == 'GROUP':
+                        return "%s:%s" % (tonode.node_tree.name, sname)
+                    elif tonode.type == 'GROUP_OUTPUT' and grpname:
                         return "%s:%s" % (grpname, sname)
                     else:
-                        return "%s:%s" % (link.to_node.type, sname)
+                        return "%s:%s" % (tonode.type, sname)
             return None
 
         def addTexNodes(tree, mat, texnodes, grpname):
