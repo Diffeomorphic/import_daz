@@ -143,6 +143,15 @@ class LocalTextureUser:
             return path
 
 
+    def getOrigPath(self, img):
+        path = img.get("DazFilePath")
+        if path:
+            return path
+        path = self.getLocalPath(img.filepath)
+        path = "/runtime/textures/%s" % path[nstrip:]
+        return GS.getAbsPath(path)
+
+
     def saveLocalImages(self):
         if self.useSaveGenerated:
             if self.useSaveLoaded:
@@ -239,14 +248,18 @@ class LocalTextureUser:
             img = self.copiedImages.get(path)
         if path in self.deletedImages.keys():
             print("Image was deleted: %s" % path)
+            if img:
+                path1 = self.getOrigPath(img)
+                if path1:
+                    img = None
+                    path = path1
         if False and img is None:
             imgname = os.path.splitext(os.path.basename(path))[0]
             img = bpy.data.images.get(imgname)
             self.loadedImages[path] = img
         if img is None and os.path.exists(path):
+            print("Reload image: %s" % path)
             img = bpy.data.images.load(path)
-            print("RELOAD", path)
-            print(img)
             if img is None:
                 msg = ("Image not found: %s" % path)
                 print(msg)
@@ -407,19 +420,11 @@ class DAZ_OT_ReloadTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperato
 
 
     def restoreOriginal(self, meshes):
-        def getOrigPath(img):
-            path = img.get("DazFilePath")
-            if path:
-                return path
-            path = self.getLocalPath(img.filepath)
-            path = "/runtime/textures/%s" % path[nstrip:]
-            return GS.getAbsPath(path)
-
         self.initLocalImages()
         nstrip = len(self.texpath)
         self.getAllImages(meshes)
         for _,img in self.foundImages:
-            filepath = getOrigPath(img)
+            filepath = self.getOrigPath(img)
             if filepath and os.path.exists(filepath):
                 if img.packed_file:
                     img.unpack()
