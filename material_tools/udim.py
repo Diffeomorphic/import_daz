@@ -55,14 +55,6 @@ class DAZ_OT_FixTextureTiles(DazPropsOperator, LocalTextureUser, TileFixer):
 #----------------------------------------------------------
 
 class GenesisTiles:
-    useGenesisTiles : BoolProperty(
-        name = "Add Genesis 1,2 Tiles",
-        description = "Add UDIM tiles for Genesis and Genesis 2 characters",
-        default = True)
-
-    def draw(self, context):
-        self.layout.prop(self, "useGenesisTiles")
-
     def addGenesisTiles(self, ob):
         if dazRna(ob).DazUrl.lower() in [
                 "/data/daz 3d/genesis/base/genesis.dsf#geometry",
@@ -157,7 +149,7 @@ class Overwriter:
         usedtiles = set()
         actmat = None
         for mn,umat in enumerate(self.umats):
-            if umat.bool or not self.useSelectedOnly:
+            if umat.bool:
                 mat = ob.data.materials[umat.name]
                 mats.append(mat)
                 if umat.bool:
@@ -189,8 +181,6 @@ class DAZ_OT_OverwriteMaterials(DazPropsOperator, MaterialSelector, Overwriter):
     bl_description = "Overwrite selected materials with the active material"
     bl_options = {'UNDO'}
 
-    useSelectedOnly = True
-
     def draw(self, context):
         self.drawActive(context)
         MaterialSelector.draw(self, context)
@@ -219,33 +209,19 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
     subdir = "/textures/UDIM"
 
+    useFixTextures = True
+    useGenesisTiles = True
+    useStackShells  = True
+
     useGuessMissing : BoolProperty(
         name = "Guess Missing Textures",
         description = "Search for UDIM textures that almost match location in node tree",
-        default = True)
-
-    useFixTextures : BoolProperty(
-        name = "Fix Textures",
-        description = (
-            "Copy textures to the right directory and correct tile numbers.\n" +
-            "For incorrect Genesis 8.1 material names,\n" +
-            "or for textures without tile info"),
         default = True)
 
     useOverwrite : BoolProperty(
         name = "Overwrite Materials",
         description = "Overwrite selected materials",
         default = False)
-
-    useSelectedOnly : BoolProperty(
-        name = "Only Selected Materials",
-        description = "Only create udim textures for selected materials",
-        default = False)
-
-    useStackShells : BoolProperty(
-        name = "Stack Shells",
-        description = "Add shell groups to UDIM material",
-        default = True)
 
     imageSize : IntProperty(
         name = "Image Size",
@@ -254,19 +230,12 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         default = 6)
 
     def draw(self, context):
-        LocalTextureUser.draw(self, context)
-        GenesisTiles.draw(self, context)
-        self.layout.prop(self, "useFixTextures")
         self.drawActive(context)
+        LocalTextureUser.draw(self, context)
         self.layout.prop(self, "imageSize")
         self.layout.prop(self, "useGuessMissing")
-        self.layout.prop(self, "useSelectedOnly")
         self.layout.prop(self, "useOverwrite")
-        if self.useOverwrite:
-            #self.layout.prop(self, "useStackShells")
-            self.layout.label(text = "Materials to overwrite")
-        if self.useSelectedOnly or self.useOverwrite:
-            MaterialSelector.draw(self, context)
+        MaterialSelector.draw(self, context)
 
 
     def invoke(self, context, event):
