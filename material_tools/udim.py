@@ -282,16 +282,12 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
     useFixTextures = True
     useGenesisTiles = True
+    useOverwrite = False
 
     useGuessMissing : BoolProperty(
         name = "Guess Missing Textures",
         description = "Search for UDIM textures that almost match location in node tree",
         default = True)
-
-    useOverwrite : BoolProperty(
-        name = "Overwrite Materials",
-        description = "Overwrite selected materials",
-        default = False)
 
     imageSize : IntProperty(
         name = "Image Size",
@@ -304,7 +300,6 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
         LocalTextureUser.draw(self, context)
         self.layout.prop(self, "imageSize")
         self.layout.prop(self, "useGuessMissing")
-        self.layout.prop(self, "useOverwrite")
         MaterialSelector.draw(self, context)
 
 
@@ -578,6 +573,14 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
                     basename = basenames.get(img.filepath)
                     if basename:
                         self.updateImage(img, basename, dazRna(mat).DazUDim)
+                    return actnode
+        lpath = img.filepath.lower()
+        udim = str(1001 + dazRna(mat).DazUDim)
+        for actnode in actnodes.values():
+            actimg = actnode.image
+            if actimg:
+                actpath = actimg.filepath.replace("<UDIM>", udim).lower()
+                if actpath == lpath:
                     return actnode
         return None
 
