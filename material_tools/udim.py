@@ -299,7 +299,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         self.drawActive(context)
         LocalTextureUser.draw(self, context)
         self.layout.prop(self, "imageSize")
-        self.layout.prop(self, "useGuessMissing")
+        #self.layout.prop(self, "useGuessMissing")
         MaterialSelector.draw(self, context)
 
 
@@ -471,7 +471,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             color = (1,1,1,1)
         elif key.startswith(("BUMP:Height")):
             color = (0.5, 0.5, 0.5, 1)
-        elif key.startswith(("PBR:Base Color", "DAZ Dual Lobe:IOR")):
+        elif key.startswith(("PBR:Base Color", "DAZ Dual Lobe:IOR", "PBR:Specular Tint")):
             color = (1,1,1,1)
         elif "Roughness" in key:
             color = (1,1,1,1)

@@ -32,6 +32,8 @@ class HiddenTextureUser:
 
 class LocalTextureUser:
     useSaveLoaded = False
+    useSaveGenerated = False
+    reuseExisting = True
     maxTexLevel = 2
     minTexLevel = 0
     level = 0
@@ -45,19 +47,10 @@ class LocalTextureUser:
                 dazRna(ob.data).DazTexLevel <= self.maxTexLevel and
                 dazRna(ob.data).DazTexLevel >= self.minTexLevel)
 
-    useSaveGenerated : BoolProperty(
-        name = "Save Generated Images",
-        description = "Save generated images to disk.\nPack them in blend file if this option is disabled",
-        default = False)
-
-    reuseExisting : BoolProperty(
-        name = "Reuse Existing Images",
-        description = "Reuse existing local textures instead of regenerating them",
-        default = True)
-
     def draw(self, context):
-        self.layout.prop(self, "useSaveGenerated")
-        self.layout.prop(self, "reuseExisting")
+        pass
+        #self.layout.prop(self, "useSaveGenerated")
+        #self.layout.prop(self, "reuseExisting")
 
 
     def getMeshes(self, context):
@@ -353,6 +346,11 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
     useSaveLoaded = True
     subdir = "/textures/original"
 
+    reuseExisting : BoolProperty(
+        name = "Reuse Existing Images",
+        description = "Reuse existing local textures instead of regenerating them",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "reuseExisting")
         HiddenTextureUser.draw(self, context)
@@ -369,7 +367,9 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
 
 
     def isIrrelevant(self, path):
-        if path.lower().startswith(self.basepath):
+        if (path.lower().startswith(self.basepath) and
+            self.reuseExisting and
+            os.path.exists(path)):
             print("Already local: %s" % path)
             return True
         return False
@@ -444,7 +444,6 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
     bl_options = {'UNDO'}
 
     resizeAll = True
-    maxTexLevel = 2
 
     level : IntProperty(
         name = "Resolution Level",
