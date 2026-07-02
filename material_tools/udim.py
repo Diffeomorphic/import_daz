@@ -272,10 +272,10 @@ class DAZ_OT_OverwriteMaterials(DazPropsOperator, MaterialSelector, Overwriter):
 #   Make UDIM materials
 #----------------------------------------------------------
 
-class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelector, TileFixer, GenesisTiles, Overwriter):
-    bl_idname = "daz.make_udim_materials"
-    bl_label = "Make UDIM Materials"
-    bl_description = "Combine materials of selected mesh into a single UDIM material.\nGeografts must be merged first"
+class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelector, TileFixer, GenesisTiles, Overwriter):
+    bl_idname = "daz.make_udim_textures"
+    bl_label = "Make UDIM Textures"
+    bl_description = "Combine textures of selected mesh into tiled textures"
     bl_options = {'UNDO'}
 
     subdir = "/textures/UDIM"
@@ -471,7 +471,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
             color = (1,1,1,1)
         elif key.startswith(("BUMP:Height")):
             color = (0.5, 0.5, 0.5, 1)
-        elif key.startswith(("PBR:Base Color")):
+        elif key.startswith(("PBR:Base Color", "DAZ Dual Lobe:IOR")):
             color = (1,1,1,1)
         elif "Roughness" in key:
             color = (1,1,1,1)
@@ -656,7 +656,7 @@ classes = [
     DAZ_OT_TilesFromGraft,
     DAZ_OT_FixTextureTiles,
     DAZ_OT_AddGenesisTiles,
-    DAZ_OT_MakeUdimMaterials,
+    DAZ_OT_MakeUdimTextures,
     DAZ_OT_OverwriteMaterials,
     DAZ_OT_SetUDims,
 ]

@@ -15,7 +15,7 @@ class DAZ_PT_EditMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "Edit Materials"
 
     def draw(self, context):
-        self.layout.operator("daz.make_udim_materials")
+        self.layout.operator("daz.make_udim_textures")
         self.layout.operator("daz.overwrite_materials")
         self.layout.separator()
         self.layout.operator("daz.launch_editor")

@@ -238,7 +238,8 @@ class TileFixer:
         def checkGraftTextures(tree, humtexs):
             for node in tree.nodes:
                 if node.type == 'TEX_IMAGE' and node.image:
-                    return (node.image in humtexs)
+                    if node.image in humtexs:
+                        return True
                 elif (node.type == 'GROUP' and
                       node.node_tree and
                       not node.name.startswith("DAZ ")):
@@ -269,8 +270,7 @@ class TileFixer:
         useLastUdimTile = False
         for mn,mat in enumerate(graft.data.materials):
             if mat:
-                check = checkGraftTextures(mat.node_tree, humtexs)
-                if not check:
+                if not checkGraftTextures(mat.node_tree, humtexs):
                     useLastUdimTile = True
 
         if useLastUdimTile:
