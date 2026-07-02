@@ -125,13 +125,6 @@ class UVLayerMerger:
 #----------------------------------------------------------
 
 class TileFixer:
-    useLastUdimTile : BoolProperty(
-        name = "Last UDIM Tile",
-        default = False)
-
-    def draw(self, context):
-        self.layout.prop(self, "useLastUdimTile")
-
     def findMatTiles(self, ob):
         uvcoords = dict([(mn,[]) for mn in range(len(ob.data.materials))])
         uvlayer = ob.data.uv_layers.active
@@ -233,6 +226,25 @@ class TileFixer:
                 m += len(f.vertices)
             return uvcoord
 
+        def addHumTextures(tree, humtexs):
+            for node in tree.nodes:
+                if node.type == 'TEX_IMAGE' and node.image:
+                    humtexs.add(node.image)
+                elif (node.type == 'GROUP' and
+                      node.node_tree and
+                      not node.name.startswith("DAZ ")):
+                    addHumTextures(node.node_tree, humtexs)
+
+        def checkGraftTextures(tree, humtexs):
+            for node in tree.nodes:
+                if node.type == 'TEX_IMAGE' and node.image:
+                    return (node.image in humtexs)
+                elif (node.type == 'GROUP' and
+                      node.node_tree and
+                      not node.name.startswith("DAZ ")):
+                    if checkGraftTextures(node.node_tree, humtexs):
+                        return True
+
         cuvlayer = hum.data.uv_layers.active
         if cuvlayer is None:
             print("Human has no active UV layer")
@@ -241,18 +253,27 @@ class TileFixer:
         tiles = {}
         udims = {}
         vdims = {}
+        humtexs = set()
         for mn,mat in enumerate(hum.data.materials):
             if mat:
                 uvcoord = getUVcoords(mn)
                 if uvcoord:
                     mname = stripName(mat.name)
                     tiles[mname], udims[mname], vdims[mname] = self.getTile(uvcoord)
+                addHumTextures(mat.node_tree, humtexs)
 
         if len(tiles) == 0:
             print("No UVs to shift")
             return
 
-        if self.useLastUdimTile:
+        useLastUdimTile = False
+        for mn,mat in enumerate(graft.data.materials):
+            if mat:
+                check = checkGraftTextures(mat.node_tree, humtexs)
+                if not check:
+                    useLastUdimTile = True
+
+        if useLastUdimTile:
             nuvs = uv_length(cuvlayer)
             array = np.zeros(2*nuvs, dtype=float)
             foreach_get_uv(cuvlayer, array)
@@ -283,7 +304,7 @@ class TileFixer:
         for mn,mat in enumerate(graft.data.materials):
             if mat and mat.node_tree:
                 mname = stripName(mat.name)
-                if mname in tiles.keys() and not self.useLastUdimTile:
+                if mname in tiles.keys() and not useLastUdimTile:
                     tile,udim,vdim = (tiles[mname], udims[mname], vdims[mname])
                 else:
                     tile,udim,vdim = default

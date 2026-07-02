@@ -56,7 +56,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         box = self.layout.box()
         box.label(text="UDIM Materials")
         box.prop(self, "useFixTiles")
-        box.prop(self, "useLastUdimTile")
         self.drawUVLayer(box)
 
 
