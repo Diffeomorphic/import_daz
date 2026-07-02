@@ -291,9 +291,9 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
     imageSize : IntProperty(
         name = "Image Size",
-        description = "2-log of size of generated images",
-        min = 0, max = 13,
-        default = 6)
+        description = "Size of generated images",
+        min = 1, max = 8196,
+        default = 64)
 
     def draw(self, context):
         self.drawActive(context)
@@ -481,8 +481,7 @@ class DAZ_OT_MakeUdimMaterials(DazPropsOperator, LocalTextureUser, MaterialSelec
 
         imgname = self.makeImageName(basename, tile, actimg)
         src,trg = self.getTargetPath(actimg, basename, tile)
-        size = 2**self.imageSize
-        img = bpy.data.images.new(imgname, size, size)
+        img = bpy.data.images.new(imgname, self.imageSize, self.imageSize)
         img.generated_color = color
         setColorSpaceNone(img)
         img.filepath_raw = trg
