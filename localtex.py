@@ -94,6 +94,7 @@ class LocalTextureUser:
         self.copiedImages = {}
         self.deletedImages = {}
         self.ignoredImages = set()
+        self.origPaths = {}
 
 
     def printLocalImages(self):
@@ -248,23 +249,22 @@ class LocalTextureUser:
             img = self.copiedImages.get(path)
         if path in self.deletedImages.keys():
             print("Image was deleted: %s" % path)
-            if img:
+            path1 = self.origPaths.get(path)
+            if path1 is None and img:
                 path1 = self.getOrigPath(img)
-                if path1:
-                    img = None
-                    path = path1
-        if False and img is None:
-            imgname = os.path.splitext(os.path.basename(path))[0]
-            img = bpy.data.images.get(imgname)
-            self.loadedImages[path] = img
-        if img is None and os.path.exists(path):
-            print("Reload image: %s" % path)
-            img = bpy.data.images.load(path)
-            if img is None:
+            if path1:
+                img = None
+                self.origPaths[path] = path1
+                path = path1
+        if img is None:
+            if os.path.exists(path):
+                print("Reload image: %s" % path)
+                img = bpy.data.images.load(path)
+                self.loadedImages[path] = img
+            else:
                 msg = ("Image not found: %s" % path)
                 print(msg)
                 raise DazError(msg)
-            self.loadedImages[path] = img
         if not img.has_data:
             self.printLocalImages()
         img.update()
