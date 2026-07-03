@@ -92,6 +92,13 @@ class DriverUser:
         for var1 in fcu1.driver.variables:
             var2 = fcu2.driver.variables.new()
             self.copyVariable(var1, var2)
+        fcu2.keyframe_points.clear()
+        for kp1 in fcu1.keyframe_points:
+            kp2 = fcu2.keyframe_points.insert(kp1.co[0], kp1.co[1], options={'FAST'})
+            kp2.handle_left_type = kp1.handle_left_type
+            kp2.handle_left = kp1.handle_left
+            kp2.handle_right_type = kp1.handle_right_type
+            kp2.handle_right = kp1.handle_right
 
 
     def copyVariable(self, var1, var2):
