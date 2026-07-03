@@ -128,10 +128,10 @@ class GeograftGroup(GeoTree):
         self.links.new(toggle.outputs["Output"], self.outputs.inputs["Geometry"])
 
 # ---------------------------------------------------------------------
-#   GeograftsGroup
+#   MultiGraftGroup
 # ---------------------------------------------------------------------
 
-class GeograftsGroup(GeoTree):
+class MultiGraftGroup(GeoTree):
     def create(self, name):
         NodeGroup.make(self, name, 8)
         addGroupInput(self.group, "NodeSocketGeometry", "Geometry")
@@ -379,14 +379,11 @@ def setModSocketName(mod, n, name):
         inputs = mod.properties.inputs
         slot = (slot1 if hasattr(inputs, slot1) else slot2)
         bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name = slot, modifier_name = mod.name)
-        print("TOGG", slot, mod.name)
         socket = getattr(inputs, slot)
-        print("SOC", socket, socket.type)
-        print(dir(socket))
         socket.attribute_name = name
     else:
         slot = (slot1 if slot1 in mod.keys() else slot2)
-        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path = slot, modifier_name = mod.name)
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name = slot, modifier_name = mod.name)
         mod["%s_attribute_name" % slot] = name
 
 # ---------------------------------------------------------------------

@@ -29,7 +29,7 @@ class MergeGeograftOptions(UVLayerMergerOptions):
         default = True)
 
     useGeoNodes: BoolProperty(
-        name = "Geometry Nodes (Experimental)",
+        name = "Geometry Nodes",
         description = "Merge geografts using geometry nodes",
         default = False)
 
@@ -495,10 +495,10 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     amod.show_viewport = amod.show_render = False
                     graft.modifiers.remove(amod)
 
-        from .geonodes import GeograftsGroup, setModSocket, setModSocketName
+        from .geonodes import MultiGraftGroup, setModSocket, setModSocketName
         from .tree import addNodeGroup
 
-        graftgrp = GeograftsGroup()
+        graftgrp = MultiGraftGroup()
         groupname = "Geografts:%s" % hum.name
         graftgrp.create(groupname)
         useBakeGrafts = (self.useBakeGrafts and bpy.app.version >= (4,4,0))
@@ -519,8 +519,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             setModSocket(mod, n, graft)
             setModSocket(mod, n+1, "paired_body_vert_%s" % graft.name)
             setModSocketName(mod, n+2, "%s Mask" % graft.name)
-            #setModSocket(mod, n+3, True)
-            setModSocketName(mod, n+4, "%s Edge" % graft.name)
+            setModSocket(mod, n+3, True)
+            setModSocket(mod, n+4, "%s Edge" % graft.name)
         if useBakeGrafts:
             bake = mod.bakes[0]
             bpy.ops.object.geometry_node_bake_single(session_uid=bake.id_data.session_uid, modifier_name=mod.name, bake_id=bake.bake_id)

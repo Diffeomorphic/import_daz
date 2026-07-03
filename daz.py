@@ -615,7 +615,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
 
     enums = [('MATERIAL', "Material", "Create material node groups")]
     if bpy.app.version >= (3,1,0):
-        enums += [('GEONODES', "Geometry Nodes (Experimental)", "Create geometry node groups")]
+        enums += [('GEONODES', "Geometry Nodes", "Create geometry node groups")]
     enums += [('IGNORE', "Ignore", "Ignore shells"),
               ('MESH', "Mesh (Debug)", "Create empty meshes. For debugging only")]
     shellMethod : EnumProperty(
