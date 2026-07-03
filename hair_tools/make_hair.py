@@ -1000,6 +1000,7 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
 
         elif self.output == 'HAIR_CURVES':
             from .hair_nodes import addHairNodeGroup
+            from ..geonodes import setModSocket
             activateObject(context, ob)
             if self.deformType == 'PROXY':
                 self.addFollowProxy(ob, proxy)
@@ -1014,29 +1015,15 @@ class DAZ_OT_MakeHair(MatchOperator, CombineHair, IsMesh, HairOptions, HairBuild
                     return mod
 
             mod = addMod(ob, "Set Hair Curve Profile")
-            
-            if bpy.app.version >= (5,2,0):
+            if mod:
+                setModSocket(mod, 3, self.hairRadius * 1e-3)
+                setModSocket(mod, 2, self.hairShape)
+            if len(strands) < self.childThreshold and self.nRenderChildren > 0:
+                mod = addMod(ob, "Duplicate Hair Curves")
                 if mod:
-                    mod.properties.inputs.Input_3.value = self.hairRadius * 1e-3
-                    mod.properties.inputs.Input_2.value = self.hairShape
-                if len(strands) < self.childThreshold and self.nRenderChildren > 0:
-                    mod = addMod(ob, "Duplicate Hair Curves")
-                    if mod:
-                        mod.properties.inputs.Input_2.value = self.nRenderChildren
-                        mod.properties.inputs.Input_4.value = self.viewFactor
-                        mod.properties.inputs.Input_5.value = self.childRadius * 1e-3
-            else:
-                if mod:
-                    socket = ("Input" if "Input_2" in mod.keys() else "Socket")
-                    mod["%s_3" % socket] = self.hairRadius * 1e-3
-                    mod["%s_2" % socket] = self.hairShape
-                if len(strands) < self.childThreshold and self.nRenderChildren > 0:
-                    mod = addMod(ob, "Duplicate Hair Curves")
-                    if mod:
-                        socket = ("Input" if "Input_2" in mod.keys() else "Socket")
-                        mod["%s_2" % socket] = self.nRenderChildren
-                        mod["%s_4" % socket] = self.viewFactor
-                        mod["%s_5" % socket] = self.childRadius * 1e-3
+                    setModSocket(mod, 2, self.nRenderChildren)
+                    setModSocket(mod, 4, self.viewFactor)
+                    setModSocket(mod, 5, self.childRadius * 1e-3)
 
     def findMeshRects(self, hair):
         from ..tables import getVertFaces, findNeighbors

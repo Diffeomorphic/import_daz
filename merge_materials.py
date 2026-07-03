@@ -70,11 +70,14 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
 
 
     def setupShells(self, context):
+        from .geonodes import getModSocket
         shelled = []
         for shell in getVisibleMeshes(context):
             mod = getModifier(shell, 'NODES')
-            if mod and "Input_1" in mod.keys() and isinstance(mod["Input_1"], bpy.types.Object):
-                shelled.append(mod["Input_1"])
+            if mod:
+                ob = getModSocket(mod, 1)
+                if isinstance(ob, bpy.types.Object):
+                    shelled.append(ob)
         self.meshes = []
         for ob in self.getMeshes(context):
             if ob in shelled:

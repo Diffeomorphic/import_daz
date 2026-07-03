@@ -339,12 +339,55 @@ def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
     group.create(noMeshName(ob.name), mnames)
     group.addNodes(mnames, mats, shmats)
     mod.node_group = group.group
-    if BLENDER3:
-        mod["Input_1"] = ob
-        mod["Input_2"] = offset
+    setModSocket(mod, 1, ob)
+    setModSocket(mod, 2, offset)
+
+
+def setModSocket(mod, n, value):
+    slot1 = "Input_%d" % n
+    slot2 = "Socket_%d" % n
+    if hasattr(mod, "properties"):
+        inputs = mod.properties.inputs
+        slot = (slot1 if hasattr(inputs, slot1) else slot2)
+        socket = getattr(inputs, slot)
+        try:
+            socket.value = value
+        except TypeError as err:
+            print(err)
     else:
-        mod["Socket_1"] = ob
-        mod["Socket_2"] = offset
+        slot = (slot1 if slot1 in mod.keys() else slot2)
+        mod[slot] = value
+
+
+def getModSocket(mod, n):
+    slot1 = "Input_%d" % n
+    slot2 = "Socket_%d" % n
+    if hasattr(mod, "properties"):
+        inputs = mod.properties.inputs
+        slot = (slot1 if hasattr(inputs, slot1) else slot2)
+        socket = getattr(inputs, slot)
+        return socket.value
+    else:
+        slot = (slot1 if slot1 in mod.keys() else slot2)
+        return mod[slot]
+
+
+def setModSocketName(mod, n, name):
+    slot1 = "Input_%d" % n
+    slot2 = "Socket_%d" % n
+    if hasattr(mod, "properties"):
+        inputs = mod.properties.inputs
+        slot = (slot1 if hasattr(inputs, slot1) else slot2)
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(input_name = slot, modifier_name = mod.name)
+        print("TOGG", slot, mod.name)
+        socket = getattr(inputs, slot)
+        print("SOC", socket, socket.type)
+        print(dir(socket))
+        socket.attribute_name = name
+    else:
+        slot = (slot1 if slot1 in mod.keys() else slot2)
+        bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path = slot, modifier_name = mod.name)
+        mod["%s_attribute_name" % slot] = name
 
 # ---------------------------------------------------------------------
 #   Mask Faces group

@@ -481,9 +481,6 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         if cuvlayer:
             self.replaceTexco(hum, cuvlayer.name, True)
 
-        from .geonodes import GeograftGroup
-        from .tree import addNodeGroup
-
         for graft in grafts:
             maskname = "%s Mask" % graft.name
             edgename = "%s Edge" % graft.name
@@ -498,7 +495,9 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     amod.show_viewport = amod.show_render = False
                     graft.modifiers.remove(amod)
 
-        from .geonodes import GeograftsGroup
+        from .geonodes import GeograftsGroup, setModSocket, setModSocketName
+        from .tree import addNodeGroup
+
         graftgrp = GeograftsGroup()
         groupname = "Geografts:%s" % hum.name
         graftgrp.create(groupname)
@@ -513,37 +512,18 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         # Handle all the inputs generated from the geografts - Placed below the inputs that apply to the entire geonode group
         graft_socket_count = 5  # Number of sockets per geograft
         socket_offset = 3 # Number of sockets before the geograft-specific sockets
-        if BLENDER3:
-            mod["Input_1"] = 0.01*GS.scale
-            for i, graft in enumerate(grafts):
-                mod["Input_%d" % (graft_socket_count*i+(socket_offset))] = graft
-                mod["Input_%d" % (graft_socket_count*i+(socket_offset+1))] = "paired_body_vert_%s" % graft.name
-                bpy.ops.object.geometry_nodes_input_attribute_toggle(
-                    prop_path="Input_%d" % (graft_socket_count*i+(socket_offset+2)),
-                    modifier_name=mod.name)
-                mod["Input_%d_attribute_name" % (graft_socket_count*i+(socket_offset+2))] = "%s Mask" % graft.name
-                mod["Input_%d" % (graft_socket_count*i+(socket_offset+3))] = True
-                mod["Input_%d" % (graft_socket_count*i+(socket_offset+4))] = f"{graft.name} Edge"
-                bpy.ops.object.geometry_nodes_input_attribute_toggle(
-                    prop_path="Input_%d" % (graft_socket_count*i+(socket_offset+4)),
-                    modifier_name=mod.name)
-        else:
-            mod["Socket_1"] = 0.01*GS.scale
-            for i, graft in enumerate(grafts):
-                mod["Socket_%d" % (graft_socket_count*i+(socket_offset))] = graft
-                mod["Socket_%d" % (graft_socket_count*i+(socket_offset+1))] = "paired_body_vert_%s" % graft.name
-                bpy.ops.object.geometry_nodes_input_attribute_toggle(
-                    input_name="Socket_%d" % (graft_socket_count*i+(socket_offset+2)),
-                    modifier_name=mod.name)
-                mod["Socket_%d_attribute_name" % (graft_socket_count*i+(socket_offset+2))] = "%s Mask" % graft.name
-                mod["Socket_%d" % (graft_socket_count*i+(socket_offset+3))] = True
-                mod["Socket_%d" % (graft_socket_count*i+(socket_offset+4))] = "%s Edge" % graft.name
-                bpy.ops.object.geometry_nodes_input_attribute_toggle(
-                    input_name="Socket_%d" % (graft_socket_count*i+(socket_offset+4)),
-                    modifier_name=mod.name)
-            if useBakeGrafts:
-                bake = mod.bakes[0]
-                bpy.ops.object.geometry_node_bake_single(session_uid=bake.id_data.session_uid, modifier_name=mod.name, bake_id=bake.bake_id)
+
+        setModSocket(mod, 1, 0.01*GS.scale)
+        for i, graft in enumerate(grafts):
+            n = graft_socket_count*i + socket_offset
+            setModSocket(mod, n, graft)
+            setModSocket(mod, n+1, "paired_body_vert_%s" % graft.name)
+            setModSocketName(mod, n+2, "%s Mask" % graft.name)
+            #setModSocket(mod, n+3, True)
+            setModSocketName(mod, n+4, "%s Edge" % graft.name)
+        if useBakeGrafts:
+            bake = mod.bakes[0]
+            bpy.ops.object.geometry_node_bake_single(session_uid=bake.id_data.session_uid, modifier_name=mod.name, bake_id=bake.bake_id)
 
         for graft in grafts:
             graft.hide_set(True)
@@ -556,14 +536,15 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
 
     def retargetShellModifiers(self, hum, grafts):
         from .tree import findLinksFrom
+        from .geonodes import getModSocket, setModSocket
         socket1 = ("Input_1" if BLENDER3 else "Socket_1")
         for ob in bpy.data.objects:
             if ob.type == 'MESH':
                 for mod in ob.modifiers:
                     if mod.type == 'NODES':
-                        graft = mod.get(socket1)
+                        graft = getModSocket(mod, 1)
                         if graft and graft in grafts:
-                            mod[socket1] = hum
+                            setModSocket(mod, 1, hum)
 
 
     def retargetShellInfluence(self, hum, grafts, influs):
