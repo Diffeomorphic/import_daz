@@ -47,8 +47,14 @@ class LocalTextureUser:
                 dazRna(ob.data).DazTexLevel <= self.maxTexLevel and
                 dazRna(ob.data).DazTexLevel >= self.minTexLevel)
 
+    imageSize : IntProperty(
+        name = "Image Size",
+        description = "Size of generated images",
+        min = 1, max = 8196,
+        default = 64)
+
     def draw(self, context):
-        pass
+        self.layout.prop(self, "imageSize")
         #self.layout.prop(self, "useSaveGenerated")
         #self.layout.prop(self, "reuseExisting")
 
@@ -200,10 +206,10 @@ class LocalTextureUser:
         return (self.loadedImages.get(path) or self.copiedImages.get(path))
 
 
-    def copyImage(self, src, trg):
+    def copyImage(self, src, trg, key=None):
         src = normalizePath(src)
         trg = normalizePath(trg)
-        img = self.loadImage(src)
+        img = self.loadImage(src, key)
         if self.reuseExisting and os.path.exists(trg):
             mod,img = self.modifyImage(img, True)
             img.filepath_raw = trg
@@ -235,7 +241,7 @@ class LocalTextureUser:
         return True, img
 
 
-    def loadImage(self, path):
+    def loadImage(self, path, key):
         path = normalizePath(path)
         img = self.loadedImages.get(path)
         if img is None:
@@ -247,13 +253,17 @@ class LocalTextureUser:
                 path1 = self.getOrigPath(img)
             if path1:
                 img = None
-                self.origPaths[path] = path1
+                #self.origPaths[path] = path1
                 path = path1
         if img is None:
             if os.path.exists(path):
                 print("Reload image: %s" % path)
                 img = bpy.data.images.load(path)
                 self.loadedImages[path] = img
+            elif key:
+                print("Generate image: %s" % path)
+                imgname = os.path.splitext(os.path.basename(path))[0]
+                img = self.addImage(imgname, path, key)
             else:
                 msg = ("Image not found: %s" % path)
                 print(msg)
@@ -264,11 +274,37 @@ class LocalTextureUser:
         return img
 
 
-    def changeImage(self, src, trg, img, img2=None, strict=True):
+    def addImage(self, imgname, trg, key):
+        from .material import setColorSpaceNone
+        if key.endswith(("Factor:Value", "Fac")):
+            color = (1,1,1,1)
+        elif key.startswith("NORMAL_MAP:Color"):
+            color = (0.5, 0.5, 1.0, 1)
+        elif key.endswith(("Color:A", "Color:B", "Color")):
+            color = (1,1,1,1)
+        elif key.startswith(("BUMP:Height")):
+            color = (0.5, 0.5, 0.5, 1)
+        elif key.startswith(("PBR:Base Color", "DAZ Dual Lobe:IOR", "PBR:Specular Tint")):
+            color = (1,1,1,1)
+        elif "Roughness" in key:
+            color = (1,1,1,1)
+        else:
+            print("Unknown key when adding UDIM image:", key)
+            color = (0,0,0,1)
+
+        img = bpy.data.images.new(imgname, self.imageSize, self.imageSize)
+        img.generated_color = color
+        setColorSpaceNone(img)
+        img.filepath_raw = trg
+        self.saveImage(img, True)
+        return img
+
+
+    def changeImage(self, src, trg, img, img2=None, key=None, strict=True):
         #if not self.checkImage(src):
         #    return None
         if src != trg and not self.imageExists(trg):
-            mod,img = self.copyImage(src, trg)
+            mod,img = self.copyImage(src, trg, key)
             if not mod:
                 return img
         if img is None:

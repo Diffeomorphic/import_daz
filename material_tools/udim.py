@@ -353,7 +353,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             #basename = self.getBaseName(imgname, dazRna(mat).DazUDim)
             if not basename.startswith("T_"):
                 basename = "T_%s" % basename
-            img = self.updateImage(img, basename, acttile)
+            img = self.updateImage(img, basename, acttile, key)
             width, height = img.size
             actimg = bpy.data.images.new(basename, width, height)
             actimg.source = "TILED"
@@ -377,7 +377,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                     img = node.image
                     tile = dazRna(mat).DazUDim
                     if found:
-                        self.updateImage(img, basename, tile)
+                        self.updateImage(img, basename, tile, key)
                     if tile not in udims.keys():
                         udims[tile] = mat.name
                     if mat == actmat:
@@ -409,16 +409,22 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                     img = node.image
                     udimpath = origpaths.get(img.filepath, img.filepath)
                     origpath = self.updatedImages.get(udimpath, udimpath)
-                    self.changeImage(udimpath, origpath, img)
+                    self.changeImage(udimpath, origpath, img, key=key)
                     img.source = "FILE"
                     node.extension = "CLIP"
                     img.filepath = origpath
                     img.name = node.label = node.label[2:]
                     print("Texture %s only on tile 1001" % origpath)
                 elif len(tiles) < len(usedtiles):
+                    img = node.image
+                    _,basename = self.getTileBase(img.name)
                     for tile in usedtiles:
                         if tile not in tiles:
-                            self.addImage(node.image, tile, key)
+                            imgname = self.makeImageName(basename, tile, img)
+                            src,trg = self.getTargetPath(img, basename, tile)
+                            self.addImage(imgname, trg, key)
+                            udim = 1001+tile
+                            img.tiles.new(tile_number=udim, label=str(udim))
 
         for mat in mats:
             self.addSkipZeroUvs(mat)
@@ -457,37 +463,6 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
 
     def makeImageName(self, basename, tile, img):
         return "%s%s" % (basename, os.path.splitext(img.name)[1])
-
-
-    def addImage(self, actimg, tile, key):
-        from ..material import setColorSpaceNone
-        #basename = self.getBaseName(actimg.name, tile)
-        _,basename = self.getTileBase(actimg.name)
-        if key.endswith(("Factor:Value", "Fac")):
-            color = (1,1,1,1)
-        elif key.startswith("NORMAL_MAP:Color"):
-            color = (0.5, 0.5, 1.0, 1)
-        elif key.endswith(("Color:A", "Color:B", "Color")):
-            color = (1,1,1,1)
-        elif key.startswith(("BUMP:Height")):
-            color = (0.5, 0.5, 0.5, 1)
-        elif key.startswith(("PBR:Base Color", "DAZ Dual Lobe:IOR", "PBR:Specular Tint")):
-            color = (1,1,1,1)
-        elif "Roughness" in key:
-            color = (1,1,1,1)
-        else:
-            print("Unknown key when adding UDIM image:", key)
-            color = (0,0,0,1)
-
-        imgname = self.makeImageName(basename, tile, actimg)
-        src,trg = self.getTargetPath(actimg, basename, tile)
-        img = bpy.data.images.new(imgname, self.imageSize, self.imageSize)
-        img.generated_color = color
-        setColorSpaceNone(img)
-        img.filepath_raw = trg
-        self.saveImage(img, True)
-        udim = 1001+tile
-        actimg.tiles.new(tile_number=udim, label=str(udim))
 
 
     def getTextureNodes(self, mat):
@@ -545,11 +520,11 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         return getTileBase(os.path.splitext(path)[0])
 
 
-    def updateImage(self, img, basename, udim):
+    def updateImage(self, img, basename, udim, key):
         src,trg = self.getTargetPath(img, basename, udim)
         trg = self.getLocalPath(trg)
         self.updatedImages[trg] = src
-        return self.changeImage(src, trg, img, strict=False)
+        return self.changeImage(src, trg, img, key=key, strict=False)
 
 
     def getTargetPath(self, img, basename, udim):
@@ -571,7 +546,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                 if folder1 == folder2:
                     basename = basenames.get(img.filepath)
                     if basename:
-                        self.updateImage(img, basename, dazRna(mat).DazUDim)
+                        self.updateImage(img, basename, dazRna(mat).DazUDim, key)
                     return actnode
         lpath = img.filepath.lower()
         udim = str(1001 + dazRna(mat).DazUDim)
