@@ -289,17 +289,9 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         description = "Search for UDIM textures that almost match location in node tree",
         default = True)
 
-    imageSize : IntProperty(
-        name = "Image Size",
-        description = "Size of generated images",
-        min = 1, max = 8196,
-        default = 64)
-
     def draw(self, context):
         self.drawActive(context)
         LocalTextureUser.draw(self, context)
-        self.layout.prop(self, "imageSize")
-        #self.layout.prop(self, "useGuessMissing")
         MaterialSelector.draw(self, context)
 
 

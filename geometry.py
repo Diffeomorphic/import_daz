@@ -698,12 +698,13 @@ def addMultires(context, ob, hdob, strict, subdivlevel, geo):
             pass
     else:
         nverts = len(ob.data.vertices)
-        while len(hdob.data.vertices) > nverts:
+        ok = True
+        while ok and len(hdob.data.vertices) > nverts:
             try:
                 bpy.ops.object.multires_unsubdivide(modifier="Multires")
                 nlevels += 1
             except RuntimeError:
-                pass
+                ok = False
     if nlevels > 0:
         hdfinger = getFingerPrint(hdob)
         if hdfinger == finger or not strict:
