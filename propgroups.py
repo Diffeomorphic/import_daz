@@ -265,6 +265,7 @@ if DAZ_PROPS:
         DazMergedRigs : CollectionProperty(type = DazStringBoolGroup)
         DazRigidityScaleFactors : CollectionProperty(type=DazRigidityScaleFactor)
         DazIndexActiveMorphs : IntProperty(default=0)
+        DazScaleMaps : BoolProperty()
 
 
     class DazImporterMesh(DazImporterGroup):
@@ -607,6 +608,7 @@ def registerDazProperties():
     bpy.types.Armature.DazBoneMap = CollectionProperty(type=DazStringGroup)
     bpy.types.Armature.DazMergedRigs = CollectionProperty(type = DazStringBoolGroup)
     bpy.types.Armature.DazRigidityScaleFactors = bpy.props.CollectionProperty(type=DazRigidityScaleFactor)
+    bpy.types.Armature.DazScaleMaps = BoolProperty()
 
     bpy.types.Mesh.DazTexLevel = IntProperty(min=0, max=3)
     bpy.types.Mesh.DazRigidityGroups = CollectionProperty(type = DazRigidityGroup)

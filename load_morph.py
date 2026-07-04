@@ -1864,13 +1864,17 @@ class LoadMorph(DriverUser):
         fcu.driver.type = 'SCRIPTED'
         removeModifiers(fcu)
         prop = self.getFinalScaleProp(pb, idx)
+        if isinstance(self.amt, bpy.types.Armature) and dazRna(self.amt).DazScaleMaps:
+            var = "a"
+        else:
+            var = "1+a"
         if inheritsScale(pb):
-            fcu.driver.expression = "(1+a)/parscale"
+            fcu.driver.expression = "(%s)/parscale" % var
             self.addPathVar(fcu, "a", self.amt, propRef(prop))
             self.correctScaleFcurve(fcu, pb, idx)
         else:
             self.addPathVar(fcu, "a", self.amt, propRef(prop))
-            fcu.driver.expression = "1+a"
+            fcu.driver.expression = var
         return fcu
 
 

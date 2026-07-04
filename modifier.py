@@ -84,18 +84,23 @@ class Modifier(Asset):
     def __init__(self, fileref):
         Asset.__init__(self, fileref)
         self.groups = []
+        self.extra = []
 
 
     def parse(self, struct):
         Asset.parse(self, struct)
         if "groups" in struct.keys():
             self.groups = struct["groups"]
+        if "extra" in struct.keys():
+            self.extra = struct["extra"]
 
 
     def update(self, struct):
         Asset.update(self, struct)
         if "groups" in struct.keys():
             self.groups = struct["groups"]
+        if "extra" in struct.keys():
+            self.extra = struct["extra"]
 
 
     def __repr__(self):
@@ -666,6 +671,10 @@ class SkinBinding(Modifier):
                 cns = copyRotation(twist, pb, rig, space='LOCAL')
                 cns.euler_order = data[1]
                 cns.use_y = False
+        for extra in self.extra:
+            scalemaps = (extra.get("scale_mode") == "ScaleMaps")
+            if rig:
+                dazRna(rig.data).DazScaleMaps = scalemaps
 
 
     def postTriax(self, context, ob, rig):
