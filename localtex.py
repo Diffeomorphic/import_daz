@@ -37,6 +37,7 @@ class LocalTextureUser:
     maxTexLevel = 2
     minTexLevel = 0
     level = 0
+    imageSize = 64
     subdir = "/textures/original"
 
     @classmethod
@@ -47,14 +48,8 @@ class LocalTextureUser:
                 dazRna(ob.data).DazTexLevel <= self.maxTexLevel and
                 dazRna(ob.data).DazTexLevel >= self.minTexLevel)
 
-    imageSize : IntProperty(
-        name = "Image Size",
-        description = "Size of generated images",
-        min = 1, max = 8196,
-        default = 64)
-
     def draw(self, context):
-        self.layout.prop(self, "imageSize")
+        pass
         #self.layout.prop(self, "useSaveGenerated")
         #self.layout.prop(self, "reuseExisting")
 
