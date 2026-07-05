@@ -342,7 +342,10 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         self.updatedImages = {}
         acttile = dazRna(actmat).DazUDim
         tiledImages = set()
-        for key,actnode in texnodes[actmat.name].items():
+        texlist = list(texnodes[actmat.name].items())
+        texlist.sort()
+        print("Textures found in active material:\n  %s" % [key for key,_ in texlist])
+        for key,actnode in texlist:
             if key is None:
                 continue
             img = actnode.image
@@ -365,18 +368,18 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             for mat in mats:
                 nodes = texnodes[mat.name]
                 node = nodes.get(key)
-                found = True
                 if node is None and self.useGuessMissing:
-                    if key.endswith((":A", ":B")):
-                        node = nodes.get(key[:-2])
-                        found = False
-                        if node and node.image:
-                            basenames[node.image.filepath] = basename
+                    altkey = self.getAltKey(key)
+                    if altkey:
+                        node = nodes.get(altkey)
+                    if node and node.image:
+                        basenames[node.image.filepath] = basename
+                    else:
+                        print("Missing texture for %s: %s" % (mat.name, key))
                 if node and node.image:
                     img = node.image
                     tile = dazRna(mat).DazUDim
-                    if found:
-                        self.updateImage(img, basename, tile, key)
+                    self.updateImage(img, basename, tile, key)
                     if tile not in udims.keys():
                         udims[tile] = mat.name
                     if mat == actmat:
@@ -464,28 +467,55 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         return "%s%s" % (basename, os.path.splitext(img.name)[1])
 
 
+    def getAltKey(self, key):
+        if key.endswith((":A", ":B")):
+            return key[:-2]
+        elif key.endswith((":Fac:Color")):
+            return "%s:Color" % key[:-10]
+        elif key.endswith((":Color:Color", ":A:Color", ":B:Color")):
+            return key[:-6]
+
+
+    def getAltKeys(self, key):
+        altkeys = ["%s:A" % key, "%s:B" % key]
+        if key.endswith("Color"):
+            stub = key[-6]
+            altkeys += [stub, "%s:Fac:Color" % stub, "%s:A:Color" % stub, "%s:B:Color" % stub]
+        return altkeys
+
+
     def getTextureNodes(self, mat):
-        def getChannel(node, links, grpname):
+        def getChannels(node, links, grpname):
+            channels = []
             for link in links:
                 if link.from_node == node:
+                    channel = None
                     sname = link.to_socket.name
+                    if link.from_socket.name in ["Transmit Fac"]:
+                        continue
                     tonode = link.to_node
-                    if tonode.type in ['MIX_RGB', 'MIX', 'MATH', 'GAMMA']:
-                        return "%s:%s" % (getChannel(tonode, links, grpname), sname)
+                    if tonode.type in ['MIX_RGB', 'MIX', 'MATH', 'GAMMA', 'INVERT']:
+                        channels1 = getChannels(tonode, links, grpname)
+                        if channels1:
+                            channel = "%s:%s" % (channels1[0], sname)
                     elif (tonode.type == 'GROUP' and
                           tonode.name in ["DAZ Color Effect"]):
-                        return "%s:%s" % (getChannel(tonode, links, grpname), sname)
+                        channels1 = getChannels(tonode, links, grpname)
+                        if channels1:
+                            channel = channels1[0]
                     elif tonode.type == 'BSDF_PRINCIPLED':
-                        return "PBR:%s" % sname
+                        channel = "BASE:%s" % sname
                     elif tonode.type == 'GROUP' and tonode.node_tree.name.startswith("DAZ "):
-                        return "%s:%s" % (tonode.node_tree.name, sname)
+                        channel = "%s:%s" % (tonode.node_tree.name, sname)
                     elif tonode.type == 'GROUP':
-                        return "%s:%s" % (tonode.node_tree.name, sname)
+                        channel = "%s:%s" % (tonode.node_tree.name, sname)
                     elif tonode.type == 'GROUP_OUTPUT' and grpname:
-                        return "%s:%s" % (grpname, sname)
+                        channel = "%s:%s" % (grpname, sname)
                     else:
-                        return "%s:%s" % (tonode.type, sname)
-            return None
+                        channel = "%s:%s" % (tonode.type, sname)
+                    if channel:
+                        channels.append(channel)
+            return channels
 
         def addTexNodes(tree, mat, texnodes, grpname):
             hasmaps = False
@@ -493,20 +523,22 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                 if node.type == 'TEX_IMAGE' and node.image:
                     if node.image.source == "TILED":
                         raise DazError("Material %s is already an UDIM material" % mat.name)
-                    channel = getChannel(node, tree.links, grpname)
+                    channels = getChannels(node, tree.links, grpname)
                     links = node.inputs["Vector"].links
                     if links and links[0].from_node.type == 'MAPPING':
                         hasmaps = True
-                    elif channel in texnodes.keys():
-                        print("Duplicate channel: %s" % channel)
-                    else:
-                        texnodes[channel] = node
+                    for channel in channels:
+                        if channel in texnodes.keys():
+                            print("Duplicate channel: %s" % channel)
+                        else:
+                            texnodes[channel] = node
                 elif (node.type == 'GROUP' and
                       not node.name.startswith("DAZ ") and
                       node.node_tree.name.startswith(("LIE", "DIMG"))):
-                        channel = getChannel(node, tree.links, grpname)
-                        hasgrp = addTexNodes(node.node_tree, mat, texnodes, channel)
-                        hasmaps = (hasmaps or hasgrp)
+                        channels = getChannels(node, tree.links, grpname)
+                        for channel in channels:
+                            hasgrp = addTexNodes(node.node_tree, mat, texnodes, channel)
+                            hasmaps = (hasmaps or hasgrp)
             return hasmaps
 
         texnodes = {}
@@ -522,8 +554,13 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
     def updateImage(self, img, basename, udim, key):
         src,trg = self.getTargetPath(img, basename, udim)
         trg = self.getLocalPath(trg)
-        self.updatedImages[trg] = src
-        return self.changeImage(src, trg, img, key=key, strict=False)
+        srcfile = os.path.basename(src)
+        trgfile = os.path.basename(trg)
+        if trgfile.startswith("T_") and srcfile.startswith("T_") and trgfile != srcfile:
+            print("Duplicate texture: %s" % trg)
+            return self.addImage("Gen", trg, key)
+        else:
+            return self.changeImage(src, trg, img, key=key, strict=False)
 
 
     def getTargetPath(self, img, basename, udim):
@@ -533,12 +570,13 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         if fname[-6:] == '<UDIM>':
             src = os.path.join(folder, "%s%d%s" % (fname[:-6], 1001+udim, ext))
         trg = os.path.join(folder, "%s_%d%s" % (basename, 1001+udim, ext))
-        return src, trg
+        return normalizePath(src), normalizePath(trg)
 
 
     def findBestMatch(self, key, img, mat, actnodes, basenames):
-        for ext in ["A", "B"]:
-            actnode = actnodes.get("%s:%s" % (key, ext))
+        altkeys = self.getAltKeys(key)
+        for altkey in altkeys:
+            actnode = actnodes.get(altkey)
             if actnode and actnode.image:
                 folder1 = os.path.dirname(img.filepath)
                 folder2 = os.path.dirname(actnode.image.filepath)
