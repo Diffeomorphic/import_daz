@@ -286,6 +286,7 @@ class BoneInstance(Instance):
         bone = pb.bone
         bone.inherit_scale = self.defaultInherit()
         dazRna(bone).DazOrient = self.attributes["orientation"]
+        dazRna(pb).DazGeneralScale = self.attributes["general_scale"]
 
         rdata = self.getHeadTail(center)
         dazRna(bone).DazHead = rdata.dazhead
