@@ -404,20 +404,31 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                     img.tiles.new(tile_number=1001+udim, label=mname)
 
         if len(usedtiles) > 1:
-            busy = set()
+            dense = set()
+            sparse = set()
             for key,tiles in keytiles.items():
                 node = texnodes[actmat.name][key]
-                if ((len(tiles) == 1 and tiles[0] == 0) or
-                    len(tiles) < len(usedtiles)):
+                if len(tiles) == 1 and tiles[0] == 0:
                     pass
+                elif len(tiles) < len(usedtiles):
+                    sparse.add(node.image)
                 else:
-                    busy.add(node.image)
+                    dense.add(node.image)
 
             for key,tiles in keytiles.items():
                 node = texnodes[actmat.name][key]
                 img = node.image
-                if img in busy:
+                if img in dense or img is None:
                     pass
+                elif img in sparse:
+                    _,basename = self.getTileBase(img.name)
+                    for tile in usedtiles:
+                        if tile not in tiles:
+                            imgname = self.makeImageName(basename, tile, img)
+                            src,trg = self.getTargetPath(img, basename, tile)
+                            self.addImage(imgname, trg, key)
+                            udim = 1001+tile
+                            img.tiles.new(tile_number=udim, label=str(udim))
                 elif len(tiles) == 1 and tiles[0] == 0:
                     udimpath = origpaths.get(img.filepath, img.filepath)
                     origpath = self.updatedImages.get(udimpath, udimpath)
@@ -427,15 +438,6 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                     img.filepath = origpath
                     img.name = node.label = node.label[2:]
                     print("Texture %s only on tile 1001" % origpath)
-                elif len(tiles) < len(usedtiles):
-                    _,basename = self.getTileBase(img.name)
-                    for tile in usedtiles:
-                        if tile not in tiles:
-                            imgname = self.makeImageName(basename, tile, img)
-                            src,trg = self.getTargetPath(img, basename, tile)
-                            self.addImage(imgname, trg, key)
-                            udim = 1001+tile
-                            img.tiles.new(tile_number=udim, label=str(udim))
 
         for mat in mats:
             self.addSkipZeroUvs(mat)
