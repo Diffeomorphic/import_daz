@@ -352,7 +352,6 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             filepath = str(img.filepath)
             imgname = os.path.splitext(img.name)[0]
             tile,basename = self.getTileBase(imgname)
-            #basename = self.getBaseName(imgname, dazRna(mat).DazUDim)
             if not basename.startswith("T_"):
                 basename = "T_%s" % basename
             img = self.updateImage(img, basename, acttile, key)
@@ -405,10 +404,21 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                     img.tiles.new(tile_number=1001+udim, label=mname)
 
         if len(usedtiles) > 1:
+            busy = set()
             for key,tiles in keytiles.items():
                 node = texnodes[actmat.name][key]
-                if len(tiles) == 1 and tiles[0] == 0:
-                    img = node.image
+                if ((len(tiles) == 1 and tiles[0] == 0) or
+                    len(tiles) < len(usedtiles)):
+                    pass
+                else:
+                    busy.add(node.image)
+
+            for key,tiles in keytiles.items():
+                node = texnodes[actmat.name][key]
+                img = node.image
+                if img in busy:
+                    pass
+                elif len(tiles) == 1 and tiles[0] == 0:
                     udimpath = origpaths.get(img.filepath, img.filepath)
                     origpath = self.updatedImages.get(udimpath, udimpath)
                     self.changeImage(udimpath, origpath, img, key=key)
@@ -418,7 +428,6 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                     img.name = node.label = node.label[2:]
                     print("Texture %s only on tile 1001" % origpath)
                 elif len(tiles) < len(usedtiles):
-                    img = node.image
                     _,basename = self.getTileBase(img.name)
                     for tile in usedtiles:
                         if tile not in tiles:
