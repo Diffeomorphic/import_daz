@@ -14,8 +14,8 @@ from .merge_uvs import UVLayerMergerOptions, UVLayerMerger, TileFixer
 class MergeGeograftOptions(UVLayerMergerOptions):
 
     keepOriginal : BoolProperty(
-        name = "Keep Original Meshes",
-        description = "Keep the original mesh and geografts in separate collections",
+        name = "Keep Original Mesh",
+        description = "Keep the original mesh for use with clothes.\nThe merged and original meshes are in separate collections",
         default = False)
 
     useFixTiles : BoolProperty(

@@ -308,7 +308,7 @@ if DAZ_PROPS:
 
         DazFavoPath : StringProperty(
             name = "Favorite Morphs",
-            description = "Path to favorite morphs",
+            description = "Path to JSON file with favorite morphs",
             subtype = 'FILE_PATH',
             default = "")
 
@@ -647,7 +647,7 @@ def registerDazProperties():
 
     bpy.types.Scene.DazFavoPath = StringProperty(
         name = "Favorite Morphs",
-        description = "Path to favorite morphs",
+        description = "Path to JSON file with favorite morphs",
         subtype = 'FILE_PATH',
         default = "")
 

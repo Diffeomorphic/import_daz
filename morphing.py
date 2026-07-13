@@ -1692,13 +1692,13 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, MorphSuffix, CustomMor
         return "Adjust Custom/%s" % self.category
 
 #-------------------------------------------------------------
-#   Save and load morph presets
+#   Save and load json favorites
 #-------------------------------------------------------------
 
-class DAZ_OT_SaveFavoMorphs(DazOperator, SingleFile, JsonFile, IsMeshArmature):
-    bl_idname = "daz.save_favo_morphs"
-    bl_label = "Save Favorite Morphs"
-    bl_description = "Save favorite morphs"
+class DAZ_OT_SaveJsonFavorites(DazOperator, SingleFile, JsonFile, IsMeshArmature):
+    bl_idname = "daz.save_json_favorites"
+    bl_label = "Save JSON Favorites"
+    bl_description = "Save favorite morphs in a JSON file"
 
     useCompact: BoolProperty(
         name = "Compact View",
@@ -1798,10 +1798,10 @@ class FavoOptions:
         default = False)
 
 
-class DAZ_OT_LoadFavoMorphs(DazOperator, MorphSuffix, MorphLoader, FavoOptions, SingleFile, JsonFile, IsMeshArmature):
-    bl_idname = "daz.load_favo_morphs"
-    bl_label = "Load Favorite Morphs"
-    bl_description = "Load favorite morphs"
+class DAZ_OT_LoadJsonFavorites(DazOperator, MorphSuffix, MorphLoader, FavoOptions, SingleFile, JsonFile, IsMeshArmature):
+    bl_idname = "daz.load_json_favorites"
+    bl_label = "Load JSON Favorites"
+    bl_description = "Load favorite morphs from a JSON file"
     bl_options = {'UNDO'}
 
     def draw(self, context):
@@ -2376,8 +2376,8 @@ classes = [
     DAZ_OT_ImportMasculine,
     DAZ_OT_ImportFeminine,
 
-    DAZ_OT_SaveFavoMorphs,
-    DAZ_OT_LoadFavoMorphs,
+    DAZ_OT_SaveJsonFavorites,
+    DAZ_OT_LoadJsonFavorites,
     DAZ_OT_ImportBakedCorrectives,
     DAZ_OT_ImportDazFavoMorphs,
 

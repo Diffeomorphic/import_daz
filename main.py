@@ -699,11 +699,6 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
         description = "Import all custom correctives for baked morphs",
         default = False)
 
-    useDazFavorites : BoolProperty(
-        name = "DAZ Favorites",
-        description = "Import DAZ favorite morphs",
-        default = False)
-
     useTransferClothes : BoolProperty(
         name = "Transfer To Clothes",
         description = "Transfer shapekeys from character to clothes",
@@ -737,9 +732,14 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
         description = "Merge selected geografts to active object.\nGeometry nodes are not used.\nDoes not work with nested geografts.\nShapekeys are always transferred first",
         default = False)
 
-    useFavoMorphs : BoolProperty(
-        name = "Use Favorite Morphs",
-        description = "Load a favorite morphs instead of loading standard morphs",
+    useDazFavorites : BoolProperty(
+        name = "DAZ Favorites",
+        description = "Import favorite morphs defined DAZ Studio",
+        default = False)
+
+    useJsonFavorites : BoolProperty(
+        name = "JSON Favorites",
+        description = "Import favorite morphs defined in a JSON file",
         default = False)
 
     favoPath : StringProperty(
@@ -777,14 +777,14 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
             if self.useAddErcBones:
                 self.layout.prop(self, "useUpdateErcBones")
         self.layout.separator()
-        self.layout.prop(self, "useFavoMorphs")
-        if self.useFavoMorphs:
-            self.subprop("favoPath")
-            self.subprop("ignoreUrl"),
-            self.subprop("ignoreFinger")
         MorphTypeOptions.draw(self, context)
         self.layout.prop(self, "useBakedCorrectives")
         self.layout.prop(self, "useDazFavorites")
+        self.layout.prop(self, "useJsonFavorites")
+        if self.useJsonFavorites:
+            self.subprop("favoPath")
+            self.subprop("ignoreUrl"),
+            self.subprop("ignoreFinger")
         self.layout.separator()
         self.layout.prop(self, "useAdjusters")
         self.layout.prop(self, "onMorphSuffix")
@@ -811,7 +811,7 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
     def invoke(self, context, event):
         scn = context.scene
         self.favoPath = dazRna(scn).DazFavoPath
-        self.useFavoMorphs = (self.favoPath != "")
+        self.useJsonFavorites = (self.favoPath != "")
         self.getColors()
         self.getFits()
         return MultiFile.invoke(self, context, event)
@@ -832,7 +832,7 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
         filepaths = self.getMultiFiles(["dbz", "duf", "dsf"])
         if len(filepaths) == 0:
             raise DazError("No valid files selected")
-        if self.useFavoMorphs:
+        if self.useJsonFavorites:
             self.favoPath = getExistingFilePath(self.favoPath, ".json")
         active = context.object
         vly = context.view_layer
@@ -1036,9 +1036,9 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
                         useFacs = self.useFacs,
                         useJcms = self.useJcms,
                         useTransferFace = False)
-            if self.useFavoMorphs:
+            if self.useJsonFavorites:
                 if activateObject(context, mainRig) and self.favoPath:
-                    bpy.ops.daz.load_favo_morphs(
+                    bpy.ops.daz.load_json_favorites(
                         filepath = self.favoPath,
                         onMorphSuffix = self.onMorphSuffix,
                         morphSuffix = self.morphSuffix,
