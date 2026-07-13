@@ -1083,18 +1083,6 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
                                 hdverts[vn].select = True
                             self.transferShapes(context, graft, [hdmesh], True, "All", useSelectedOnly=True, useShapeAsDriver=False)
 
-        # Merge material slots
-        # Must be done after shapekeys have been transferred to HD.
-        if (self.useMergeMaterials and
-            meshes and
-            activateObject(context, meshes[0])):
-            for ob in meshes[1:]:
-                selectSet(ob, True)
-            for ob in hdmeshes:
-                selectSet(ob, True)
-            print("Merge materials")
-            bpy.ops.daz.merge_materials()
-
         # Merge geografts
         hdgrafts = []
         if geografts:
@@ -1141,6 +1129,18 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
                     hdmain = hdmeshes[0]
                     mergeGeografts(context, hdmain, hdgrafts, hdmeshes)
                     hdgrafts = []
+
+        # Merge material slots
+        # Must be done after shapekeys have been transferred to HD.
+        if (self.useMergeMaterials and
+            meshes and
+            activateObject(context, meshes[0])):
+            for ob in meshes[1:]:
+                selectSet(ob, True)
+            for ob in hdmeshes:
+                selectSet(ob, True)
+            print("Merge materials")
+            bpy.ops.daz.merge_materials()
 
         # Transfer shapekeys to clothes and lashes
         if self.useTransferClothes:
