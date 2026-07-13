@@ -342,6 +342,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         self.updatedImages = {}
         acttile = dazRna(actmat).DazUDim
         tiledImages = set()
+        keyImages = {}
         texlist = list(texnodes[actmat.name].items())
         texlist.sort()
         print("Textures found in active material:\n  %s" % [key for key,_ in texlist])
@@ -361,6 +362,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             actimg.filepath_raw = filepath
             actimg.colorspace_settings.name = img.colorspace_settings.name
             tiledImages.add(actimg)
+            keyImages[key] = [actimg]
             actnode.image = actimg
             actnode.extension = "CLIP"
             udims = {}
@@ -385,6 +387,8 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                         img.name = self.makeImageName(basename, acttile, img)
                         node.label = basename
                         node.name = basename
+                    else:
+                        keyImages[key].append(img)
 
             img = actnode.image
             keytiles[key] = list(udims.keys())
@@ -439,6 +443,20 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                     img.name = node.label = node.label[2:]
                     print("Texture %s only on tile 1001" % origpath)
 
+        for key,images in keyImages.items():
+            if len(images) > 1:
+                actimg = images[0]
+                tiledname = baseName(actimg.name)
+                for img in images:
+                    if not img.name.startswith(tiledname):
+                        folder = os.path.dirname(actimg.filepath)
+                        fname,ext = os.path.splitext(img.name)
+                        tile = baseName(fname)[-4:]
+                        imgname = "%s_%s%s" % (tiledname, tile, ext)
+                        trg = "%s/%s" % (folder, imgname)
+                        print("Replace %s with %s" % (img.filepath, trg))
+                        img = self.addImage(imgname, trg, key)
+
         for mat in mats:
             self.addSkipZeroUvs(mat)
 
@@ -459,6 +477,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                             node.extension = "CLIP"
                             node.label = actnode.label
                             node.name = actnode.name
+
         self.printLocalImages()
         useSaveGenerated = self.useSaveGenerated
         self.useSaveGenerated = True
