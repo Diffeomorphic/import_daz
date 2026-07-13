@@ -1059,7 +1059,8 @@ class CyclesTree(Tree):
         node.inputs["IOR"].default_value = 1.1 + 0.7*value
         if tex:
             iortex = self.multiplyScalarTex(0.7*value, tex, add=1.1)
-            self.links.new(colorOutput(iortex), node.inputs["IOR"])
+            if iortex:
+                self.links.new(colorOutput(iortex), node.inputs["IOR"])
 
         if self.owner.shader == 'PBRSKIN':
             rough1,rough2,roughtex,ratio = self.getDualRoughness()
