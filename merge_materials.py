@@ -32,10 +32,16 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
         description = "Merge materials even if the bump strengths differ",
         default = True)
 
+    debug : BoolProperty(
+        name = "Debug",
+        description = "Print debug messages in the terminal",
+        default = False)
+
     def draw(self, context):
         self.layout.prop(self, "useAcrossObjects")
         self.layout.prop(self, "useAllObjects")
         self.layout.prop(self, "ignoreBump")
+        self.layout.prop(self, "debug")
 
 
     def run(self, context):
@@ -183,7 +189,7 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
             attr1 = attr2 = None
             if (prop[0] == "_" or
                 prop[0:3] == "Daz" or
-                prop in ["select", "session_uid"]):
+                prop in ["select", "session_uid", "users"]):
                 pass
             elif hasattr(rna1, prop) and hasattr(rna2, prop):
                 attr1 = getattr(rna1, prop)
@@ -191,8 +197,16 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
                     attr1 = self.fixKey(attr1, mname1, mname2)
                 attr2 = getattr(rna2, prop)
                 if not self.checkEqual(attr1, attr2):
+                    if self.debug:
+                        print("%s != %s, attribute %s: %s != %s" % (mname1, mname2, prop, attr1, attr2))
                     return False
-            elif hasattr(rna1, prop) or hasattr(rna2, prop):
+            elif hasattr(rna1, prop):
+                if self.debug:
+                    print("%s lacks attribute %s" % (mname2, prop))
+                return False
+            elif hasattr(rna2, prop):
+                if self.debug:
+                    print("%s lacks attribute %s" % (mname1, prop))
                 return False
         return True
 
@@ -332,6 +346,8 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
                 continue
             key2 = self.fixKey(key1, mname1, mname2)
             if key2 not in struct2.keys():
+                if self.debug:
+                    print("%s != %s, key %s" % (mname1, mname2, key2))
                 return False
         return True
 
