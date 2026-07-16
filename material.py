@@ -1340,6 +1340,9 @@ def checkSetting(attr, op, val, minval, first, header):
     else:
         return False,minval
 
+#----------------------------------------------------------
+#   Update Render settings
+#----------------------------------------------------------
 
 class DAZ_OT_UpdateRenderSettings(DazOperator):
     bl_idname = "daz.update_render_settings"
@@ -1351,9 +1354,24 @@ class DAZ_OT_UpdateRenderSettings(DazOperator):
         checkRenderSettings(context, True)
 
 #----------------------------------------------------------
-#   Strip material names
+#   Prune images
 #----------------------------------------------------------
 
+class DAZ_OT_PruneImages(DazOperator):
+    bl_idname = "daz.prune_images"
+    bl_label = "Prune Images"
+    bl_description = "Remove all unused images"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        for img in list(bpy.data.images):
+            if img.users == 0:
+                print("Remove %s" % img.name)
+                bpy.data.images.remove(img)
+
+#----------------------------------------------------------
+#   Strip material names
+#----------------------------------------------------------
 class DAZ_OT_StripMaterialNames(DazPropsOperator, IsMesh):
     bl_idname = "daz.strip_material_names"
     bl_label = "Strip Material Names"
@@ -1425,6 +1443,7 @@ def sortMaterialsByName(ob):
 classes = [
     DAZ_OT_CopyMaterials,
     DAZ_OT_PruneNodeTrees,
+    DAZ_OT_PruneImages,
     DAZ_OT_UpdateRenderSettings,
     DAZ_OT_StripMaterialNames,
     DAZ_OT_SortMaterialsByName,
