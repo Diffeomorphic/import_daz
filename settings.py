@@ -169,7 +169,10 @@ class GlobalSettings:
 
 
     def fixPath(self, path):
-        filepath = os.path.expanduser(unquote(path)).replace("\\", "/")
+        filepath = os.path.expanduser(unquote(path))
+        filepath = filepath.replace("\\", "/")
+        if filepath.startswith("//") and sys.platform == 'win32':
+            filepath = "\\\\%s" % filepath[2:]
         return filepath.rstrip("/ ")
 
 
@@ -473,8 +476,9 @@ class GlobalSettings:
             return path
         else:
             for folder in self.getDazPaths():
-                filepath = "%s/%s" % (folder, path)
-                filepath = filepath.replace("//", "/")
+                filepath = "%s/%s" % (folder, path).replace("//", "/")
+                if folder.startswith("//") and sys.platform == 'win32':
+                    filepath = "\\\\%s" % filepath[2:]
                 if os.path.exists(filepath):
                     return filepath
                 words = filepath.rsplit("/", 2)
