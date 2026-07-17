@@ -90,6 +90,7 @@ class DAZ_PT_SetupMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.merge_materials")
         self.layout.operator("daz.change_colors")
+        self.layout.operator("daz.prune_images")
 
 #----------------------------------------------------------
 #   Morphs
