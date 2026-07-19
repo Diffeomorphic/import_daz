@@ -476,7 +476,8 @@ class GlobalSettings:
             return path
         else:
             for folder in self.getDazPaths():
-                filepath = "%s/%s" % (folder, path).replace("//", "/")
+                filepath = "%s/%s" % (folder, path)
+                filepath = filepath.replace("//", "/")
                 if folder.startswith("//") and sys.platform == 'win32':
                     filepath = "\\\\%s" % filepath[2:]
                 if os.path.exists(filepath):
