@@ -1,1 +1,2 @@
 DEBUG = True
+DEBUG_MHX_ERC = False

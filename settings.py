@@ -610,7 +610,7 @@ class LocalSettings:
         self.returnValue = {}
         self.ercDrivers = None
         self.ercFormulas = None
-        self.ercMats = None
+        self.ercMats = {}
 
 
     def __repr__(self):

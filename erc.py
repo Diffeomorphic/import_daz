@@ -268,13 +268,14 @@ def addErcDrivers(context, rig):
                 elif not isDspBone(bname):
                     print("Missing ERC driver", bname, bname1, idx)
 
+
     def addErcBoneDrivers(context, rig):
         from .rig_utils import copyTransform
         for bname,form in LS.ercFormulas.items():
             pb = rig.pose.bones[bname]
             drvb = rig.pose.bones[drvBone(bname)]
             drvb.driver_remove("location")
-            if hasattr(ercb, "color"):
+            if hasattr(drvb, "color"):
                 drvb.bone.color.palette = 'THEME14'
                 drvb.color.palette = 'THEME14'
             for idx in range(3):
