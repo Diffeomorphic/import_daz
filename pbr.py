@@ -488,7 +488,7 @@ class PbrTree(CyclesTree):
             if weight > 0:
                 self.linkScalar(wttex, self.pbr, weight, PBR.TransmitWeight, texslot=texslot)
                 self.thickness = 0.0
-                self.setRefractivePrincipled()
+                self.setRefractivePrincipled(weight, wttex)
             else:
                 self.column = col
             return weight,wttex
@@ -497,47 +497,98 @@ class PbrTree(CyclesTree):
             return CyclesTree.buildRefraction(self)
 
 
-    def setRefractivePrincipled(self):
+    def setRefractivePrincipled(self, weight, wttex):
         pbr = self.cycles = self.pbr
         color,coltex,roughness,roughtex = self.getRefractionColor()
+        gcolor,gcoltex,_ = self.getColorTex("getChannelGlossyColor", "COLOR", WHITE)
+        grough, groughtex,_ = self.getColorTex(["Glossy Roughness"], "NONE", 0, False, maxval=1)
         ior,iortex,_ = self.getColorTex("getChannelIOR", "NONE", 1.45)
         strength,strtex,texslot = self.getColorTex("getChannelGlossyLayeredWeight", "NONE", 1.0, False, isMask=True)
+        self.postPBR = True
         tint = None
         if self.getValue(["Share Glossy Inputs"], False):
             tint = Tint(1.0)
-        self.postPBR = True
 
         if self.owner.isThinWall:
             # if thin walled is on then there's no volume
             # and we use the clearcoat channel for reflections
             #
-            # principled ior = 1
-            # principled roughness = 0
             # BLENDER 3:
-            #   principled clearcoat = (iray refraction index - 1) * 10 * iray glossy layered weight
-            #   principled clearcoat roughness = 0
+            #   principled transmission = iray refraction weight
+            #   principled ior = 1.0
+            #   principled clearcoat = (iray refraction index - 1) * 5
+            #   if iray share glossy inputs == on
+            #       principled base color = iray glossy color
+            #       principled transmission roughness = iray glossy roughness
+            #       principled clearcoat roughness = iray glossy roughness
+            #   else
+            #       principled base color = iray refraction color
+            #       principled transmission roughness = iray refraction roughness
+            #       principled clearcoat roughness = iray glossy roughness
+            #
             # BLENDER 4:
+            #   principled transmission = iray refraction weight
+            #   principled ior = 1
+            #   principled roughness = 0
+            #   if iray share glossy inputs == on
+            #       principled base color = iray glossy color
+            #       principled roughness = iray glossy roughness
+            #   else
+            #       principled base color = iray refraction color
+            #       principled roughness = iray refraction roughness
+            #   principled coat tint = iray glossy color
+            #   principled coat roughness = iray glossy roughness
             #   coat weight = iray glossy layered weight
             #   coat roughness = iray glossy roughness
             #   coat ior = iray refraction index
             #   coat tint = iray glossy color
+            #
+            # BLENDER 5.2
+            #   principled thin wall == on
+            #   principled transmission = iray refraction weight
+            #   principled ior = iray refraction index
+            #   principled roughness = iray refraction roughness
+            #   if iray share glossy inputs == on
+            #       principled base color = iray glossy color
+            #       principled specular tint = iray glossy color
+            #   else
+            #       principled base color = iray refraction color
+            #   principled specular tint = iray glossy color
+
             self.owner.setTransSettings(True, False, color, 0.1)
-            self.replaceSlot(pbr, "IOR", 1.0)
-            self.replaceSlot(pbr, "Roughness", 0.0)
+            hasThinWall = ("Thin Wall" in pbr.inputs.keys())
             if BLENDER3:
-                clearcoat = (ior-1)*10*strength
+                self.replaceSlot(pbr, "IOR", 1.0)
+                self.replaceSlot(pbr, "Roughness", 0.0)
+                self.replaceSlot(pbr, "Specular", 0.5)
+                self.linkScalar(roughtex, pbr, roughness, "Transmission Roughness")
+                clearcoat = (ior-1)*5
                 self.removeLink(pbr, "Clearcoat")
-                self.linkScalar(strtex, pbr, clearcoat, "Clearcoat", texslot=texslot)
-                self.replaceSlot(pbr, "Clearcoat Roughness", 0)
+                self.linkScalar(strtex, pbr, clearcoat, "Clearcoat")
+                self.removeLink(pbr, "Clearcoat Roughness")
+                self.linkScalar(groughtex, pbr, grough, "Clearcoat Roughness",)
+            elif hasThinWall:
+                self.replaceSlot(pbr, "Thin Wall", True)
+                self.removeLink(pbr, "IOR")
+                self.linkScalar(iortex, pbr, ior, "IOR")
+                self.removeLink(pbr, "Roughness")
+                self.linkScalar(roughtex, pbr, roughness, "Roughness")
+                self.linkColor(gcoltex, pbr, gcolor, "Specular Tint")
+                tint = None
             else:
+                self.replaceSlot(pbr, "IOR", 1.0)
+                self.removeLink(pbr, "Roughness")
+                self.linkScalar(roughtex, pbr, roughness, "Roughness")
                 self.removeLink(pbr, "Coat Weight")
-                self.linkScalar(strtex, pbr, strength, "Coat Weight", texslot=texslot)
+                self.linkScalar(strtex, pbr, strength, "Coat Weight")
                 self.removeLink(pbr, "Coat IOR")
                 self.linkScalar(iortex, pbr, ior, "Coat IOR")
-                self.removeLink(pbr, "Coat Roughness")
-                self.linkScalar(roughtex, pbr, roughness, "Coat Roughness")
                 self.removeLink(pbr, "Coat Tint")
-                self.linkColor(coltex, pbr, color, "Coat Tint")
+                self.linkColor(gcoltex, pbr, gcolor, "Coat Tint")
+                tint = None
+                self.removeLink(pbr, "Coat Roughness")
+                self.linkScalar(groughtex, pbr, grough, "Coat Roughness")
+
             if LS.materialMethod == 'EXTENDED_PRINCIPLED':
                 from .cgroup import RayClipGroup
                 clip = self.addGroup(RayClipGroup, "DAZ Ray Clip", col=6)
