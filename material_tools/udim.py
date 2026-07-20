@@ -388,6 +388,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                         node.label = basename
                         node.name = basename
                     else:
+                        pass
                         keyImages[key].append(img)
 
             img = actnode.image
@@ -447,13 +448,14 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             if len(images) > 1:
                 actimg = images[0]
                 tiledname = baseName(actimg.name)
-                for img in images:
-                    if not img.name.startswith(tiledname):
-                        folder = os.path.dirname(actimg.filepath)
-                        fname,ext = os.path.splitext(img.name)
+                folder = os.path.dirname(actimg.filepath)
+                for img in images[1:]:
+                    if os.path.dirname(img.filepath) != folder:
+                        file = os.path.basename(img.filepath)
+                        trg = "%s/%s" % (folder, file)
+                        fname,ext = os.path.splitext(file)
                         tile = baseName(fname)[-4:]
                         imgname = "%s_%s%s" % (tiledname, tile, ext)
-                        trg = "%s/%s" % (folder, imgname)
                         print("Replace %s with %s" % (img.filepath, trg))
                         img = self.addImage(imgname, trg, key)
 

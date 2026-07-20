@@ -608,8 +608,8 @@ class LocalSettings:
         self.hdmeshes = { None : [] }
         self.bakedMorphs = {}
         self.returnValue = {}
-        self.ercDrivers = None
-        self.ercFormulas = None
+        self.ercDrivers = {}
+        self.ercFormulas = {}
         self.ercMats = {}
 
 

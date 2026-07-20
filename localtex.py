@@ -31,9 +31,17 @@ class HiddenTextureUser:
 #-------------------------------------------------------------
 
 class LocalTextureUser:
+    useSaveGenerated : BoolProperty(
+        name = "Save Generated Files",
+        description = "Save generated files to disk. If disabled, pack generated files in current blend file",
+        default = True)
+
+    reuseExisting : BoolProperty(
+        name = "Reuse Existing Images",
+        description = "Reuse existing local textures instead of regenerating them",
+        default = True)
+
     useSaveLoaded = False
-    useSaveGenerated = False
-    reuseExisting = True
     maxTexLevel = 2
     minTexLevel = 0
     level = 0
@@ -50,8 +58,8 @@ class LocalTextureUser:
 
     def draw(self, context):
         pass
-        #self.layout.prop(self, "useSaveGenerated")
-        #self.layout.prop(self, "reuseExisting")
+        self.layout.prop(self, "useSaveGenerated")
+        self.layout.prop(self, "reuseExisting")
 
 
     def getMeshes(self, context):
@@ -376,11 +384,6 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
     maxTexLevel = 0
     useSaveLoaded = True
     subdir = "/textures/original"
-
-    reuseExisting : BoolProperty(
-        name = "Reuse Existing Images",
-        description = "Reuse existing local textures instead of regenerating them",
-        default = True)
 
     def draw(self, context):
         self.layout.prop(self, "reuseExisting")
