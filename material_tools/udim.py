@@ -8,7 +8,7 @@ import numpy as np
 from ..error import *
 from ..utils import *
 from ..fileutils import MultiFile, ImageFile
-from ..localtex import LocalTextureUser, normPath
+from ..localtex import LocalTextureUser, normPath, freeImages
 from ..matsel import MaterialSelector
 from ..tree import getFromSocket, XSIZE, YSIZE, YSTEP
 from ..merge_uvs import TileFixer
@@ -49,6 +49,7 @@ class DAZ_OT_FixTextureTiles(DazPropsOperator, LocalTextureUser, TileFixer):
         self.saveLocalTextures(context)
         mattiles = self.findMatTiles(ob)
         self.fixTextures(ob, ob.active_material.name, mattiles)
+        freeImages()
 
 #----------------------------------------------------------
 #   Add Genesis tiles
@@ -312,10 +313,16 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
 
 
     def run(self, context):
-        self.initLocalImages()
         ob = context.object
         if ob.active_material is None:
             raise DazError("No active material")
+        self.initLocalImages()
+        self.makeUdimTextures(context)
+        freeImages()
+
+
+    def makeUdimTextures(self, context):
+        ob = context.object
         if self.useGenesisTiles:
             self.addGenesisTiles(ob)
         self.saveLocalTextures(context)
@@ -339,7 +346,6 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         basenames = {}
         keytiles = {}
         origpaths = {}
-        self.updatedImages = {}
         acttile = dazRna(actmat).DazUDim
         tiledImages = set()
         keyImages = {}
@@ -435,9 +441,8 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                             udim = 1001+tile
                             img.tiles.new(tile_number=udim, label=str(udim))
                 elif len(tiles) == 1 and tiles[0] == 0:
-                    udimpath = origpaths.get(img.filepath, img.filepath)
-                    origpath = self.updatedImages.get(udimpath, udimpath)
-                    self.changeImage(udimpath, origpath, img, key=key)
+                    origpath = origpaths.get(img.filepath, img.filepath)
+                    self.changeImage(origpath, origpath, img, key=key)
                     img.source = "FILE"
                     node.extension = "CLIP"
                     img.filepath = origpath

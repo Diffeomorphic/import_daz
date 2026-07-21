@@ -6,7 +6,7 @@ import os
 import bpy
 from .utils import *
 from .error import *
-from .localtex import LocalTextureUser
+from .localtex import LocalTextureUser, freeImages
 
 #----------------------------------------------------------
 #   Bake LIE
@@ -55,6 +55,7 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
         path,img = self.foundImages[0]
         level = self.getResLevel(path)
         self.setResSubdir(level)
+        freeImages()
         self.initLocalImages()
         bpy.ops.mesh.primitive_plane_add(size=1)
         bakeplane = context.object
@@ -69,6 +70,7 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
         finally:
             deleteObjects(context, [bakeplane])
             bpy.data.materials.remove(bakemat)
+            freeImages()
 
 
     def bakeLieGroups(self, context, ob, bakeplane, bakemat):

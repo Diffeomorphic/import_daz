@@ -396,6 +396,7 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
         self.saveLocalTextures(context)
         self.printLocalImages()
         self.saveLocalImages()
+        freeImages()
         for ob in meshes:
             dazRna(ob.data).DazTexLevel = 1
 
@@ -437,10 +438,10 @@ class DAZ_OT_ReloadTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperato
     def run(self, context):
         ob = context.object
         meshes = self.getMeshes(context)
+        self.initLocalImages()
         if self.useOriginal:
             self.restoreOriginal(meshes)
         else:
-            self.initLocalImages()
             self.getAllImages(meshes)
             for _,img in self.foundImages:
                 filepath = bpy.path.abspath(img.filepath)
@@ -451,10 +452,10 @@ class DAZ_OT_ReloadTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperato
                         img.unpack()
                     img.filepath = filepath
                     img.update()
+        freeImages()
 
 
     def restoreOriginal(self, meshes):
-        self.initLocalImages()
         nstrip = len(self.texpath)
         self.getAllImages(meshes)
         for _,img in self.foundImages:
@@ -498,6 +499,7 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
         self.saveLocalTextures(context)
         self.printLocalImages()
         self.saveLocalImages()
+        freeImages()
         for ob in meshes:
             dazRna(ob.data).DazTexLevel = 2
 
@@ -518,8 +520,30 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
             return False, img
 
 #----------------------------------------------------------
+#   Prune images
+#----------------------------------------------------------
+
+class DAZ_OT_PruneImages(DazOperator):
+    bl_idname = "daz.prune_images"
+    bl_label = "Prune Images"
+    bl_description = "Remove all unused images"
+    bl_options = {'UNDO'}
+
+    def run(self, context):
+        for img in list(bpy.data.images):
+            img.buffers_free()
+            if img.users == 0:
+                print("Remove %s" % img.name)
+                bpy.data.images.remove(img)
+
+#----------------------------------------------------------
 #   Utility
 #----------------------------------------------------------
+
+def freeImages():
+    for img in list(bpy.data.images):
+        img.buffers_free()
+
 
 def getProperPath(path):
     if path[0:2] == "//":
@@ -540,6 +564,7 @@ classes = [
     DAZ_OT_SaveLocalTextures,
     DAZ_OT_ReloadTextures,
     DAZ_OT_SetResolution,
+    DAZ_OT_PruneImages,
 ]
 
 def register():
