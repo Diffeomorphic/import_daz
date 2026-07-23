@@ -166,6 +166,8 @@ class TileFixer:
 
 
     def fixTextures(self, ob, matname, mattiles):
+        from .localtex import pathKey
+
         def getFolder(ob, matname):
             for mat in ob.data.materials:
                 if mat.name == matname:
@@ -181,7 +183,7 @@ class TileFixer:
                 return
             for node in tree.nodes:
                 if node.type == 'TEX_IMAGE' and node.image:
-                    path = bpy.path.abspath(node.image.filepath)
+                    path = pathKey(node.image.filepath)
                     file = os.path.basename(path)
                     fname,ext = os.path.splitext(file)
                     tile,base = getTileBase(fname)
@@ -196,9 +198,11 @@ class TileFixer:
                             img = images[src]
                         else:
                             trg = self.getLocalPath(bpy.path.abspath(newpath))
-                            img = self.changeImage(src, trg, None, node.image)
+                            img = self.saveImageAs(node.image, trg)
                             images[src] = img
+                        print("FIX", node.image.filepath)
                         node.image = img
+                        print("DIBE", node.image.filepath)
                         node.label = "%s_%d" % (base, mattile)
                 elif (node.type == 'GROUP' and
                       not node.name.startswith("DAZ ") and

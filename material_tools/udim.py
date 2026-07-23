@@ -39,14 +39,9 @@ class DAZ_OT_FixTextureTiles(DazPropsOperator, LocalTextureUser, TileFixer):
     bl_description = "Copy textures to the right directory and correct tile numbers.\nTo fix incorrect Genesis 8.1 material names"
     bl_options = {'UNDO'}
 
-    def draw(self, context):
-        LocalTextureUser.draw(self, context)
-        TileFixer.draw(self, context)
-
     def run(self, context):
         ob = context.object
         self.initLocalImages()
-        self.saveLocalTextures(context)
         mattiles = self.findMatTiles(ob)
         self.fixTextures(ob, ob.active_material.name, mattiles)
         freeImages()
@@ -362,10 +357,17 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             if not basename.startswith("T_"):
                 basename = "T_%s" % basename
             img = self.updateImage(img, basename, acttile, key)
+            if img is None:
+                print("Not tileable: %s" % filepath)
+                continue
             width, height = img.size
+            ext = os.path.splitext(filepath)[1]
+            udimpath = "%s/%s_<UDIM>%s" % (self.texpath, basename, ext)
+            origpaths[udimpath] = filepath
             actimg = bpy.data.images.new(basename, width, height)
             actimg.source = "TILED"
-            actimg.filepath_raw = filepath
+            actimg.filepath_raw = udimpath
+            self.saveImage(actimg)
             actimg.colorspace_settings.name = img.colorspace_settings.name
             tiledImages.add(actimg)
             keyImages[key] = [actimg]
@@ -397,22 +399,15 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                         pass
                         keyImages[key].append(img)
 
-            img = actnode.image
             keytiles[key] = list(udims.keys())
-            if bpy.app.version >= (3, 1, 0):
-                path2,ext2 = os.path.splitext(img.filepath)
-                tile,base = self.getTileBase(path2)
-                if base:
-                    udimpath = "%s_<UDIM>%s" % (base,ext2)
-                    origpaths[udimpath] = str(img.filepath)
-                    img.filepath = udimpath
-            tile0 = img.tiles[0]
+            tile0 = actimg.tiles[0]
             for udim,mname in udims.items():
                 if udim == 0:
                     tile0.number = 1001
                     tile0.label = mname
                 else:
                     img.tiles.new(tile_number=1001+udim, label=mname)
+            self.saveImage(actimg)
 
         if len(usedtiles) > 1:
             dense = set()
@@ -442,7 +437,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                             img.tiles.new(tile_number=udim, label=str(udim))
                 elif len(tiles) == 1 and tiles[0] == 0:
                     origpath = origpaths.get(img.filepath, img.filepath)
-                    self.changeImage(origpath, origpath, img, key=key)
+                    img = self.copyImage(img.filepath, origpath, key)
                     img.source = "FILE"
                     node.extension = "CLIP"
                     img.filepath = origpath
@@ -484,19 +479,6 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                             node.extension = "CLIP"
                             node.label = actnode.label
                             node.name = actnode.name
-
-        self.printLocalImages()
-        useSaveGenerated = self.useSaveGenerated
-        self.useSaveGenerated = True
-        self.saveLocalImages()
-        for img in tiledImages:
-            img.reload()
-        if not useSaveGenerated:
-            self.useSaveGenerated = False
-            self.saveLocalImages()
-            for img in tiledImages:
-                img.pack()
-            self.deleteCopiedImages()
         dazRna(ob.data).DazTexLevel = 3
 
 
@@ -597,7 +579,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             print("Duplicate texture: %s" % trg)
             return self.addImage("Gen", trg, key)
         else:
-            return self.changeImage(src, trg, img, key=key, strict=False)
+            return self.copyImage(src, trg, key)
 
 
     def getTargetPath(self, img, basename, udim):

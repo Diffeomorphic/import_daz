@@ -52,8 +52,8 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
         self.getAllImages(meshes)
         if not self.foundImages:
             return
-        path,img = self.foundImages[0]
-        level = self.getResLevel(path)
+        node,img = self.foundImages[0]
+        level = self.getResLevel(img.filepath)
         self.setResSubdir(level)
         freeImages()
         self.initLocalImages()
@@ -136,10 +136,7 @@ class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
                             (tuple(bakeimg.size), bakeimg.colorspace_settings.name, bakeimg.filepath))
                         width,height = img.size
                         bpy.ops.object.bake(type='EMIT', width=width, height=height)
-                        if self.useSaveGenerated:
-                            bakeimg.save()
-                        else:
-                            bakeimg.pack()
+                        bakeimg.save()
                         lies.append((node, tex, img, bakeimg))
             for node,tex,img,bakeimg in lies:
                 newTex = tree.nodes.new(type="ShaderNodeTexImage")

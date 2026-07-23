@@ -176,8 +176,7 @@ class LocalTextureUser:
             img.update()
             img.reload()
             if not img.has_data:
-                print("FAIL", img.filepath, img.has_data)
-                halt
+                print("FAIL", img.filepath, img.has_data, os.path.exists(img.filepath))
 
 
     def copyImage(self, src, trg, key=None):
@@ -186,39 +185,36 @@ class LocalTextureUser:
             img = self.existImages.get(trg)
             if img:
                 print("DBB", img.filepath)
-                return False, img
+                return img
             elif os.path.exists(trg):
                 img = bpy.data.images.load(trg)
                 print("EX", img.filepath)
                 self.existImages[trg] = img
-                return False, img
+                return img
 
         src = pathKey(src)
-        img = self.loadImage(src, key)
-        mod,img = self.modifyImage(img, False)
-        if not mod:
-            self.ignoredImages.add(trg)
-            return False, img
-        self.ensureUpdated(img)
-        filepath = img.filepath
-        name = img.name
+        if not os.path.exists(src):
+            print("Image not found: %s" % src)
+            return None
+        img = bpy.data.images.load(src)
+        img.update()
+        img = self.modifyImage(img, False)
         img.filepath_raw = trg
         img.name = os.path.basename(trg)
+        print("SAV", img.filepath, img.has_data)
         img.save()
-        img.name = name
-        img.filepath_raw = filepath
-        img = self.loadImage(trg, key)
+        self.existImages[trg] = img
         if GS.verbosity >= 3:
             print("Copied %s %s" % (tuple(img.size), trg))
         if "Public" in trg:
             msg = "Expected local image: %s" % trg
             print(msg)
             raise DazError(msg)
-        return True, img
+        return img
 
 
     def modifyImage(self, img, force):
-        return True, img
+        return img
 
 
     def loadImage(self, path, key):
@@ -284,37 +280,20 @@ class LocalTextureUser:
         return img
 
 
-    def changeImage(self, src, trg, img, img2=None, key=None, strict=True):
-        #if not self.checkImage(src):
-        #    return None
-        src = pathKey(src)
-        trg = pathKey(trg)
-        if src != trg and not self.imageExists(trg):
-            mod,img = self.copyImage(src, trg, key)
-            if not mod:
-                return img
-        if img is None:
-            img = img2.copy()
-            self.ensureUpdated(img)
-            img.colorspace_settings.name = img2.colorspace_settings.name
-            img.filepath_raw = trg
-            self.saveImage(img)
-        return img
+    def saveImage(self, img):
+        img.save()
+        path = pathKey(img.filepath)
+        self.existImages[path] = img
 
 
-    def saveImage(self, img, isnew):
-        if img:
-            self.ensureUpdated(img)
-            path = pathKey(img.filepath)
-            img.filepath_raw = path
-            print("PP", path)
-            if "/../" in path:
-                halt
-            if img.has_data or True:
-                img.save()
-                self.existImages[path] = img
-            else:
-                print("Failed to update image:", img.filepath)
+    def saveImageAs(self, img, path):
+        img2 = bpy.data.images.load(img.filepath)
+        img2.update()
+        img2.filepath_raw = path
+        img2.colorspace_settings.name = img.colorspace_settings.name
+        img2.save()
+        self.existImages[path] = img2
+        return img2
 
 
     def isIrrelevant(self, path):
@@ -329,7 +308,7 @@ class LocalTextureUser:
             trg = self.getLocalPath(src)
             print("FIX", src)
             print("TO", trg)
-            mod,img2 = self.copyImage(src, trg)
+            img2 = self.copyImage(src, trg)
             print("IM2", img2)
             node.image = img2
 
@@ -382,7 +361,7 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
         for node,img in self.foundImages:
             src = pathKey(img.filepath)
             trg = self.getLocalPath(src)
-            mod,img2 = self.copyImage(src, trg)
+            img2 = self.copyImage(src, trg)
             node.image = img2
         #freeImages()
         for ob in meshes:
@@ -488,7 +467,7 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
         for node,img in self.foundImages:
             src = pathKey(img.filepath)
             trg = self.getLocalPath(src)
-            mod,img2 = self.copyImage(src, trg)
+            img2 = self.copyImage(src, trg)
             node.image = img2
         #freeImages()
         for ob in meshes:
@@ -501,14 +480,15 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
             scale = int(2**(self.level-level))
             x,y = img.size
             img.scale(int(x/scale), int(y/scale))
-            return True, img
+            return img
         elif force:
             scale = int(2**(level-self.level))
             x,y = img.size
             img.scale(int(x*scale), int(y*scale))
-            return True, img
+            return img
         else:
-            return False, img
+            self.ignoredImages.add(trg)
+            return img
 
 #----------------------------------------------------------
 #   Prune images
