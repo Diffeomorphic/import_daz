@@ -31,13 +31,6 @@ class HiddenTextureUser:
 #-------------------------------------------------------------
 
 class LocalTextureUser:
-    useSaveGenerated = True
-
-    reuseExisting : BoolProperty(
-        name = "Reuse Existing Images",
-        description = "Reuse existing local textures instead of regenerating them",
-        default = True)
-
     useSaveLoaded = False
     maxTexLevel = 2
     minTexLevel = 0
@@ -54,7 +47,7 @@ class LocalTextureUser:
                 dazRna(ob.data).DazTexLevel >= self.minTexLevel)
 
     def draw(self, context):
-        self.layout.prop(self, "reuseExisting")
+        pass
 
 
     def getMeshes(self, context):
@@ -86,11 +79,7 @@ class LocalTextureUser:
         self.texpath = "%s%s" % (folder, self.subdir)
         self.basepath = ("%s/textures" % folder).lower()
         print('Save textures to "%s"' % self.texpath)
-        if self.reuseExisting:
-            self.existImages = dict([(pathKey(img.filepath), img) for img in bpy.data.images])
-        else:
-            self.existImages = {}
-        print("EXIS", self.existImages.keys())
+        self.existImages = dict([(pathKey(img.filepath), img) for img in bpy.data.images])
         self.foundImages = []
         self.deletedImages = {}
         self.ignoredImages = set()
@@ -181,16 +170,13 @@ class LocalTextureUser:
 
     def copyImage(self, src, trg, key=None):
         trg = pathKey(trg)
-        if self.reuseExisting:
-            img = self.existImages.get(trg)
-            if img:
-                print("DBB", img.filepath)
-                return img
-            elif os.path.exists(trg):
-                img = bpy.data.images.load(trg)
-                print("EX", img.filepath)
-                self.existImages[trg] = img
-                return img
+        img = self.existImages.get(trg)
+        if img:
+            return img
+        elif os.path.exists(trg):
+            img = bpy.data.images.load(trg)
+            self.existImages[trg] = img
+            return img
 
         src = pathKey(src)
         if not os.path.exists(src):
@@ -201,7 +187,6 @@ class LocalTextureUser:
         img = self.modifyImage(img, False)
         img.filepath_raw = trg
         img.name = os.path.basename(trg)
-        print("SAV", img.filepath, img.has_data)
         img.save()
         self.existImages[trg] = img
         if GS.verbosity >= 3:
@@ -223,15 +208,12 @@ class LocalTextureUser:
                 print("Reload image: %s" % path)
                 img = bpy.data.images.load(path)
                 self.existImages[path] = img
-                print("LLL", img.filepath, img.name)
                 return img
 
         path = pathKey(path)
-        if self.reuseExisting:
-            img = self.existImages.get(path)
-            if img:
-                print("LBB", img.filepath)
-                return img
+        img = self.existImages.get(path)
+        if img:
+            return img
         img = reload(path)
         if img:
             return img
@@ -281,36 +263,26 @@ class LocalTextureUser:
 
 
     def saveImage(self, img):
+        img.update()
         img.save()
         path = pathKey(img.filepath)
         self.existImages[path] = img
 
 
     def saveImageAs(self, img, path):
+        img.update()
         img2 = bpy.data.images.load(img.filepath)
         img2.update()
         img2.filepath_raw = path
-        img2.colorspace_settings.name = img.colorspace_settings.name
         img2.save()
+        img2.colorspace_settings.name = img.colorspace_settings.name
+        img2.update()
         self.existImages[path] = img2
         return img2
 
 
     def isIrrelevant(self, path):
         return False
-
-
-    def saveLocalTextures(self, context):
-        meshes = self.getMeshes(context)
-        self.getAllImages(meshes)
-        for node,img in self.foundImages:
-            src = pathKey(img.filepath)
-            trg = self.getLocalPath(src)
-            print("FIX", src)
-            print("TO", trg)
-            img2 = self.copyImage(src, trg)
-            print("IM2", img2)
-            node.image = img2
 
 
     def getAllImages(self, meshes):
@@ -350,10 +322,6 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
     maxTexLevel = 0
     subdir = "/textures/original"
 
-    def draw(self, context):
-        self.layout.prop(self, "reuseExisting")
-        HiddenTextureUser.draw(self, context)
-
     def run(self, context):
         meshes = self.getMeshes(context)
         self.initLocalImages()
@@ -370,7 +338,6 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
 
     def isIrrelevant(self, path):
         if (path.lower().startswith(self.basepath) and
-            self.reuseExisting and
             os.path.exists(path)):
             print("Already local: %s" % path)
             return True

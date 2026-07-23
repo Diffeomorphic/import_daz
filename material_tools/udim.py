@@ -320,7 +320,6 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         ob = context.object
         if self.useGenesisTiles:
             self.addGenesisTiles(ob)
-        self.saveLocalTextures(context)
         mattiles = self.findMatTiles(ob)
         if self.useFixTextures:
             self.fixTextures(ob, ob.active_material.name, mattiles)
@@ -341,7 +340,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         basenames = {}
         keytiles = {}
         origpaths = {}
-        acttile = dazRna(actmat).DazUDim
+        actudim = dazRna(actmat).DazUDim
         tiledImages = set()
         keyImages = {}
         texlist = list(texnodes[actmat.name].items())
@@ -356,24 +355,26 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             tile,basename = self.getTileBase(imgname)
             if not basename.startswith("T_"):
                 basename = "T_%s" % basename
-            img = self.updateImage(img, basename, acttile, key)
+            img = self.updateImage(img, basename, actudim, key)
             if img is None:
                 print("Not tileable: %s" % filepath)
                 continue
             width, height = img.size
+            locpath = self.getLocalPath(filepath)
             ext = os.path.splitext(filepath)[1]
-            udimpath = "%s/%s_<UDIM>%s" % (self.texpath, basename, ext)
+            udimpath = "%s/%s_<UDIM>%s" % (os.path.dirname(locpath), basename, ext)
             origpaths[udimpath] = filepath
             actimg = bpy.data.images.new(basename, width, height)
             actimg.source = "TILED"
             actimg.filepath_raw = udimpath
-            self.saveImage(actimg)
             actimg.colorspace_settings.name = img.colorspace_settings.name
-            tiledImages.add(actimg)
-            keyImages[key] = [actimg]
+            tile = actimg.tiles.active
+            tile.number = 1001 + actudim
+            tile.label = actmat.name
+            #keyImages[key] = [actimg]
             actnode.image = actimg
             actnode.extension = "CLIP"
-            udims = {}
+            udims = {actudim : actmat.name}
             for mat in mats:
                 nodes = texnodes[mat.name]
                 node = nodes.get(key)
@@ -391,23 +392,23 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                     self.updateImage(img, basename, tile, key)
                     if tile not in udims.keys():
                         udims[tile] = mat.name
-                    if mat == actmat:
-                        img.name = self.makeImageName(basename, acttile, img)
-                        node.label = basename
-                        node.name = basename
-                    else:
-                        pass
-                        keyImages[key].append(img)
+                    #keyImages[key].append(img)
 
             keytiles[key] = list(udims.keys())
-            tile0 = actimg.tiles[0]
             for udim,mname in udims.items():
-                if udim == 0:
-                    tile0.number = 1001
-                    tile0.label = mname
-                else:
-                    img.tiles.new(tile_number=1001+udim, label=mname)
-            self.saveImage(actimg)
+                if udim != actudim:
+                    actimg.tiles.new(tile_number=1001+udim, label=mname)
+            udim = actudim
+            mname = udims[udim]
+            tile = actimg.tiles.active
+            xtile = None
+            if len(udims) == 1:
+                xtile = actimg.tiles.new(tile_number=1010, label=mname)
+            actimg.tiles.remove(tile)
+            actimg.tiles.new(tile_number=1001+udim, label=mname)
+            if xtile:
+                actimg.tiles.remove(xtile)
+            #actimg.update()
 
         if len(usedtiles) > 1:
             dense = set()
@@ -456,7 +457,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                         fname,ext = os.path.splitext(file)
                         tile = baseName(fname)[-4:]
                         imgname = "%s_%s%s" % (tiledname, tile, ext)
-                        print("Replace %s with %s" % (img.filepath, trg))
+                        #print("Replace %s with %s" % (img.filepath, trg))
                         img = self.addImage(imgname, trg, key)
 
         for mat in mats:

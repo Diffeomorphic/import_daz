@@ -200,9 +200,7 @@ class TileFixer:
                             trg = self.getLocalPath(bpy.path.abspath(newpath))
                             img = self.saveImageAs(node.image, trg)
                             images[src] = img
-                        print("FIX", node.image.filepath)
                         node.image = img
-                        print("DIBE", node.image.filepath)
                         node.label = "%s_%d" % (base, mattile)
                 elif (node.type == 'GROUP' and
                       not node.name.startswith("DAZ ") and
