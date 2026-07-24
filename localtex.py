@@ -63,7 +63,7 @@ class LocalTextureUser:
 
 
     def getResLevel(self, path):
-        lpath = path.lower()
+        lpath = normalizePath(path).lower()
         if lpath.startswith(self.basepath):
             lpath = lpath[len(self.basepath):]
             for string in ["/res", "/udim/res", "/lie/res"]:

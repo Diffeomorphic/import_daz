@@ -12,7 +12,7 @@ from .localtex import LocalTextureUser, freeImages
 #   Bake LIE
 #----------------------------------------------------------
 
-class DAZ_OT_BakeLie(DazPropsOperator, LocalTextureUser):
+class DAZ_OT_BakeLie(DazOperator, LocalTextureUser):
     bl_idname = "daz.bake_lie"
     bl_label = "Bake Layered Images"
     bl_description = "Bake layered images of selected meshes to simple textures"
