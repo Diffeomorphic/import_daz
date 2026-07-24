@@ -9,6 +9,7 @@ from ..error import *
 from ..utils import *
 from ..fileutils import MultiFile, ImageFile
 from ..localtex import LocalTextureUser, normPath, freeImages
+from ..material import isSRGBImage
 from ..matsel import MaterialSelector
 from ..tree import getFromSocket, XSIZE, YSIZE, YSTEP
 from ..merge_uvs import TileFixer
@@ -425,6 +426,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             for key,tiles in keytiles.items():
                 node = texnodes[actmat.name][key]
                 img = node.image
+                srgb = isSRGBImage(img)
                 if img in dense or img is None:
                     pass
                 elif img in sparse:
@@ -433,12 +435,12 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                         if tile not in tiles:
                             imgname = self.makeImageName(basename, tile, img)
                             src,trg = self.getTargetPath(img, basename, tile)
-                            self.addImage(imgname, trg, key)
+                            self.addImage(imgname, trg, srgb, key)
                             udim = 1001+tile
                             img.tiles.new(tile_number=udim, label=str(udim))
                 elif len(tiles) == 1 and tiles[0] == 0:
                     origpath = origpaths.get(img.filepath, img.filepath)
-                    img = self.copyImage(img.filepath, origpath, key)
+                    img = self.copyImage(img.filepath, origpath, srgb, key)
                     img.source = "FILE"
                     node.extension = "CLIP"
                     img.filepath = origpath
@@ -452,13 +454,14 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                 folder = os.path.dirname(actimg.filepath)
                 for img in images[1:]:
                     if os.path.dirname(img.filepath) != folder:
+                        srgb = isSrgbImage(img)
                         file = os.path.basename(img.filepath)
                         trg = "%s/%s" % (folder, file)
                         fname,ext = os.path.splitext(file)
                         tile = baseName(fname)[-4:]
                         imgname = "%s_%s%s" % (tiledname, tile, ext)
                         #print("Replace %s with %s" % (img.filepath, trg))
-                        img = self.addImage(imgname, trg, key)
+                        img = self.addImage(imgname, trg, srgb, key)
 
         for mat in mats:
             self.addSkipZeroUvs(mat)
@@ -572,15 +575,16 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
 
 
     def updateImage(self, img, basename, udim, key):
+        srgb = isSRGBImage(img)
         src,trg = self.getTargetPath(img, basename, udim)
         trg = self.getLocalPath(trg)
         srcfile = os.path.basename(src)
         trgfile = os.path.basename(trg)
         if trgfile.startswith("T_") and srcfile.startswith("T_") and trgfile != srcfile:
             print("Duplicate texture: %s" % trg)
-            return self.addImage("Gen", trg, key)
+            return self.addImage("Gen", trg, srgb, key)
         else:
-            return self.copyImage(src, trg, key)
+            return self.copyImage(src, trg, srgb, key)
 
 
     def getTargetPath(self, img, basename, udim):

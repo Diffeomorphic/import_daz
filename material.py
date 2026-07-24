@@ -956,6 +956,12 @@ CSNonColor = ["Non-Color", "Raw", "Non-Colour Data", "Generic Data", "Utilities 
 CSLinear = ["Linear", "Linear Rec.709", "Linear BT.709 I-D65", "Linear BT.709", "Utilities - Linear - Rec.709", "lin_rec709",
             "Linear CIE-XYZ D65", "Linear CIE-XYZ E", "Linear DCI-P3 D65", "Linear Rec.2020"]
 
+def setRightColorSpace(img, srgb):
+    if srgb:
+        setColorSpace(img, CSSRGB)
+    else:
+        setColorSpace(img, CSNonColor)
+
 def setColorSpaceSRGB(img):
     setColorSpace(img, CSSRGB)
 

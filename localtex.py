@@ -6,6 +6,7 @@ import bpy
 import os
 from .utils import *
 from .error import *
+from .material import isSRGBImage, setRightColorSpace
 
 #-------------------------------------------------------------
 #   Use hidden textures
@@ -79,7 +80,11 @@ class LocalTextureUser:
         self.texpath = "%s%s" % (folder, self.subdir)
         self.basepath = ("%s/textures" % folder).lower()
         print('Save textures to "%s"' % self.texpath)
-        self.existImages = dict([(pathKey(img.filepath), img) for img in bpy.data.images])
+        self.existImages = {}
+        self.existImages[True] = dict([(pathKey(img.filepath), img)
+                                        for img in bpy.data.images if isSRGBImage(img)])
+        self.existImages[False] = dict([(pathKey(img.filepath), img)
+                                        for img in bpy.data.images if not isSRGBImage(img)])
         self.foundImages = []
         self.deletedImages = {}
         self.ignoredImages = set()
@@ -87,9 +92,12 @@ class LocalTextureUser:
 
 
     def printLocalImages(self):
-        return
-        print("Loaded images")
-        for path,img in self.existImages.items():
+        print("SRGB images")
+        for path,img in self.existImages[True].items():
+            if img:
+                print("  ", path, img.has_data)
+        print("NonColor images")
+        for path,img in self.existImages[False].items():
             if img:
                 print("  ", path, img.has_data)
         print("Deleted images")
@@ -168,14 +176,15 @@ class LocalTextureUser:
                 print("FAIL", img.filepath, img.has_data, os.path.exists(img.filepath))
 
 
-    def copyImage(self, src, trg, key=None):
+    def copyImage(self, src, trg, srgb, key=None):
         trg = pathKey(trg)
-        img = self.existImages.get(trg)
+        img = self.existImages[srgb].get(trg)
         if img:
             return img
         elif os.path.exists(trg):
             img = bpy.data.images.load(trg)
-            self.existImages[trg] = img
+            setRightColorSpace(img, srgb)
+            self.existImages[srgb][trg] = img
             return img
 
         src = pathKey(src)
@@ -184,11 +193,12 @@ class LocalTextureUser:
             return None
         img = bpy.data.images.load(src)
         img.update()
+        setRightColorSpace(img, srgb)
         img = self.modifyImage(img, False)
         img.filepath_raw = trg
         img.name = os.path.basename(trg)
         img.save()
-        self.existImages[trg] = img
+        self.existImages[srgb][trg] = img
         if GS.verbosity >= 3:
             print("Copied %s %s" % (tuple(img.size), trg))
         if "Public" in trg:
@@ -201,17 +211,18 @@ class LocalTextureUser:
     def modifyImage(self, img, force):
         return img
 
-
-    def loadImage(self, path, key):
+    '''
+    def loadImage(self, path, srgb, key):
         def reload(path):
             if os.path.exists(path):
                 print("Reload image: %s" % path)
                 img = bpy.data.images.load(path)
-                self.existImages[path] = img
+                setRightColorSpace(img, srgb)
+                self.existImages[srgb][path] = img
                 return img
 
         path = pathKey(path)
-        img = self.existImages.get(path)
+        img = self.existImages[srgb].get(path)
         if img:
             return img
         img = reload(path)
@@ -228,14 +239,14 @@ class LocalTextureUser:
         if key:
             print("Generate image: %s" % path)
             imgname = os.path.splitext(os.path.basename(path))[0]
-            return self.addImage(imgname, path, key)
+            return self.addImage(imgname, path, srgb, key)
         msg = ("Image not found: %s" % path)
         print(msg)
         halt
         raise DazError(msg)
+    '''
 
-
-    def addImage(self, imgname, trg, key):
+    def addImage(self, imgname, trg, srgb, key):
         from .material import setColorSpaceNone
         if key.endswith(("Factor:Value", "Fac")):
             color = (1,1,1,1)
@@ -255,7 +266,7 @@ class LocalTextureUser:
 
         img = bpy.data.images.new(imgname, self.imageSize, self.imageSize)
         img.generated_color = color
-        setColorSpaceNone(img)
+        setRightColorSpace(img, srgb)
         trg = pathKey(trg)
         img.filepath_raw = trg
         self.saveImage(img)
@@ -266,18 +277,20 @@ class LocalTextureUser:
         img.update()
         img.save()
         path = pathKey(img.filepath)
-        self.existImages[path] = img
+        srgb = isSRGBImage(img)
+        self.existImages[srgb][path] = img
 
 
     def saveImageAs(self, img, path):
         img.update()
+        srgb = isSRGBImage(img)
         img2 = bpy.data.images.load(img.filepath)
         img2.update()
         img2.filepath_raw = path
         img2.save()
         img2.colorspace_settings.name = img.colorspace_settings.name
         img2.update()
-        self.existImages[path] = img2
+        self.existImages[srgb][path] = img2
         return img2
 
 
@@ -325,11 +338,13 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
     def run(self, context):
         meshes = self.getMeshes(context)
         self.initLocalImages()
+        self.printLocalImages()
         self.getAllImages(meshes)
         for node,img in self.foundImages:
             src = pathKey(img.filepath)
             trg = self.getLocalPath(src)
-            img2 = self.copyImage(src, trg)
+            srgb = isSRGBImage(img)
+            img2 = self.copyImage(src, trg, srgb)
             node.image = img2
         #freeImages()
         for ob in meshes:
@@ -434,7 +449,8 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
         for node,img in self.foundImages:
             src = pathKey(img.filepath)
             trg = self.getLocalPath(src)
-            img2 = self.copyImage(src, trg)
+            srgb = isSRGBImage(img)
+            img2 = self.copyImage(src, trg, srgb)
             node.image = img2
         #freeImages()
         for ob in meshes:
