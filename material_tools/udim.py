@@ -340,7 +340,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
 
         basenames = {}
         keytiles = {}
-        origpaths = {}
+        origimages = {}
         actudim = dazRna(actmat).DazUDim
         tiledImages = set()
         keyImages = {}
@@ -364,10 +364,10 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             locpath = self.getLocalPath(filepath)
             ext = os.path.splitext(filepath)[1]
             udimpath = "%s/%s_<UDIM>%s" % (os.path.dirname(locpath), basename, ext)
-            origpaths[udimpath] = filepath
+            origimages[udimpath] = actnode.image
             actimg = bpy.data.images.new(basename, width, height)
-            actimg.source = "TILED"
             actimg.filepath_raw = udimpath
+            actimg.source = "TILED"
             actimg.colorspace_settings.name = img.colorspace_settings.name
             tile = actimg.tiles.active
             tile.number = 1001 + actudim
@@ -399,17 +399,6 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             for udim,mname in udims.items():
                 if udim != actudim:
                     actimg.tiles.new(tile_number=1001+udim, label=mname)
-            udim = actudim
-            mname = udims[udim]
-            tile = actimg.tiles.active
-            xtile = None
-            if len(udims) == 1:
-                xtile = actimg.tiles.new(tile_number=1010, label=mname)
-            actimg.tiles.remove(tile)
-            actimg.tiles.new(tile_number=1001+udim, label=mname)
-            if xtile:
-                actimg.tiles.remove(xtile)
-            #actimg.update()
 
         if len(usedtiles) > 1:
             dense = set()
@@ -439,13 +428,11 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                             udim = 1001+tile
                             img.tiles.new(tile_number=udim, label=str(udim))
                 elif len(tiles) == 1 and tiles[0] == 0:
-                    origpath = origpaths.get(img.filepath, img.filepath)
-                    img = self.copyImage(img.filepath, origpath, srgb, key)
-                    img.source = "FILE"
+                    img = origimages[img.filepath]
+                    node.image = img
                     node.extension = "CLIP"
-                    img.filepath = origpath
-                    img.name = node.label = node.label[2:]
-                    print("Texture %s only on tile 1001" % origpath)
+                    node.label = img.name
+                    print("Texture %s only on tile 1001" % img.filepath)
 
         for key,images in keyImages.items():
             if len(images) > 1:
@@ -582,9 +569,11 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         trgfile = os.path.basename(trg)
         if trgfile.startswith("T_") and srcfile.startswith("T_") and trgfile != srcfile:
             print("Duplicate texture: %s" % trg)
-            return self.addImage("Gen", trg, srgb, key)
+            img = self.addImage("Gen", trg, srgb, key)
         else:
-            return self.copyImage(src, trg, srgb, key)
+            img = self.copyImage(src, trg, srgb, key)
+        img.update()
+        return img
 
 
     def getTargetPath(self, img, basename, udim):
