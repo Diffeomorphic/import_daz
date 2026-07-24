@@ -192,9 +192,9 @@ class LocalTextureUser:
             print("Image not found: %s" % src)
             return None
         img = bpy.data.images.load(src)
-        img.update()
         setRightColorSpace(img, srgb)
-        img = self.modifyImage(img, False)
+        img.update()
+        img = self.modifyImage(img)
         img.filepath_raw = trg
         img.name = os.path.basename(trg)
         img.save()
@@ -208,7 +208,7 @@ class LocalTextureUser:
         return img
 
 
-    def modifyImage(self, img, force):
+    def modifyImage(self, img):
         return img
 
     '''
@@ -435,10 +435,16 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
         min = 0, max = 8,
         default = 2)
 
+    force : BoolProperty(
+        name = "Force Resize",
+        description = "Resize the image even if it means upscaling it",
+        default = False)
+
     def draw(self, context):
         LocalTextureUser.draw(self, context)
         HiddenTextureUser.draw(self, context)
         self.layout.prop(self, "level")
+        self.layout.prop(self, "force")
 
 
     def run(self, context):
@@ -457,20 +463,19 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
             dazRna(ob.data).DazTexLevel = 2
 
 
-    def modifyImage(self, img, force):
+    def modifyImage(self, img):
         level = self.getResLevel(img.filepath)
         if level < self.level:
             scale = int(2**(self.level-level))
             x,y = img.size
             img.scale(int(x/scale), int(y/scale))
             return img
-        elif force:
+        elif level > self.level and self.force:
             scale = int(2**(level-self.level))
             x,y = img.size
             img.scale(int(x*scale), int(y*scale))
             return img
         else:
-            self.ignoredImages.add(trg)
             return img
 
 #----------------------------------------------------------
