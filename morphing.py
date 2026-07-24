@@ -1761,18 +1761,17 @@ class DAZ_OT_SaveJsonFavorites(DazOperator, SingleFile, JsonFile, IsMeshArmature
 
         if self.useRemoveDuplicates:
             def removeDuplicates(datas, taken):
+                aliases = [data for data in datas if "/alias" in data[0].lower()]
+                reals = [data for data in datas if "/alias" not in data[0].lower()]
                 ndatas = []
-                datas.sort()
-                datas.reverse()     # alias last
-                for data in datas:
+                for data in reals + aliases:
                     path,prop,bodypart = data
-                    if prop not in taken.keys():
+                    if prop not in taken:
                         ndatas.append(data)
-                        taken[prop] = True
-                ndatas.reverse()
+                        taken.add(prop)
                 return ndatas
 
-            taken = {}
+            taken = set()
             for key,datas in list(mstruct.items()):
                 if not key.startswith("Custom/"):
                     mstruct[key] = removeDuplicates(datas, taken)
