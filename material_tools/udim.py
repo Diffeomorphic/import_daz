@@ -8,7 +8,7 @@ import numpy as np
 from ..error import *
 from ..utils import *
 from ..fileutils import MultiFile, ImageFile
-from ..localtex import LocalTextureUser, normPath, freeImages
+from ..localtex import LocalTextureUser, pathKey, freeImages
 from ..material import isSRGBImage
 from ..matsel import MaterialSelector
 from ..tree import getFromSocket, XSIZE, YSIZE, YSTEP
@@ -577,7 +577,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
 
 
     def getTargetPath(self, img, basename, udim):
-        src = normPath(img.filepath)
+        src = pathKey(img.filepath)
         folder = os.path.dirname(src)
         fname,ext = os.path.splitext(bpy.path.basename(src))
         if fname[-6:] == '<UDIM>':

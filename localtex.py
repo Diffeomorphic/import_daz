@@ -87,8 +87,6 @@ class LocalTextureUser:
                                         for img in bpy.data.images if not isSRGBImage(img)])
         self.foundImages = []
         self.deletedImages = {}
-        self.ignoredImages = set()
-        self.origPaths = {}
 
 
     def printLocalImages(self):
@@ -106,31 +104,35 @@ class LocalTextureUser:
                 print("  ", path, img.has_data)
 
 
-    def getLocalPath(self, path):
-        def getRelPath(path, lpath):
-            if lpath.startswith(self.basepath):
-                for string in ["/textures/original/", "/textures/udim/", "/textures/lie/"]:
-                    words = lpath.rsplit(string, 1)
-                    if len(words) == 2:
-                        n = len(words[1])
-                        return path[-n:]
-                words = lpath.rsplit("/textures/res", 1)
-                if len(words) == 2:
-                    n = len(words[1])
-                    return path[-n+2:]
-            words = lpath.rsplit("/runtime/textures/", 1)
+    def stripPath(self, path):
+        lpath = path.lower()
+        for string in ["/textures/original/", "/textures/udim/"]:
+            words = lpath.rsplit(string, 1)
             if len(words) == 2:
                 n = len(words[1])
                 return path[-n:]
-            print("NO REL PATH", lpath, self.basepath)
+        words = lpath.rsplit("/textures/res", 1)
+        if len(words) == 2:
+            n = len(words[1])
+            return path[-n+2:]
 
+
+    def getLocalPath(self, path):
         path = normalizePath(path)
         words = path.split(".jpg")
         if len(words) > 2 or path.endswith("<UDIM>"):
             msg = ("Bad local path: %s" % path)
             print(msg)
             raise DazError(msg)
-        relpath = getRelPath(path, path.lower())
+        relpath = None
+        lpath = path.lower()
+        if lpath.startswith(self.basepath):
+            relpath = self.stripPath(path)
+        else:
+            words = lpath.rsplit("/runtime/textures/", 1)
+            if len(words) == 2:
+                n = len(words[1])
+                relpath = path[-n:]
         if relpath:
             return "%s/%s" % (self.texpath, relpath)
         else:
@@ -142,38 +144,12 @@ class LocalTextureUser:
         if path:
             return path
         path = self.getLocalPath(img.filepath)
-        path = "/runtime/textures/%s" % path[nstrip:]
+        path = normalizePath(bpy.path.relpath(path))
+        if path.startswith("//textures"):
+            relpath = self.stripPath(path[1:])
+            if relpath:
+                path = "/runtime/textures/%s" % relpath
         return GS.getAbsPath(path)
-
-
-    def deleteCopiedImages(self):
-        for img in self.copiedImages.values():
-            path = img.filepath_raw
-            if (path.startswith(self.texpath) and
-                os.path.exists(path)):
-                if GS.verbosity >= 3:
-                    print("Delete %s" % path)
-                os.remove(path)
-
-
-    def checkImage(self, path, strict=False):
-        if not self.imageExists(path):
-            msg = "Missing texture file:\n%s" % path
-            print(msg)
-            if strict:
-                raise DazError(msg)
-
-
-    def imageExists(self, path):
-        return (self.loadedImages.get(path) or self.copiedImages.get(path))
-
-
-    def ensureUpdated(self, img):
-        if not img.has_data:
-            img.update()
-            img.reload()
-            if not img.has_data:
-                print("FAIL", img.filepath, img.has_data, os.path.exists(img.filepath))
 
 
     def copyImage(self, src, trg, srgb, key=None):
@@ -211,40 +187,6 @@ class LocalTextureUser:
     def modifyImage(self, img):
         return img
 
-    '''
-    def loadImage(self, path, srgb, key):
-        def reload(path):
-            if os.path.exists(path):
-                print("Reload image: %s" % path)
-                img = bpy.data.images.load(path)
-                setRightColorSpace(img, srgb)
-                self.existImages[srgb][path] = img
-                return img
-
-        path = pathKey(path)
-        img = self.existImages[srgb].get(path)
-        if img:
-            return img
-        img = reload(path)
-        if img:
-            return img
-        if path in self.deletedImages.keys():
-            print("Image was deleted: %s" % path)
-            path1 = self.origPaths.get(path)
-            if path1 is None and img:
-                path1 = self.getOrigPath(img)
-            img = reload(path1)
-            if img:
-                return img
-        if key:
-            print("Generate image: %s" % path)
-            imgname = os.path.splitext(os.path.basename(path))[0]
-            return self.addImage(imgname, path, srgb, key)
-        msg = ("Image not found: %s" % path)
-        print(msg)
-        halt
-        raise DazError(msg)
-    '''
 
     def addImage(self, imgname, trg, srgb, key):
         from .material import setColorSpaceNone
@@ -338,7 +280,6 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
     def run(self, context):
         meshes = self.getMeshes(context)
         self.initLocalImages()
-        self.printLocalImages()
         self.getAllImages(meshes)
         for node,img in self.foundImages:
             src = pathKey(img.filepath)
@@ -399,8 +340,8 @@ class DAZ_OT_ReloadTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperato
                         if not self.useUnpack:
                             continue
                         img.unpack()
-                    img.filepath = filepath
-                    self.ensureUpdated()
+                    img.filepath_raw = filepath
+                    img.update()
         freeImages()
 
 
@@ -502,18 +443,6 @@ class DAZ_OT_PruneImages(DazOperator):
 def freeImages():
     for img in bpy.data.images:
         img.buffers_free()
-
-
-def getProperPath(path):
-    if path[0:2] == "//":
-        return os.path.join(os.path.dirname(bpy.data.filepath), path[2:])
-    return path
-
-
-def normPath(path):
-    path = bpy.path.abspath(path)
-    path = bpy.path.reduce_dirs([path])[0]
-    return normalizePath(path)
 
 
 def pathKey(path, colorspace=None):
