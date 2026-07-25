@@ -20,7 +20,7 @@ class ImportShells(DazOperator, MaterialLoader, DazImageFile):
 
     def run(self, context):
         from ..cycles import CyclesMaterial
-        from ..tree import pruneNodeTree
+        from ..tree import pruneNodeTree, getProtected
         from ..matsel import isShellNode
         from .shell import setShellInfluence
         filepaths = self.getMultiFiles(["duf", "dsf", "dse"])
@@ -30,6 +30,7 @@ class ImportShells(DazOperator, MaterialLoader, DazImageFile):
         for idx,filepath in enumerate(filepaths):
             bpy.ops.mesh.primitive_cube_add(size=30*GS.scale, location=(50*(idx+1)*GS.scale, 0, 0))
             cube = context.object
+            protected = getProtected(cube)
             cube.name = os.path.basename(os.path.splitext(filepath)[0])
             main = self.loadDazFile(filepath, context)
             for node,inst in main.nodes:
@@ -43,7 +44,7 @@ class ImportShells(DazOperator, MaterialLoader, DazImageFile):
                 mat = dmat.rna
                 if mat and mat.node_tree and mat not in taken:
                     cube.data.materials.append(mat)
-                    pruneNodeTree(mat.node_tree, None)
+                    pruneNodeTree(mat.node_tree, protected, None)
                     taken.append(mat)
             nodegroups = {}
             for mat in cube.data.materials:

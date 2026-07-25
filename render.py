@@ -145,7 +145,6 @@ class WorldTree(CyclesTree):
 
 
     def build(self):
-        from .tree import pruneNodeTree
         backdrop = self.owner.backdrop
         background = self.owner.background
         envmap = self.owner.envmap
@@ -172,7 +171,9 @@ class WorldTree(CyclesTree):
         if socket:
             self.links.new(socket, output.inputs["Surface"])
         if GS.usePruneNodes:
-            pruneNodeTree(self, usePruneTexco=False)
+            from .tree import pruneNodeTree, getProtected
+            protected = getProtected()
+            pruneNodeTree(self, protected, usePruneTexco=False)
 
 
     def buildEnvmap(self, envmap):

@@ -344,7 +344,6 @@ class WorldTree(CyclesTree):
 
 
     def build(self):
-        from .tree import pruneNodeTree
         self.makeTree("Generated")
 
         mapping = self.addNode("ShaderNodeMapping", 1)
@@ -365,7 +364,9 @@ class WorldTree(CyclesTree):
         self.links.new(envnode.outputs["Background"], output.inputs["Surface"])
 
         if GS.usePruneNodes:
-            pruneNodeTree(self, usePruneTexco=False)
+            from .tree import pruneNodeTree, getProtected
+            protected = getProtected()
+            pruneNodeTree(self, protected, usePruneTexco=False)
 
 
 

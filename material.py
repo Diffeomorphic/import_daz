@@ -1190,13 +1190,15 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
 
     def run(self, context):
         from .geometry import getActiveUvLayer
-        from .tree import pruneNodeTree
+        from .tree import pruneNodeTree, getProtected
         for ob in getSelectedMeshes(context):
-            LS.__init__()
+            protected = getProtected(ob)
+            print("OOO", protected[0].keys())
             active = getActiveUvLayer(ob)
             for mat in ob.data.materials:
                 if mat:
                     pruneNodeTree(mat.node_tree,
+                                  protected,
                                   active,
                                   self.useDeleteUnusedNodes,
                                   self.useHideTexNodes,

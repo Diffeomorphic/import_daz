@@ -203,15 +203,16 @@ class DazLoader:
 
         # Do this at the very end, because it deletes nodes
         if GS.usePruneNodes:
-            from .tree import pruneNodeTree
+            from .tree import pruneNodeTree, getProtected
             from .geometry import getActiveUvLayer
             obss = list(LS.meshes.values()) + list(LS.hairs.values())
             for obs in obss:
                 for ob in obs:
+                    protected = getProtected(ob)
                     active = getActiveUvLayer(ob)
                     for mat in ob.data.materials:
                         if mat:
-                            pruneNodeTree(mat.node_tree, active)
+                            pruneNodeTree(mat.node_tree, protected, active)
 
         t2 = perf_counter()
         print('File "%s" loaded in %.3f seconds' % (filepath, t2-t1))
@@ -473,13 +474,14 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
             LS.render.build(context)
 
         if GS.usePruneNodes:
-            from .tree import pruneNodeTree
+            from .tree import pruneNodeTree, getProtected
             from .geometry import getActiveUvLayer
             for ob in meshes:
+                protected = getProtected(ob)
                 active = getActiveUvLayer(ob)
                 for mat in ob.data.materials:
                     if mat:
-                        pruneNodeTree(mat.node_tree, active)
+                        pruneNodeTree(mat.node_tree, protected, active)
 
 
     def addMaterials(self, context, ob, main):
@@ -521,10 +523,12 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
 
 
     def assignMaterials(self, context, ob, matches):
+        from .tree import getProtected
+        protected = getProtected(ob)
         for idx,mat,dmat in matches:
             dmat.mesh = ob
             if dmat.partial and mat:
-                self.updateMaterial(context, idx, mat, dmat)
+                self.updateMaterial(context, idx, mat, dmat, protected)
             else:
                 dmat.build(context)
                 dmat.postbuild()
@@ -534,7 +538,7 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
                     ob.data.materials.append(dmat.rna)
 
 
-    def updateMaterial(self, context, idx, mat, dmat):
+    def updateMaterial(self, context, idx, mat, dmat, protected):
         from .tree import pruneNodeTree
         dmat.getFromMaterial(context, mat)
         tree = dmat.tree
@@ -554,7 +558,7 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
             tree.buildOverlay()
             tree.linkToOutputs(cycles)
         if GS.usePruneNodes:
-            pruneNodeTree(mat.node_tree)
+            pruneNodeTree(mat.node_tree, protected)
 
 
     def getMatch(self, dmat, mats):

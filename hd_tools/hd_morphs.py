@@ -186,7 +186,7 @@ class DispAdder:
         self.layout.prop(self, "midlevel")
 
     def loadDispMaps(self, mat, args):
-        from ..tree import findNodes, pruneNodeTree, XSIZE
+        from ..tree import findNodes, XSIZE
         from ..cycles import findTree
         from ..driver import makePropDriver
         if not self.checkTileUsed(mat, args):
@@ -245,7 +245,9 @@ class DispAdder:
                 tree.links.new(last.outputs[0], node.inputs["Displacement"])
         tree.shiftNodes(nodes, -XSIZE, dy)
         if self.usePrune:
-            pruneNodeTree(tree, useFixColorSpace=False)
+            from .tree import pruneNodeTree, getProtected
+            protected = getProtected(ob)
+            pruneNodeTree(tree, protected, useFixColorSpace=False)
 
 
 class DAZ_OT_LoadScalarDisp(DazOperator, LoadMaps, DispAdder):
@@ -296,7 +298,7 @@ class DAZ_OT_LoadVectorDisp(DazOperator, LoadMaps, DispAdder):
 class NormalAdder:
     def loadNormalMaps(self, mat, args, row):
         from ..driver import makePropDriver
-        from ..tree import findNode, findLinksTo, XSIZE, pruneNodeTree
+        from ..tree import findNode, findLinksTo, XSIZE
         from ..cycles import findTree
 
         if not self.checkTileUsed(mat, args) or not GS.useNormalMap:
@@ -363,7 +365,9 @@ class NormalAdder:
             print("No link to normal map node")
         tree.shiftNodes(nodes, -XSIZE, dy)
         if self.usePrune:
-            pruneNodeTree(tree, useFixColorSpace=False)
+            from .tree import pruneNodeTree, getProtected
+            protected = getProtected(ob)
+            pruneNodeTree(tree, protected, useFixColorSpace=False)
 
 
 class DAZ_OT_LoadNormalMap(DazOperator, LoadMaps, NormalAdder):

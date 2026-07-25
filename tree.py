@@ -471,7 +471,45 @@ def getFromSocket(socket):
 #   Prune node tree
 #-------------------------------------------------------------
 
+def getProtected(ob=None):
+    from .material import isSRGBImage
+    protectedImages = {}
+    protectedGroups = set()
+    if ob is None:
+        return protectedImages, protectedGroups
+
+    def protectTree(tree, protectedImages):
+        for node in list(tree.nodes):
+            if node.type == 'TEX_IMAGE':
+                links = node.outputs["Color"].links
+                img = node.image
+                if img is None:
+                    continue
+                if len(links) == 1:
+                    gamma = links[0].to_node
+                    if (gamma.label == "Linear" and
+                        gamma.type == 'GAMMA'):
+                        continue
+                for link in links:
+                    tonode = link.to_node
+                    if (tonode.type in ['NORMAL_MAP'] or
+                        link.to_socket.type == 'VALUE'):
+                        pass
+                    elif isSRGBImage:
+                        protectedImages[img.name] = img
+            elif (node.type == 'GROUP' and
+                  node.node_tree and
+                  not node.node_tree.name.startswith("DAZ")):
+                  protectTree(node.node_tree, protectedImages)
+
+    for mat in ob.data.materials:
+        if mat:
+            protectTree(mat.node_tree, protectedImages)
+    return protectedImages, protectedGroups
+
+
 def pruneNodeTree(tree,
+                  protected,
                   active = None,
                   useDeleteUnusedNodes = True,
                   useHideTexNodes = True,
@@ -481,20 +519,22 @@ def pruneNodeTree(tree,
                   useFixColorSpace = True,
                   useDazImages = True,
                   useBeautify = True,
-                  useGroups = True,
+                  useGroups = True
                   ):
     marked = {}
     if not tree:
         return marked
 
+    protectedImages, protectedGroups = protected
     for node in tree.nodes:
         if (node.type == 'GROUP' and
             not node.name.startswith("DAZ ") and
             useGroups and
             node.outputs and
-            node.node_tree not in LS.protectedGroups):
+            node.node_tree not in protectedGroups):
             isLie = node.node_tree.name.startswith(("LIE", "DIMG"))
             pruneNodeTree(node.node_tree,
+                          protected,
                           None,
                           useDeleteUnusedNodes,
                           useHideTexNodes,
@@ -505,7 +545,7 @@ def pruneNodeTree(tree,
                           (useDazImages and not isLie),
                           useBeautify,
                           useGroups)
-            LS.protectedGroups.add(node.node_tree)
+            protectedGroups.add(node.node_tree)
 
     def isUvPrunable(node, active):
         if node.type == 'TEX_COORD':
@@ -561,25 +601,7 @@ def pruneNodeTree(tree,
             if not socket.links:
                 socket.hide = useHideOutputs
 
-    from .material import setColorSpaceNone, setColorSpaceSRGB, isSRGBImage
-    def protectImage(node, img, links):
-        if isSRGBImage(img):
-            LS.protectedImages[img.name] = img
-        else:
-            for link in links:
-                if (link.to_node.type in ['NORMAL_MAP'] or
-                    link.to_socket.type == 'VALUE'):
-                    return
-            img2 = LS.protectedImages.get(img.name)
-            if img2 is None:
-                img2 = img.copy()
-                setColorSpaceSRGB(img2)
-                LS.protectedImages[img.name] = img2
-            try:
-                node.image = img2
-            except ReferenceError:
-                print("Image has been removed", img)
-                node.image = img
+    from .material import setColorSpaceNone, isSRGBImage
 
     if useFixColorSpace:
         for node in list(tree.nodes):
@@ -590,17 +612,13 @@ def pruneNodeTree(tree,
                     gamma = links[0].to_node
                     if (gamma.label == "Linear" and
                         gamma.type == 'GAMMA'):
-                        if isSRGBImage(img) and img.name in LS.protectedImages.keys():
+                        if isSRGBImage(img) and img.name in protectedImages.keys():
                             if GS.verbosity >= 3:
                                 print("Protected image: %s" % img.name)
                         else:
                             setColorSpaceNone(img)
                             for link in gamma.outputs["Color"].links:
                                 tree.links.new(node.outputs["Color"], link.to_socket)
-                    else:
-                        protectImage(node, img, links)
-                elif img:
-                    protectImage(node, img, links)
                 node.hide = useHideTexNodes
 
     if useDeleteUnusedNodes:
