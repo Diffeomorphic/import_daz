@@ -455,7 +455,7 @@ def addMaskFaceModifier(ob, grpname, fgname):
             else:
                 mod = addModifierFirst(ob, "Mask FG %s" % fgname, 'NODES')
                 mod.node_group = addNodeGroup(MaskFacesGroup, "DAZ Mask Faces", [])
-                mod["Socket_1"] = grpname
-                mod["Socket_2"] = pgs[fgname].a
+                setModSocket(mod, 1, grpname)
+                setModSocket(mod, 2, pgs[fgname].a)
                 return mod
     print("%s attribute %s not found" % (grpname, fgname))

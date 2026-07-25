@@ -289,8 +289,9 @@ class HairBuilder(Pinner, Collision, Cloth):
 
     def addFollowProxy(self, hair, proxy):
         from .hair_nodes import FollowProxyGroup
+        from ..geonodes import setModSocket
         mod = self.addHairModifier(hair, FollowProxyGroup, "DAZ Follow Proxy", "Follow %s" % proxy.name)
-        mod["Socket_1"] = proxy
+        setModSocket(mod, 1, proxy)
 
 
     def addDeformCurves(self, hair, hum):

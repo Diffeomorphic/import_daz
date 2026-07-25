@@ -459,15 +459,13 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         full_body_grp.add([v.index for v in hum.data.vertices], 1.0, 'REPLACE')
 
         from .geometry import getActiveUvLayer
+        from .geonodes import getModSocket
         stores = []
         delmasks = []
         for mod in list(hum.modifiers):
             if mod.type == 'NODES':
                 if mod.node_group.name == "DAZ Geograft":
-                    if BLENDER3:
-                        graft = mod["Input_1"]
-                    else:
-                        graft = mod["Socket_1"]
+                    graft = getModSocket(mod, 1)
                     if graft:
                         delmasks.append(graft.name)
                     else:
