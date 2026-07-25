@@ -40,7 +40,7 @@ class GeoTree(Tree, NodeGroup):
             self.links.new(fromsocket, node.inputs[-2])
 
         def captureOutput(self, node, slot, tosocket):
-            self.links.new(node.outputs[1], tosocket)
+            self.links.new(node.outputs["Value"], tosocket)
 
 # ---------------------------------------------------------------------
 #   Geograft group
