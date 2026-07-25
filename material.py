@@ -1193,7 +1193,6 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
         from .tree import pruneNodeTree, getProtected
         for ob in getSelectedMeshes(context):
             protected = getProtected(ob)
-            print("OOO", protected[0].keys())
             active = getActiveUvLayer(ob)
             for mat in ob.data.materials:
                 if mat:

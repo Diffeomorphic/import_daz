@@ -473,7 +473,7 @@ def getFromSocket(socket):
 
 def getProtected(ob=None):
     from .material import isSRGBImage
-    protectedImages = {}
+    protectedImages = set()
     protectedGroups = set()
     if ob is None:
         return protectedImages, protectedGroups
@@ -491,15 +491,14 @@ def getProtected(ob=None):
                         gamma.type == 'GAMMA'):
                         continue
                 for link in links:
-                    tonode = link.to_node
-                    if (tonode.type in ['NORMAL_MAP'] or
+                    if (link.to_node.type in ['NORMAL_MAP'] or
                         link.to_socket.type == 'VALUE'):
                         pass
                     elif isSRGBImage:
-                        protectedImages[img.name] = img
+                        protectedImages.add(img)
             elif (node.type == 'GROUP' and
                   node.node_tree and
-                  not node.node_tree.name.startswith("DAZ")):
+                  not node.node_tree.name.startswith("DAZ ")):
                   protectTree(node.node_tree, protectedImages)
 
     for mat in ob.data.materials:
@@ -612,7 +611,7 @@ def pruneNodeTree(tree,
                     gamma = links[0].to_node
                     if (gamma.label == "Linear" and
                         gamma.type == 'GAMMA'):
-                        if isSRGBImage(img) and img.name in protectedImages.keys():
+                        if isSRGBImage(img) and img in protectedImages:
                             if GS.verbosity >= 3:
                                 print("Protected image: %s" % img.name)
                         else:
