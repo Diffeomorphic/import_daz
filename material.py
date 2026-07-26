@@ -1177,6 +1177,11 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
         description = "Beautify node tree",
         default = True)
 
+    useSharedImages : BoolProperty(
+        name = "Shared Images",
+        description = "Use SRGB images for both color and non-color textures.\nDisable to make UDIM materials",
+        default = True)
+
     def draw(self, context):
         self.layout.prop(self, "useDeleteUnusedNodes")
         self.layout.prop(self, "useHideTexNodes")
@@ -1186,6 +1191,7 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
         self.layout.prop(self, "useFixColorSpace")
         self.layout.prop(self, "useDazImages")
         self.layout.prop(self, "useBeautify")
+        self.layout.prop(self, "useSharedImages")
 
 
     def run(self, context):
@@ -1199,14 +1205,15 @@ class DAZ_OT_PruneNodeTrees(DazPropsOperator):
                     pruneNodeTree(mat.node_tree,
                                   protected,
                                   active,
-                                  self.useDeleteUnusedNodes,
-                                  self.useHideTexNodes,
-                                  self.usePruneTexco,
-                                  self.useHideOutputs,
-                                  self.keepUnusedTextures,
-                                  self.useFixColorSpace,
-                                  self.useDazImages,
-                                  self.useBeautify,
+                                  useDeleteUnusedNodes = self.useDeleteUnusedNodes,
+                                  useHideTexNodes = self.useHideTexNodes,
+                                  usePruneTexco = self.usePruneTexco,
+                                  useHideOutputs = self.useHideOutputs,
+                                  keepUnusedTextures = self.keepUnusedTextures,
+                                  useFixColorSpace = self.useFixColorSpace,
+                                  useDazImages = self.useDazImages,
+                                  useBeautify = self.useBeautify,
+                                  useSharedImages = self.useSharedImages
                                   )
 
 #----------------------------------------------------------

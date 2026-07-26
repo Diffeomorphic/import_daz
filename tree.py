@@ -518,7 +518,8 @@ def pruneNodeTree(tree,
                   useFixColorSpace = True,
                   useDazImages = True,
                   useBeautify = True,
-                  useGroups = True
+                  useGroups = True,
+                  useSharedImages = True
                   ):
     marked = {}
     if not tree:
@@ -543,7 +544,8 @@ def pruneNodeTree(tree,
                           useFixColorSpace,
                           (useDazImages and not isLie),
                           useBeautify,
-                          useGroups)
+                          useGroups,
+                          useSharedImages)
             protectedGroups.add(node.node_tree)
 
     def isUvPrunable(node, active):
@@ -615,7 +617,7 @@ def pruneNodeTree(tree,
             if node.type == 'TEX_IMAGE':
                 links = node.outputs["Color"].links
                 img = node.image
-                if GS.useSharedImages:
+                if GS.useSharedImages and useSharedImages:
                     if len(links) == 1 and img:
                         gamma = links[0].to_node
                         if gamma.label == "Linear" and gamma.type == 'GAMMA':

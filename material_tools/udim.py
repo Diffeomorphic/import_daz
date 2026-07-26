@@ -310,9 +310,16 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
 
 
     def run(self, context):
+        from ..geometry import getActiveUvLayer
+        from ..tree import pruneNodeTree, getProtected
         ob = context.object
         if ob.active_material is None:
             raise DazError("No active material")
+        protected = getProtected(ob)
+        active = getActiveUvLayer(ob)
+        for mat in ob.data.materials:
+            if mat:
+                pruneNodeTree(mat.node_tree, protected, active, useSharedImages=False)
         self.initLocalImages()
         self.makeUdimTextures(context)
         freeImages()

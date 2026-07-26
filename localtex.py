@@ -427,7 +427,7 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
 class DAZ_OT_PruneImages(DazOperator, LocalTextureUser):
     bl_idname = "daz.prune_images"
     bl_label = "Prune Images"
-    bl_description = "Remove all unused images"
+    bl_description = "Merge images of selected meshes and remove all unused images"
     bl_options = {'UNDO'}
 
     def run(self, context):
