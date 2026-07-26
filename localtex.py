@@ -33,6 +33,7 @@ class HiddenTextureUser:
 
 class LocalTextureUser:
     useSaveLoaded = False
+    reuseExistingImages = True
     maxTexLevel = 2
     minTexLevel = 0
     level = 0
@@ -157,7 +158,7 @@ class LocalTextureUser:
         img = self.existImages[srgb].get(trg)
         if img:
             return img
-        elif os.path.exists(trg):
+        elif self.reuseExistingImages and os.path.exists(trg):
             img = bpy.data.images.load(trg)
             setRightColorSpace(img, srgb)
             self.existImages[srgb][trg] = img

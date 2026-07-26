@@ -280,6 +280,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
     useFixTextures = True
     useGenesisTiles = True
     useOverwrite = False
+    reuseExistingImages = False
 
     useGuessMissing : BoolProperty(
         name = "Guess Missing Textures",
@@ -372,7 +373,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             tile = actimg.tiles.active
             tile.number = 1001 + actudim
             tile.label = actmat.name
-            #keyImages[key] = [actimg]
+            #keyImages[key] = set()
             actnode.image = actimg
             actnode.extension = "CLIP"
             udims = {actudim : actmat.name}
@@ -390,10 +391,10 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                 if node and node.image:
                     img = node.image
                     tile = dazRna(mat).DazUDim
-                    self.updateImage(img, basename, tile, key)
+                    img = self.updateImage(img, basename, tile, key)
                     if tile not in udims.keys():
                         udims[tile] = mat.name
-                    #keyImages[key].append(img)
+                    #keyImages[key].add(img)
 
             keytiles[key] = list(udims.keys())
             for udim,mname in udims.items():
