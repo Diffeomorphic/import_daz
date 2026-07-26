@@ -75,7 +75,6 @@ class GlobalSettings:
         self.clothesColor3 = 1.0
         self.shellMethod = 'MATERIAL'
         self.usePruneNodes = True
-        self.useSharedImages = True
 
         self.LPW = 7500.0
         self.useFakeCaustics = False

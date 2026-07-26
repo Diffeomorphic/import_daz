@@ -617,7 +617,7 @@ def pruneNodeTree(tree,
             if node.type == 'TEX_IMAGE':
                 links = node.outputs["Color"].links
                 img = node.image
-                if GS.useSharedImages and useSharedImages:
+                if useSharedImages:
                     if len(links) == 1 and img:
                         gamma = links[0].to_node
                         if gamma.label == "Linear" and gamma.type == 'GAMMA':
