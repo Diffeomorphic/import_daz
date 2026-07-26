@@ -424,13 +424,32 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
 #   Prune images
 #----------------------------------------------------------
 
-class DAZ_OT_PruneImages(DazOperator):
+class DAZ_OT_PruneImages(DazOperator, LocalTextureUser):
     bl_idname = "daz.prune_images"
     bl_label = "Prune Images"
     bl_description = "Remove all unused images"
     bl_options = {'UNDO'}
 
     def run(self, context):
+        meshes = self.getMeshes(context)
+        self.existImages = {}
+        for srgb in (True, False):
+            images = self.existImages[srgb] = {}
+            for img in bpy.data.images:
+                if isSRGBImage(img) == srgb:
+                    path = pathKey(img.filepath)
+                    if path not in images.keys():
+                        images[path] = []
+                    images[path].append(img)
+        self.foundImages = []
+        self.getAllImages(meshes)
+        for node,img in self.foundImages:
+            path = pathKey(img.filepath)
+            srgb = isSRGBImage(img)
+            images = self.existImages[srgb][path]
+            node.image = images[0]
+            node.label = img.name
+
         for img in list(bpy.data.images):
             img.buffers_free()
             if img.users == 0:
