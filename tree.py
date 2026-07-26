@@ -602,22 +602,50 @@ def pruneNodeTree(tree,
 
     from .material import setColorSpaceNone, isSRGBImage
 
+    def getNoneColorImage(filepath):
+        for img in bpy.data.images:
+            if img.filepath == filepath and not isSRGBImage(img):
+                return img
+        img = bpy.data.images.load(filepath)
+        setColorSpaceNone(img)
+        return img
+
     if useFixColorSpace:
         for node in list(tree.nodes):
             if node.type == 'TEX_IMAGE':
                 links = node.outputs["Color"].links
                 img = node.image
-                if len(links) == 1 and img:
-                    gamma = links[0].to_node
-                    if (gamma.label == "Linear" and
-                        gamma.type == 'GAMMA'):
-                        if isSRGBImage(img) and img in protectedImages:
-                            if GS.verbosity >= 3:
-                                print("Protected image: %s" % img.name)
-                        else:
-                            setColorSpaceNone(img)
-                            for link in gamma.outputs["Color"].links:
-                                tree.links.new(node.outputs["Color"], link.to_socket)
+                if GS.useSharedImages:
+                    if len(links) == 1 and img:
+                        gamma = links[0].to_node
+                        if gamma.label == "Linear" and gamma.type == 'GAMMA':
+                            if isSRGBImage(img) and img in protectedImages:
+                                pass
+                            else:
+                                setColorSpaceNone(img)
+                                for link in gamma.outputs["Color"].links:
+                                    tree.links.new(node.outputs["Color"], link.to_socket)
+                else:
+                    for link in links:
+                        gamma = link.to_node
+                        if (gamma.label == "Linear" and
+                            gamma.type == 'GAMMA' and
+                            len(gamma.outputs["Color"].links) > 0):
+                            if img in protectedImages:
+                                img2 = getNoneColorImage(img.filepath)
+                                node2 = tree.nodes.new(type="ShaderNodeTexImage")
+                                node2.location = node.location
+                                node2.image = img2
+                                node2.interpolation = GS.imageInterpolation
+                                node2.hide = True
+                                for link2 in node.inputs["Vector"].links:
+                                    tree.links.new(link2.from_socket, node2.inputs["Vector"])
+                                for link2 in gamma.outputs["Color"].links:
+                                    tree.links.new(node2.outputs["Color"], link2.to_socket)
+                            else:
+                                setColorSpaceNone(img)
+                                for link2 in gamma.outputs["Color"].links:
+                                    tree.links.new(node.outputs["Color"], link2.to_socket)
                 node.hide = useHideTexNodes
 
     if useDeleteUnusedNodes:

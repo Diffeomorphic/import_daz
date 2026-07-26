@@ -452,6 +452,10 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "World",
         description = "When to create a world material")
 
+    useSharedImages : BoolProperty(
+        name = "Shared Images",
+        description = "Use SRGB images for both color and non-color textures.\nDisable to make UDIM materials")
+
     useDazImages : BoolProperty(
         name = "DAZ Image Groups",
         description = "Combine textures, mapping and gamma nodes into DIMG groups")
@@ -844,6 +848,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         row.prop(self, "skinColor")
         row.prop(self, "clothesColor")
         drawEnum(self, box, "worldMethod")
+        box.prop(self, "useSharedImages")
         box.prop(self, "useDazImages")
         box.prop(self, "useMaterialsByIndex")
         box.prop(self, "useMaterialsByName")
