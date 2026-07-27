@@ -471,13 +471,13 @@ def getFromSocket(socket):
 #   Prune node tree
 #-------------------------------------------------------------
 
-def getProtected(ob=None):
+def getProtected(objects=[]):
     from .material import isSRGBImage
     protectedImages = set()
     protectedGroups = set()
     ctrees = []
-    if ob is None:
-        return protectedImages, protectedGroups, ctrees
+    if not isinstance(objects, list):
+        objects = [ob]
 
     def protectTree(tree, protectedImages):
         for node in list(tree.nodes):
@@ -502,9 +502,10 @@ def getProtected(ob=None):
                   not node.node_tree.name.startswith("DAZ ")):
                   protectTree(node.node_tree, protectedImages)
 
-    for mat in ob.data.materials:
-        if mat:
-            protectTree(mat.node_tree, protectedImages)
+    for ob in objects:
+        for mat in ob.data.materials:
+            if mat:
+                protectTree(mat.node_tree, protectedImages)
     return protectedImages, protectedGroups, ctrees
 
 

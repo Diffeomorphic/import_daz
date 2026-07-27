@@ -206,9 +206,9 @@ class DazLoader:
             from .tree import pruneNodeTree, getProtected
             from .geometry import getActiveUvLayer
             obss = list(LS.meshes.values()) + list(LS.hairs.values())
+            protected = getProtected(flatten(obss))
             for obs in obss:
                 for ob in obs:
-                    protected = getProtected(ob)
                     active = getActiveUvLayer(ob)
                     for mat in ob.data.materials:
                         if mat:
@@ -476,8 +476,8 @@ class ImportDAZMaterials(DazOperator, MaterialLoader, DazImageFile, IsMesh):
         if GS.usePruneNodes:
             from .tree import pruneNodeTree, getProtected
             from .geometry import getActiveUvLayer
+            protected = getProtected(meshes)
             for ob in meshes:
-                protected = getProtected(ob)
                 active = getActiveUvLayer(ob)
                 for mat in ob.data.materials:
                     if mat:
