@@ -60,27 +60,29 @@ def copyNodeTree(src, trg):
 #-------------------------------------------------------------
 
 class CtreeInfo:
-    def __init__(self, tex, after, before):
+    def __init__(self, node, tex, after, before):
+        self.name = node.name
         self.image = tex.image
         self.after = [self.getStruct(node) for node in after]
         self.before = [self.getStruct(node) for node in before]
 
     def getStruct(self, node):
-        exclude = ["dimensions", "location"]
         struct = {}
-        for key in dir(node):
-            if key[0] != "_" and key not in exclude:
-                attr = getattr(node, key)
-                if isinstance(attr, (int, float, str, Vector, Color)):
-                    struct[key] = attr
+        struct["type"] = node.type
+        for key,socket in node.inputs.items():
+            value = socket.default_value
+            if isinstance(value, (int, float, str)):
+                struct[key] = value
+            elif isinstance(value, (Vector, Color)):
+                struct[key] = tuple(value)
         return struct
 
     def matchNode(self, node, other):
         struct = self.getStruct(node)
-        for key,attr in struct.items():
-            if attr != other.get(key):
+        for key,value in struct.items():
+            if value != other.get(key):
                 if GS.verbosity >= 2:
-                    print("DIMG mismatch: %s: %s != %s" % (key, attr, other.get(key)))
+                    print("DIMG mismatch: %s %s:\n  %s != %s" % (self.name, key, value, other.get(key)))
                 return False
         return True
 
@@ -186,7 +188,7 @@ def makeDazImages(tree, ctrees):
                 print("DIMG match: %s" % grpnode.node_tree.name)
         else:
             ctree = makeCtree(grpnode, tex, after, before)
-            info = CtreeInfo(tex, after, before)
+            info = CtreeInfo(grpnode, tex, after, before)
             ctrees.append((ctree, info))
 
         first = (before[0] if before else tex)
