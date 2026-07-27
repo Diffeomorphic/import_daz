@@ -32,16 +32,10 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
         description = "Merge materials even if the bump strengths differ",
         default = True)
 
-    debug : BoolProperty(
-        name = "Debug",
-        description = "Print debug messages in the terminal",
-        default = False)
-
     def draw(self, context):
         self.layout.prop(self, "useAcrossObjects")
         self.layout.prop(self, "useAllObjects")
         self.layout.prop(self, "ignoreBump")
-        self.layout.prop(self, "debug")
 
 
     def run(self, context):
@@ -143,15 +137,6 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
             pset.material_slot = matslot
 
 
-    def keepMaterial(self, n, mat, ob):
-        for mat2 in self.matlist:
-            if self.areSameMaterial(mat, mat2):
-                m = self.reindex[n] = self.assoc[mat2.name]
-                self.newname[mat.name] = mat2.name
-                return False
-        return True
-
-
     def areSameMaterial(self, mat1, mat2):
         mname1 = mat1.name
         mname2 = mat2.name
@@ -160,11 +145,11 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
             "name", "name_full", "active_texture",
             "diffuse_color"
         ]
-        matProps = self.getRelevantProps(mat1, deadMatProps)
-        if not self.haveSameAttrs(mat1, mat2, matProps, mname1, mname2):
+        matProps = getRelevantProps(mat1, deadMatProps)
+        if not haveSameAttrs(mat1, mat2, matProps, mname1, mname2):
             return False
         if not BLENDER5 or (mat1.use_nodes and mat2.use_nodes):
-            if self.areSameCycles(mat1.node_tree, mat2.node_tree, mname1, mname2):
+            if areSameTrees(mat1.node_tree, mat2.node_tree, mname1, mname2, self.ignoreBump):
                 if not ES.easy:
                     print("%s = %s" % (mat1.name, mat2.name))
                 self.nCombined += 1
@@ -173,183 +158,6 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
                 return False
         else:
             return False
-
-
-    def getRelevantProps(self, rna, deadProps):
-        props = []
-        for prop in dir(rna):
-            if (prop[0] != "_" and
-                prop not in deadProps):
-                props.append(prop)
-        return props
-
-
-    def haveSameAttrs(self, rna1, rna2, props, mname1, mname2):
-        for prop in props:
-            attr1 = attr2 = None
-            if (prop[0] == "_" or
-                prop[0:3] == "Daz" or
-                prop in ["select", "session_uid", "users"]):
-                pass
-            elif hasattr(rna1, prop) and hasattr(rna2, prop):
-                attr1 = getattr(rna1, prop)
-                if prop == "name":
-                    attr1 = self.fixKey(attr1, mname1, mname2)
-                attr2 = getattr(rna2, prop)
-                if not self.checkEqual(attr1, attr2):
-                    if self.debug:
-                        print("%s != %s, attribute %s: %s != %s" % (mname1, mname2, prop, attr1, attr2))
-                    return False
-            elif hasattr(rna1, prop):
-                if self.debug:
-                    print("%s lacks attribute %s" % (mname2, prop))
-                return False
-            elif hasattr(rna2, prop):
-                if self.debug:
-                    print("%s lacks attribute %s" % (mname1, prop))
-                return False
-        return True
-
-
-    def checkEqual(self, attr1, attr2):
-        if isinstance(attr1, (int, float, str)):
-            return (attr1 == attr2)
-        elif isinstance(attr1, bpy.types.Image):
-            return (isinstance(attr2, bpy.types.Image) and (attr1.name == attr2.name))
-        elif (isinstance(attr1, set) and isinstance(attr2, set)):
-            return True
-        elif hasattr(attr1, "__len__") and hasattr(attr2, "__len__"):
-            if (len(attr1) != len(attr2)):
-                return False
-            for n in range(len(attr1)):
-                if not self.checkEqual(attr1[n], attr2[n]):
-                    return False
-        return True
-
-
-    def areSameCycles(self, tree1, tree2, mname1, mname2):
-        def rehash(struct):
-            nstruct = {}
-            for key,node in struct.items():
-                if node.name[0:2] == "T_":
-                    nstruct[node.name] = node
-                elif node.type == 'GROUP':
-                    nstruct[node.node_tree.name] = node
-                else:
-                    nstruct[key] = node
-            return nstruct
-
-        nodes1 = rehash(tree1.nodes)
-        nodes2 = rehash(tree2.nodes)
-        if not self.haveSameKeys(nodes1, nodes2, mname1, mname2):
-            return False
-        if not self.haveSameKeys(tree1.links, tree2.links, mname1, mname2):
-            return False
-        for key1,node1 in nodes1.items():
-            key2 = self.fixKey(key1, mname1, mname2)
-            node2 = nodes2[key2]
-            if not self.areSameNode(node1, node2, mname1, mname2):
-                return False
-        for link1 in tree1.links:
-            hit = False
-            for link2 in tree2.links:
-                if self.areSameLink(link1, link2, mname1, mname2):
-                    hit = True
-                    break
-            if not hit:
-                return False
-        for link2 in tree2.links:
-            hit = False
-            for link1 in tree1.links:
-                if self.areSameLink(link1, link2, mname1, mname2):
-                    hit = True
-                    break
-            if not hit:
-                return False
-        return True
-
-
-    def areSameNode(self, node1, node2, mname1, mname2):
-        if node1.type != node2.type:
-            return False
-        if not self.haveSameKeys(node1, node2, mname1, mname2):
-            return False
-        deadNodeProps = ["dimensions", "location"]
-        nodeProps = self.getRelevantProps(node1, deadNodeProps)
-        if node1.type == 'GROUP':
-            if node1.node_tree != node2.node_tree:
-                return False
-        elif not self.haveSameAttrs(node1, node2, nodeProps, mname1, mname2):
-            return False
-        if not self.haveSameInputs(node1, node2):
-            return False
-        return True
-
-
-    def areSameLink(self, link1, link2, mname1, mname2):
-        fromname1 = self.getNodeName(link1.from_node)
-        toname1 = self.getNodeName(link1.to_node)
-        fromname2 = self.getNodeName(link2.from_node)
-        toname2 = self.getNodeName(link2.to_node)
-        fromname1 = self.fixKey(fromname1, mname1, mname2)
-        toname1 = self.fixKey(toname1, mname1, mname2)
-        return (
-            (fromname1 == fromname2) and
-            (toname1 == toname2) and
-            (link1.from_socket.name == link2.from_socket.name) and
-            (link1.to_socket.name == link2.to_socket.name)
-        )
-
-
-    def getNodeName(self, node):
-        if node.type == 'GROUP':
-            return node.node_tree.name
-        else:
-            return node.name
-
-
-    def haveSameInputs(self, node1, node2):
-        if len(node1.inputs) != len(node2.inputs):
-            return False
-        for n,socket1 in enumerate(node1.inputs):
-            socket2 = node2.inputs[n]
-            if hasattr(socket1, "default_value"):
-                if not hasattr(socket2, "default_value"):
-                    return False
-                val1 = socket1.default_value
-                val2 = socket2.default_value
-                if (hasattr(val1, "__len__") and
-                    hasattr(val2, "__len__")):
-                    for m in range(len(val1)):
-                        if val1[m] != val2[m]:
-                            return False
-                elif (val1 != val2 and
-                      not (node1.type == "BUMP" and self.ignoreBump)):
-                    return False
-            elif hasattr(socket2, "default_value"):
-                return False
-        return True
-
-
-    def fixKey(self, key, mname1, mname2):
-        n = len(key) - len(mname1)
-        if key[n:] == mname1:
-            return key[:n] + mname2
-        else:
-            return key
-
-
-    def haveSameKeys(self, struct1, struct2, mname1, mname2):
-        m = len(mname1)
-        for key1 in struct1.keys():
-            if key1 in ["interface"]:
-                continue
-            key2 = self.fixKey(key1, mname1, mname2)
-            if key2 not in struct2.keys():
-                if self.debug:
-                    print("%s != %s, key %s" % (mname1, mname2, key2))
-                return False
-        return True
 
 
     def mergeSlots(self, ob):
@@ -382,6 +190,189 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
             for pset,matslot in phairs:
                 mnum2 = assoc[matslot]
                 pset.material_slot = mats[mnum2].name
+
+#-------------------------------------------------------------
+#   getRelevantProps
+#-------------------------------------------------------------
+
+def getRelevantProps(rna, deadProps):
+    props = []
+    for prop in dir(rna):
+        if (prop[0] != "_" and
+            prop not in deadProps):
+            props.append(prop)
+    return props
+
+#-------------------------------------------------------------
+#   fixKey
+#-------------------------------------------------------------
+
+def fixKey(key, mname1, mname2):
+    n = len(key) - len(mname1)
+    if key[n:] == mname1:
+        return key[:n] + mname2
+    else:
+        return key
+
+#-------------------------------------------------------------
+#   haveSameAttrs
+#-------------------------------------------------------------
+
+def haveSameAttrs(rna1, rna2, props, mname1, mname2):
+    def checkEqual(attr1, attr2):
+        if isinstance(attr1, (int, float, str)):
+            return (attr1 == attr2)
+        elif isinstance(attr1, bpy.types.Image):
+            return (isinstance(attr2, bpy.types.Image) and (attr1.name == attr2.name))
+        elif (isinstance(attr1, set) and isinstance(attr2, set)):
+            return True
+        elif hasattr(attr1, "__len__") and hasattr(attr2, "__len__"):
+            if (len(attr1) != len(attr2)):
+                return False
+            for n in range(len(attr1)):
+                if not checkEqual(attr1[n], attr2[n]):
+                    return False
+        return True
+
+    for prop in props:
+        attr1 = attr2 = None
+        if (prop[0] == "_" or
+            prop[0:3] == "Daz" or
+            prop in ["select", "session_uid", "users"]):
+            pass
+        elif hasattr(rna1, prop) and hasattr(rna2, prop):
+            attr1 = getattr(rna1, prop)
+            if prop == "name":
+                attr1 = fixKey(attr1, mname1, mname2)
+            attr2 = getattr(rna2, prop)
+            if not checkEqual(attr1, attr2):
+                if GS.verbosity >= 3:
+                    print("%s != %s, attribute %s: %s != %s" % (mname1, mname2, prop, attr1, attr2))
+                return False
+        elif hasattr(rna1, prop):
+            if GS.verbosity >= 3:
+                print("%s lacks attribute %s" % (mname2, prop))
+            return False
+        elif hasattr(rna2, prop):
+            if GS.verbosity >= 3:
+                print("%s lacks attribute %s" % (mname1, prop))
+            return False
+        return True
+
+#-------------------------------------------------------------
+#   areSameTrees
+#-------------------------------------------------------------
+
+def areSameTrees(tree1, tree2, mname1, mname2, ignoreBump=False):
+    def rehash(struct):
+        nstruct = {}
+        for key,node in struct.items():
+            if node.name[0:2] == "T_":
+                nstruct[node.name] = node
+            elif node.type == 'GROUP':
+                nstruct[node.node_tree.name] = node
+            else:
+                nstruct[key] = node
+        return nstruct
+
+    def haveSameInputs(node1, node2):
+        if len(node1.inputs) != len(node2.inputs):
+            return False
+        for n,socket1 in enumerate(node1.inputs):
+            socket2 = node2.inputs[n]
+            if hasattr(socket1, "default_value"):
+                if not hasattr(socket2, "default_value"):
+                    return False
+                val1 = socket1.default_value
+                val2 = socket2.default_value
+                if (hasattr(val1, "__len__") and
+                    hasattr(val2, "__len__")):
+                    for m in range(len(val1)):
+                        if val1[m] != val2[m]:
+                            return False
+                elif (val1 != val2 and
+                      not (node1.type == "BUMP" and ignoreBump)):
+                    return False
+            elif hasattr(socket2, "default_value"):
+                return False
+        return True
+
+    def haveSameKeys(struct1, struct2, mname1, mname2):
+        m = len(mname1)
+        for key1 in struct1.keys():
+            if key1 in ["interface"]:
+                continue
+            key2 = fixKey(key1, mname1, mname2)
+            if key2 not in struct2.keys():
+                if GS.verbosity >= 3:
+                    print("%s != %s, key %s" % (mname1, mname2, key2))
+                return False
+        return True
+
+    def areSameNode(node1, node2, mname1, mname2):
+        if node1.type != node2.type:
+            return False
+        if not haveSameKeys(node1, node2, mname1, mname2):
+            return False
+        deadNodeProps = ["dimensions", "location"]
+        nodeProps = getRelevantProps(node1, deadNodeProps)
+        if node1.type == 'GROUP':
+            if node1.node_tree != node2.node_tree:
+                return False
+        elif not haveSameAttrs(node1, node2, nodeProps, mname1, mname2):
+            return False
+        if not haveSameInputs(node1, node2):
+            return False
+        return True
+
+    def getNodeName(node):
+        if node.type == 'GROUP':
+            return node.node_tree.name
+        else:
+            return node.name
+
+    def areSameLink(link1, link2, mname1, mname2):
+        fromname1 = getNodeName(link1.from_node)
+        toname1 = getNodeName(link1.to_node)
+        fromname2 = getNodeName(link2.from_node)
+        toname2 = getNodeName(link2.to_node)
+        fromname1 = fixKey(fromname1, mname1, mname2)
+        toname1 = fixKey(toname1, mname1, mname2)
+        return (
+            (fromname1 == fromname2) and
+            (toname1 == toname2) and
+            (link1.from_socket.name == link2.from_socket.name) and
+            (link1.to_socket.name == link2.to_socket.name)
+        )
+
+    nodes1 = rehash(tree1.nodes)
+    nodes2 = rehash(tree2.nodes)
+    if not haveSameKeys(nodes1, nodes2, mname1, mname2):
+        return False
+    if not haveSameKeys(tree1.links, tree2.links, mname1, mname2):
+        return False
+    for key1,node1 in nodes1.items():
+        key2 = fixKey(key1, mname1, mname2)
+        node2 = nodes2[key2]
+        if not areSameNode(node1, node2, mname1, mname2):
+            return False
+    for link1 in tree1.links:
+        hit = False
+        for link2 in tree2.links:
+            if areSameLink(link1, link2, mname1, mname2):
+                hit = True
+                break
+        if not hit:
+            return False
+    for link2 in tree2.links:
+        hit = False
+        for link1 in tree1.links:
+            if areSameLink(link1, link2, mname1, mname2):
+                hit = True
+                break
+        if not hit:
+            return False
+    return True
 
 
 def clearMaterials(ob):
