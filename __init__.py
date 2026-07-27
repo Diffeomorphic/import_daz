@@ -60,7 +60,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "rig_utils", "bone_data", "transform", "node", "figure", "bone", "geometry",
            "store", "modifier", "load_morph", "morphing", "slider", "baked",
            "animation", "neighbor", "fix", "dbzfile", "panel", "erc",
-           "tree", "material", "merge_materials", "localtex",
+           "tree", "dazimg", "material", "merge_materials", "localtex",
            "cycles", "cgroup", "pbr", "brick", "toon", "bake_lie", "hair_material",
            "render", "camera", "light", "visibility",
            "guess", "convert", "files", "finger", "locks", "bone_chains",

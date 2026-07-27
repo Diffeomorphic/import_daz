@@ -35,7 +35,7 @@ class DAZ_OT_ReplaceMaterials(MaterialSelector, DazPropsOperator, IsMesh):
         return True
 
     def run(self, context):
-        from ..tree import copyNodeTree
+        from ..dazimg import copyNodeTree
         ob = context.object
         src = bpy.data.materials[self.material]
         uvlayers = {}
