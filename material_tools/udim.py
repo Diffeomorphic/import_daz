@@ -269,7 +269,70 @@ class DAZ_OT_OverwriteMaterials(DazPropsOperator, MaterialSelector, Overwriter):
 #   Make UDIM materials
 #----------------------------------------------------------
 
-class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelector, TileFixer, GenesisTiles, Overwriter):
+class TextureTypeCombiner:
+    def combineTextureTypes(self, meshes):
+        def getTilePaths():
+            tilepaths = {True : {}, False : {}}
+            for node,img,_tree in self.foundImages:
+                if img.source == 'TILED':
+                    srgb = isSRGBImage(img)
+                    existing = self.existImages[srgb].values()
+                    begin = img.filepath.split("<UDIM>", 1)[0]
+                    timages = [timg for timg in existing if timg.filepath.startswith(begin)]
+                    for timg in timages:
+                        path = timg.get("DazFilePath")
+                        if path:
+                            tilepaths[srgb][path] = img
+            return tilepaths
+
+        def replaceNodes(tilepaths):
+            for node,img,tree in self.foundImages:
+                if img.source == 'FILE' and tree:
+                    srgb = isSRGBImage(img)
+                    path = img.get("DazFilePath")
+                    timg = tilepaths[not srgb].get(path)
+                    if timg:
+                        print("Use %s instead of\n%s" % (timg, path))
+                        gamma = tree.nodes.new(type="ShaderNodeGamma")
+                        (x,y) = node.location
+                        gamma.location = (x, y-100)
+                        if srgb:
+                            gamma.inputs["Gamma"].default_value = 2.2
+                            gamma.label = "SRGB"
+                        else:
+                            gamma.inputs["Gamma"].default_value = 1/2.2
+                            gamma.label = "Linear"
+                        for link in list(node.outputs["Color"].links):
+                            tree.links.new(gamma.outputs["Color"], link.to_socket)
+                        tree.links.new(node.outputs["Color"], gamma.inputs["Color"])
+                        gamma.hide = True
+                        node.image = timg
+                        node.extension = 'CLIP'
+
+        self.getAllImages(meshes)
+        tilepaths = getTilePaths()
+        replaceNodes(tilepaths)
+
+
+class DAZ_OT_CombineTextureTypes(DazOperator, LocalTextureUser, TextureTypeCombiner):
+    bl_idname = "daz.combine_texture_types"
+    bl_label = "Combine Texture Types"
+    bl_description = "Combine sRGB and non-color textures of selected mesh"
+    bl_options = {'UNDO'}
+
+    maxTexLevel = 3
+
+    def run(self, context):
+        ob = context.object
+        self.initLocalImages()
+        self.combineTextureTypes([ob])
+        freeImages()
+
+#----------------------------------------------------------
+#   Make UDIM materials
+#----------------------------------------------------------
+
+class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelector, TileFixer, GenesisTiles, Overwriter, TextureTypeCombiner):
     bl_idname = "daz.make_udim_textures"
     bl_label = "Make UDIM Textures"
     bl_description = "Combine textures of selected mesh into tiled textures"
@@ -293,9 +356,15 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         min = 1, max = 8196,
         default = 64)
 
+    useCombineTypes : BoolProperty(
+        name = "Combine Texture Types",
+        description = "Combine sRGB and non-color textures",
+        default = True)
+
     def draw(self, context):
         self.drawActive(context)
         self.layout.prop(self, "imageSize")
+        self.layout.prop(self, "useCombineTypes")
         LocalTextureUser.draw(self, context)
         MaterialSelector.draw(self, context)
 
@@ -322,6 +391,8 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                 pruneNodeTree(mat.node_tree, protected, active, useSharedImages=False)
         self.initLocalImages()
         self.makeUdimTextures(context)
+        if self.useCombineTypes:
+            self.combineTextureTypes([ob])
         freeImages()
 
 
@@ -580,6 +651,7 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             img = self.addImage("Gen", trg, srgb, key)
         else:
             img = self.copyImage(src, trg, srgb, key)
+            img["DazFilePath"] = src
         img.update()
         return img
 
@@ -691,6 +763,7 @@ classes = [
     DAZ_OT_AddGenesisTiles,
     DAZ_OT_MakeUdimTextures,
     DAZ_OT_OverwriteMaterials,
+    DAZ_OT_CombineTextureTypes,
     DAZ_OT_SetUDims,
 ]
 

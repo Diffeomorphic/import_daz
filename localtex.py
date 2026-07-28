@@ -245,7 +245,7 @@ class LocalTextureUser:
         def getNodesInTree(tree):
             for node in tree.nodes.values():
                 if node.type == 'TEX_IMAGE':
-                    self.foundImages.append((node, node.image))
+                    self.foundImages.append((node, node.image, tree))
                 elif node.type == 'GROUP':
                     getNodesInTree(node.node_tree)
 
@@ -254,7 +254,7 @@ class LocalTextureUser:
                 if mtex:
                     tex = mtex.texture
                     if hasattr(tex, "image") and tex.image:
-                        self.foundImages.append((None, tex.image))
+                        self.foundImages.append((None, tex.image, None))
 
         self.foundImages = []
         for ob in meshes:
@@ -282,7 +282,7 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
         meshes = self.getMeshes(context)
         self.initLocalImages()
         self.getAllImages(meshes)
-        for node,img in self.foundImages:
+        for node,img,_tree in self.foundImages:
             src = pathKey(img.filepath)
             trg = self.getLocalPath(src)
             srgb = isSRGBImage(img)
@@ -334,7 +334,7 @@ class DAZ_OT_ReloadTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperato
             self.restoreOriginal(meshes)
         else:
             self.getAllImages(meshes)
-            for _,img in self.foundImages:
+            for _node,img,_tree in self.foundImages:
                 filepath = bpy.path.abspath(img.filepath)
                 if filepath and os.path.exists(filepath):
                     if img.packed_file:
@@ -349,7 +349,7 @@ class DAZ_OT_ReloadTextures(HiddenTextureUser, LocalTextureUser, DazPropsOperato
     def restoreOriginal(self, meshes):
         nstrip = len(self.texpath)
         self.getAllImages(meshes)
-        for _,img in self.foundImages:
+        for _node,img,_tree in self.foundImages:
             filepath = self.getOrigPath(img)
             if filepath and os.path.exists(filepath):
                 if img.packed_file:
@@ -394,7 +394,7 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
         meshes = self.getMeshes(context)
         self.initLocalImages()
         self.getAllImages(meshes)
-        for node,img in self.foundImages:
+        for node,img,_tree in self.foundImages:
             src = pathKey(img.filepath)
             trg = self.getLocalPath(src)
             srgb = isSRGBImage(img)
@@ -443,7 +443,7 @@ class DAZ_OT_PruneImages(DazOperator, LocalTextureUser):
                     images[path].append(img)
         self.foundImages = []
         self.getAllImages(meshes)
-        for node,img in self.foundImages:
+        for node,img,_tree in self.foundImages:
             path = pathKey(img.filepath)
             srgb = isSRGBImage(img)
             images = self.existImages[srgb][path]

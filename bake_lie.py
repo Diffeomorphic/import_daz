@@ -52,7 +52,7 @@ class DAZ_OT_BakeLie(DazOperator, LocalTextureUser):
         self.getAllImages(meshes)
         if not self.foundImages:
             return
-        node,img = self.foundImages[0]
+        node,img,_tree = self.foundImages[0]
         level = self.getResLevel(img.filepath)
         self.setResSubdir(level)
         freeImages()

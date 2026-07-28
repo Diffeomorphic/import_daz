@@ -59,6 +59,7 @@ class DAZ_PT_DebugMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.separator()
         self.layout.operator("daz.prune_node_trees")
         self.layout.operator("daz.prune_uv_maps")
+        self.layout.operator("daz.combine_texture_types")
         self.layout.separator()
         self.layout.operator("daz.make_shader_groups")
 
