@@ -277,22 +277,21 @@ class TextureTypeCombiner:
                 if img.source == 'TILED':
                     srgb = isSRGBImage(img)
                     existing = self.existImages[srgb].values()
-                    begin = img.filepath.split("<UDIM>", 1)[0]
-                    timages = [timg for timg in existing if timg.filepath.startswith(begin)]
-                    for timg in timages:
-                        path = timg.get("DazFilePath")
-                        if path:
-                            tilepaths[srgb][path] = img
+                    paths = img.get("DazFilePath", "").split(";")
+                    for path in paths:
+                        tilepaths[srgb][path] = img
             return tilepaths
 
         def replaceNodes(tilepaths):
             for node,img,tree in self.foundImages:
                 if img.source == 'FILE' and tree:
                     srgb = isSRGBImage(img)
-                    path = img.get("DazFilePath")
-                    timg = tilepaths[not srgb].get(path)
+                    timg = tilepaths[not srgb].get(img.filepath)
+                    if timg is None:
+                        path = img.get("DazFilePath")
+                        timg = tilepaths[not srgb].get(path)
                     if timg:
-                        print("Use %s instead of\n%s" % (timg, path))
+                        print("Use tiled %s instead of %s" % (timg.name, img.name))
                         gamma = tree.nodes.new(type="ShaderNodeGamma")
                         (x,y) = node.location
                         gamma.location = (x, y-100)
@@ -417,6 +416,12 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         if self.useOverwrite:
             actshells, shells = self.getAllShells(actmat, mats)
 
+        def addOrigPaths(origpaths, img):
+            origpaths.add(pathKey(img.filepath))
+            path = img.get("DazFilePath")
+            if path:
+                origpaths.add(pathKey(path))
+
         basenames = {}
         keytiles = {}
         origimages = {}
@@ -430,6 +435,8 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             if key is None:
                 continue
             img = actnode.image
+            origpaths = set()
+            addOrigPaths(origpaths, img)
             filepath = str(img.filepath)
             imgname = os.path.splitext(img.name)[0]
             tile,basename = self.getTileBase(imgname)
@@ -469,11 +476,13 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                 if node and node.image:
                     img = node.image
                     tile = dazRna(mat).DazUDim
-                    img = self.updateImage(img, basename, tile, key)
                     if tile not in udims.keys():
                         udims[tile] = mat.name
+                        addOrigPaths(origpaths, img)
+                    img = self.updateImage(img, basename, tile, key)
                     #keyImages[key].add(img)
 
+            actimg["DazFilePath"] = ";".join(list(origpaths))
             keytiles[key] = list(udims.keys())
             for udim,mname in udims.items():
                 if udim != actudim:
@@ -651,7 +660,6 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
             img = self.addImage("Gen", trg, srgb, key)
         else:
             img = self.copyImage(src, trg, srgb, key)
-            img["DazFilePath"] = src
         img.update()
         return img
 
