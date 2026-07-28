@@ -477,7 +477,7 @@ def getProtected(objects=[]):
     protectedGroups = set()
     ctrees = []
     if not isinstance(objects, list):
-        objects = [ob]
+        objects = [objects]
 
     def protectTree(tree, protectedImages):
         for node in list(tree.nodes):
