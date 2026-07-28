@@ -276,7 +276,6 @@ class TextureTypeCombiner:
             for node,img,_tree in self.foundImages:
                 if img.source == 'TILED':
                     srgb = isSRGBImage(img)
-                    existing = self.existImages[srgb].values()
                     paths = img.get("DazFilePath", "").split(";")
                     for path in paths:
                         tilepaths[srgb][path] = img
@@ -286,10 +285,11 @@ class TextureTypeCombiner:
             for node,img,tree in self.foundImages:
                 if img.source == 'FILE' and tree:
                     srgb = isSRGBImage(img)
-                    timg = tilepaths[not srgb].get(img.filepath)
+                    timg = tilepaths[not srgb].get(pathKey(img.filepath))
                     if timg is None:
                         path = img.get("DazFilePath")
-                        timg = tilepaths[not srgb].get(path)
+                        if path:
+                            timg = tilepaths[not srgb].get(pathKey(path))
                     if timg:
                         print("Use tiled %s instead of %s" % (timg.name, img.name))
                         gamma = tree.nodes.new(type="ShaderNodeGamma")
