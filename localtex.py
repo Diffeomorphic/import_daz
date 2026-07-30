@@ -288,7 +288,7 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
             srgb = isSRGBImage(img)
             img2 = self.copyImage(src, trg, srgb)
             node.image = img2
-        #freeImages()
+        freeImages()
         for ob in meshes:
             dazRna(ob.data).DazTexLevel = 1
 
@@ -400,7 +400,7 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
             srgb = isSRGBImage(img)
             img2 = self.copyImage(src, trg, srgb)
             node.image = img2
-        #freeImages()
+        freeImages()
         for ob in meshes:
             dazRna(ob.data).DazTexLevel = 2
 
