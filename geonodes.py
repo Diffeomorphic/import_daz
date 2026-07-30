@@ -342,6 +342,18 @@ def makeShellModifier(shell, ob, offset, mnames, mats, shmats):
     setModSocket(mod, 1, ob)
     setModSocket(mod, 2, offset)
 
+# ---------------------------------------------------------------------
+#   Utilities
+# ---------------------------------------------------------------------
+
+def addNodeGroup(classdef, name, args=[]):
+    if name in bpy.data.node_groups.keys():
+        return bpy.data.node_groups[name]
+    group = classdef()
+    group.create(name)
+    group.addNodes(args)
+    return group.group
+
 
 def setModSocket(mod, n, value):
     slot1 = "Input_%d" % n
@@ -430,7 +442,6 @@ class MaskFacesGroup(GeoTree):
 def addMaskFaceModifier(ob, grpname, fgname):
     if fgname is None:
         return
-    from .tree import addNodeGroup
     from .store import addModifierFirst
     pgs = getattr(dazRna(ob.data), grpname)
     attr = ob.data.attributes.get(grpname)

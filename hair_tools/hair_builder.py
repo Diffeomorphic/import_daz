@@ -279,7 +279,7 @@ class HairBuilder(Pinner, Collision, Cloth):
 
 
     def addHairModifier(self, hair, group, groupname, modname, args=[]):
-        from ..tree import addNodeGroup
+        from ..geonodes import addNodeGroup
         n = len(hair.modifiers)
         mod = hair.modifiers.new(modname, 'NODES')
         mod.node_group = addNodeGroup(group, groupname, args)
@@ -295,16 +295,16 @@ class HairBuilder(Pinner, Collision, Cloth):
 
 
     def addDeformCurves(self, hair, hum):
-        from ..tree import addNodeGroup
+        from ..geonodes import addNodeGroup
         from .hair_nodes import DeleteInvalidGroup, DeformCurvesGroup
         if self.onInvalid != 'KEEP':
             modname = "DAZ Delete Invalid Curves"
             mod = hair.modifiers.new(modname, 'NODES')
             mod.node_group = addNodeGroup(DeleteInvalidGroup, modname, [])
+            setModSocket(mod, 1, hum)
+            setModSocket(mod, 2, uvlayer.name)
             socket = ("Input" if "Input_2" in mod.keys() else "Socket")
-            mod["%s_1" % socket] = hum
             uvlayer = hum.data.uv_layers.active
-            mod["%s_2" % socket] = uvlayer.name
             if self.onInvalid == 'REMOVE':
                 applyModifier(mod.name)
         modname = "DAZ Deform Curves"

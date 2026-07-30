@@ -493,8 +493,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                     amod.show_viewport = amod.show_render = False
                     graft.modifiers.remove(amod)
 
-        from .geonodes import MultiGraftGroup, setModSocket, setModSocketName
-        from .tree import addNodeGroup
+        from .geonodes import MultiGraftGroup, setModSocket, setModSocketName, addNodeGroup
 
         graftgrp = MultiGraftGroup()
         groupname = "Geografts:%s" % hum.name
