@@ -81,7 +81,7 @@ class CtreeInfo:
         struct = self.getStruct(node)
         for key,value in struct.items():
             if value != other.get(key):
-                if GS.verbosity >= 2:
+                if GS.verbosity >= 3:
                     print("DIMG mismatch: %s %s:\n  %s != %s" % (self.name, key, value, other.get(key)))
                 return False
         return True
@@ -184,7 +184,7 @@ def makeDazImages(tree, ctrees):
         ctree = getCtree(ctrees, tex, after, before)
         if ctree:
             grpnode.node_tree = ctree.group
-            if GS.verbosity >= 2:
+            if GS.verbosity >= 3:
                 print("DIMG match: %s" % grpnode.node_tree.name)
         else:
             ctree = makeCtree(grpnode, tex, after, before)

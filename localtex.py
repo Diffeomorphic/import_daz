@@ -153,37 +153,39 @@ class LocalTextureUser:
         return GS.getAbsPath(path)
 
 
-    def copyImage(self, src, trg, srgb, key=None):
+    def copyImage(self, src, trg, img, key=None):
+        srgb = isSRGBImage(img)
         trg = pathKey(trg)
-        img = self.existImages[srgb].get(trg)
-        if img:
-            return img
+        img2 = self.existImages[srgb].get(trg)
+        if img2:
+            return img2
         elif self.reuseExistingImages and os.path.exists(trg):
-            img = bpy.data.images.load(trg)
-            setRightColorSpace(img, srgb)
-            self.existImages[srgb][trg] = img
-            return img
+            img2 = bpy.data.images.load(trg)
+            setRightColorSpace(img2, srgb)
+            img2["DazFilePath"] = img.get("DazFilePath")
+            self.existImages[srgb][trg] = img2
+            return img2
 
         src = pathKey(src)
         if not os.path.exists(src):
             print("Image not found: %s" % src)
             return None
-        img = bpy.data.images.load(src)
-        setRightColorSpace(img, srgb)
-        img.update()
-        img = self.modifyImage(img)
-        img.filepath_raw = trg
-        img.name = os.path.basename(trg)
-        img.save()
-        img.buffers_free()
-        self.existImages[srgb][trg] = img
+        img2 = bpy.data.images.load(src)
+        setRightColorSpace(img2, srgb)
+        img2.update()
+        img2 = self.modifyImage(img2)
+        img2.filepath_raw = trg
+        img2.name = os.path.basename(trg)
+        img2.save()
+        img2.buffers_free()
+        self.existImages[srgb][trg] = img2
         if GS.verbosity >= 3:
-            print("Copied %s %s" % (tuple(img.size), trg))
+            print("Copied %s %s" % (tuple(img2.size), trg))
         if "Public" in trg:
             msg = "Expected local image: %s" % trg
             print(msg)
             raise DazError(msg)
-        return img
+        return img2
 
 
     def modifyImage(self, img):
@@ -234,6 +236,7 @@ class LocalTextureUser:
         img2.filepath_raw = path
         img2.save()
         img2.buffers_free()
+        img2["DazFilePath"] = img.get("DazFilePath")
         self.existImages[srgb][path] = img2
         return img2
 
@@ -286,8 +289,7 @@ class DAZ_OT_SaveLocalTextures(HiddenTextureUser, LocalTextureUser, DazPropsOper
         for node,img,_tree in self.foundImages:
             src = pathKey(img.filepath)
             trg = self.getLocalPath(src)
-            srgb = isSRGBImage(img)
-            img2 = self.copyImage(src, trg, srgb)
+            img2 = self.copyImage(src, trg, img)
             node.image = img2
         freeImages()
         for ob in meshes:
@@ -398,8 +400,7 @@ class DAZ_OT_SetResolution(DazPropsOperator, HiddenTextureUser, LocalTextureUser
         for node,img,_tree in self.foundImages:
             src = pathKey(img.filepath)
             trg = self.getLocalPath(src)
-            srgb = isSRGBImage(img)
-            img2 = self.copyImage(src, trg, srgb)
+            img2 = self.copyImage(src, trg, img)
             node.image = img2
         freeImages()
         for ob in meshes:

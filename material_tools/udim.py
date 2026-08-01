@@ -281,17 +281,28 @@ class TextureTypeCombiner:
                         tilepaths[srgb][path] = img
             return tilepaths
 
+        def getImage(struct, img):
+            path = img.get("DazFilePath")
+            if path:
+                img2 = struct.get(pathKey(path))
+                if img2:
+                    return img2
+            return struct.get(pathKey(img.filepath))
+
         def replaceNodes(tilepaths):
             for node,img,tree in self.foundImages:
                 if img.source == 'FILE' and tree:
                     srgb = isSRGBImage(img)
-                    timg = tilepaths[not srgb].get(pathKey(img.filepath))
-                    if timg is None:
-                        path = img.get("DazFilePath")
-                        if path:
-                            timg = tilepaths[not srgb].get(pathKey(path))
+                    timg = None
+                    timg = getImage(tilepaths[srgb], img)
                     if timg:
                         print("Use tiled %s instead of %s" % (timg.name, img.name))
+                        node.image = timg
+                        node.extension = 'CLIP'
+                        continue
+                    timg = getImage(tilepaths[not srgb], img)
+                    if timg:
+                        print("Use tiled %s and gamma instead of %s" % (timg.name, img.name))
                         gamma = tree.nodes.new(type="ShaderNodeGamma")
                         (x,y) = node.location
                         gamma.location = (x, y-100)
@@ -657,11 +668,11 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
         trgfile = os.path.basename(trg)
         if trgfile.startswith("T_") and srcfile.startswith("T_") and trgfile != srcfile:
             print("Duplicate texture: %s" % trg)
-            img = self.addImage("Gen", trg, srgb, key)
+            img2 = self.addImage("Gen", trg, srgb, key)
         else:
-            img = self.copyImage(src, trg, srgb, key)
-        img.update()
-        return img
+            img2 = self.copyImage(src, trg, img, key)
+        img2.update()
+        return img2
 
 
     def getTargetPath(self, img, basename, udim):
