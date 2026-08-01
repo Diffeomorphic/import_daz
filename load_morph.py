@@ -1504,6 +1504,7 @@ class LoadMorph(DriverUser):
         bvars = []
         vvars = {}
         propDriver = None
+        string0 = ""
         fcu0 = getRnaDriver(rna, path, None)
         if channel == "value":
             channel = "rotation"
@@ -1534,6 +1535,11 @@ class LoadMorph(DriverUser):
         for bvar in bvars:
             var = fcu.driver.variables.new()
             bvar.create(var)
+        if asset and asset.value != 0 and not string0:
+            if asset.value > 0:
+                string = "%s+%.3f" % (string, asset.value)
+            else:
+                string = "%s-%.3f" % (string, -asset.value)
         if propDriver:
             plus = ("" if string[0] == "-" else "+")
             string = "%s%s%s" % (propDriver.expression, plus, string)
