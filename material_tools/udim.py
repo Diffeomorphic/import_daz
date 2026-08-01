@@ -384,7 +384,8 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
 
 
     def isDefaultActive(self, mat, ob):
-        return self.isSkinRedMaterial(mat)
+        return True
+        #return self.isSkinRedMaterial(mat)
 
 
     def run(self, context):
