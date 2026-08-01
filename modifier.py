@@ -865,7 +865,7 @@ class FormulaAsset(Formula, ChannelAsset):
 
 
     def __repr__(self):
-        return ("<Formula %s %f>" % (self.id, self.value))
+        return ("<Formula %s %f %f %f>" % (self.id, self.value, self.min, self.max))
 
 
     def parse(self, struct):
@@ -903,7 +903,7 @@ class Morph(FormulaAsset):
 
 
     def __repr__(self):
-        return ("<Morph %s %f %s>" % (self.name, self.value, self.id))
+        return ("<Morph %s %f %s %f %f>" % (self.name, self.value, self.id, self.min, self.max))
 
 
     def parse(self, struct):

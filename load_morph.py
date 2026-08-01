@@ -63,7 +63,6 @@ class LoadMorph(DriverUser):
         self.mult = []
         self.mults = {}
         self.adjustable = {}
-        self.currentAsset = None
         self.origMorphset = ""
         self.initTmp()
 
@@ -304,7 +303,6 @@ class LoadMorph(DriverUser):
 
     def makeSingleMorph(self, name, asset, bodypart, force):
         from .modifier import Alias, ChannelAsset, FormulaAsset
-        self.currentAsset = asset
         self.setupUniqueSuffix()
         if not force:
             if self.alreadyLoaded(asset):
@@ -546,6 +544,7 @@ class LoadMorph(DriverUser):
                         self.referred[ref.lower()] = True
                     continue
                 for idx,expr in data1.items():
+                    expr.asset = asset
                     if key == "value":
                         self.makeValueFormula(output, expr, self.propDrivers)
                     elif self.onlyProperties:
@@ -1387,7 +1386,7 @@ class LoadMorph(DriverUser):
                 pb2 = self.rig.pose.bones.get(bname2)
                 if pb2:
                     uvec2 = unit*getBoneVector(target2.factor, target2.comp, pb2)
-            self.makeSimpleBoneDriver(channel, uvec, rna, path, -1, bname, keep, bname2, uvec2)
+            self.makeSimpleBoneDriver(channel, uvec, rna, path, -1, bname, expr.asset, keep, bname2, uvec2)
 
     #-------------------------------------------------------------
     #   Bone drivers
@@ -1401,7 +1400,7 @@ class LoadMorph(DriverUser):
         return vname, vars, umax
 
 
-    def makeSimpleBoneDriver(self, channel, vec, rna, path, idx, bname, keep, bname2=None, vec2=None):
+    def makeSimpleBoneDriver(self, channel, vec, rna, path, idx, bname, asset, keep, bname2=None, vec2=None):
         var,vars,umax = self.getVarData(vec, bname, "A")
         string = getMult(umax, var)
         if bname2:
@@ -1409,7 +1408,7 @@ class LoadMorph(DriverUser):
             string2 = getMult(umax2, var2)
             vars = vars + vars2
             string = "%s+%s" % (string, string2)
-        self.makeBoneDriver(string, vars, channel, rna, path, idx, keep)
+        self.makeBoneDriver(string, vars, channel, rna, path, idx, asset, keep)
 
 
     def makeSplineString(self, points, var, umax, ufactor):
@@ -1494,13 +1493,13 @@ class LoadMorph(DriverUser):
         return string
 
 
-    def makeSplineBoneDriver(self, channel, uvec, points, rna, path, idx, bname, keep):
+    def makeSplineBoneDriver(self, channel, uvec, points, rna, path, idx, bname, asset, keep):
         var,vars,umax = self.getVarData(uvec, bname, "A")
         string = self.makeSplineString(points, var, umax, 1.0)
-        self.makeBoneDriver(string, vars, channel, rna, path, idx, keep)
+        self.makeBoneDriver(string, vars, channel, rna, path, idx, asset, keep)
 
 
-    def makeBoneDriver(self, string, vars, channel, rna, path, idx, keep):
+    def makeBoneDriver(self, string, vars, channel, rna, path, idx, asset, keep):
         from .driver import addTransformVar, Driver, Variable, getRnaDriver, removeModifiers
         bvars = []
         vvars = {}
@@ -1540,14 +1539,13 @@ class LoadMorph(DriverUser):
             string = "%s%s%s" % (propDriver.expression, plus, string)
             for var in propDriver.variables:
                 var.create(fcu.driver.variables.new())
-        if (not string.startswith(("clamp", "smoothstep")) and
-            self.currentAsset):
+        if not string.startswith(("clamp", "smoothstep")) and asset:
             words = string.split("else ")
             if len(words) == 3:
                 words = words[1].split(" if")
                 if len(words) == 2:
                     string = words[0]
-            string = "clamp(%s,%g,%g)" % (string, self.currentAsset.min, self.currentAsset.max)
+            string = "clamp(%s,%g,%g)" % (string, asset.min, asset.max)
         if ((GS.useMakeHiddenSliders or
              self.useMakeHiddenSliders or
              self.stripPrefix) and
@@ -2002,7 +2000,7 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                     tvec,idx2 = getTransformVector(factor, path, comp, pbDriver, pb, idx)
                     if path == "rotation_quaternion" and idx2 == 1:
                         from .driver import removeModifiers, addTransformVar
-                        lm.makeSimpleBoneDriver("rotation", tvec, pb, path, idx2+1, bname, False)
+                        lm.makeSimpleBoneDriver("rotation", tvec, pb, path, idx2+1, bname, expr.asset, False)
                         pb.driver_remove(path, 0)
                         fcu = pb.driver_add(path, 0)
                         fcu.driver.type = 'SCRIPTED'
@@ -2010,7 +2008,7 @@ def buildBoneFormula(asset, rig, altmorphs, errors):
                         removeModifiers(fcu)
                         addTransformVar(fcu, "y", "ROT_Y", rig, None, bname)
                     else:
-                        lm.makeSimpleBoneDriver(channel, tvec, pb, path, idx2, bname, False)
+                        lm.makeSimpleBoneDriver(channel, tvec, pb, path, idx2, bname, expr.asset, False)
 
 
     def canOptimizeScale(exprs, pb, rig):

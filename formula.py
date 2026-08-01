@@ -356,9 +356,10 @@ class Expression:
         self.bone = None
         self.bone2 = None
         self.path = None
+        self.asset = None
 
     def __repr__(self):
-        return "<Expression\n  %s\n  %s\n  %s\n  %s>" % (self.props, self.bone, self.bone2, self.path)
+        return "<Expression\n  %s\n  %s\n  %s\n  %s\n  %s>" % (self.props, self.bone, self.bone2, self.path, self.asset)
 
     def multFactors(self, factor):
         for target in self.props:
