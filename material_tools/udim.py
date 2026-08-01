@@ -293,7 +293,6 @@ class TextureTypeCombiner:
             for node,img,tree in self.foundImages:
                 if img.source == 'FILE' and tree:
                     srgb = isSRGBImage(img)
-                    timg = None
                     timg = getImage(tilepaths[srgb], img)
                     if timg:
                         print("Use tiled %s instead of %s" % (timg.name, img.name))

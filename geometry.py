@@ -425,6 +425,7 @@ class GeoNode(Node, SimNode):
             if (smooth and
                 GS.useSharpEdges and
                 not self.isSubdivided() and
+                not isGeograft(ob) and
                 activateObject(context, ob)):
                 if hasattr(ob.data, "use_auto_smooth"):
                     setMode('EDIT')
