@@ -175,6 +175,7 @@ class LocalTextureUser:
         img.filepath_raw = trg
         img.name = os.path.basename(trg)
         img.save()
+        img.buffers_free()
         self.existImages[srgb][trg] = img
         if GS.verbosity >= 3:
             print("Copied %s %s" % (tuple(img.size), trg))
@@ -219,20 +220,20 @@ class LocalTextureUser:
     def saveImage(self, img):
         img.update()
         img.save()
+        img.buffers_free()
         path = pathKey(img.filepath)
         srgb = isSRGBImage(img)
         self.existImages[srgb][path] = img
 
 
     def saveImageAs(self, img, path):
-        img.update()
         srgb = isSRGBImage(img)
         img2 = bpy.data.images.load(img.filepath)
+        img2.colorspace_settings.name = img.colorspace_settings.name
         img2.update()
         img2.filepath_raw = path
         img2.save()
-        img2.colorspace_settings.name = img.colorspace_settings.name
-        img2.update()
+        img2.buffers_free()
         self.existImages[srgb][path] = img2
         return img2
 
