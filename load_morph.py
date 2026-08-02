@@ -1375,7 +1375,7 @@ class LoadMorph(DriverUser):
         self.getMultipliers(raw)
         if target.points:
             uvec,xys = getSplinePoints(target.points, pb, target.comp)
-            self.makeSplineBoneDriver(channel, uvec, xys, rna, path, -1, bname, keep)
+            self.makeSplineBoneDriver(channel, uvec, xys, rna, path, -1, bname, expr.asset, keep)
         else:
             uvec = unit*getBoneVector(target.factor, target.comp, pb)
             bname2 = None
