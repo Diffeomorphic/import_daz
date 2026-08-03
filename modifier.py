@@ -320,6 +320,14 @@ class ChannelAsset(Modifier):
         channels = struct.get("channel", {})
         if "current_value" in channels.keys():
             self.value = channels["current_value"]
+            if self.value != 0:
+                LS.bakedMorphs[self.id] = self
+
+
+    def postbuild(self, context, inst):
+        if LS.fitFile or LS.useMorph:
+            from .formula import buildBakedMorph
+            buildBakedMorph(inst, self.id, self.value)
 
 
     def getMorphParent(self):

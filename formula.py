@@ -42,6 +42,7 @@ class Formula:
         for formula in self.formulas:
             ref,key,value = self.computeFormula(formula)
             if key == "value":
+                print("FROM")
                 buildBakedMorph(inst, ref, value)
 
 
@@ -281,7 +282,7 @@ def buildBakedMorph(inst, ref, value):
     from .driver import removeModifiers, addDriverVar
     from .selector import setActivated
     rig = inst.getRig()
-    if rig and value != 0:
+    if rig and isinstance(value, (int, float)) and value != 0:
         value = float(value)
         file,raw = ref.rsplit("#",1)
         file = unquote(file)
