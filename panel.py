@@ -834,6 +834,9 @@ class DAZ_PT_Flexions(DAZ_PT_Morphs, bpy.types.Panel):
     ftype = "DazFlexions"
     uilist = "DAZ_UL_Flexions"
 
+#------------------------------------------------------------------------
+#    Baked morphs
+#------------------------------------------------------------------------
 
 class DAZ_UL_Baked(DAZ_UL_StandardMorphs):
     morphset = "Baked"
@@ -861,6 +864,23 @@ class DAZ_PT_Baked(DAZ_PT_Morphs, bpy.types.Panel):
                 value = rig.data.get(finalProp(item.name))
             if value is not None:
                 self.layout.label(text = "%s : %.3f" % (item.text, value))
+
+#------------------------------------------------------------------------
+#    Multipliers
+#------------------------------------------------------------------------
+
+class DAZ_UL_Multipliers(DAZ_UL_StandardMorphs):
+    morphset = "Multipliers"
+
+class DAZ_PT_Multipliers(DAZ_PT_Morphs, bpy.types.Panel):
+    bl_label = "Multipliers"
+    bl_parent_id = "DAZ_PT_MorphGroup"
+    morphset = "Multipliers"
+    ftype = "DazMultipliers"
+    uilist = "DAZ_UL_Multipliers"
+
+    def hasTheseMorphs(self, rig):
+        return dazRna(rig).DazMultipliers
 
 #------------------------------------------------------------------------
 #    Custom panels
@@ -1135,6 +1155,7 @@ classes = [
     DAZ_UL_JCMs,
     DAZ_UL_Flexions,
     DAZ_UL_Baked,
+    DAZ_UL_Multipliers,
 
     DAZ_PT_MorphGroup,
     DAZ_PT_ActiveMorphs,
@@ -1152,6 +1173,7 @@ classes = [
     DAZ_PT_JCMs,
     DAZ_PT_Flexions,
     DAZ_PT_Baked,
+    DAZ_PT_Multipliers,
 
     DAZ_PT_CustomMorphs,
     DAZ_PT_CustomMeshMorphs,

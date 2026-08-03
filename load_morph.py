@@ -140,6 +140,7 @@ class LoadMorph(DriverUser):
         self.shapekeys = {}
         self.faceshapes = {}
         self.mults = {}
+        self.multipliers = set()
         self.sumdrivers = {}
         self.restdrivers = {}
         self.iked = []
@@ -232,6 +233,7 @@ class LoadMorph(DriverUser):
                 if self.isJcm and GS.onShapekeyDrivers == 'OPTIMIZE_JCM':
                     self.optimizeJcmDrivers()
                 self.correctScaleParents()
+                self.buildMultipliers()
             finally:
                 self.deleteTmp()
             self.obj.update_tag()
@@ -405,6 +407,24 @@ class LoadMorph(DriverUser):
             pg = pgs[prop]
             pg.text = label
 
+
+    def buildMultipliers(self):
+        from .morphing import addMorphProp
+        from .driver import makePropDriver, getDriver
+        pgs = dazRna(self.obj).DazMultipliers
+        for raw in self.multipliers:
+            final = finalProp(raw)
+            if (final not in self.amt.keys() or
+                getDriver(self.amt, propRef(final), 0)):
+                continue
+            if raw not in self.obj.keys():
+                self.setFloatLimits(self.obj, raw, None, None, True)
+            makePropDriver(propRef(raw), self.amt, propRef(final), self.obj, "x")
+            pg = pgs.get(raw)
+            if raw not in pgs.keys():
+                pg = addMorphProp(pgs)
+                pg.name = raw
+                pg.text = raw
 
     def buildShape(self, asset, useBuild=True):
         from .modifier import Morph
@@ -695,6 +715,7 @@ class LoadMorph(DriverUser):
                 if isinstance(mult, str):
                     mult = self.getUniqueName(mult)
                     self.addNewProp(mult)
+                    self.multipliers.add(mult)
                 if output not in self.mults.keys():
                     self.mults[output] = []
                 self.mults[output].append(mult)

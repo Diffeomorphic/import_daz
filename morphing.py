@@ -25,7 +25,7 @@ from .uilist import updateScrollbars
 class MorphSets:
     def __init__(self):
         self.Standards = ["Standard", "Head", "Units", "Expressions", "Visemes", "Facs", "Facsdetails", "Facsexpr", "Powerpose", "Body", "Anime"]
-        self.Customs = ["Custom", "Baked"]
+        self.Customs = ["Custom", "Baked", "Multipliers"]
         self.JCMs = ["Jcms", "Masculine", "Feminine", "Flexions"]
         self.Morphsets = self.Standards + self.Customs + self.JCMs + ["Visibility"]
 
