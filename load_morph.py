@@ -1549,6 +1549,10 @@ class LoadMorph(DriverUser):
                 for vname,_,var0 in vtargets:
                     vvars[vname] = Variable(var0)
 
+        for starter in ("clamp(", "smoothstep("):
+            if string.startswith(starter) and asset:
+                words = string.split(",", 2)
+                string = words[0][len(starter):]
         rna.driver_remove(path, idx)
         fcu = rna.driver_add(path, idx)
         fcu.driver.type = 'SCRIPTED'
@@ -1566,13 +1570,6 @@ class LoadMorph(DriverUser):
             string = "%s%s%s" % (propDriver.expression, plus, string)
             for var in propDriver.variables:
                 var.create(fcu.driver.variables.new())
-        if not string.startswith(("clamp", "smoothstep")) and asset:
-            words = string.split("else ")
-            if len(words) == 3:
-                words = words[1].split(" if")
-                if len(words) == 2:
-                    string = words[0]
-            string = "clamp(%s,%g,%g)" % (string, asset.min, asset.max)
         if ((GS.useMakeHiddenSliders or
              self.useMakeHiddenSliders or
              self.stripPrefix) and
@@ -1594,6 +1591,13 @@ class LoadMorph(DriverUser):
             if adj:
                 self.addAdjuster(adj, fcu, "K")
                 string = "K*(%s)" % string
+        if asset:
+            words = string.split("else ")
+            if len(words) == 3:
+                words = words[1].split(" if")
+                if len(words) == 2:
+                    string = words[0]
+            string = "clamp(%s,%g,%g)" % (string, asset.min, asset.max)
         fcu.driver.expression = string
         ttypes = self.getTransformTypes(channel)
         if ttypes is None:
