@@ -42,7 +42,6 @@ class Formula:
         for formula in self.formulas:
             ref,key,value = self.computeFormula(formula)
             if key == "value":
-                print("FROM")
                 buildBakedMorph(inst, ref, value)
 
 
