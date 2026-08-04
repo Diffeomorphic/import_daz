@@ -684,6 +684,8 @@ def getAllBoneSumDrivers(rig, bnames):
             bname = baseBone(words[1])
             if bname not in bnames:
                 continue
+        elif fcu.data_path in ["location", "rotation_euler", "scale"]:
+            continue
         else:
             if GS.verbosity >= 3 and words[0] != "[":
                 print("MISS", words)

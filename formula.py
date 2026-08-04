@@ -137,6 +137,8 @@ class Formula:
             output = "RIG"
         elif rig and rig.type != 'ARMATURE':
             output = "RIG"
+        elif rig and url.lower() == dazRna(rig).DazId.lower():
+            output = "RIG"
         elif rig and rig.type == 'ARMATURE':
             output1 = getMappedBone(output, rig, mesh)
             if output1 and output1 in rig.pose.bones.keys():

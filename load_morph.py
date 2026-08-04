@@ -258,7 +258,7 @@ class LoadMorph(DriverUser):
     #------------------------------------------------------------------
 
     def makeAllMorphs(self, namepaths, force):
-        def getAsset(name, assets):
+        def getAssetFromList(name, assets):
             for asset in assets:
                 if asset.name == name:
                     return asset
@@ -288,7 +288,7 @@ class LoadMorph(DriverUser):
                         self.addUrl(asset, aliases, filepath)
                         printName(char, asset.label)
                 else:
-                    asset = getAsset(name, assets)
+                    asset = getAssetFromList(name, assets)
                     if asset:
                         char = self.makeSingleMorph(name, asset, bodypart, force)
                         self.addUrl(asset, aliases, filepath)
@@ -898,8 +898,14 @@ class LoadMorph(DriverUser):
 
     def addObjectDriver(self, tfm):
         success = False
-        if tfm.scaleProp:
-            self.setFcurves(self.obj, tfm.scale-One, tfm.scaleProp, "scale")
+        if tfm.transProp:
+            self.setFcurves(self.obj, d2b(tfm.trans), tfm.transProp, "location")
+            success = True
+        elif tfm.rotProp:
+            self.setFcurves(self.obj, d2bu(tfm.rot), tfm.rotProp, "rotation_euler")
+            success = True
+        elif tfm.scaleProp:
+            self.setFcurves(self.obj, d2bs(tfm.scale)-One, tfm.scaleProp, "scale")
             success = True
         elif tfm.generalProp:
             self.setFcurves(self.obj, tfm.general-One, tfm.generalProp, "scale")
@@ -939,10 +945,7 @@ class LoadMorph(DriverUser):
 
     def setFcurves(self, pb, vec, prop, channel, pose="pose", useDrv=True):
         def getBoneFcurves(pb, channel):
-            if isinstance(pb, bpy.types.Object):
-                path = channel
-            else:
-                path = '%s.bones["%s"].%s' % (pose, pb.name, channel)
+            path = self.getDataPath(pb, channel, pose)
             fcustruct = {}
             if self.rig.animation_data:
                 for fcu in self.rig.animation_data.drivers:
@@ -968,7 +971,10 @@ class LoadMorph(DriverUser):
 
 
     def findSumDriver(self, pb, channel, idx, data):
-        bname = pb.name
+        if isinstance(pb, bpy.types.Object):
+            bname = 'RIG'
+        else:
+            bname = pb.name
         if bname not in self.sumdrivers.keys():
             self.sumdrivers[bname] = {}
         if channel not in self.sumdrivers[bname].keys():
@@ -1622,15 +1628,16 @@ class LoadMorph(DriverUser):
 
     def addObjectDrivers(self, ob, exprs):
         from .driver import removeModifiers
-        mappings = {
+        if LS.useLoadBaked:
+            return
+
+        ObjectMappings = {
             "translation" : ("location", [0,2,1], [1,1,-1], GS.scale),
             "rotation" : ("rotation_euler", [0,2,1], [1,1,-1], D),
             "scale" : ("scale", [0,2,1], [1,1,1], 1.0),
         }
 
-        if LS.useLoadBaked:
-            return
-        for key,mapping in mappings.items():
+        for key,mapping in ObjectMappings.items():
             moves = exprs.get(key)
             if moves:
                 channel, bindex, flips, scale = mapping
@@ -1701,11 +1708,18 @@ class LoadMorph(DriverUser):
                     else:
                         self.ensureAnimData(self.obj)
                         sumfcu = self.obj.animation_data.drivers.from_existing(src_driver=fcu)
-                        sumfcu.data_path = 'pose.bones["%s"].%s' % (pb.name, channel)
+                        sumfcu.data_path = self.getDataPath(pb, channel)
                         sumfcu.array_index = idx
                     self.clearTmpDriver(0)
             if GS.verbosity >= 3:
                 printName(" +", bname)
+
+
+    def getDataPath(self, pb, channel, pose="pose"):
+        if isinstance(pb, bpy.types.Object):
+            return channel
+        else:
+            return '%s.bones["%s"].%s' % (pose, pb.name, channel)
 
 
     def ensureAnimData(self, rna):
@@ -1921,8 +1935,8 @@ class LoadMorph(DriverUser):
             return
         for pb in self.rig.pose.bones:
             if inheritsScale(pb):
-                parchannel = 'pose.bones["%s"].scale' % pb.parent.name
-                channel = 'pose.bones["%s"].scale' % pb.name
+                parchannel =  self.getDataPath(pb.parent, "scale")
+                channel =  self.getDataPath(pb, "scale")
                 for idx in range(3):
                     if getDriver(self.rig, parchannel, idx):
                         fcu = getDriver(self.rig, channel, idx)
