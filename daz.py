@@ -371,10 +371,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Shapekey Drivers",
         description = "Optimization method for shapekey drivers")
 
-    useMultiplierProperites : BoolProperty(
-        name = "Multiplier Properties",
-        description = "Generate properties for unknown multipliers")
-
     useMakeHiddenSliders : BoolProperty(
         name = "Make Hidden Sliders",
         description = "Create properties for hidden morphs,\nso they can be displayed in the UI")
@@ -818,7 +814,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         drawEnum(self, box, "onShapekeyDrivers")
         drawEnum(self, box, "ercMethod")
         box.prop(self, "useBakedMorphs")
-        box.prop(self, "useMultiplierProperites")
         box.prop(self, "numpyMorphFraction")
         box.prop(self, "useStripCategory")
         box.prop(self, "useDefaultDrivers")

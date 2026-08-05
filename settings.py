@@ -114,7 +114,6 @@ class GlobalSettings:
         self.useDefaultDrivers = True
         self.useReducedDrivers = False
         self.onShapekeyDrivers = 'REGULAR'
-        self.useMultiplierProperites = True
 
         self.useArmature = True
         self.useQuaternions = False

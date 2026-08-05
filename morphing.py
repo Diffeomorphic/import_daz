@@ -1943,7 +1943,7 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
     bl_label = "Import Baked Correctives"
     bl_description = "Import all custom correctives for baked morphs"
 
-    defaultMultiplier = 0.0
+    defaultMultiplier = 1.0
 
     useExpressions : BoolProperty(
         name = "Expressions",
