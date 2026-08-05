@@ -61,7 +61,9 @@ def postloadMorphs(context, filepath):
         for prop,data in props.items():
             label,type,value = data
             if isinstance(value, (float, int)):
-                if type == 'int':
+                if type == 'bool':
+                    ob[prop] = (bool)(value*factor)
+                elif type == 'int':
                     ob[prop] = (int)(value*factor)
                 else:
                     ob[prop] = (float)(value*factor)

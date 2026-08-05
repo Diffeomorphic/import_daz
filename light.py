@@ -137,7 +137,7 @@ class Light(Node):
             return
         else:
             print("Unknown light type: %s" % self.type)
-            light = addLight(inst, width, height)
+            light = addLight(inst, width, height, False)
 
         for attr,op,value in getMinLightSettings():
             if hasattr(light, attr):
