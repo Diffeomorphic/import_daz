@@ -947,13 +947,13 @@ class LoadMorph(DriverUser):
         def getBoneFcurves(pb, channel):
             path = self.getDataPath(pb, channel, pose)
             fcustruct = {}
-            if self.rig.animation_data:
+            if self.rig and self.rig.animation_data:
                 for fcu in self.rig.animation_data.drivers:
                     if path == fcu.data_path:
                         fcustruct[fcu.array_index] = fcu
             return fcustruct
 
-        if useDrv and drvBone(pb.name) in self.rig.pose.bones.keys():
+        if useDrv and self.rig and drvBone(pb.name) in self.rig.pose.bones.keys():
             pb = self.rig.pose.bones[drvBone(pb.name)]
         fcustruct = getBoneFcurves(pb, channel)
         for idx,factor in self.getFactors(vec):
@@ -971,10 +971,10 @@ class LoadMorph(DriverUser):
 
 
     def findSumDriver(self, pb, channel, idx, data):
-        if isinstance(pb, bpy.types.Object):
-            bname = 'RIG'
-        else:
+        if isinstance(pb, bpy.types.PoseBone):
             bname = pb.name
+        else:
+            bname = 'RIG'
         if bname not in self.sumdrivers.keys():
             self.sumdrivers[bname] = {}
         if channel not in self.sumdrivers[bname].keys():
@@ -1704,6 +1704,7 @@ class LoadMorph(DriverUser):
                         prop = self.getFinalScaleProp(pb, idx)
                         self.amt[prop] = 0.0
                         sumfcu.data_path = propRef(prop)
+                        print("SSS", pb, idx, prop)
                         self.addScaleDriver(pb, idx)
                     else:
                         self.ensureAnimData(self.obj)
@@ -1716,10 +1717,10 @@ class LoadMorph(DriverUser):
 
 
     def getDataPath(self, pb, channel, pose="pose"):
-        if isinstance(pb, bpy.types.Object):
-            return channel
-        else:
+        if isinstance(pb, bpy.types.PoseBone):
             return '%s.bones["%s"].%s' % (pose, pb.name, channel)
+        else:
+            return channel
 
 
     def ensureAnimData(self, rna):
@@ -1907,14 +1908,17 @@ class LoadMorph(DriverUser):
         fcu.driver.type = 'SCRIPTED'
         removeModifiers(fcu)
         prop = self.getFinalScaleProp(pb, idx)
-        var = "%g+a" % dazRna(pb).DazGeneralScale
+        if isinstance(pb, bpy.types.PoseBone):
+            expr = "%g+a" % dazRna(pb).DazGeneralScale
+        else:
+            expr = "a+1"
         if inheritsScale(pb):
             fcu.driver.expression = "(%s)/parscale" % var
             self.addPathVar(fcu, "a", self.amt, propRef(prop))
             self.correctScaleFcurve(fcu, pb, idx)
         else:
             self.addPathVar(fcu, "a", self.amt, propRef(prop))
-            fcu.driver.expression = var
+            fcu.driver.expression = expr
         return fcu
 
 
@@ -1954,8 +1958,6 @@ class LoadMorph(DriverUser):
         nterms = 0
         varname = "a"
         vars = []
-        bname = prefix[:-6]
-        pb = self.rig.pose.bones.get(bname)
         for final,target in drivers.items():
             factor,points = self.getFactorPoints(target, final)
             if factor == 0.0 and not points:

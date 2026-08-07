@@ -683,7 +683,7 @@ class MorphLoader(LoadMorph, PosableMaker):
         else:
             item.text = label
 
-        if GS.useFaceSubpanels:
+        if GS.useFaceSubpanels and self.rig:
             pgs = dazRna(self.rig).DazActiveMorphs
             pg = pgs.get(prop)
             if pg is None:

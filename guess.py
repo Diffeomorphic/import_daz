@@ -15,7 +15,8 @@ def getMaterialType(mat, defaultType='CLOTHES'):
 
 
 def getMatType(mname, geo, defaultType='CLOTHES'):
-    if (geo and
+    from .geometry import Geometry
+    if (isinstance(geo, Geometry) and
         (len(geo.vertex_pairs) > 0 or geo.isShell)):
         return 'SKIN'
 

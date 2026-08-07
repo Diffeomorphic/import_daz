@@ -73,7 +73,7 @@ class FitOptions:
     fitMeshes : EnumProperty(
         items = [('SHARED', "Unmorphed Shared", "Don't fit meshes. All objects share the same mesh.\nFor environments with identical objects like leaves"),
                  ('UNIQUE', "Unmorped Unique", "Don't fit meshes. Each object has unique mesh instance.\nFor environments with objects with same mesh but different materials, like paintings"),
-                 ('MORPHED', "Morphed", "Don't fit meshes, but load morphs.\nIncompatible with ERC morphs"),
+                 ('MORPHED', "Morphed", "Don't fit meshes, but load morphs.\nFor environments that use morphs.\nIncompatible with ERC morphs"),
                  ('DBZFILE', "DBZ File", "Use exported .dbz (.json) file to fit meshes. Must exist in same directory.\nFor characters and other objects with morphs"),
                 ],
         name = "Mesh Fitting",

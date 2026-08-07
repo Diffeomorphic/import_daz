@@ -186,7 +186,7 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, IsMesh):
             for mnum,mat in enumerate(mats):
                 ob.data.materials.append(mat)
             for f,mn in zip(ob.data.polygons, facenums):
-                f.material_index = reindex[mn]
+                f.material_index = reindex.get(mn, f.material_index)
             for pset,matslot in phairs:
                 mnum2 = assoc[matslot]
                 pset.material_slot = mats[mnum2].name
