@@ -523,6 +523,9 @@ def register():
 
 
 def registerDazProperties():
+    if DAZ_PROPS:
+        return
+
     from .morphing import MS
 
     for morphset in MS.Morphsets:

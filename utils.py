@@ -920,7 +920,8 @@ def stripUuid(string):
 
 if DAZ_PROPS:
     def dazRna(rna):
-        return (rna if rna.daz_importer.legacy else rna.daz_importer)
+        return rna.daz_importer
+        #return (rna if rna.daz_importer.legacy else rna.daz_importer)
 
     def setModernProps(rna):
         rna.daz_importer.legacy = False
