@@ -1704,7 +1704,6 @@ class LoadMorph(DriverUser):
                         prop = self.getFinalScaleProp(pb, idx)
                         self.amt[prop] = 0.0
                         sumfcu.data_path = propRef(prop)
-                        print("SSS", pb, idx, prop)
                         self.addScaleDriver(pb, idx)
                     else:
                         self.ensureAnimData(self.obj)

@@ -308,7 +308,7 @@ class MetaMaker(RigifyCommon):
         cns.mute = True
 
         meta["DazMetaRig"] = True
-        meta.DazRig = "metarig"
+        dazRna(meta).DazRig = "metarig"
         meta["DazSplitShin"] = self.useSplitShin
         meta["DazRigifyPose"]= self.useRigifyPose
         meta["DazFingerIk"] = self.useFingerIk
