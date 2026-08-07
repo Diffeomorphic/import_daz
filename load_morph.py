@@ -1555,10 +1555,9 @@ class LoadMorph(DriverUser):
                 for vname,_,var0 in vtargets:
                     vvars[vname] = Variable(var0)
 
-        for starter in ("clamp(", "smoothstep("):
-            if string.startswith(starter) and asset:
-                words = string.split(",", 2)
-                string = words[0][len(starter):]
+        if string.startswith("clamp") and asset:
+            words = string.split(",", 2)
+            string = words[0][6:]
         rna.driver_remove(path, idx)
         fcu = rna.driver_add(path, idx)
         fcu.driver.type = 'SCRIPTED'
@@ -1597,7 +1596,7 @@ class LoadMorph(DriverUser):
             if adj:
                 self.addAdjuster(adj, fcu, "K")
                 string = "K*(%s)" % string
-        if asset:
+        if asset and "smoothstep" not in string:
             words = string.split("else ")
             if len(words) == 3:
                 words = words[1].split(" if")
