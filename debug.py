@@ -1,2 +1,2 @@
-DEBUG = True
+DEBUG = False
 DEBUG_MHX_ERC = False
