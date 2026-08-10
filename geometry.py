@@ -1390,7 +1390,7 @@ class Geometry(Asset, Channels):
             guideMe.from_pydata(guideVerts, guideEdges, [])
             guideOb = bpy.data.objects.new("%s_GUIDE" % inst.name, guideMe)
             setModernProps(guideOb)
-            guideMe.DazFingerPrint = getFingerPrint(guideOb)
+            dazRna(guideMe).DazFingerPrint = getFingerPrint(guideOb)
             self.setHairMatNums(guideMe, guidePolymats)
             for mat in me.materials:
                 guideMe.materials.append(mat)
