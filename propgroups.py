@@ -35,7 +35,7 @@ class DazPairGroup(bpy.types.PropertyGroup):
     b : IntProperty()
 
 class DazStringStringGroup(bpy.types.PropertyGroup):
-    names : CollectionProperty(type = bpy.types.PropertyGroup)
+    names : bpy.props.CollectionProperty(type = bpy.types.PropertyGroup)
 
 
 class DazTextGroup(bpy.types.PropertyGroup):
@@ -77,19 +77,19 @@ class DazRigidityGroup(bpy.types.PropertyGroup):
 #------------------------------------------------------------------
 
 class DazAffectedBone(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Bone name",  default="Unknown")
-    weight: bpy.props.FloatProperty(name="Average Rigidty Map Weight",  default=0)
+    name: StringProperty(name="Bone name",  default="Unknown")
+    weight: FloatProperty(name="Average Rigidty Map Weight",  default=0)
 
 class DazShapekeyScaleFactor(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Shapekey name",  default="Unknown")
-    shapekey_center_coord: bpy.props.FloatVectorProperty(name="Center of shapekey shape Rigidity Reference vertices",default=Vector((0,0,0)),subtype="XYZ")
-    scale: bpy.props.FloatVectorProperty(name="Scale Factor", description="Scale factor is calculated when transfer shapekey to the geograft that has defined Rigidity Group",subtype="MATRIX",size=9)
+    name: StringProperty(name="Shapekey name",  default="Unknown")
+    shapekey_center_coord: FloatVectorProperty(name="Center of shapekey shape Rigidity Reference vertices",default=Vector((0,0,0)),subtype="XYZ")
+    scale: FloatVectorProperty(name="Scale Factor", description="Scale factor is calculated when transfer shapekey to the geograft that has defined Rigidity Group",subtype="MATRIX",size=9)
 
 class DazRigidityScaleFactor(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Name of object (eg. Geograft) that Rigidity Group originaly came from",  default="Unknown")
-    base_center_coord: bpy.props.FloatVectorProperty(name="Center of basis shape Rigidity Reference vertices",default=Vector((0,0,0)),subtype="XYZ")
-    shapekeys: bpy.props.CollectionProperty(type=DazShapekeyScaleFactor)
-    affected_bones: bpy.props.CollectionProperty(type=DazAffectedBone)
+    name: StringProperty(name="Name of object (eg. Geograft) that Rigidity Group originaly came from",  default="Unknown")
+    base_center_coord: FloatVectorProperty(name="Center of basis shape Rigidity Reference vertices",default=Vector((0,0,0)),subtype="XYZ")
+    shapekeys: CollectionProperty(type=DazShapekeyScaleFactor)
+    affected_bones: CollectionProperty(type=DazAffectedBone)
 
 #-------------------------------------------------------------
 #   Edit Slot group

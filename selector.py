@@ -142,7 +142,7 @@ class Selector():
         if self.invoked:
             return None
         elif len(self.selection) > 0:
-            return [item["name"] for item in self.selection]
+            return [item.name for item in self.selection if item.name]
         else:
             return LS.selection
 
@@ -150,7 +150,7 @@ class Selector():
     def getSelectedValues(self):
         selection = self.getScriptedValues()
         if selection is None:
-            return [item.name for item in self.getSelectedItems()]
+            return [item.name for item in self.getSelectedItems() if item.name]
         else:
             return selection
 

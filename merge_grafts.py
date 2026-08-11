@@ -277,8 +277,8 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             ngraftverts = len(graft.data.vertices)
             graftedge = self.graftedges[graft.name] = dict([(vn,False) for vn in range(ngraftverts)])
             humedge = self.humedges[graft.name] = dict([(vn,False) for vn in range(nverts)])
-            pg = dazRna(hum.data).DazMergedGeografts.add()
-            pg.name = graft.name
+            pgs = dazRna(hum.data).DazMergedGeografts
+            addNamedProp(pgs, graft.name)
 
             # Add custom attribute which will store the vertex to be paired, and accessible via geometry node
             # If this is the graft...
