@@ -149,7 +149,7 @@ class DBZObject:
         self.center = center
 
     def __repr__(self):
-        return "<DBZ %s l:%s v:%d e:%d f:%d p:%d mg:%d>" % (self.name, self.label, len(self.verts), len(self.edges), len(self.faces), len(self.polylines), len(self.matgroups))
+        return "<DBZ %s l:%s v:%d e:%d f:%d p:%d mg:%d u:%d>" % (self.name, self.label, len(self.verts), len(self.edges), len(self.faces), len(self.polylines), len(self.matgroups), len(self.uvs))
 
 
 class DBZRig:
@@ -408,6 +408,8 @@ def fitToFile(filepath, nodes):
                 elif subsurfaced:
                     if len(verts) >= len(geo.verts):
                         geonode.verts = verts[0:len(geo.verts)]
+                        geonode.lodfaces = base.faces
+                        geonode.loduvs = base.uvs
                         geonode.center = base.center
                         geonode.highdef = highdef
                         geonode.hdshells = hdshells
@@ -420,6 +422,8 @@ def fitToFile(filepath, nodes):
                         for base1 in dbz.getAlternatives(nname):
                             if len(base1.verts) == len(geo.verts):
                                 geonode.verts = base1.verts
+                                geonode.lodfaces = base1.faces
+                                geonode.loduvs = base1.uvs
                                 geonode.center = base1.center
                                 geonode.highdef = highdef
                                 ok = True
@@ -428,6 +432,8 @@ def fitToFile(filepath, nodes):
                             makeMeshFromDbz(base, geonode, True)
                     else:
                         geonode.verts = base.verts
+                        geonode.lodfaces = base.faces
+                        geonode.loduvs = base.uvs
                         geonode.center = base.center
                         geonode.highdef = highdef
                         geonode.hdshells = hdshells

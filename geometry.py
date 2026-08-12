@@ -44,6 +44,8 @@ class GeoNode(Node, SimNode):
         self.verts = None
         self.edges = []
         self.faces = []
+        self.lodfaces = []
+        self.loduvs = []
         self.materials = OrderedDict()
         self.hairMaterials = []
         self.texcos = set()
@@ -295,6 +297,22 @@ class GeoNode(Node, SimNode):
         return me
 
 
+    def addUvLayer(self, me, uvname, uvs, faces, setActive, mtype):
+        if uvname in me.uv_layers:
+            print("%s UV layer %s already exists" % (mtype, uvname))
+            return
+        uvfaces = self.stripNegatives([f[1] for f in faces])
+        uvlayer = makeNewUvLayer(me, uvname, setActive)
+        if GS.verbosity >= 3:
+            print("  Add %s UV layer %s" % (mtype, uvlayer.name))
+            t1 = perf_counter()
+        uvdata = [uvs[vn] for f in uvfaces for vn in f]
+        foreach_set_uv(uvlayer, flatten(uvdata))
+        if GS.verbosity >= 3:
+            t2 = perf_counter()
+            print("  %s UVs added in %s seconds" % (mtype, t2-t1))
+
+
     def addHDUvs(self, ob, hdob):
         if not self.highdef.uvs:
             if hdob.name not in LS.hdUvMissing:
@@ -303,26 +321,11 @@ class GeoNode(Node, SimNode):
                 LS.hdUvMissing.append(hdob.name)
             return
 
-        def addUvLayer(uvname, uvs, faces, setActive):
-            if uvname in hdob.data.uv_layers:
-                print("HD UV layer %s already exists" % uvname)
-                return
-            uvfaces = self.stripNegatives([f[1] for f in faces])
-            uvlayer = makeNewUvLayer(hdob.data, uvname, setActive)
-            if GS.verbosity >= 3:
-                print("  Add HD UV layer %s to %s" % (uvlayer.name, hdob.name))
-                t1 = perf_counter()
-            uvdata = [uvs[vn] for f in uvfaces for vn in f]
-            foreach_set_uv(uvlayer, flatten(uvdata))
-            if GS.verbosity >= 3:
-                t2 = perf_counter()
-                print("  HD UVs added in %s seconds" % (t2-t1))
-
         if len(ob.data.uv_layers) > 0:
             uvname = ob.data.uv_layers.active.name
         else:
             uvname = "UV Layer"
-        addUvLayer(uvname, self.highdef.uvs, self.highdef.faces, True)
+        self.addUvLayer(hdob.data, uvname, self.highdef.uvs, self.highdef.faces, True, "HD")
         for hdshell in self.hdshells.values():
             uvname = LS.shellUvs.get(hdshell.label)
             if uvname is None:
@@ -330,7 +333,7 @@ class GeoNode(Node, SimNode):
             if uvname is None:
                 uvname = hdshell.label
                 print("Missing shell UV layer: %s" % uvname)
-            addUvLayer(uvname, hdshell.uvs, hdshell.faces, False)
+            self.addUvLayer(hdob.data, uvname, hdshell.uvs, hdshell.faces, False, "HD")
 
 
     def addHDMaterials(self, matgroups, inst, mats, prefix):
@@ -1285,7 +1288,11 @@ class Geometry(Asset, Channels):
         polymats = guideVerts = guideEdges = guidePolymats = []
         faces = self.faces
         if isinstance(geonode, GeoNode) and geonode.verts:
-            if geonode.edges:
+            if geonode.lodfaces:
+                faces = geonode.stripNegatives([f[0] for f in geonode.lodfaces])
+                self.material_indices = [f[4] for f in geonode.lodfaces]
+                self.polygon_indices = [f[5] for f in geonode.lodfaces]
+            elif geonode.edges:
                 verts = geonode.verts
                 edges = geonode.edges
             elif geonode.faces:
@@ -1338,6 +1345,8 @@ class Geometry(Asset, Channels):
         for key,uvset in self.uv_sets.items():
             self.buildUVSet(context, uvset, me, False)
         self.buildUVSet(context, self.uv_set, me, True)
+        if geonode and geonode.loduvs:
+            geonode.addUvLayer(me, "LOD UV", geonode.loduvs, geonode.lodfaces, True, "LOD")
         if self.shells and self.uv_set != self.default_uv_set:
             self.buildUVSet(context, self.default_uv_set, me, False)
 
