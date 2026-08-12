@@ -1,7 +1,7 @@
 // DAZ Studio Script
 
 var appName = "export_to_blender";
-var version = "\"4.5.0.2668\"";
+var version = "\"5.2.0.3019\"";
 var useExportHD = false;
 var useHDConvention = false;
 var useHDUVs = false;
@@ -286,7 +286,8 @@ function doBaseMesh(fp, obj, shape, clname, node, str1, str2)
 {
     var lodctrl = shape.getLODControl();
     var lodvalue = lodctrl.getValue();
-    lodctrl.setValue(0);
+    var lodmax = lodctrl.getMax();
+    // lodctrl.setValue(0);
     obj.forceCacheUpdate(node,false);
     var geom = obj.getCachedGeom();
     if (geom == null) {
@@ -302,11 +303,17 @@ function doBaseMesh(fp, obj, shape, clname, node, str1, str2)
         doFaces(fp, geom, "");
     }
     
-    fp.writeLine("        \"lod\": " + lodvalue + ",");
     var nf = geom.getNumFacets();
     if (nf == 0)
         doPolylines(fp, geom, "");
     doMaterialGroups(fp, geom, "", ",");
+    if (lodvalue != lodmax)
+    {
+	fp.writeLine("        \"lod value\": " + lodvalue + ",");
+	fp.writeLine("        \"lod max\": " + lodmax + ",");
+        doUVs(fp, geom, "");
+        doFaces(fp, geom, "");
+    }
     doVertices(fp, geom, "");
     fp.writeLine(str1);
     fp.writeLine(str2);
