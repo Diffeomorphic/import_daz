@@ -21,6 +21,7 @@ def getMatType(mname, geo, defaultType='CLOTHES'):
         return 'SKIN'
 
     SkinMaterials = {
+        "eyebrow" : 'BLACK',
         "eyelash" : 'BLACK',
         "eyelashes" : 'BLACK',
         "eyemoisture" : 'INVIS',
@@ -46,6 +47,7 @@ def getMatType(mname, geo, defaultType='CLOTHES'):
         "sclera" : 'WHITE',
         "iris" : 'BLUE',
         "irises" : 'BLUE',
+        "eyesurface" : 'BLUE',
         "eye_left" : 'BLUE',
         "eye_right" : 'BLUE',
         "highlight" : 'WHITE',
@@ -53,15 +55,23 @@ def getMatType(mname, geo, defaultType='CLOTHES'):
 
         "skinface" : 'SKIN',
         "face" : 'SKIN',
+        "nostril" : 'SKIN',
+        "skinneck" : 'SKIN',
+        "skinhead" : 'SKIN',
         "head" : 'SKIN',
         "ears" : 'SKIN',
+        "eyesocket" : 'SKIN',
         "skinleg" : 'SKIN',
         "legs" : 'SKIN',
         "skintorso" : 'SKIN',
         "torso" : 'SKIN',
+        "nipple" : 'SKIN',
+        "nipples" : 'SKIN',
         "body" : 'SKIN',
         "skinarm" : 'SKIN',
+        "skinforearm" : 'SKIN',
         "arms" : 'SKIN',
+        "skinfoot" : 'SKIN',
         "feet" : 'SKIN',
         "skinhip" : 'SKIN',
         "hips" : 'SKIN',
@@ -71,11 +81,15 @@ def getMatType(mname, geo, defaultType='CLOTHES'):
     }
 
     mname = mname.lower().split("-")[0].split(".")[0].split(" ")[0].split("&")[0]
-    if mname in SkinMaterials.keys():
-        return SkinMaterials[mname]
-    mname2 = mname.rsplit("_", 2)[-1]
-    if mname2 in SkinMaterials.keys():
-        return SkinMaterials[mname2]
+    mtype = SkinMaterials.get(mname)
+    if mtype:
+        return mtype
+    words = mname.split("_", 1)
+    if len(words) == 2 and words[0].isdigit():
+        mname = words[1]
+        mtype = SkinMaterials.get(mname)
+        if mtype:
+            return mtype
     return defaultType
 
 
@@ -83,7 +97,7 @@ def setDiffuse(mat, color):
     mat.diffuse_color[0:3] = color[0:3]
 
 
-def guessMaterialColor(mat, choose, enforce, default, defaultType='CLOTHES'):
+def guessMaterialColor(mat, choose, enforce, skin, default, defaultType='CLOTHES'):
     if mat is None:
         return
     mtype = getMaterialType(mat, defaultType)
@@ -100,7 +114,7 @@ def guessMaterialColor(mat, choose, enforce, default, defaultType='CLOTHES'):
         if mat.diffuse_color[3] < 1.0:
             pass
         elif mtype == 'SKIN':
-            setDiffuse(mat, default)
+            setDiffuse(mat, skin)
         elif mtype == 'RED':
             setDiffuse(mat, (1,0,0,1))
         elif mtype == 'MOUTH':
@@ -190,7 +204,7 @@ class DAZ_OT_ChangeSkinColor(DazPropsOperator, ColorProp, IsMesh):
     def run(self, context):
         for ob in getSelectedMeshes(context):
             for mat in ob.data.materials:
-                guessMaterialColor(mat, 'GUESS', True, self.color)
+                guessMaterialColor(mat, 'GUESS', True, self.color, self.color)
 
 #----------------------------------------------------------
 #   Initialize

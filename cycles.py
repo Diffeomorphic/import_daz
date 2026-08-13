@@ -37,7 +37,7 @@ class CyclesMaterial(Material):
         from .guess import guessMaterialColor
         from .geometry import GeoNode
         from .finger import isGenesis
-        color = LS.clothesColor
+        default = LS.clothesColor
         mat = self.rna
         mtype = 'CLOTHES'
         if isinstance(self.geometry, GeoNode):
@@ -47,13 +47,13 @@ class CyclesMaterial(Material):
         if ob is None:
             pass
         elif isGenesis(ob):
-            color = LS.skinColor
+            default = LS.skinColor
             mtype = 'SKIN'
         elif (ob.data and
               (dazRna(ob.data).DazGraftGroup or not ob.data.vertices)):
-            color = LS.skinColor
+            default = LS.skinColor
             mtype = 'SKIN'
-        guessMaterialColor(mat, GS.viewportColors, False, color, mtype)
+        guessMaterialColor(mat, GS.viewportColors, False, LS.skinColor, default, mtype)
 
 
     def build(self, context):

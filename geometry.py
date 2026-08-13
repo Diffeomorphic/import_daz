@@ -1289,6 +1289,7 @@ class Geometry(Asset, Channels):
         faces = self.faces
         if isinstance(geonode, GeoNode) and geonode.verts:
             if geonode.lodfaces:
+                verts = geonode.verts
                 faces = geonode.stripNegatives([f[0] for f in geonode.lodfaces])
                 self.material_indices = [f[4] for f in geonode.lodfaces]
                 self.polygon_indices = [f[5] for f in geonode.lodfaces]

@@ -7,7 +7,7 @@
 #----------------------------------------------------------
 
 import bpy
-from ..panel import DAZ_PT_SetupTab, DAZ_PT_RuntimeTab
+from ..panel import DAZ_PT_SetupTab, DAZ_PT_RuntimeTab, dazRna
 
 class DAZ_PT_EditMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_parent_id = "DAZ_PT_SetupMaterials"
@@ -26,7 +26,7 @@ class DAZ_PT_EditMaterials(DAZ_PT_SetupTab, bpy.types.Panel):
         self.layout.operator("daz.make_palette")
         self.layout.separator()
         self.layout.operator("daz.make_decal")
-        self.layout.prop(context.scene, "DazDecalMask")
+        self.layout.prop(dazRna(context.scene), "DazDecalMask")
 
 
 class DAZ_PT_MoreMaterials(DAZ_PT_SetupTab, bpy.types.Panel):

@@ -1122,7 +1122,7 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
                         from .guess import guessMaterialColor
                         LS.skinColor = (self.skinColor if GS.viewportColors == 'GUESS' else GS.skinColor)
                         for mat in firstMesh.data.materials:
-                            guessMaterialColor(mat, 'GUESS', True, LS.skinColor)
+                            guessMaterialColor(mat, 'GUESS', True, LS.skinColor, LS.skinColor)
 
                 grafts = []
                 for grafts0,hum in geografts.values():
