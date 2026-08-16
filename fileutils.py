@@ -212,7 +212,7 @@ def getFolders(reldir, subdirs, match81=True):
     if match81:
         reldir2 = the81Folders.get(reldir.lower())
         if reldir2:
-            addFolders(reldir2)
+            addFolders(reldir2, preferred, others)
     folders = preferred+others
     if not folders:
         reldir = reldir.rsplit("/", 1)[0]
