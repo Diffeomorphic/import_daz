@@ -528,6 +528,7 @@ class MorphLoader(LoadMorph, PosableMaker):
             self.meshes = getMeshChildren(self.rig)
             self.chars = len(self.meshes)*[None]
 
+
     def getMorphSet(self, asset):
         return self.morphset
 
@@ -1657,7 +1658,7 @@ class DAZ_OT_ImportCustomMorphs(DazOperator, PropDrivers, MorphSuffix, CustomMor
             msg = ('No mesh associated with "%s"' % context.object.name)
             invokeErrorMessage(msg)
             return {'FINISHED'}
-        self.setPreferredFolder(self.rig, self.meshes, ["Morphs/"], False)
+        self.setPreferredFolder(self.rig, self.meshes, self.chars, ["Morphs/"], False)
         return MultiFile.invoke(self, context, event)
 
 

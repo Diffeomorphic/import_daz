@@ -137,7 +137,7 @@ def getFingerPrint(ob):
 
 
 def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
-    def getSingleChar(rig, char):
+    def getSingleChar(rig, mesh, char):
         if isinstance(char, tuple):
             if rig:
                 url = dazRna(rig).DazUrl.rsplit("#",1)[-1]
@@ -147,6 +147,9 @@ def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
                     elif "Male" in url:
                         return char[1]
             return char[0]
+        if char is None and dazRna(mesh).DazUrl:
+            file = dazRna(mesh).DazUrl.split("#", 1)[0]
+            return os.path.dirname(file)
         return char
 
     meshes = []
@@ -165,7 +168,7 @@ def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
         else:
             if verbose:
                 print("Did not find fingerprint", finger)
-        char = getSingleChar(ob.parent, char)
+        char = getSingleChar(ob.parent, ob, char)
         if not useGenesis or (char and char.startswith("Genesis")):
             chars = [char]
             meshes = [ob]
@@ -176,15 +179,15 @@ def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
         return rig,meshes,chars,modded
 
     elif ob.type == 'ARMATURE':
-        def addChar(finger, mesh):
+        def addChar(finger, rig, mesh):
             char = FingerPrints.get(finger)
+            char = getSingleChar(rig, mesh, char)
             if char:
-                char = getSingleChar(ob, char)
                 if char.startswith("Genesis"):
-                    meshes0.append(child)
+                    meshes0.append(mesh)
                     chars0.append(char)
                 elif not useGenesis:
-                    meshes.append(child)
+                    meshes.append(mesh)
                     chars.append(char)
             return char
 
@@ -194,7 +197,7 @@ def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
         for child in ob.children:
             if child.type == 'MESH':
                 finger = getFingerPrint(child)
-                if addChar(finger, child):
+                if addChar(finger, ob, child):
                     pass
                 elif useOrig:
                     addChar(dazRna(child.data).DazFingerPrint, child)

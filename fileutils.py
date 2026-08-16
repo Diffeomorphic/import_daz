@@ -190,7 +190,7 @@ the81Folders = {
 }
 
 def getFolders(reldir, subdirs, match81=True):
-    def addFolders(reldir):
+    def addFolders(reldir, preferred, others):
         for subdir in subdirs:
             folders = GS.getAbsPaths("%s/%s" % (reldir, subdir))
             for folder in folders:
@@ -207,12 +207,18 @@ def getFolders(reldir, subdirs, match81=True):
     preferred = []
     others = []
     reldir = unquote(reldir)
-    addFolders(reldir)
+    folder = GS.getAbsPath(reldir)
+    addFolders(reldir, preferred, others)
     if match81:
         reldir2 = the81Folders.get(reldir.lower())
         if reldir2:
             addFolders(reldir2)
-    return preferred+others
+    folders = preferred+others
+    if not folders:
+        reldir = reldir.rsplit("/", 1)[0]
+        addFolders(reldir, preferred, others)
+        folders = preferred+others
+    return folders
 
 
 def getFoldersFromObject(ob, subdirs, match81=True, usePeople=False):
@@ -371,7 +377,7 @@ class MultiFile(ImportHelper):
         return {'RUNNING_MODAL'}
 
 
-    def setPreferredFolder(self, rig, meshes, folders, usePeople):
+    def setPreferredFolder(self, rig, meshes, chars, folders, usePeople):
         if GS.rememberLastFolder:
             return
         dirs = []
@@ -379,6 +385,9 @@ class MultiFile(ImportHelper):
             dirs = getFoldersFromObject(meshes[0], folders, usePeople=usePeople)
         if not dirs:
             dirs = getFoldersFromObject(rig, folders, usePeople=usePeople)
+        if not dirs:
+            for char in chars:
+                dirs = getFolders(char, folders, True)
         if dirs:
             self.properties.filepath = os.path.join(dirs[0], "")
 

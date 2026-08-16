@@ -754,7 +754,7 @@ class AnimatorBase(MultiFile, DazImageFile, FrameConverter, BoneOptions, MorphOp
     def invoke(self, context, event):
         rig = getRigFromContext(context, strict=False)
         self.isFigure = (rig.type == 'ARMATURE')
-        self.setPreferredFolder(context.object, [], self.preferredFolders, True)
+        self.setPreferredFolder(context.object, [], [], self.preferredFolders, True)
         return MultiFile.invoke(self, context, event)
 
 
