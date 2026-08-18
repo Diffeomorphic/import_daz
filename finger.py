@@ -200,7 +200,7 @@ def getFingeredCharacters(ob, useOrig, useGenesis=False, verbose=True):
                 if addChar(finger, ob, child):
                     pass
                 elif useOrig:
-                    addChar(dazRna(child.data).DazFingerPrint, child)
+                    addChar(dazRna(child.data).DazFingerPrint, ob, child)
         meshes = meshes0 + meshes
         chars = chars0 + chars
         return ob,meshes,chars,modded
