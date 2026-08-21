@@ -1363,13 +1363,16 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
             prop = "MhaForearmFollow_%s" % suffix
             setMhx(rig, prop, False)
-            cns1 = copyRotation(forearm, handFk, rig, space='LOCAL')
-            cns2 = copyRotation(forearm, hand0Ik, rig, ikprop, space='LOCAL')
-            cns1.use_x = cns1.use_z = cns2.use_x = cns2.use_z = False
+            cns1 = copyRotation(forearm, handFk, rig, ikprop, "1-x", space='LOCAL')
+            cns1.use_x = cns1.use_z = False
+            cns1.mix_mode = 'ADD'
+            cns2 = copyRotation(forearm, hand0Ik, rig, ikprop, "x", space='LOCAL')
+            cns2.use_x = cns2.use_z = False
+            cns2.mix_mode = 'ADD'
             addMuteDriver(cns1, rig, prop)
-            addMuteDriver(cns2, rig, prop)
-            forearmFk.lock_rotation[1] = True
-            addDriver(forearmFk, "lock_rotation", rig, mhxProp(prop), "x", index=1)
+            #forearmFk.lock_rotation[1] = True
+            #addDriver(forearmFk, "lock_rotation", rig, mhxProp(prop), "x", index=1)
+            #addMuteDriver(cns2, rig, prop)
 
             legSocket = rpbs["legSocket.%s" % suffix]
             legParent = rpbs["leg_parent.%s" % suffix]
