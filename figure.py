@@ -589,7 +589,7 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
 
     def getBoneNames(rig, ignoreLocked):
         from .driver import getDrivenBoneFcurves
-        exclude = ["lMetatarsals", "rMetatarsals", "l_metatarsal", "r_metatarsal"]
+        exclude = ["lMetatarsals", "rMetatarsals"]
         driven = getDrivenBoneFcurves(rig, useRigifySafe=True)
         bnames = set()
         for pb in rig.pose.bones:
