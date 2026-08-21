@@ -1363,6 +1363,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
             prop = "MhaForearmFollow_%s" % suffix
             setMhx(rig, prop, False)
+            prop2 = "MhaIKForearmFollow_%s" % suffix
+            setMhx(rig, prop2, True)
             cns1 = copyRotation(forearm, handFk, rig, ikprop, "1-x", space='LOCAL')
             cns1.use_x = cns1.use_z = False
             cns1.mix_mode = 'ADD'
@@ -1370,9 +1372,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             cns2.use_x = cns2.use_z = False
             cns2.mix_mode = 'ADD'
             addMuteDriver(cns1, rig, prop)
+            addMuteDriver(cns2, rig, prop2)
             #forearmFk.lock_rotation[1] = True
             #addDriver(forearmFk, "lock_rotation", rig, mhxProp(prop), "x", index=1)
-            #addMuteDriver(cns2, rig, prop)
 
             legSocket = rpbs["legSocket.%s" % suffix]
             legParent = rpbs["leg_parent.%s" % suffix]
@@ -1639,7 +1641,7 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
 
     def copyIkLimits(self, rig, bname, suffix):
         iktwist = rig.pose.bones.get("%s.ik.twist.%s" % (bname, suffix))
-        #iktwist.lock_rotation = (True,False,True)
+        iktwist.lock_rotation = (True,False,True)
         fkbone = rig.pose.bones["%s.fk.%s" % (bname, suffix)]
         ikbone = rig.pose.bones["%s.ik.%s" % (bname, suffix)]
         ikbone.lock_ik_x = fkbone.lock_rotation[0]
