@@ -405,10 +405,13 @@ if DAZ_PROPS:
                 for prop,value in rna.items():
                     setProp(rna.daz_importer, prop, value)
                 setModernProps(rna)
+                for prop,value in list(rna.items()):
+                    del rna[prop]
 
 
             if self.useScene:
-                updateProps(context.scene)
+                scn = context.scene
+                updateProps(scn)
             if not self.useObjects:
                 return
             elif self.useAllProps:
@@ -417,22 +420,16 @@ if DAZ_PROPS:
                 objects = getSelectedObjects(context)
             for ob in objects:
                 updateProps(ob)
-                setModernProps(ob)
                 if ob.type == 'MESH':
                     updateProps(ob.data)
-                    setModernProps(ob.data)
                     for mat in ob.data.materials:
                         if mat:
                             updateProps(mat)
-                            setModernProps(mat)
                 elif ob.type == 'ARMATURE':
                     updateProps(ob.data)
-                    setModernProps(ob.data)
                     for pb in ob.pose.bones:
                         updateProps(pb.bone)
-                        setModernProps(pb.bone)
                         updateProps(pb)
-                        setModernProps(pb)
 
 
     class DAZ_OT_SelectLegacyPosebones(DazOperator, IsArmature):
