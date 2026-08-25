@@ -586,6 +586,7 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
 
     def drawItems(self, scn, rig):
         pgs = getattr(dazRna(rig), "Daz%s" % self.morphset)
+        print("DD", self.morphset, len(pgs))
         if len(pgs) > 0:
             self.layout.template_list( self.uilist, "",
                                        dazRna(rig), "Daz%s" % self.morphset,

@@ -369,42 +369,41 @@ if DAZ_PROPS:
 
         def run(self, context):
             def updateProps(rna):
-                def setCollProp(group, prop, value, pgs2):
-                    if len(value) == 0:
+                def setSingleAttr(pg, prop, value):
+                    try:
+                        setattr(pg, prop, value)
+                    except TypeError:
+                        setattr(pg, prop, bool(value))
+
+                def setVectorAttr(pg, prop, value):
+                    try:
+                        setattr(pg, prop, value)
+                    except TypeError:
+                        setattr(pg, prop, [bool(elt) for elt in value])
+
+                def setProp(pg, prop, value):
+                    if not prop.startswith("Daz"):
                         pass
-                    elif isinstance(value, str):
-                        setattr(group, prop, value)
-                    elif isinstance(value[0], (bool, int, float)):
-                        setattr(group, prop, value)
+                    elif not hasattr(pg, prop):
+                        pass
+                    elif isinstance(value, (str, bool, int, float)):
+                        setSingleAttr(pg, prop, value)
+                    elif len(value) == 0:
+                        pass
+                    elif isinstance(value[0], (str, bool, int, float)):
+                        setVectorAttr(pg, prop, value)
                     else:
                         pgs1 = value
+                        pgs2 = getattr(pg, prop)
                         for pg1 in pgs1:
                             pg2 = pgs2.add()
-                            for key in dir(pg2):
-                                if key[0] == "_" or key in ["rna_type", "bl_rna"]:
-                                    pass
-                                elif key in ["names", "shapekeys", "affected_bones", "morphs"]:
-                                    value1 = getattr(pg1, key)
-                                    value2 = getattr(pg2, key)
-                                    setCollProp(pg2, key, value1, value2)
-                                else:
-                                    value = getattr(pg1, key)
-                                    try:
-                                        setattr(pg2, key, value)
-                                    except AttributeError:
-                                        print("ILLEGAL", key, value)
+                            pg2.name = pg1.name
+                            for key,value in pg1.items():
+                                setProp(pg2, key, value)
 
-                for prop in dir(rna.daz_importer):
-                    if (prop.startswith("Daz") and
-                        prop in rna.keys() and
-                        hasattr(rna, prop)):
-                        value = getattr(rna, prop)
-                        if hasattr(value, "__len__"):
-                            pgs2 = getattr(rna.daz_importer, prop)
-                            setCollProp(rna.daz_importer, prop, value, pgs2)
-                        else:
-                            setattr(rna.daz_importer, prop, value)
-                        del rna[prop]
+                #print("Update %s" % rna)
+                for prop,value in rna.items():
+                    setProp(rna.daz_importer, prop, value)
                 setModernProps(rna)
 
 
@@ -417,7 +416,6 @@ if DAZ_PROPS:
             else:
                 objects = getSelectedObjects(context)
             for ob in objects:
-                print("Update %s %s" % (ob.type, ob.name))
                 updateProps(ob)
                 setModernProps(ob)
                 if ob.type == 'MESH':
