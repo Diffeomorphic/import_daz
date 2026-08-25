@@ -589,14 +589,12 @@ def makeBonesPosable(rig, ignoreLocked=True, errorOnFail=True):
 
     def getBoneNames(rig, ignoreLocked):
         from .driver import getDrivenBoneFcurves
-        exclude = ["lMetatarsals", "rMetatarsals"]
         driven = getDrivenBoneFcurves(rig, useRigifySafe=True)
         bnames = set()
         for pb in rig.pose.bones:
             if (pb.name in driven.keys() and
                 isBaseBone(pb.name) and
-                drvBone(pb.name) not in rig.pose.bones.keys() and
-                pb.name not in exclude):
+                drvBone(pb.name) not in rig.pose.bones.keys()):
                 bname = baseBone(pb.name)
                 if bname not in rig.pose.bones.keys():
                     print("Missing bone (makeBonesPosable): %s" % pb.name)
