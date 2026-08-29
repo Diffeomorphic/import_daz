@@ -23,5 +23,5 @@ DEBUG_MHX_ERC = False
 #
 # https://github.com/Diffeomorphic/import_daz/issues/88
 
-OLD_STYLE_PROPS = False
+OLD_STYLE_PROPS = True
 
