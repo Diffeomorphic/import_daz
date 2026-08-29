@@ -10,11 +10,11 @@ from urllib.parse import quote, unquote
 from time import perf_counter
 from bpy.props import *
 from .settings import GS, LS, ES
+from .debug import OLD_STYLE_PROPS
 
 BLENDER3 = (bpy.app.version < (4,0,0))
 BLENDER4 = (bpy.app.version < (5,0,0))
 BLENDER5 = (bpy.app.version < (6,0,0))
-DAZ_PROPS = True
 
 #-------------------------------------------------------------
 #   Blender 5
@@ -930,40 +930,29 @@ def stripUuid(string):
 #   DAZ props
 #-------------------------------------------------------------
 
-if DAZ_PROPS:
+if OLD_STYLE_PROPS:
+    def dazRna(rna):
+        return (rna if rna.daz_importer.legacy else rna.daz_importer)
+
+    def hasLegacyProps(rna):
+        return rna.daz_importer.legacy
+else:
     def dazRna(rna):
         return rna.daz_importer
-        #return (rna if rna.daz_importer.legacy else rna.daz_importer)
-
-    def setModernProps(rna):
-        rna.daz_importer.legacy = False
 
     def hasLegacyProps(rna):
         return False
-        return rna.daz_importer.legacy
 
-    def modernizeBones(rig):
-        for pb in rig.pose.bones:
-            modernizeBone(pb)
+def setModernProps(rna):
+    rna.daz_importer.legacy = False
 
-    def modernizeBone(pb):
-        setModernProps(pb)
-        setModernProps(pb.bone)
-else:
-    def dazRna(rna):
-        return rna
+def modernizeBones(rig):
+    for pb in rig.pose.bones:
+        modernizeBone(pb)
 
-    def setModernProps(rna):
-        pass
-
-    def hasLegacyProps(rna):
-        return True
-
-    def modernizeBones(rig):
-        pass
-
-    def modernizeBone(pb):
-        pass
+def modernizeBone(pb):
+    setModernProps(pb)
+    setModernProps(pb.bone)
 
 #-------------------------------------------------------------
 #   Progress

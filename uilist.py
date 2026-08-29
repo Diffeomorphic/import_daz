@@ -191,7 +191,7 @@ def updateScrollbars(context):
 
     scn = context.scene
     for ob in scn.objects:
-        if DAZ_PROPS and hasLegacyProps(ob):
+        if hasLegacyProps(ob):
             pass
         elif ob.type == 'ARMATURE':
             updateRigScrollbars(scn, ob)

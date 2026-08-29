@@ -315,6 +315,11 @@ def register():
         if modname in Regnames:
             exec("%s.register()" % modname)
 
+    from .debug import OLD_STYLE_PROPS
+    if OLD_STYLE_PROPS:
+        from .old_propgroups import registerDazProperties
+        registerDazProperties()
+
     bpy.utils.register_class(DAZ_OT_EnableAllFeatures)
     bpy.utils.register_class(DAZ_OT_DisableAllFeatures)
 

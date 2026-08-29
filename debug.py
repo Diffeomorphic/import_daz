@@ -1,2 +1,4 @@
 DEBUG = True
 DEBUG_MHX_ERC = False
+OLD_STYLE_PROPS = False
+

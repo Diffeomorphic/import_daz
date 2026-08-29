@@ -283,9 +283,7 @@ class DAZ_PT_DazProperties(DAZ_PT_SetupTab, bpy.types.Panel):
     bl_label = "DAZ Importer Properties"
 
     def draw(self, context):
-        if DAZ_PROPS:
-            self.layout.operator("daz.update_daz_properties")
-            self.layout.operator("daz.select_legacy_posebones")
+        self.layout.operator("daz.select_legacy_posebones")
 
 
 class DazPropsPanel:

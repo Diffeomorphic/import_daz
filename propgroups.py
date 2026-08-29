@@ -134,6 +134,8 @@ class DazActiveGroup(bpy.types.PropertyGroup):
 #   DAZ props
 #-------------------------------------------------------------
 
+DAZ_PROPS = True
+
 propsclasses = []
 
 def getRootEnums(scn, context):
@@ -339,99 +341,6 @@ if DAZ_PROPS:
         DazLastImportedExpression : StringProperty()
 
 
-    class DAZ_OT_UpdateDazProperties(DazPropsOperator):
-        bl_idname = "daz.update_daz_properties"
-        bl_label = "Update DAZ Properties"
-        bl_description = "Update DAZ properties"
-        bl_options = {'UNDO'}
-
-        useScene : BoolProperty(
-            name = "Scene",
-            description = "Update scene properties",
-            default = True)
-
-        useObjects : BoolProperty(
-            name = "Objects",
-            description = "Update object properties",
-            default = True)
-
-        useAllProps : BoolProperty(
-            name = "All Properties",
-            description = "Update all properties in scene rather than selected objects only",
-            default = True)
-
-        def draw(self, context):
-            self.layout.prop(self, "useScene")
-            self.layout.prop(self, "useObjects")
-            if self.useObjects:
-                self.layout.prop(self, "useAllProps")
-
-
-        def run(self, context):
-            def updateProps(rna):
-                def setSingleAttr(pg, prop, value):
-                    try:
-                        setattr(pg, prop, value)
-                    except TypeError:
-                        setattr(pg, prop, bool(value))
-
-                def setVectorAttr(pg, prop, value):
-                    try:
-                        setattr(pg, prop, value)
-                    except TypeError:
-                        setattr(pg, prop, [bool(elt) for elt in value])
-
-                def setProp(pg, prop, value):
-                    if not prop.startswith("Daz"):
-                        pass
-                    elif not hasattr(pg, prop):
-                        pass
-                    elif isinstance(value, (str, bool, int, float)):
-                        setSingleAttr(pg, prop, value)
-                    elif len(value) == 0:
-                        pass
-                    elif isinstance(value[0], (str, bool, int, float)):
-                        setVectorAttr(pg, prop, value)
-                    else:
-                        pgs1 = value
-                        pgs2 = getattr(pg, prop)
-                        for pg1 in pgs1:
-                            pg2 = pgs2.add()
-                            pg2.name = pg1.name
-                            for key,value in pg1.items():
-                                setProp(pg2, key, value)
-
-                #print("Update %s" % rna)
-                for prop,value in rna.items():
-                    setProp(rna.daz_importer, prop, value)
-                setModernProps(rna)
-                for prop,value in list(rna.items()):
-                    del rna[prop]
-
-
-            if self.useScene:
-                scn = context.scene
-                updateProps(scn)
-            if not self.useObjects:
-                return
-            elif self.useAllProps:
-                objects = context.view_layer.objects
-            else:
-                objects = getSelectedObjects(context)
-            for ob in objects:
-                updateProps(ob)
-                if ob.type == 'MESH':
-                    updateProps(ob.data)
-                    for mat in ob.data.materials:
-                        if mat:
-                            updateProps(mat)
-                elif ob.type == 'ARMATURE':
-                    updateProps(ob.data)
-                    for pb in ob.pose.bones:
-                        updateProps(pb.bone)
-                        updateProps(pb)
-
-
     class DAZ_OT_SelectLegacyPosebones(DazOperator, IsArmature):
         bl_idname = "daz.select_legacy_posebones"
         bl_label = "Select Legacy Posebones"
@@ -451,7 +360,6 @@ if DAZ_PROPS:
         DazImporterMaterial,
         DazImporterMesh,
         DazImporterScene,
-        DAZ_OT_UpdateDazProperties,
         DAZ_OT_SelectLegacyPosebones
         ]
 
@@ -489,29 +397,28 @@ def register():
     bpy.types.PoseBone.DazTailLocal = bpy.props.FloatVectorProperty(size=3, default=(-1,-1,-1))
     bpy.types.PoseBone.HdOffset = bpy.props.FloatVectorProperty(size=3, default=(0,0,0))
 
-    if DAZ_PROPS:
-        for morphset in MS.Morphsets:
-            setattr(DazImporterObject, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
-            setattr(DazImporterArmature, "DazIndex%s" % morphset, IntProperty(default=0))
+    for morphset in MS.Morphsets:
+        setattr(DazImporterObject, "Daz%s" % morphset, CollectionProperty(type = DazTextGroup))
+        setattr(DazImporterArmature, "DazIndex%s" % morphset, IntProperty(default=0))
 
-        def defineSubmorphs(base, adjust, groups):
-            for group in groups:
-                path = "%s%s%s" % (base, group, adjust)
-                setattr(DazImporterObject, "Daz%s" % path, CollectionProperty(type = DazTextGroup))
-                setattr(DazImporterArmature, "DazIndex%s" % path, IntProperty(default=0))
+    def defineSubmorphs(base, adjust, groups):
+        for group in groups:
+            path = "%s%s%s" % (base, group, adjust)
+            setattr(DazImporterObject, "Daz%s" % path, CollectionProperty(type = DazTextGroup))
+            setattr(DazImporterArmature, "DazIndex%s" % path, IntProperty(default=0))
 
-        defineSubmorphs("Head", "", MS.HeadGroups)
-        #defineSubmorphs("Head", "Adjustments", MS.HeadGroups)
-        defineSubmorphs("Facs", "", MS.FacsGroups)
-        defineSubmorphs("Facs", "Adjustments", MS.FacsGroups)
+    defineSubmorphs("Head", "", MS.HeadGroups)
+    #defineSubmorphs("Head", "Adjustments", MS.HeadGroups)
+    defineSubmorphs("Facs", "", MS.FacsGroups)
+    defineSubmorphs("Facs", "Adjustments", MS.FacsGroups)
 
-        bpy.types.Bone.daz_importer = PointerProperty(type=DazImporterBone)
-        bpy.types.PoseBone.daz_importer = PointerProperty(type=DazImporterPoseBone)
-        bpy.types.Object.daz_importer = PointerProperty(type=DazImporterObject)
-        bpy.types.Armature.daz_importer = PointerProperty(type=DazImporterArmature)
-        bpy.types.Mesh.daz_importer = PointerProperty(type=DazImporterMesh)
-        bpy.types.Material.daz_importer = PointerProperty(type=DazImporterMaterial)
-        bpy.types.Scene.daz_importer = PointerProperty(type=DazImporterScene)
+    bpy.types.Bone.daz_importer = PointerProperty(type=DazImporterBone)
+    bpy.types.PoseBone.daz_importer = PointerProperty(type=DazImporterPoseBone)
+    bpy.types.Object.daz_importer = PointerProperty(type=DazImporterObject)
+    bpy.types.Armature.daz_importer = PointerProperty(type=DazImporterArmature)
+    bpy.types.Mesh.daz_importer = PointerProperty(type=DazImporterMesh)
+    bpy.types.Material.daz_importer = PointerProperty(type=DazImporterMaterial)
+    bpy.types.Scene.daz_importer = PointerProperty(type=DazImporterScene)
 
 
 def unregister():
