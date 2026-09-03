@@ -369,8 +369,7 @@ class BoneInstance(Instance):
         if (mapped and
             self.name != mapped and
             mapped not in dazRna(rig.data).DazBoneMap.keys()):
-            pg = dazRna(rig.data).DazBoneMap.add()
-            pg.name = mapped
+            pg = addNamedProp(dazRna(rig.data).DazBoneMap, mapped)
             pg.s = self.name
         if self.id != self.name:
             dazRna(pb.bone).DazTrueName = unquote(self.id)

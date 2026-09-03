@@ -688,8 +688,7 @@ class MorphLoader(LoadMorph, PosableMaker):
             pgs = dazRna(self.rig).DazActiveMorphs
             pg = pgs.get(prop)
             if pg is None:
-                pg = pgs.add()
-                pg.name = prop
+                pg = addNamedProp(pgs, prop)
             pg.text = item.text
 
         return prop
@@ -1515,8 +1514,7 @@ class CustomMorphLoader(MorphLoader):
         self.category = cat
         if self.obj:
             if cat not in dazRna(self.obj).DazMorphCats.keys():
-                pg = dazRna(self.obj).DazMorphCats.add()
-                pg.name = cat
+                pg = addNamedProp(dazRna(self.obj).DazMorphCats, cat)
             dazRna(self.obj).DazCustomMorphs = True
 
 #------------------------------------------------------------------------
@@ -2327,8 +2325,7 @@ class DAZ_OT_UpdateActiveMorphs(DazOperator, IsMeshArmature):
         morphs = list(morphs.items())
         morphs.sort()
         for name, text in morphs:
-            pg = pgs.add()
-            pg.name = name
+            pg = addNamedProp(pgs, name)
             pg.text = text
 
 #-------------------------------------------------------------

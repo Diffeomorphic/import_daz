@@ -6,6 +6,7 @@ import bpy
 
 from .error import *
 from .utils import *
+from .propgroups import DazDummyGroup
 
 #-------------------------------------------------------------
 #   Selector
@@ -461,8 +462,7 @@ def getActivateGroup(rig, key):
         return dazRna(rig).DazActivated[key]
     else:
         try:
-            pg = dazRna(rig).DazActivated.add()
-            pg.name = key
+            pg = addNamedProp(dazRna(rig).DazActivated, key)
             return pg
         except TypeError as err:
             msg = "Failed to load morph, because\n%s" % err

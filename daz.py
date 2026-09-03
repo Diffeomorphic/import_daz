@@ -8,6 +8,7 @@ import bpy
 from .error import *
 from .utils import *
 from .fileutils import SingleFile, JsonFile, JsonExportFile
+from .propgroups import DazDummyGroup
 
 #-------------------------------------------------------------
 #   Silent mode
@@ -34,8 +35,7 @@ class DAZ_OT_AddContentDir(bpy.types.Operator):
 
     def execute(self, context):
         global theGlobalDialog
-        pg = theGlobalDialog.contentDirs.add()
-        pg.name = ""
+        pg = addNamedProp(theGlobalDialog.contentDirs, "")
         return {'PASS_THROUGH'}
 
 
@@ -47,8 +47,7 @@ class DAZ_OT_AddMDLDir(bpy.types.Operator):
 
     def execute(self, context):
         global theGlobalDialog
-        pg = theGlobalDialog.mdlDirs.add()
-        pg.name = ""
+        pg = addNamedProp(theGlobalDialog.mdlDirs, "")
         return {'PASS_THROUGH'}
 
 
@@ -60,8 +59,7 @@ class DAZ_OT_AddCloudDir(bpy.types.Operator):
 
     def execute(self, context):
         global theGlobalDialog
-        pg = theGlobalDialog.cloudDirs.add()
-        pg.name = ""
+        pg = addNamedProp(theGlobalDialog.cloudDirs, "")
         return {'PASS_THROUGH'}
 
 #-------------------------------------------------------------
@@ -248,17 +246,17 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
     bl_options = {'UNDO', 'PRESET'}
 
     contentDirs : CollectionProperty(
-        type = bpy.types.PropertyGroup,
+        type = DazDummyGroup,
         name = "DAZ Content Directories",
         description = "Search paths for DAZ Studio content")
 
     mdlDirs : CollectionProperty(
-        type = bpy.types.PropertyGroup,
+        type = DazDummyGroup,
         name = "DAZ MDL Directories",
         description = "Search paths for DAZ Studio MDL")
 
     cloudDirs : CollectionProperty(
-        type = bpy.types.PropertyGroup,
+        type = DazDummyGroup,
         name = "DAZ Cloud Directories",
         description = "Search paths for DAZ Studio cloud content")
 

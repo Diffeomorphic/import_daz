@@ -69,11 +69,9 @@ def postloadMorphs(context, filepath):
                     ob[prop] = (float)(value*factor)
                 setActivated(ob, prop, False)
                 if prop not in dazRna(ob).DazBaked.keys():
-                    dazRna(ob).DazBaked.add()
-                    pg.name = prop
+                    pg = addNamedProp(dazRna(ob).DazBaked, prop)
                     pg.text = label
-                    pg = dazRna(ob).DazBakedValue.add()
-                    pg.name = prop
+                    pg = addNamedProp(dazRna(ob).DazBakedValue, prop)
                     pg.f = (float)(value*factor)
 
     def addFormFormulas(forms, ob, lm):

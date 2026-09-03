@@ -20,7 +20,7 @@ BLENDER5 = (bpy.app.version < (6,0,0))
 #   Blender 5
 #-------------------------------------------------------------
 
-if bpy.app.version < (5,3,0):
+if True or bpy.app.version < (5,3,0):
     def addNamedProp(pgs, name):
         pg = pgs.add()
         pg.name = name
@@ -30,6 +30,7 @@ else:
         pg = pgs.add()
         print("Add named prop %s to %s" % (name, pgs))
         #pg.name = name
+        print(pgs.keys())
         return pg
 
 if BLENDER4:

@@ -542,8 +542,8 @@ class SkinBinding(Modifier):
                     for comp in ["x", "y", "z"]:
                         bweights = joint["bulge_weights"].get(comp, {})
                         if bweights:
-                            pg = dazRna(ob.data).DazBulges.add()
-                            pg.name = "%s_%s" % (vgname, comp)
+                            pgs = dazRna(ob.data).DazBulges
+                            pg = addNamedProp(pgs, "%s_%s" % (vgname, comp))
                             bvalues = {}
                             for bulge in bweights.get("bulges", []):
                                 bid = bulge["id"].replace("-", "_")

@@ -11,6 +11,9 @@ from .debug import OLD_STYLE_PROPS
 #   Property groups
 #-------------------------------------------------------------
 
+class DazDummyGroup(bpy.types.PropertyGroup):
+    name : StringProperty()
+
 class DazIntGroup(bpy.types.PropertyGroup):
     a : IntProperty()
 
@@ -36,7 +39,7 @@ class DazPairGroup(bpy.types.PropertyGroup):
     b : IntProperty()
 
 class DazStringStringGroup(bpy.types.PropertyGroup):
-    names : bpy.props.CollectionProperty(type = bpy.types.PropertyGroup)
+    names : bpy.props.CollectionProperty(type = DazStringGroup)
 
 
 class DazTextGroup(bpy.types.PropertyGroup):
@@ -282,14 +285,14 @@ if DAZ_PROPS:
         DazGraftData : CollectionProperty(type = DazStringIntGroup)
         DazMaterialSets : CollectionProperty(type = DazStringStringGroup)
         DazHDMaterials : CollectionProperty(type = DazTextGroup)
-        DazMergedGeografts : CollectionProperty(type = bpy.types.PropertyGroup)
+        DazMergedGeografts : CollectionProperty(type = DazDummyGroup)
         DazHairType : StringProperty(default = 'SHEET')
         DazDhdmFiles : CollectionProperty(type = DazStringBoolGroup)
         DazMorphFiles : CollectionProperty(type = DazStringBoolGroup)
         DazPolygonGroup : CollectionProperty(type = DazIntGroup)
         DazMaterialGroup : CollectionProperty(type = DazIntGroup)
         DazCondGraftGroup : CollectionProperty(type = DazIntGroup)
-        DazFavorites : CollectionProperty(type = bpy.types.PropertyGroup)
+        DazFavorites : CollectionProperty(type = DazDummyGroup)
         DazBodyPart : CollectionProperty(type = DazStringGroup)
         DazMorphNames : CollectionProperty(type = DazStringGroup)
         DazFullyRigid : BoolProperty()
@@ -465,14 +468,14 @@ if OLD_STYLE_PROPS:
         bpy.types.Mesh.DazGraftData = CollectionProperty(type = DazStringIntGroup)
         bpy.types.Mesh.DazMaterialSets = CollectionProperty(type = DazStringStringGroup)
         bpy.types.Mesh.DazHDMaterials = CollectionProperty(type = DazTextGroup)
-        bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = bpy.types.PropertyGroup)
+        bpy.types.Mesh.DazMergedGeografts = CollectionProperty(type = DazDummyGroup)
         bpy.types.Mesh.DazHairType = StringProperty(default = 'SHEET')
         bpy.types.Mesh.DazDhdmFiles = CollectionProperty(type = DazStringBoolGroup)
         bpy.types.Mesh.DazMorphFiles = CollectionProperty(type = DazStringBoolGroup)
         bpy.types.Mesh.DazPolygonGroup = CollectionProperty(type = DazIntGroup)
         bpy.types.Mesh.DazMaterialGroup = CollectionProperty(type = DazIntGroup)
         bpy.types.Mesh.DazCondGraftGroup = CollectionProperty(type = DazIntGroup)
-        bpy.types.Mesh.DazFavorites = CollectionProperty(type = bpy.types.PropertyGroup)
+        bpy.types.Mesh.DazFavorites = CollectionProperty(type = DazDummyGroup)
         bpy.types.Mesh.DazBodyPart = CollectionProperty(type = DazStringGroup)
         bpy.types.Mesh.DazMorphNames = CollectionProperty(type = DazStringGroup)
         bpy.types.Mesh.DazFullyRigid = BoolProperty()
@@ -531,6 +534,7 @@ if OLD_STYLE_PROPS:
 #-------------------------------------------------------------
 
 classes = [
+    DazDummyGroup,
     DazIntGroup,
     DazBoolGroup,
     DazFloatGroup,
@@ -553,6 +557,7 @@ classes = [
 
 def register():
     for cls in classes + propsclasses:
+        print("Reg", cls)
         bpy.utils.register_class(cls)
 
     from .morphing import MS
@@ -588,5 +593,8 @@ def register():
 
 
 def unregister():
-    for cls in classes + propsclasses:
+    allclasses = classes + propsclasses
+    allclasses.reverse()
+    for cls in allclasses:
+        print("Unreg", cls)
         bpy.utils.unregister_class(cls)
