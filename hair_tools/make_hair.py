@@ -117,14 +117,14 @@ class HairOptions:
         description = "Keep (reconstruct) mesh hair after making particle hair"
     )
 
-    enums = [('PARTICLES', "Particles", "Particle hair"),
-             ('CURVES', "Curves", "Ordinary curves"),
-             ('POLYLINES', "Polylines", "Line meshes, one for each strand"),
-             ('MESH', "Mesh", "Single line mesh")]
+    hairenums = [('PARTICLES', "Particles", "Particle hair"),
+                 ('CURVES', "Curves", "Ordinary curves"),
+                 ('POLYLINES', "Polylines", "Line meshes, one for each strand"),
+                 ('MESH', "Mesh", "Single line mesh")]
     if not BLENDER3:
-        enums = [('HAIR_CURVES', "Hair Curves", "Hair curves")] + enums
+        hairenums = [('HAIR_CURVES', "Hair Curves", "Hair curves")] + hairenums
     output : EnumProperty(
-        items = enums,
+        items = hairenums,
         name = "Output",
         description = "")
 

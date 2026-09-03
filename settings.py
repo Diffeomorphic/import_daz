@@ -196,14 +196,14 @@ class GlobalSettings:
 
 
     def toDialog(self, btn):
+        from .utils import addNamedProp
         for attr in dir(self):
             value = getattr(self, attr)
             if attr in ["contentDirs", "cloudDirs", "mdlDirs"]:
                 pgs = getattr(btn, attr)
                 pgs.clear()
                 for folder in value:
-                    pg = pgs.add()
-                    pg.name = folder
+                    addNamedProp(pgs, folder)
             elif attr[0] != "_":
                 try:
                     setattr(btn, attr, value)
