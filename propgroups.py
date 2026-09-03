@@ -39,7 +39,7 @@ class DazPairGroup(bpy.types.PropertyGroup):
     b : IntProperty()
 
 class DazStringStringGroup(bpy.types.PropertyGroup):
-    names : bpy.props.CollectionProperty(type = DazStringGroup)
+    names : bpy.props.CollectionProperty(type = DazDummyGroup)
 
 
 class DazTextGroup(bpy.types.PropertyGroup):
@@ -557,7 +557,6 @@ classes = [
 
 def register():
     for cls in classes + propsclasses:
-        print("Reg", cls)
         bpy.utils.register_class(cls)
 
     from .morphing import MS
@@ -593,8 +592,5 @@ def register():
 
 
 def unregister():
-    allclasses = classes + propsclasses
-    allclasses.reverse()
-    for cls in allclasses:
-        print("Unreg", cls)
+    for cls in classes + propsclasses:
         bpy.utils.unregister_class(cls)
