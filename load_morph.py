@@ -1909,7 +1909,7 @@ class LoadMorph(DriverUser):
         else:
             expr = "a+1"
         if inheritsScale(pb):
-            fcu.driver.expression = "(%s)/parscale" % var
+            fcu.driver.expression = "(%s)/parscale" % expr
             self.addPathVar(fcu, "a", self.amt, propRef(prop))
             self.correctScaleFcurve(fcu, pb, idx)
         else:
