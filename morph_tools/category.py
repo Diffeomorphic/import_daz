@@ -257,26 +257,26 @@ class CategorySelector(Selector):
 #   Remove category
 #------------------------------------------------------------------------
 
-class DAZ_OT_RemoveCategories(DazOperator, CategorySelector, MorphRemover, IsArmature):
+class DAZ_OT_RemoveCategories(DazOperator, CategorySelector, MorphRemover, IsMeshArmature):
     bl_idname = "daz.remove_categories"
     bl_label = "Remove Categories"
     bl_description = "Remove selected categories and associated drivers"
     bl_options = {'UNDO'}
 
-    def runObject(self, context, rig, items):
+    def runObject(self, context, ob, items):
         cats = [cat for idx,cat in items]
-        if rig.type == 'ARMATURE':
-            self.removeUrls(rig, cats)
-            for ob in getMeshChildren(rig):
-                self.removeUrls(ob, cats)
-            for key in cats:
-                cat = dazRna(rig).DazMorphCats[key]
-                for pg in cat.morphs:
-                    self.removeRigProp(rig, pg.name)
+        self.removeUrls(ob, cats)
+        if ob.type == 'ARMATURE':
+            for mesh in getMeshChildren(ob):
+                self.removeUrls(mesh, cats)
+        for key in cats:
+            cat = dazRna(ob).DazMorphCats[key]
+            for pg in cat.morphs:
+                self.removeRigProp(ob, pg.name)
         for idx,key in items:
-            dazRna(rig).DazMorphCats.remove(idx)
-        if len(dazRna(rig).DazMorphCats) == 0:
-            dazRna(rig).DazMeshMorphs = False
+            dazRna(ob).DazMorphCats.remove(idx)
+        if len(dazRna(ob).DazMorphCats) == 0:
+            dazRna(ob).DazMeshMorphs = False
 
 
     def removeUrls(self, ob, cats):
@@ -292,7 +292,7 @@ class DAZ_OT_RemoveCategories(DazOperator, CategorySelector, MorphRemover, IsArm
 #   Join categories
 #------------------------------------------------------------------------
 
-class DAZ_OT_JoinCategories(DazOperator, CategorySelector, CustomEnums, CategoryBasic, IsArmature):
+class DAZ_OT_JoinCategories(DazOperator, CategorySelector, CustomEnums, CategoryBasic, IsMeshArmature):
     bl_idname = "daz.join_categories"
     bl_label = "Join Categories"
     bl_description = "Join selected categories with the chosen category"

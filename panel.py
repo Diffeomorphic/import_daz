@@ -568,18 +568,22 @@ class DAZ_PT_Morphs(DAZ_PT_RuntimeTab):
         op.morphset = self.morphset
         op.category = category
         op.ftype = ftype
+        op.useMesh = self.useMesh
         op = split.operator("daz.key_morphs", text="", icon='KEY_HLT')
         op.morphset = self.morphset
         op.category = category
         op.ftype = ftype
+        op.useMesh = self.useMesh
         op = split.operator("daz.unkey_morphs", text="", icon='KEY_DEHLT')
         op.morphset = self.morphset
         op.category = category
         op.ftype = ftype
+        op.useMesh = self.useMesh
         op = split.operator("daz.clear_morphs", text="", icon='X')
         op.morphset = self.morphset
         op.category = category
         op.ftype = ftype
+        op.useMesh = self.useMesh
 
 
     def drawItems(self, scn, rig):

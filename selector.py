@@ -310,6 +310,7 @@ class MorphGroup:
     category : StringProperty(default = "")
     prefix : StringProperty(default = "")
     ftype : StringProperty(default = "")
+    useMesh : BoolProperty(default = False)
 
     subgroups = []
 
@@ -322,6 +323,13 @@ class MorphGroup:
             self.subgroups = MS.FacsGroups
         elif morphset == "DazHead":
             self.subgroups = MS.HeadGroups
+
+
+    def getObjectFromContext(self, context):
+        if self.useMesh:
+            return context.object
+        else:
+            return getRigFromContext(context)
 
 
     def getFiltered(self):
@@ -495,6 +503,7 @@ class DAZ_OT_DeactivateAll(DazOperator, Activator):
 #------------------------------------------------------------------
 
 def setMorphs(value, rig, mgrp, scn, frame, force):
+    print("REL", rig, mgrp)
     morphs = mgrp.getRelevantMorphs(scn, rig)
     for morph in morphs:
         if (getActivated(rig, rig, morph, force) and
@@ -528,7 +537,8 @@ class DAZ_OT_ClearMorphs(DazOperator, MorphGroup, IsMeshArmature):
 
     def run(self, context):
         scn = context.scene
-        for rig in getRigsFromContext(context):
+        rig = self.getObjectFromContext(context)
+        if rig:
             setMorphs(0.0, rig, self, scn, scn.frame_current, False)
             updateRigDrivers(context, rig)
 
@@ -549,7 +559,8 @@ class DAZ_OT_MultiplyMorphs(DazPropsOperator, MorphGroup, IsMeshArmature):
 
     def run(self, context):
         scn = context.scene
-        for rig in getRigsFromContext(context):
+        rig = self.getObjectFromContext(context)
+        if rig:
             multiplyMorphs(self.factor, rig, self, scn, scn.frame_current, False)
             updateRigDrivers(context, rig)
 
@@ -594,7 +605,7 @@ class DAZ_OT_AddKeysets(DazOperator, MorphGroup, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        rig = getRigFromContext(context)
+        rig = self.getObjectFromContext(context)
         if rig:
             scn = context.scene
             aksi = scn.keying_sets.active_index
@@ -617,7 +628,7 @@ class DAZ_OT_KeyMorphs(DazOperator, MorphGroup, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        rig = getRigFromContext(context)
+        rig = self.getObjectFromContext(context)
         if rig:
             scn = context.scene
             morphs = self.getRelevantMorphs(scn, rig, adjusters=True)
@@ -651,7 +662,7 @@ class DAZ_OT_UnkeyMorphs(DazOperator, MorphGroup, IsMeshArmature):
     bl_options = {'UNDO'}
 
     def run(self, context):
-        rig = getRigFromContext(context)
+        rig = self.getObjectFromContext(context)
         if rig and rig.animation_data and rig.animation_data.action:
             scn = context.scene
             morphs = self.getRelevantMorphs(scn, rig, adjusters=True)
@@ -764,9 +775,10 @@ class DAZ_OT_PinMorph(DazOperator, MorphGroup, IsMeshArmature):
 
     def run(self, context):
         from .morphing import MP
-        rig = getRigFromContext(context)
+        rig = self.getObjectFromContext(context)
         scn = context.scene
         MP.setupMorphPaths(False)
+        print("PIN", rig)
         pinMorph(rig, scn, self.key, self, scn.frame_current)
         updateRigDrivers(context, rig)
 
