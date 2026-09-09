@@ -8,6 +8,7 @@ import bpy
 from .error import *
 from .utils import *
 from .fileutils import SingleFile, JsonFile, JsonExportFile
+from .propgroups import DazDummyGroup
 
 #-------------------------------------------------------------
 #   Silent mode
@@ -34,8 +35,7 @@ class DAZ_OT_AddContentDir(bpy.types.Operator):
 
     def execute(self, context):
         global theGlobalDialog
-        pg = theGlobalDialog.contentDirs.add()
-        pg.name = ""
+        pg = addNamedProp(theGlobalDialog.contentDirs, "")
         return {'PASS_THROUGH'}
 
 
@@ -47,8 +47,7 @@ class DAZ_OT_AddMDLDir(bpy.types.Operator):
 
     def execute(self, context):
         global theGlobalDialog
-        pg = theGlobalDialog.mdlDirs.add()
-        pg.name = ""
+        pg = addNamedProp(theGlobalDialog.mdlDirs, "")
         return {'PASS_THROUGH'}
 
 
@@ -60,8 +59,7 @@ class DAZ_OT_AddCloudDir(bpy.types.Operator):
 
     def execute(self, context):
         global theGlobalDialog
-        pg = theGlobalDialog.cloudDirs.add()
-        pg.name = ""
+        pg = addNamedProp(theGlobalDialog.cloudDirs, "")
         return {'PASS_THROUGH'}
 
 #-------------------------------------------------------------
@@ -248,17 +246,17 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
     bl_options = {'UNDO', 'PRESET'}
 
     contentDirs : CollectionProperty(
-        type = bpy.types.PropertyGroup,
+        type = DazDummyGroup,
         name = "DAZ Content Directories",
         description = "Search paths for DAZ Studio content")
 
     mdlDirs : CollectionProperty(
-        type = bpy.types.PropertyGroup,
+        type = DazDummyGroup,
         name = "DAZ MDL Directories",
         description = "Search paths for DAZ Studio MDL")
 
     cloudDirs : CollectionProperty(
-        type = bpy.types.PropertyGroup,
+        type = DazDummyGroup,
         name = "DAZ Cloud Directories",
         description = "Search paths for DAZ Studio cloud content")
 
@@ -394,15 +392,15 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         description = "Material Method",
         default = 'SELECT')
 
-    enums = [('BURLEY_SKIN', "Burley/Skin", "Use Random walk (skin) for skin materials,\nChristensen-Burley for other materials"),
-             ('BURLEY', "Christensen-Burley", "Christensen-Burley"),
-             ('RANDOM_WALK', "Random Walk", "Random walk")]
+    sssEnums = [('BURLEY_SKIN', "Burley/Skin", "Use Random walk (skin) for skin materials,\nChristensen-Burley for other materials"),
+                ('BURLEY', "Christensen-Burley", "Christensen-Burley"),
+                ('RANDOM_WALK', "Random Walk", "Random walk")]
     if BLENDER3:
-        enums.append(('RANDOM_WALK_FIXED_RADIUS', "Random Walk (Fixed Radius)", "Random Walk (Fixed Radius)"))
+        sssEnums.append(('RANDOM_WALK_FIXED_RADIUS', "Random Walk (Fixed Radius)", "Random Walk (Fixed Radius)"))
     else:
-        enums.append(('RANDOM_WALK_SKIN', "Random Walk (Skin)", "Random Walk (Skin)"))
+        sssEnums.append(('RANDOM_WALK_SKIN', "Random Walk (Skin)", "Random Walk (Skin)"))
     sssMethod : EnumProperty(
-        items = enums,
+        items = sssEnums,
         name = "SSS Method",
         description = "Method for subsurface scattering")
 
@@ -613,13 +611,13 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Simulation",
         description = "Add influence (pinning) vertex groups for simulation")
 
-    enums = [('MATERIAL', "Material", "Create material node groups")]
+    geoenums = [('MATERIAL', "Material", "Create material node groups")]
     if bpy.app.version >= (3,1,0):
-        enums += [('GEONODES', "Geometry Nodes", "Create geometry node groups")]
-    enums += [('IGNORE', "Ignore", "Ignore shells"),
-              ('MESH', "Mesh (Debug)", "Create empty meshes. For debugging only")]
+        geoenums += [('GEONODES', "Geometry Nodes", "Create geometry node groups")]
+    geoenums += [('IGNORE', "Ignore", "Ignore shells"),
+                 ('MESH', "Mesh (Debug)", "Create empty meshes. For debugging only")]
     shellMethod : EnumProperty(
-        items = enums,
+        items = geoenums,
         name = "Shell Method",
         description = "Method for geometry shells")
 

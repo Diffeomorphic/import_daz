@@ -354,14 +354,13 @@ class GeoNode(Node, SimNode):
                         if isGeograft(ob):
                             addToTable(ob.data.materials, "%s_" % child.id)
             for mg in matgroups:
-                pg = dazRna(self.hdobject.data).DazHDMaterials.add()
-                pg.name = mg
+                pg = addNamedProp(dazRna(self.hdobject.data).DazHDMaterials, mg)
                 pg.text = table.get(mg, mg)
             return
 
         for mat in mats:
-            pg = dazRna(self.hdobject.data).DazHDMaterials.add()
-            pg.name = prefix + stripName(mat.name)
+            pgs = dazRna(self.hdobject.data).DazHDMaterials
+            pg = addNamedProp(pgs, prefix + stripName(mat.name))
             pg.text = mat.name
         if self.data and self.data.vertex_pairs:
             # Geograft
@@ -571,8 +570,7 @@ class GeoNode(Node, SimNode):
             self.addLSMesh(ob, inst, LS.rigname)
             for extra in self.extra:
                 for favo in extra.get("favorites", []):
-                    pg = dazRna(ob.data).DazFavorites.add()
-                    pg.name = favo
+                    pg = addNamedProp(dazRna(ob.data).DazFavorites, favo)
 
 
     def makeCondGraftGroups(self, inst, ob):
@@ -1374,8 +1372,7 @@ class Geometry(Asset, Channels):
         geonodes = list(self.nodes.values())
         if me.vertices and geonodes and self.id:
             pgs = dazRna(ob.data).DazGraftData
-            pg = pgs.add()
-            pg.name = geonodes[0].getName()
+            pg = addNamedProp(pgs, geonodes[0].getName())
             pg.s = self.id.rsplit("/",1)[0]
             pg.i = len(ob.data.vertices)
             vattr = ob.data.attributes.new("DazVertex", 'INT', 'POINT')
@@ -1423,8 +1420,7 @@ class Geometry(Asset, Channels):
             return
         pgs = getattr(dazRna(ob.data), aname)
         for group in groups:
-            pg = pgs.add()
-            pg.name = group
+            pg = addNamedProp(pgs, group)
             pg.a = len(pgs) - 1
         attr = ob.data.attributes.new(aname, 'INT', 'FACE')
         attr.data.foreach_set("value", indices)

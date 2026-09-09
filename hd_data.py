@@ -104,14 +104,12 @@ def addSkeyToUrls(ob, asset, skey):
     if asset.hd_url:
         pgs = dazRna(ob.data).DazDhdmFiles
         if skey.name not in pgs.keys():
-            pg = pgs.add()
-            pg.name = skey.name
+            pg = addNamedProp(pgs, skey.name)
             pg.s = GS.getAbsPath(asset.hd_url)
             pg.b = False
 
     pgs = dazRna(ob.data).DazMorphFiles
     if skey.name not in pgs.keys():
-        pg = pgs.add()
-        pg.name = skey.name
+        pg = addNamedProp(pgs, skey.name)
         pg.s = GS.getAbsPath(asset.fileref)
         pg.b = False

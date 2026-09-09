@@ -361,8 +361,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
             n0 = len(pgs)
             graftpgs = getattr(dazRna(graft.data), aname)
             for gname in graftpgs.keys():
-                pg = pgs.add()
-                pg.name = gname
+                pg = addNamedProp(pgs, gname)
             attr = graft.data.attributes.get(aname)
             if attr:
                 for data in attr.data.values():
@@ -377,8 +376,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
                 gdata.value = gn
             pgs = dazRna(hum.data).DazGraftData
             gpg = dazRna(graft.data).DazGraftData[0]
-            pg = pgs.add()
-            pg.name = gpg.name
+            pg = addNamedProp(pgs, gpg.name)
             pg.s = gpg.s
             pg.i = gpg.i
 
@@ -651,8 +649,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MergeGeograftOptions, UVLayerMerge
         cpgs = dazRna(hum.data).DazBodyPart
         for sname,apg in apgs.items():
             if sname not in cpgs.keys():
-                cpg = cpgs.add()
-                cpg.name = sname
+                cpg = addNamedProp(cpgs, sname)
                 cpg.s = apg.s
 
 

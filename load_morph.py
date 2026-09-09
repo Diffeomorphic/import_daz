@@ -320,8 +320,7 @@ class LoadMorph(DriverUser):
             pgs = dazRna(self.obj).DazMorphNames
             pg = pgs.get(asset.name)
             if pg is None:
-                pg = pgs.add()
-                pg.name = asset.name
+                pg = addNamedProp(pgs, asset.name)
             pg.s = prop
         self.bodypart = bodypart
         skey,ok = self.buildShape(asset)
@@ -490,8 +489,7 @@ class LoadMorph(DriverUser):
             pgs = dazRna(self.mesh).DazMorphNames
             pg = pgs.get(prop)
             if pg is None:
-                pg = pgs.add()
-                pg.name = prop
+                pg = addNamedProp(pgs, prop)
             pg.s = asset.name
             self.setShapeLimits(skey, asset)
             self.shapekeys[prop] = skey
@@ -1911,7 +1909,7 @@ class LoadMorph(DriverUser):
         else:
             expr = "a+1"
         if inheritsScale(pb):
-            fcu.driver.expression = "(%s)/parscale" % var
+            fcu.driver.expression = "(%s)/parscale" % expr
             self.addPathVar(fcu, "a", self.amt, propRef(prop))
             self.correctScaleFcurve(fcu, pb, idx)
         else:

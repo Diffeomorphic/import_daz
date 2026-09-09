@@ -649,7 +649,9 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             elif not vgtwists:
                 continue
 
-            vgrp = ob.vertex_groups.new(name=bname)
+            vgrp = ob.vertex_groups.get(bname)
+            if vgrp is None:
+                vgrp = ob.vertex_groups.new(name=bname)
             indices = [vgtwist.index for vgtwist in vgtwists]
             if vgbend:
                 indices.append(vgbend.index)

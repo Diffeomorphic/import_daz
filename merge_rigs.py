@@ -274,8 +274,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             getObjects(root, root.parent, objects, infos, widgets, [])
 
         def addMergedRig(rig, subrig, idx):
-            pg = dazRna(rig.data).DazMergedRigs.add()
-            pg.name = str(idx)
+            pg = addNamedProp(dazRna(rig.data).DazMergedRigs, str(idx))
             pg.s = dazRna(subrig).DazUrl
             pg.b = (subrig.parent_bone is not None)
 
@@ -344,8 +343,7 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
             for subrig,subbones,submeshes in info[1:]:
                 for key,pg0 in dazRna(subrig.data).DazBoneMap.items():
                     if key not in dazRna(rig.data).DazBoneMap.keys():
-                        pg = dazRna(rig.data).DazBoneMap.add()
-                        pg.name = pg0.name
+                        pg = addNamedProp(dazRna(rig.data).DazBoneMap, pg0.name)
                         pg.s = pg0.s
 
                 copyProps(subrig, rig, True)
