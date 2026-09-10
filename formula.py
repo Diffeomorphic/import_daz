@@ -136,7 +136,10 @@ class Formula:
         elif output in self.Genesis:
             output = "RIG"
         elif rig and rig.type != 'ARMATURE':
-            output = "RIG"
+            if rig.name == output:
+                output = "RIG"
+            else:
+                output = None
         elif rig and url.lower() == dazRna(rig).DazId.lower():
             output = "RIG"
         elif rig and rig.type == 'ARMATURE':

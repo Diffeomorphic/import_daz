@@ -554,6 +554,8 @@ class LoadMorph(DriverUser):
         if not exprs:
             return False
         for output,data in exprs.items():
+            if output is None:
+                continue
             output = rawProp(output)
             for key,data1 in data.items():
                 if key == "*fileref":
