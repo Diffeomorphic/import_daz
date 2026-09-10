@@ -356,7 +356,7 @@ class MorphGroup:
         morphs = []
         if rig is None:
             return morphs
-        if self.morphset == "Custom":
+        if self.morphset in ("Custom", "Mesh"):
             return self.getCustomMorphs(scn, rig)
         elif self.morphset == "All":
             if adjusters:
@@ -503,7 +503,6 @@ class DAZ_OT_DeactivateAll(DazOperator, Activator):
 #------------------------------------------------------------------
 
 def setMorphs(value, rig, mgrp, scn, frame, force):
-    print("REL", rig, mgrp)
     morphs = mgrp.getRelevantMorphs(scn, rig)
     for morph in morphs:
         if (getActivated(rig, rig, morph, force) and
@@ -778,7 +777,6 @@ class DAZ_OT_PinMorph(DazOperator, MorphGroup, IsMeshArmature):
         rig = self.getObjectFromContext(context)
         scn = context.scene
         MP.setupMorphPaths(False)
-        print("PIN", rig)
         pinMorph(rig, scn, self.key, self, scn.frame_current)
         updateRigDrivers(context, rig)
 

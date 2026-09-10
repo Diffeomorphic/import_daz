@@ -25,7 +25,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
     usedPropsOnly = False
 
     def draw_item(self, context, layout, data, morph, icon, active, indexProp):
-        rig,amt = self.getRigAmt(context)
+        rig,amt,useMesh = self.getRigAmt(context)
         key = morph.name
         if rig is None or key not in rig.keys():
             return
@@ -49,6 +49,7 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         op.morphset = morphset
         op.category = category
         op.ftype = self.getFilterType(data)
+        op.useMesh = useMesh
 
 
     def getRigAmt(self, context):
@@ -56,9 +57,9 @@ class DAZ_UL_MorphList(bpy.types.UIList):
         while rig.type != 'ARMATURE' and rig.parent:
             rig = rig.parent
         if rig.type == 'ARMATURE':
-            return rig, rig.data
+            return rig, rig.data, False
         else:
-            return None, None
+            return None, None, False
 
 
     def showBool(self, layout, ob, key, text=""):
@@ -136,6 +137,7 @@ class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
             op = row.operator("daz.pin_shape", icon='UNPINNED')
             op.key = key
             op.category = cat.name
+            op.useMesh = True
 
     def getMorphCat(self, cat):
         return "Mesh", cat.name
@@ -149,9 +151,9 @@ class DAZ_UL_Shapekeys(DAZ_UL_MorphList):
     def getRigAmt(self, context):
         ob = context.object
         if ob.type == 'MESH':
-            return ob, ob.data
+            return ob, ob.data, True
         else:
-            return None, None
+            return None, None, True
 
 #-------------------------------------------------------------
 #   Update scrollbars

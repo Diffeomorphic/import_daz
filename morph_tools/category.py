@@ -305,14 +305,15 @@ class DAZ_OT_JoinCategories(DazOperator, CategorySelector, CustomEnums, Category
     def runObject(self, context, ob, items):
         props = []
         labels = []
+        custom = self.custom
         for idx,key in items:
-            if key != self.custom:
+            if key != custom:
                 cat = dazRna(ob).DazMorphCats[key]
                 props += [morph.name for morph in cat.morphs]
                 labels += [morph.text for morph in cat.morphs]
         addToCategories(ob, props, labels, self.custom)
         for idx,key in items:
-            if key != self.custom:
+            if key != custom:
                 dazRna(ob).DazMorphCats.remove(idx)
 
 #------------------------------------------------------------------
