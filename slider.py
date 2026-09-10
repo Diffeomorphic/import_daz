@@ -23,6 +23,8 @@ def getCatEnums(scn, context):
     return theCatEnums
 
 class GeneralMorphSelector(Selector):
+    useMeshMorphs = False
+
     morphset : EnumProperty(
         items = getMorphEnums,
         name = "Type")
@@ -40,7 +42,7 @@ class GeneralMorphSelector(Selector):
 
     def draw(self, context):
         self.layout.prop(self, "morphset")
-        if self.morphset in ["All", "Custom"]:
+        if self.morphset in ["All", "Custom", "Mesh"]:
             self.layout.prop(self, "category")
         self.drawMore()
         Selector.draw(self, context)
@@ -49,14 +51,20 @@ class GeneralMorphSelector(Selector):
         pass
 
     def getKeys(self, rig, ob):
-        if rig is None:
-            return []
-        from .morphing import getMorphList
-        morphs = getMorphList(rig, self.morphset, sets=MS.Standards)
-        keys = [(item.name, item.text, "All") for item in morphs]
-        for cat in dazRna(rig).DazMorphCats:
-            for item in cat.morphs:
-                keys.append((item.name,item.text,cat.name))
+        def getObjectKeys(rig):
+            if rig is None:
+                return []
+            from .morphing import getMorphList
+            morphs = getMorphList(rig, self.morphset, sets=MS.Standards)
+            keys = [(item.name, item.text, "All") for item in morphs]
+            for cat in dazRna(rig).DazMorphCats:
+                for item in cat.morphs:
+                    keys.append((item.name,item.text,cat.name))
+            return keys
+
+        keys = getObjectKeys(rig)
+        if ob != rig and self.morphset == "All":
+            keys += getObjectKeys(ob)
         return keys
 
 
@@ -67,6 +75,7 @@ class GeneralMorphSelector(Selector):
     def invoke(self, context, event):
         global theMorphEnums, theCatEnums
         rig = self.rig = getRigFromContext(context)
+        ob = context.object
         theMorphEnums = [("All", "All", "All")]
         theCatEnums = [("All", "All", "All")]
         self.morphset = "All"
@@ -90,14 +99,20 @@ class GeneralMorphSelector(Selector):
                     addMorphSet("Facs", "Facs%s" % subset, rig)
             theMorphEnums.append((morphset, morphset, morphset))
         theMorphEnums.append(("Custom", "Custom", "Custom"))
-        self.catnames = {}
-        self.catnames["All"] = []
-        if rig:
+
+        def addObjectMorphs(rig):
             for cat in dazRna(rig).DazMorphCats:
                 theCatEnums.append((cat.name, cat.name, cat.name))
                 self.morphnames["All"] += list(cat.morphs.keys())
                 self.catnames["All"] += list(cat.morphs.keys())
                 self.catnames[cat.name] = cat.morphs.keys()
+
+        self.catnames = {}
+        self.catnames["All"] = []
+        if rig:
+            addObjectMorphs(rig)
+        if ob and ob != rig:
+            addObjectMorphs(ob)
         return Selector.invoke(self, context, event)
 
 #------------------------------------------------------------------
@@ -109,6 +124,8 @@ class DAZ_OT_UpdateSliderLimits(DazOperator, GeneralMorphSelector, IsMeshArmatur
     bl_label = "Update Slider Limits"
     bl_description = "Update selected slider min and max values.\nAll slider limits are selected when called from script"
     bl_options = {'UNDO'}
+
+    useMeshMorphs = True
 
     min : FloatProperty(
         name = "Min",
