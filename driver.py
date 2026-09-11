@@ -441,10 +441,7 @@ def addTransformVar(fcu, vname, ttype, rig, rig2, bname):
     if pb is None:
         trg.rotation_mode = 'XYZ'
     elif pb.rotation_mode == 'QUATERNION':
-        if GS.driverRotationMode == 'NATIVE':
-            trg.rotation_mode = BD.RotationModes.get(pb.name, 'AUTO')
-        else:
-            trg.rotation_mode = GS.driverRotationMode
+        trg.rotation_mode = 'SWING_TWIST_Y'
     else:
         trg.rotation_mode = pb.rotation_mode
     trg.transform_type = ttype
@@ -667,6 +664,23 @@ def isPropDriver(fcu):
     vars = fcu.driver.variables
     return (len(vars) > 0 and vars[0].type == 'SINGLE_PROP')
 
+
+def setDriverModes(rig, rotmode, useAll):
+    def setModes(rna, quats):
+        if rna.animation_data:
+            for fcu in rna.animation_data.drivers:
+                for var in fcu.driver.variables:
+                    for trg in var.targets:
+                        if useAll or trg.bone_target in quats:
+                            trg.rotation_mode = rotmode
+
+    if rotmode == 'NATIVE':
+        return
+    quats = [pb.name for pb in rig.pose.bones if pb.rotation_mode == 'QUATERNION']
+    setModes(rig, quats)
+    setModes(rig.data, quats)
+    for ob in getShapeChildren(rig):
+        setModes(ob.data.shape_keys, quats)
 
 #----------------------------------------------------------
 #   Bone sum drivers

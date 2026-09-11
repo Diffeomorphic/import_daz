@@ -393,6 +393,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
         self.addDisplayTransform(rig, "head")
         if LS.ercFormulas:
             addErcDrivers(context, rig)
+        from ..driver import setDriverModes
+        setDriverModes(rig, 'SWING_TWIST_Y', False)
         rig["MhxRig"] = True
         rig.data["MhaFeatures"] |= F_IDPROPS
         modernizeBones(rig)

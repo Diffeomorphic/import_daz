@@ -1245,6 +1245,9 @@ class Rigifier(RigifyCommon):
             scale,offset = tfm
             self.fixCustomShape(gen, bname, scale, offset)
 
+        from ..driver import setDriverModes
+        setDriverModes(gen, 'SWING_TWIST_Y', False)
+
         #Clean up
         print("  Clean up")
         self.addDisplayTransform(gen, "DEF-spine.007")

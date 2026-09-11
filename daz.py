@@ -231,14 +231,6 @@ MaterialMethodItems = [
     ('FBX_COMPATIBLE', "FBX Compatible", 'For manual fitting of textures and then export to FBX.\nUse "Build Unused Textures" in global settings, very limited IRAY quality'),
 ]
 
-DriverModeItems = [
-    ('NATIVE', "Native Euler", "Native Euler"),
-    ('AUTO', "Auto Euler", "Auto Euler"),
-    ('SWING_TWIST_X', "Swing and X Twist", "Swing and X Twist"),
-    ('SWING_TWIST_Y', "Swing and Y Twist", "Swing and Y Twist"),
-    ('SWING_TWIST_Z', "Swing and Z Twist", "Swing and Z Twist")
-]
-
 class DAZ_OT_GlobalSettings(DazPropsOperator):
     bl_idname = "daz.global_settings"
     bl_label = "Global Settings"
@@ -554,11 +546,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Quaternions",
         description = "Use quaternions for ball-and-socket joints (shoulders and hips)")
 
-    driverRotationMode : EnumProperty(
-        items = DriverModeItems,
-        name = "Driver Rotation Modes",
-        description = "Use as driver rotation mode for quaternion bones.\nNon-native modes avoids some popping during animation at the cost of JCMs accuracy")
-
     caseSensitivePaths : BoolProperty(
         name = "Case-Sensitive Paths",
         description = "Convert URLs to lowercase. Works best on Windows")
@@ -779,7 +766,6 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         box.label(text = "Rigging")
         box.prop(self, "useArmature")
         box.prop(self, "useQuaternions")
-        drawEnum(self, box, "driverRotationMode")
         box.prop(self, "useLockLoc")
         box.prop(self, "useLimitLoc")
         box.prop(self, "useLockRot")

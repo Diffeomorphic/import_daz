@@ -5,7 +5,6 @@
 import bpy
 from ..error import *
 from ..utils import *
-from ..daz import DriverModeItems
 
 #-------------------------------------------------------------
 #   Optimize pose for IK
@@ -42,7 +41,13 @@ class DAZ_OT_SetDriverModes(DazPropsOperator, IsArmature):
     bl_options = {'UNDO'}
 
     rotMode : EnumProperty(
-        items = DriverModeItems,
+        items = [
+            ('NATIVE', "Native Euler", "Native Euler"),
+            ('AUTO', "Auto Euler", "Auto Euler"),
+            ('SWING_TWIST_X', "Swing and X Twist", "Swing and X Twist"),
+            ('SWING_TWIST_Y', "Swing and Y Twist", "Swing and Y Twist"),
+            ('SWING_TWIST_Z', "Swing and Z Twist", "Swing and Z Twist")
+        ],
         name = "Rotation Mode",
         description = "Use this rotation mode",
         default = 'AUTO')
@@ -56,25 +61,8 @@ class DAZ_OT_SetDriverModes(DazPropsOperator, IsArmature):
         self.layout.prop(self, "rotMode")
 
     def run(self, context):
+        from ..driver import setDriverModes
         setDriverModes(context.object, self.rotMode, (not self.useQuatsOnly))
-
-
-def setDriverModes(rig, rotmode, useAll):
-    def setModes(rna):
-        if rna.animation_data:
-            for fcu in rna.animation_data.drivers:
-                for var in fcu.driver.variables:
-                    for trg in var.targets:
-                        if useAll or trg.bone_target in quats:
-                            trg.rotation_mode = rotmode
-
-    if rotmode == 'NATIVE':
-        return
-    quats = [pb.name for pb in rig.pose.bones if pb.rotation_mode == 'QUATERNION']
-    setModes(rig)
-    setModes(rig.data)
-    for ob in getShapeChildren(rig):
-        setModes(ob.data.shape_keys)
 
 #----------------------------------------------------------
 #   Batch set custom shape

@@ -229,6 +229,8 @@ class DAZ_OT_AddSimpleIK(DazPropsOperator):
         modernizeBones(rig)
         if LS.ercFormulas:
             addErcDrivers(context, rig)
+        from ..driver import setDriverModes
+        setDriverModes(rig, 'SWING_TWIST_Y', False)
         rig["DazSimpleIK"] = True
         from ..driver import setFloatProp
         setFloatProp(rig, "DazArmIK_L", 1.0, 0.0, 1.0, True)
