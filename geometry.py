@@ -903,7 +903,7 @@ class Geometry(Asset, Channels):
         self.poly_count = 0
         self.vertex_pairs = []
         self.dmaterials = []
-        self.bumpareas = {}
+        self.bumpfactors = {}
 
         self.hidden_polys = []
         self.uv_set = None
@@ -1341,6 +1341,8 @@ class Geometry(Asset, Channels):
             dazRna(me).DazHairType = 'TUBE'
 
         hasShells = self.addMaterials(me, geonode, context)
+        for dmat in self.dmaterials:
+            dmat.correctBumpArea(self, me)
         for key,uvset in self.uv_sets.items():
             self.buildUVSet(context, uvset, me, False)
         self.buildUVSet(context, self.uv_set, me, True)
@@ -1389,6 +1391,7 @@ class Geometry(Asset, Channels):
             self.addFaceMap(ob, "DazMaterialGroup", self.polygon_material_groups, self.material_indices)
 
         self.validateMesh(me, obname)
+        LS.graftParents[len(self.verts)] = self
         guideOb = None
         if guideVerts:
             guideMe = bpy.data.meshes.new("%s_GUIDE" % geonode.getName())
@@ -1493,10 +1496,19 @@ class Geometry(Asset, Channels):
 
 
     def addMaterials(self, me, geonode, context):
+        def addMaterial(dmat, mnum, me, geonode):
+            if dmat.rna is None:
+                msg = ("Material without rna:\n  %s\n  %s\n  %s" % (dmat, geonode, self))
+                reportError(msg)
+            me.materials.append(dmat.rna)
+            self.dmaterials.append(dmat)
+            if dmat.uv_set and dmat.uv_set.checkSize(me):
+                self.uv_set = dmat.uv_set
+
         hasShells = False
         if GS.useMaterialsByIndex:
             for mnum,dmat in enumerate(geonode.materials.values()):
-                self.addMaterial(dmat, mnum, me, geonode)
+                addMaterial(dmat, mnum, me, geonode)
                 if dmat.shells:
                     hasShells = True
             return hasShells
@@ -1509,7 +1521,7 @@ class Geometry(Asset, Channels):
                 ref = self.fileref + "#" + mname
                 dmat = self.getAsset(ref)
             if dmat:
-                self.addMaterial(dmat, mnum, me, geonode)
+                addMaterial(dmat, mnum, me, geonode)
                 if dmat.shells:
                     hasShells = True
             else:
@@ -1520,17 +1532,6 @@ class Geometry(Asset, Channels):
                 reportError("Material \"%s\" not found in geometry %s" % (mname, geonode.name))
                 return False
         return hasShells
-
-
-    def addMaterial(self, dmat, mnum, me, geonode):
-        if dmat.rna is None:
-            msg = ("Material without rna:\n  %s\n  %s\n  %s" % (dmat, geonode, self))
-            reportError(msg)
-        me.materials.append(dmat.rna)
-        self.dmaterials.append(dmat)
-        dmat.correctBumpArea(self, me)
-        if dmat.uv_set and dmat.uv_set.checkSize(me):
-            self.uv_set = dmat.uv_set
 
 
     def validateMesh(self, me, name):
@@ -1546,19 +1547,56 @@ class Geometry(Asset, Channels):
                 self.dmaterials.append(dmat)
 
 
-    def getBumpArea(self, me, bumps):
-        bump = list(bumps)[0]
-        if bump not in self.bumpareas.keys():
+    def getBumpFactors(self, me, bumps):
+        if self.vertex_count:
+            par = LS.graftParents.get(self.vertex_count)
+            if par:
+                for bump in bumps:
+                    if (bump in par.bumpfactors.keys() and
+                        bump not in self.bumpfactors.keys()):
+                        self.bumpfactors[bump] = par.bumpfactors[bump]
+                        if GS.verbosity >= 3:
+                            print("Bump factor:", bump, self.bumpfactors[bump])
+
+        uvset = self.uv_set
+        if not uvset:
+            return dict([(bump, 1.0) for bump in bumps])
+        uvcoords = {}
+        polyverts = uvset.getPolyVerts(me)
+        nfaces = len(me.polygons)
+        for fn in range(nfaces):
+            uvcoords[fn] = [Vector(uvset.uvs[vn]) for vn in polyverts[fn]]
+
+        for bump in bumps:
+            if bump in self.bumpfactors.keys():
+                continue
             area = 0.0
+            uvarea = 0.0
+            dmats = []
             for mn,dmat in enumerate(self.dmaterials):
                 use = (bump in dmat.geobump.keys())
                 for shell in dmat.shells.values():
                     if bump in shell.material.geobump.keys():
                         use = True
                 if use:
-                    area += sum([f.area for f in me.polygons if f.material_index == mn])
-            self.bumpareas[bump] = area
-        return self.bumpareas[bump]
+                    dmats.append(dmat.name)
+                    faces = [f for f in me.polygons if f.material_index == mn]
+                    area += sum([f.area for f in faces])
+                    for f in faces:
+                        uvs = uvcoords[f.index]
+                        uvar = 0.0
+                        uv0 = uvs[0]
+                        e1 = uvs[1] - uv0
+                        for uv in uvs[2:]:
+                            e2 = uv - uv0
+                            uvar += e1.cross(e2)
+                            e1 = e2
+                        uvarea += abs(uvar)/2
+            self.bumpfactors[bump] = uvarea/area
+            if GS.verbosity >= 3:
+                print("Bump factor:", bump, self.bumpfactors[bump])
+                print("  using %s" % dmats)
+        return self.bumpfactors
 
 
     def buildUVSet(self, context, uv_set, me, setActive):

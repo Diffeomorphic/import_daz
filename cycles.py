@@ -126,14 +126,16 @@ class CyclesMaterial(Material):
     def correctBumpArea(self, geo, me):
         if not self.geobump:
             return
-        area = geo.getBumpArea(me, self.geobump.keys())
-        if area <= 0.0:
-            return
-        for tex,sockets in self.geobump.values():
-            if not hasattr(tex, "image") or tex.image is None:
+        factors = geo.getBumpFactors(me, self.geobump.keys())
+        for bump,data in self.geobump.items():
+            tex,sockets = data
+            factor = factors.get(bump, 0.0)
+            if (factor <= 0.0 or
+                not hasattr(tex, "image") or
+                tex.image is None):
                 continue
             width,height = tex.image.size
-            density = width * height / area
+            density = width * height * factor
             if density == 0.0:
                 continue
             link = getLinkTo(self.tree, tex, "Vector")

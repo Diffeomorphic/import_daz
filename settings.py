@@ -569,6 +569,7 @@ class LocalSettings:
         self.images = {}
         self.gammas = {}
         self.customShapes = []
+        self.graftParents = {}
         self.toons = []
         self.rimtoons = []
         self.distantLight = None
