@@ -147,7 +147,7 @@ class CyclesMaterial(Material):
                 if density == 0.0:
                     continue
             if density > 0:
-                height = 3.0/math.sqrt(density)
+                height = 2.0/math.sqrt(density)
             for socket in sockets:
                 socket.default_value = height * GS.bumpMultiplier
 
