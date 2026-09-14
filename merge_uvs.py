@@ -380,19 +380,24 @@ def replaceNodeNames(mat, oldname, newname):
             texco = node
             break
 
-    uvmaps = []
-    for node in mat.node_tree.nodes:
-        if isinstance(node, bpy.types.ShaderNodeUVMap):
-            if node.uv_map == oldname:
-                node.uv_map = newname
-                uvmaps.append(node)
-        elif isinstance(node, bpy.types.ShaderNodeAttribute):
-            if node.attribute_name == oldname:
-                node.attribute_name = newname
-        elif isinstance(node, bpy.types.ShaderNodeNormalMap):
-            if node.uv_map == oldname:
-                node.uv_map = newname
+    def replaceUvMaps(tree, uvmaps):
+        for node in tree.nodes:
+            if node.type == 'UVMAP':
+                if node.uv_map == oldname:
+                    node.uv_map = newname
+                    uvmaps.append(node)
+            elif node.type == 'ATTRIBUTE':
+                if node.attribute_name == oldname:
+                    node.attribute_name = newname
+            elif node.type == 'NORMAL_MAP':
+                if node.uv_map == oldname:
+                    node.uv_map = newname
+            elif (node.type == 'GROUP' and
+                  not node.node_tree.name.startswith(("DAZ ", "SLIE", "SLie", "LIE"))):
+                replaceUvMaps(node.node_tree, uvmaps)
 
+    uvmaps = []
+    replaceUvMaps(mat.node_tree, uvmaps)
     if texco and uvmaps:
         fromsocket = texco.outputs["UV"]
         tosockets = []
