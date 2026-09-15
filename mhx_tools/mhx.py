@@ -295,6 +295,8 @@ class DAZ_OT_ConvertToMhx(DazPropsOperator, BendTwists, Fixer, GizmoUser):
             self.fixKnees(rig)
         elif dazRna(rig).DazRig == "genesis9":
             if self.keepG9Twist:
+                showProgress(2, 28, "  Connect to parent")
+                connectToParent(rig, MHX.ConnectBendTwist)
                 showProgress(4, 28, "  Rename bones")
                 self.rename2Mhx(rig)
                 self.useBendTwist = False
