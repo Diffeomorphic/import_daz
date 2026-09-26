@@ -949,6 +949,7 @@ class Rigifier(RigifyCommon):
         coll.objects.link(gen)
         unlinkAll(meta, False)
         coll.objects.link(meta)
+        meta["DazRigified"] = True
         wcoll = activecoll.children.get("WGTS_rig")
         if wcoll:
             activecoll.children.unlink(wcoll)
@@ -1730,8 +1731,8 @@ class DAZ_OT_RigifyMetaRig(DazPropsOperator, Rigifier, Fixer, GizmoUser, BendTwi
 
     @classmethod
     def poll(self, context):
-        rig = context.object
-        return (rig and rig.get("DazMetaRig"))
+        meta = context.object
+        return (meta and meta.get("DazMetaRig") and not meta.get("DazRigified"))
 
     def run(self, context):
         self.initFixer()
