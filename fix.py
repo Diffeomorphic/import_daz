@@ -59,7 +59,7 @@ class Fixer(DriverUser):
         default = 'NONE')
 
     shaftName : StringProperty(
-        name = "Shaft Name",
+        name = "Shaft Name 1",
         description = "Shaft bones start with this string (case insensitive)",
         default = "Shaft")
 
@@ -531,12 +531,18 @@ class Fixer(DriverUser):
     #-------------------------------------------------------------
 
     def getShaftBones(self, rig):
-        def isShaft(bname):
-            shaft = self.shaftName.lower()
-            nchars = len(shaft)
-            return bname.lower()[0:nchars] == shaft and bname[nchars:].isdigit()
+        def isShaft(bname, shaft):
+            if bname.lower().startswith(shaft):
+                nchars = len(shaft)
+                rest = bname[nchars:]
+                if len(rest) == 0:
+                    return True
+                elif rest[0] in ["_", "-"]:
+                    rest = rest[1:]
+                return rest.isdigit()
 
-        bnames = [bone.name for bone in rig.data.bones if isShaft(bone.name)]
+        shaft = self.shaftName.lower()
+        bnames = [bone.name for bone in rig.data.bones if isShaft(bone.name, shaft)]
         bnames.sort()
         print("Shaft bones: %s" % bnames)
         return bnames
