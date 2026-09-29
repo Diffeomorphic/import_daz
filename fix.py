@@ -59,7 +59,7 @@ class Fixer(DriverUser):
         default = 'NONE')
 
     shaftName : StringProperty(
-        name = "Shaft Name 1",
+        name = "Shaft Name",
         description = "Shaft bones start with this string (case insensitive)",
         default = "Shaft")
 
