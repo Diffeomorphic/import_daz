@@ -200,7 +200,7 @@ class Overwriter:
                 ob.data.materials.pop(index=mn)
 
 
-    def addShells(self, mat, shells):
+    def addShells(self, ob, mat, shells):
         if not shells:
             return
         from ..cycles import makeCyclesTree
@@ -220,6 +220,7 @@ class Overwriter:
                 uvmap.hide = True
                 uvmap.location = (x,y-6*YSTEP)
                 skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
+                copyShellInfluence(template, skip, ob)
                 skip.location = (x,y)
                 ctree.links.new(uvmap.outputs["UV"], skip.inputs["UV"])
                 shell = ctree.addNode("ShaderNodeGroup")
@@ -263,7 +264,7 @@ class DAZ_OT_OverwriteMaterials(DazPropsOperator, MaterialSelector, Overwriter):
         actmat, actmnum, acttile, mats, mnums, usedtiles = self.getMaterials(ob, {})
         actshells, shells = self.getAllShells(actmat, mats)
         self.overwrite(ob, actmnum, mnums)
-        self.addShells(actmat, shells)
+        self.addShells(ob, actmat, shells)
 
 #----------------------------------------------------------
 #   Make UDIM materials
@@ -550,11 +551,11 @@ class DAZ_OT_MakeUdimTextures(DazPropsOperator, LocalTextureUser, MaterialSelect
                         img = self.addImage(imgname, trg, srgb, key)
 
         for mat in mats:
-            self.addSkipZeroUvs(mat)
+            self.addSkipZeroUvs(ob, mat)
 
         if self.useOverwrite:
             self.overwrite(ob, actmnum, mnums)
-            self.addShells(actmat, shells)
+            self.addShells(ob, actmat, shells)
         else:
             actnodes = texnodes[actmat.name]
             for mat in mats:

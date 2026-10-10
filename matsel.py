@@ -290,6 +290,18 @@ def driveShellInfluence(ob):
                     dazRna(rig).DazVisibilityDrivers = True
 
 
+def copyShellInfluence(src, trg, ob):
+    from .driver import addDriver
+    trg.inputs["Influence"].default_value = src.inputs["Influence"].default_value
+    prop = "INFLU %s" % src.label
+    if prop in ob.keys():
+        addDriver(trg.inputs["Influence"], "default_value", ob, propRef(prop), "x")
+    else:
+        rig = ob.parent
+        if rig and prop in rig.keys():
+            addDriver(trg.inputs["Influence"], "default_value", rig, propRef(prop), "x")
+
+
 ShellInputs = ["Influence", "BSDF", "UV", "Displacement"]
 ShellOutputs = ["BSDF", "Displacement"]
 

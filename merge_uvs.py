@@ -331,14 +331,15 @@ class TileFixer:
             return {}
 
 
-    def addSkipZeroUvs(self, mat):
+    def addSkipZeroUvs(self, ob, mat):
         from .cycles import makeCyclesTree
         from .cgroup import SkipZeroUvGroup
-        from .matsel import isShellNode
+        from .matsel import isShellNode, copyShellInfluence
         ctree = makeCyclesTree(mat)
         for node in list(ctree.nodes):
             if isShellNode(node):
                 skip = ctree.addGroup(SkipZeroUvGroup, "DAZ Skip Zero UVs")
+                copyShellInfluence(node, skip, ob)
                 x,y = node.location
                 skip.location = (x-XSIZE, y+YSIZE)
                 socket = getFromSocket(node.inputs["UV"])

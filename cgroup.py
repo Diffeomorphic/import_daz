@@ -413,13 +413,14 @@ class LogColorGroup(CyclesGroup):
 class SkipZeroUvGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["UV"]
+        self.insockets += ["UV", "Influence"]
         self.outsockets += ["Influence"]
 
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 3)
+        CyclesGroup.create(self, node, name, parent, 4)
         addGroupInput(self.group, "NodeSocketVector", "UV")
+        addGroupInput(self.group, "NodeSocketFloat", "Influence")
         addGroupOutput(self.group, "NodeSocketFloat", "Influence")
 
 
@@ -431,7 +432,11 @@ class SkipZeroUvGroup(CyclesGroup):
         comp.operation = 'GREATER_THAN'
         self.links.new(node.outputs["Value"], comp.inputs[0])
         comp.inputs[1].default_value = 0
-        self.links.new(comp.outputs[0], self.outputs.inputs["Influence"])
+        mult = self.addNode("ShaderNodeMath", 3)
+        mult.operation = 'MULTIPLY'
+        self.links.new(comp.outputs[0], mult.inputs[0])
+        self.links.new(self.inputs.outputs["Influence"], mult.inputs[1])
+        self.links.new(mult.outputs[0], self.outputs.inputs["Influence"])
 
 # ---------------------------------------------------------------------
 #   Mix Group.
@@ -2107,7 +2112,7 @@ ShaderGroups = {
         "useToonGlossy" : (ToonGlossyGroup, "DAZ Toon Glossy", []),
         "useToonRim" : (ToonRimGroup, "DAZ Toon Rim", []),
         "useToonLight" : (ToonLightGroup, "DAZ Toon Light", []),
-
+        "useSkipZero" : (SkipZeroUvGroup, "DAZ Skip Zero UVs", []),
     }
 
 class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
@@ -2150,6 +2155,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator, IsMesh):
     useToonGlossy : BoolProperty(name="Toon Glossy", default=False)
     useToonRim : BoolProperty(name="Toon Rim", default=False)
     useToonLight : BoolProperty(name="Toon Light", default=False)
+    useSkipZero : BoolProperty(name="Skip Zero UVs", default=False)
 
     def draw(self, context):
         for key in ShaderGroups.keys():
