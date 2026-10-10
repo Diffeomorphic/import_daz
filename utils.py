@@ -646,14 +646,17 @@ def stripName(name):
 def normalizePath(path):
     return path.replace("\\", "/")
 
+def shortProp(prop):
+    return (prop if len(prop) < 57 else "%s_%s" % (prop[0:20], prop[-36:]))
+
 def rawProp(prop):
-    return unquote(prop[0:57])
+    return unquote(shortProp(prop))
 
 def finalProp(prop):
-    return "%s(fin)" % unquote(prop[0:57])
+    return "%s(fin)" % rawProp(prop)
 
 def restProp(prop):
-    return "%s(rst)" % unquote(prop[0:57])
+    return "%s(rst)" % rawProp(prop)
 
 def baseProp(string):
     if string[-5:] in ["(fin)", "(rst)"]:

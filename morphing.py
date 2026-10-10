@@ -462,7 +462,7 @@ class MorphSuffix:
                 return string
             else:
                 string = "%s%s" % (string, self.uniqueSuffix)
-                return string[:57]      # 64-character limit
+                return shortProp(string)
         else:
             return string
 
