@@ -123,22 +123,29 @@ class DAZ_OT_BakeLie(DazOperator, LocalTextureUser):
             tex.extension = 'CLIP'
             baketree.nodes.active = tex
 
-        def bakeMaterial(tree, baketree, uvname):
-            lies = []
+        def findLies(tree, baketree, uvname, lies):
+            if tree is None:
+                return
             for node in tree.nodes:
-                if (node.type == 'GROUP' and
-                    node.node_tree.name.startswith("LIE")):
-                    tex,img = findTexImage(node.node_tree)
-                    if img:
-                        bakeimg = makeBakeImage(node, img)
-                        makeBakeTree(node, baketree, bakeimg, uvname)
-                        print('Bake %s %s image\n  "%s"' %
-                            (tuple(bakeimg.size), bakeimg.colorspace_settings.name, bakeimg.filepath))
-                        width,height = img.size
-                        bpy.ops.object.bake(type='EMIT', width=width, height=height)
-                        bakeimg.save()
-                        lies.append((node, tex, img, bakeimg))
-            for node,tex,img,bakeimg in lies:
+                if node.type == 'GROUP':
+                    if node.node_tree.name.startswith("LIE"):
+                        tex,img = findTexImage(node.node_tree)
+                        if img:
+                            bakeimg = makeBakeImage(node, img)
+                            makeBakeTree(node, baketree, bakeimg, uvname)
+                            print('Bake %s %s image\n  "%s"' %
+                                (tuple(bakeimg.size), bakeimg.colorspace_settings.name, bakeimg.filepath))
+                            width,height = img.size
+                            bpy.ops.object.bake(type='EMIT', width=width, height=height)
+                            bakeimg.save()
+                            lies.append((tree, node, tex, img, bakeimg))
+                    elif not node.node_tree.name.startswith("DAZ"):
+                        findLies(node.node_tree, baketree, uvname, lies)
+
+        def bakeMaterial(mat, baketree, uvname):
+            lies = []
+            findLies(mat.node_tree, baketree, uvname, lies)
+            for tree,node,tex,img,bakeimg in lies:
                 newTex = tree.nodes.new(type="ShaderNodeTexImage")
                 newTex.location = node.location
                 newTex.image = bakeimg
@@ -156,7 +163,7 @@ class DAZ_OT_BakeLie(DazOperator, LocalTextureUser):
         uvname = bakeplane.data.uv_layers.active.name
         for mat in ob.data.materials:
             if mat and mat.node_tree:
-                bakeMaterial(mat.node_tree, bakemat.node_tree, uvname)
+                bakeMaterial(mat, bakemat.node_tree, uvname)
 
 #-------------------------------------------------------------
 #   Initialize
