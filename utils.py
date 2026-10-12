@@ -647,7 +647,15 @@ def normalizePath(path):
     return path.replace("\\", "/")
 
 def shortProp(prop):
-    return (prop if len(prop) < 57 else "%s_%s" % (prop[0:20], prop[-36:]))
+    if len(prop) < 57:
+        return prop
+    tprop = LS.truncatedProps.get(prop)
+    if tprop:
+        return tprop
+    tprop = "%s_%s" % (prop[0:20], prop[-36:])
+    LS.truncatedProps[prop] = tprop
+    LS.truncatedProps[tprop] = tprop
+    return tprop
 
 def rawProp(prop):
     return unquote(shortProp(prop))

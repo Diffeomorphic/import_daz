@@ -1535,7 +1535,10 @@ class LoadMorph(DriverUser):
         fcu0 = getRnaDriver(rna, path, None)
         if channel == "value":
             channel = "rotation"
-            propDriver = Driver(fcu0)
+            if fcu0:
+                propDriver = Driver(fcu0)
+            else:
+                reportError("makeBoneDriver: Missing old fcurve: %s" % path)
         elif keep:
             if fcu0 and fcu0.driver.type == 'SCRIPTED':
                 vtargets,btargets = self.getVarBoneTargets(fcu0)

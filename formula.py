@@ -87,8 +87,11 @@ class Formula:
                 x = stack[-2]*stack[-1]
                 stack = stack[:-2]
                 stack.append(x)
+            elif op == "neg":
+                stack[-1] *= -1
             else:
                 reportError("Unknown formula %s %s" % (op, struct.items()), trigger=(1,5), force=True)
+
 
         if len(stack) == 1:
             ref,key = self.getRefKey(formula["output"])
@@ -241,6 +244,8 @@ class Formula:
         op = oper["op"]
         if op == "mult":
             target.factor = opers[1]["val"]
+        elif op == "neg":
+            target.factor *= -1
         elif op == "spline_tcb":
             target.points = [opers[n]["val"] for n in range(1,len(opers)-2)]
             target.spline = "TCB"
