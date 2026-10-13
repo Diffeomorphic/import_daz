@@ -649,12 +649,12 @@ def normalizePath(path):
 def shortProp(prop):
     if len(prop) < 57:
         return prop
-    tprop = LS.truncatedProps.get(prop)
+    tprop = ES.truncatedProps.get(prop)
     if tprop:
         return tprop
     tprop = "%s_%s" % (prop[0:20], prop[-36:])
-    LS.truncatedProps[prop] = tprop
-    LS.truncatedProps[tprop] = tprop
+    ES.truncatedProps[prop] = tprop
+    ES.truncatedProps[tprop] = tprop
     return tprop
 
 def rawProp(prop):

@@ -523,7 +523,6 @@ class LocalSettings:
         self.trace = []
         self.error = False
         self.activeObject = None
-        self.truncatedProps = {}
 
         self.materialMethod = 'EXTENDED_PRINCIPLED'
         self.skinColor = None
@@ -738,6 +737,7 @@ class EasySettings:
         self.easy = False
         self.message = ""
         self.error = False
+        self.truncatedProps = {}
 
 
 
