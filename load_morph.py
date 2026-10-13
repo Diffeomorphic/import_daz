@@ -417,6 +417,7 @@ class LoadMorph(DriverUser):
                 getDriver(self.amt, propRef(final), 0)):
                 continue
             if raw not in self.obj.keys():
+                continue
                 setFloatProp(self.obj, raw, 0.0, 0.0, 1.0, True)
             makePropDriver(propRef(raw), self.amt, propRef(final), self.obj, "x")
             pg = pgs.get(raw)
