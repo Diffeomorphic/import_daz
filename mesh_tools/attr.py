@@ -87,16 +87,19 @@ class DAZ_OT_CopyAttributes(DazPropsOperator, IsMesh):
 #   Getters
 # ---------------------------------------------------------------------
 
+@keepEnums
 def getMaterialGroups(scn, context):
     ob = context.object
     return [(gname, gname, gname) for gname in dazRna(ob.data).DazMaterialGroup.keys()]
 
 
+@keepEnums
 def getPolygonGroups(scn, context):
     ob = context.object
     return [(gname, gname, gname) for gname in dazRna(ob.data).DazPolygonGroup.keys()]
 
 
+@keepEnums
 def getCondGraftGroups(scn, context):
     ob = context.object
     return [(gname, gname, gname) for gname in dazRna(ob.data).DazCondGraftGroup.keys()]

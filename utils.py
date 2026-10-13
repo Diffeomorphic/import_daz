@@ -64,6 +64,32 @@ else:
         return len(uvlayer.uv)
 
 #-------------------------------------------------------------
+#   EnumProperty item callbacks
+#-------------------------------------------------------------
+# Blender keeps raw pointers to the strings returned by an EnumProperty
+# items callback and does not copy them. If Python drops the returned list,
+# the strings are freed and Blender reads garbage: wrong values, a
+# UnicodeDecodeError when the property is read back, or a crash. It shows up
+# as soon as names are non-ASCII or longer than a few characters. Keep the
+# last list of each callback alive, and return the same list object while
+# its contents are unchanged so the pointers stay valid across redraws.
+
+theEnumCache = {}
+
+def keepEnums(func):
+    from functools import wraps
+    key = "%s.%s" % (func.__module__, func.__qualname__)
+    @wraps(func)
+    def wrapper(scn, context):
+        enums = func(scn, context)
+        old = theEnumCache.get(key)
+        if old == enums:
+            return old
+        theEnumCache[key] = enums
+        return enums
+    return wrapper
+
+#-------------------------------------------------------------
 #   Action slots
 #-------------------------------------------------------------
 
