@@ -1594,7 +1594,11 @@ class Geometry(Asset, Channels):
                             uvar += e1.cross(e2)
                             e1 = e2
                         uvarea += abs(uvar)/2
-            self.bumpfactors[bump] = uvarea/area
+            if area > 0:
+                self.bumpfactors[bump] = uvarea/area
+            else:
+                print("No bump area:", dmat.name)
+                continue
             if GS.verbosity >= 3:
                 print("Bump factor:", bump, self.bumpfactors[bump])
                 print("  using %s" % dmats)
