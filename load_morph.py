@@ -1092,10 +1092,7 @@ class LoadMorph(DriverUser):
         vvars = {}
         string = ""
         string0 = ""
-        if "jcm" in raw.lower():
-            fcu0 = None
-        else:
-            fcu0 = getRnaDriver(rna, channel, None)
+        fcu0 = getRnaDriver(rna, channel, None)
         if fcu0 and fcu0.driver.type == 'SCRIPTED':
             if not self.primary[raw]:
                 self.extendPropDriver(fcu0, raw, drivers)
