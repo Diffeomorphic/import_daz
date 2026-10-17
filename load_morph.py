@@ -417,8 +417,11 @@ class LoadMorph(DriverUser):
                 getDriver(self.amt, propRef(final), 0)):
                 continue
             if raw not in self.obj.keys():
-                continue
-                setFloatProp(self.obj, raw, 0.0, 0.0, 1.0, True)
+                val = self.amt.get(final)
+                if val > 0:
+                    setFloatProp(self.obj, raw, 0.0, 0.0, 1.0, True)
+                else:
+                    continue
             makePropDriver(propRef(raw), self.amt, propRef(final), self.obj, "x")
             pg = pgs.get(raw)
             if raw not in pgs.keys():
@@ -1328,7 +1331,8 @@ class LoadMorph(DriverUser):
                     multfinal = finalProp(mult)
                     if propRef(multfinal) not in targets:
                         mstring += "%s*" % varname
-                        self.ensureExists(mult, multfinal, self.defaultMultiplier)
+                        default = self.amt.get(multfinal, self.defaultMultiplier)
+                        self.ensureExists(mult, multfinal, default)
                         self.addPathVar(fcu, varname, self.amt, propRef(multfinal))
                         varname = nextLetter(varname)
                 elif isinstance(mult, tuple):
