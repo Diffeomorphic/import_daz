@@ -14,6 +14,7 @@ from ..tree import XSIZE, YSIZE
 #   Make Decal
 # ---------------------------------------------------------------------
 
+@keepEnums
 def getEmptyName(scn, context):
     ob = context.object
     enums = [('NONE', "None", "None")]

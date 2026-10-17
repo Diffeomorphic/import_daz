@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
+from ..utils import keepEnums
 from ..tree import *
 from ..material import isWhite, isBlack, getImage
 from ..main import *
@@ -103,6 +104,7 @@ Geografts = [
 
 theImages = {}
 
+@keepEnums
 def getTargetMaterial(scn, context):
     ob = context.object
     return [(mat.name, mat.name, mat.name) for mat in ob.data.materials]

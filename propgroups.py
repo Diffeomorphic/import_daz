@@ -142,6 +142,7 @@ DAZ_PROPS = True
 
 propsclasses = []
 
+@keepEnums
 def getRootEnums(scn, context):
     return [(folder,folder,folder) for folder in GS.getDazPaths()]
 
