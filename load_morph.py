@@ -37,7 +37,6 @@ class LoadMorph(DriverUser):
     useSearchAlias = True
     onlyProperties = False
     useMakeHiddenSliders = False
-    defaultMultiplier = 1.0
     useMulti = False
     useVisible = False
     disableErc = False
@@ -1331,7 +1330,7 @@ class LoadMorph(DriverUser):
                     multfinal = finalProp(mult)
                     if propRef(multfinal) not in targets:
                         mstring += "%s*" % varname
-                        default = self.amt.get(multfinal, self.defaultMultiplier)
+                        default = self.amt.get(multfinal, 1.0)
                         self.ensureExists(mult, multfinal, default)
                         self.addPathVar(fcu, varname, self.amt, propRef(multfinal))
                         varname = nextLetter(varname)

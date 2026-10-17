@@ -1942,8 +1942,6 @@ class DAZ_OT_ImportBakedCorrectives(DazPropsOperator, CustomMorphLoader, IsMeshA
     bl_label = "Import Baked Correctives"
     bl_description = "Import all custom correctives for baked morphs"
 
-    defaultMultiplier = 1.0
-
     useExpressions : BoolProperty(
         name = "Expressions",
         description = "Import eJCM files",
