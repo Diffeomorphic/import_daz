@@ -1034,7 +1034,6 @@ class EasyImportDAZ(DazOperator, MultiFile, ColorOptions, FitOptions,
                         useMakePosable=False)
             if self.useBakedCorrectives and activateObject(context, mainRig):
                 useExpressions = (self.useHead or self.useUnits or self.useExpressions or self.useVisemes)
-                print("UE", self.useExpressions, useExpressions)
                 if (useExpressions or self.useFacs or self.useJcms):
                     bpy.ops.daz.import_baked_correctives(
                         useExpressions = useExpressions,

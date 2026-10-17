@@ -419,7 +419,7 @@ class LoadMorph(DriverUser):
             if raw not in self.obj.keys():
                 val = self.amt.get(final)
                 if val > 0:
-                    setFloatProp(self.obj, raw, 0.0, 0.0, 1.0, True)
+                    setFloatProp(self.obj, raw, val, 0.0, 1.0, True)
                 else:
                     continue
             makePropDriver(propRef(raw), self.amt, propRef(final), self.obj, "x")
