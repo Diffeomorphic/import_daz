@@ -175,11 +175,14 @@ class Formula:
 
     def evalStage(self, formula, expr, rig, mesh):
         from .bone import getMappedBone
-        ignore = ["JCMs On",
-                  "BaseFlexions",
-                  "body_basejointcorrectives",
-                  "body_ctrl_FlexionAutoStrength",
-                  "facs_ctrl_FACSDetailStrength",]
+        if GS.onShapekeyDrivers == 'OPTIMIZE_JCM':
+            ignore = ["JCMs On",
+                      "BaseFlexions",
+                      "body_basejointcorrectives",
+                      "body_ctrl_FlexionAutoStrength",
+                      "facs_ctrl_FACSDetailStrength",]
+        else:
+            ignore = []
         if formula["stage"] == "mult":
             opers = formula["operations"]
             key,type,path,comp = self.evalUrl(opers[0], rig)
