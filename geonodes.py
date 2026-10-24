@@ -377,11 +377,11 @@ def getModSocket(mod, n):
     if hasattr(mod, "properties"):
         inputs = mod.properties.inputs
         slot = (slot1 if hasattr(inputs, slot1) else slot2)
-        socket = getattr(inputs, slot)
-        return socket.value
+        socket = getattr(inputs, slot, None)
+        return getattr(socket, "value", None)
     else:
         slot = (slot1 if slot1 in mod.keys() else slot2)
-        return mod[slot]
+        return mod.get(slot)
 
 
 def setModSocketName(mod, n, name):
