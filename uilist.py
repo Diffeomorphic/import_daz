@@ -225,9 +225,9 @@ def getShapeUIList(cat, scn):
 #   Initialize
 #-------------------------------------------------------------
 
-@persistent
-def onLoad(dummy):
-    updateScrollbars(bpy.context)
+#@persistent
+#def onLoad(dummy):
+#    updateScrollbars(bpy.context)
 
 
 classes = [
@@ -242,11 +242,11 @@ theShapeScrollbars = {}
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.app.handlers.load_post.append(onLoad)
+    #bpy.app.handlers.load_post.append(onLoad)
 
 
 def unregister():
-    bpy.app.handlers.load_post.remove(onLoad)
+    #bpy.app.handlers.load_post.remove(onLoad)
     for cls in theMorphScrollbars.values():
         bpy.utils.unregister_class(cls)
     for cls in theShapeScrollbars.values():
