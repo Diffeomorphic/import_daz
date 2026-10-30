@@ -1539,7 +1539,7 @@ class LoadMorph(DriverUser):
             if fcu0:
                 propDriver = Driver(fcu0)
             else:
-                reportError("makeBoneDriver: Missing old fcurve: %s" % path)
+                reportError("makeBoneDriver: Missing old fcurve: %s" % path, trigger=(3,5))
         elif keep:
             if fcu0 and fcu0.driver.type == 'SCRIPTED':
                 vtargets,btargets = self.getVarBoneTargets(fcu0)
