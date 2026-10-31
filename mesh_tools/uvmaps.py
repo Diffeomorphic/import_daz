@@ -146,6 +146,7 @@ class DAZ_OT_RestoreUDims(DazOperator):
 #   Copy UV maps
 #----------------------------------------------------------
 
+@keepEnums
 def getUvMaps(scn, context):
         me = context.object.data
         return [(uvset.name, uvset.name, uvset.name) for uvset in me.uv_layers]
@@ -178,6 +179,7 @@ class DAZ_OT_CopyUvs(DazPropsOperator, IsMesh):
 #   Merge UV sets
 #-------------------------------------------------------------
 
+@keepEnums
 def getUvLayers(scn, context):
     ob = context.object
     enums = []

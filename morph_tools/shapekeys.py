@@ -131,6 +131,7 @@ class DAZ_OT_ApplyAllShapekeys(DazOperator, IsShape):
 #   Mix Shapekeys
 #----------------------------------------------------------
 
+@keepEnums
 def shapekeyItems1(self, context):
     filter = self.filter1.lower()
     enums = [(sname,sname,sname)
@@ -141,6 +142,7 @@ def shapekeyItems1(self, context):
     return enums
 
 
+@keepEnums
 def shapekeyItems2(self, context):
     filter = self.filter2.lower()
     enums = [(sname,sname,sname)

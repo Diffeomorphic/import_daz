@@ -456,6 +456,7 @@ class BoneOptions:
 #   MorphOptions
 #-------------------------------------------------------------
 
+@keepEnums
 def getGeograftItems(scn, context):
     enums = [("-", "-", "-")]
     rig = context.object
