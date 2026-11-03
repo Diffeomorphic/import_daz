@@ -12,6 +12,7 @@ from ..matsel import MaterialSelector, findUvlayers
 #   Replace material node tree
 #-------------------------------------------------------------
 
+@keepEnums
 def getAllMaterials(scn, context):
     return [(mat.name, mat.name, mat.name) for mat in bpy.data.materials]
 

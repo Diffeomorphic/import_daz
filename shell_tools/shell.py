@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import bpy
+from ..utils import keepEnums
 from ..matsel import *
 from ..selector import Selector
 from ..tree import *
@@ -450,6 +451,7 @@ class ShellCyclesGroup(ShellGroup, CyclesTree):
         self.links.new(self.inputs.outputs["Displacement"], self.outputs.inputs["Displacement"])
 
 
+@keepEnums
 def getNodeGroups(scn, context):
     return [(name,name,name) for name in bpy.data.node_groups.keys() if not name.startswith("DAZ ")]
 
