@@ -661,6 +661,13 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         name = "Simplified Coat",
         description = "Use Principled Coat instead of separate Top Coat node")
 
+    useVolumeTranslucencyColor : BoolProperty(
+        name = "Volume Skin Color",
+        description = ("Makes skin look closer to DAZ Studio.\n" +
+                       "Skin color is worked out from the skin's subsurface settings, instead of a fixed formula\n" +
+                       "that can make some skins too dark or too red.\n" +
+                       "For PBR Skin and Iray Uber skin, with the Extended Principled material method."))
+
     useVolume : BoolProperty(
         name = "Volume",
         description = "Use volume for volumetice materials")
@@ -822,6 +829,7 @@ class DAZ_OT_GlobalSettings(DazPropsOperator):
         drawEnum(self, box, "displacementMethod")
         drawEnum(self, box, "toonMethod")
         box.prop(self, "useSimplifiedCoat")
+        box.prop(self, "useVolumeTranslucencyColor")
         drawEnum(self, box, "onHairMaterial")
         drawEnum(self, box, "viewportColors")
         row = box.row()

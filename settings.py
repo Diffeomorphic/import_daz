@@ -64,6 +64,7 @@ class GlobalSettings:
         else:
             self.skinMethod = 'SSS'
         self.useSimplifiedCoat = False
+        self.useVolumeTranslucencyColor = False
         self.viewportColors = 'GUESS'
         self.skinColor0 = 0.6
         self.skinColor1 = 0.4
