@@ -248,7 +248,7 @@ class Formula:
         if op == "mult":
             target.factor = opers[1]["val"]
         elif op == "neg":
-            target.factor *= -1
+            target.factor = -1
         elif op == "spline_tcb":
             target.points = [opers[n]["val"] for n in range(1,len(opers)-2)]
             target.spline = "TCB"

@@ -1574,11 +1574,6 @@ class LoadMorph(DriverUser):
                 string = "%s+%.3f" % (string, asset.value)
             else:
                 string = "%s-%.3f" % (string, -asset.value)
-        if propDriver:
-            plus = ("" if string[0] == "-" else "+")
-            string = "%s%s%s" % (propDriver.expression, plus, string)
-            for var in propDriver.variables:
-                var.create(fcu.driver.variables.new())
         if ((GS.useMakeHiddenSliders or
              self.useMakeHiddenSliders or
              self.stripPrefix) and
@@ -1594,7 +1589,16 @@ class LoadMorph(DriverUser):
                 self.obj[raw] = 0.0
                 self.addPathVar(fcu, "u", self.obj, propRef(raw))
                 self.addToMorphSet(raw, None, True)
-        string = self.multiplyMults(fcu, string)
+        if propDriver:
+            mults = propDriver.expression.rsplit("*(", 1)
+            if len(mults) == 2:
+                string = "%s*(%s)" % (mults[0], string)
+            plus = ("" if string[0] == "-" else "+")
+            string = "%s%s%s" % (propDriver.expression, plus, string)
+            for var in propDriver.variables:
+                var.create(fcu.driver.variables.new())
+        else:
+            string = self.multiplyMults(fcu, string)
         if self.useAdjusters:
             adj = self.getAdjustProp()
             if adj:
