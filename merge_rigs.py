@@ -45,12 +45,17 @@ class BoneInfo:
         self.parentBone = parentBone
 
 
-    def setEditBone(self, bname, ebones, subrig):
+    def setEditBone(self, bname, ebones, subrig, target_rig=None):
         eb = ebones.new(bname)
         eb.head = self.head
         eb.tail = self.tail
         if self.matrix_world:
-            eb.matrix = self.matrix_world @ self.matrix_local
+            # Bone matrices assigned to edit bones must be in the target
+            # armature's local space, even when the source rig is scaled.
+            mat = self.matrix_world @ self.matrix_local
+            if target_rig is not None:
+                mat = target_rig.matrix_world.inverted() @ mat
+            eb.matrix = mat
         else:
             eb.matrix = self.matrix_local
         eb.use_deform = self.use_deform
@@ -246,7 +251,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                         wmat = rig.matrix_world
                 else:
                     conforms = True
-                    wmat = rig.parent.matrix_world
+                    # The source rig may have a different transform from its
+                    # parent after temporary transform application.
+                    wmat = rig.matrix_world
                 if not conforms:
                     parent = rig
                     info = []
@@ -321,9 +328,9 @@ class DAZ_OT_MergeRigs(DazPropsOperator, MergeRigsOptions, DriverUser, IsArmatur
                         hasNew = True
                         if bname in dups.keys():
                             dupname = getDupName(subrig, bname)
-                            binfo.setEditBone(dupname, rig.data.edit_bones, subrig)
+                            binfo.setEditBone(dupname, rig.data.edit_bones, subrig, rig)
                         else:
-                            binfo.setEditBone(bname, rig.data.edit_bones, subrig)
+                            binfo.setEditBone(bname, rig.data.edit_bones, subrig, rig)
                             taken.append(bname)
             setMode('OBJECT')
             modernizeBones(rig)
