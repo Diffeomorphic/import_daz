@@ -809,11 +809,12 @@ class CyclesTree(Tree):
     #   Color effect
     #-------------------------------------------------------------
 
-    def buildColorEffect(self, effect, color, tex, tint, fac, factex, node, facslot="Fac", colorslot="Color"):
+    def buildColorEffect(self, effect, color, tex, tint, fac, factex, node, facslot="Fac", colorslot="Color", force=False):
         # [ "Scatter Only", "Scatter & Transmit", "Scatter & Transmit Intensity" ]
+        # force: build the group also for a white colour and tint (a diffuse map still sets the split)
         if fac == 0:
             return False, None
-        elif effect == 0 or (isWhite(color) and isWhite(tint)):
+        elif effect == 0 or (not force and isWhite(color) and isWhite(tint)):
             if facslot:
                 self.linkScalar(factex, node, fac, facslot)
             if colorslot:

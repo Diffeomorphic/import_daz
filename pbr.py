@@ -233,6 +233,7 @@ class PbrTree(CyclesTree):
         from .cycles import findTextureNode
         if not self.isEnabled("Diffuse"):
             color = WHITE
+            tint = WHITE
             tex = factex = None
             effect = None
         else:
@@ -251,13 +252,21 @@ class PbrTree(CyclesTree):
         transwt,wttex,texslot = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
         transcolor,transtex,_ = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
 
+        self.uberTranslucency = self.useUberTranslucency(effect, color, tex, tint, transwt)
+        if self.uberTranslucency and transwt == 0:
+            effect = None   # Iray Uber with Translucency Weight 0: a plain diffuse in the diffuse colour
         if effect:
-            hasEffect,effnode = self.buildColorEffect(effect, color, tex, tint, 1-transwt, wttex, self.pbr, facslot=None, colorslot="Base Color")
+            fac,factex = 1-transwt, wttex
+            if self.uberTranslucency and wttex:
+                factex = self.addOneMinus(wttex)    # diffuse share 1 - weight x map
+                fac = 1
+            hasEffect,effnode = self.buildColorEffect(effect, color, tex, tint, fac, factex, self.pbr, facslot=None, colorslot="Base Color", force=self.uberTranslucency)
         if effect and hasEffect:
             sub = self.addNode("ShaderNodeMath", 3)
             sub.operation = 'SUBTRACT'
             sub.inputs[0].default_value = 1
-            self.links.new(effnode.outputs["Transmit Fac"], sub.inputs[1])
+            outfac = ("Intensity Fac" if self.uberTranslucency and effect == 2 else "Transmit Fac")
+            self.links.new(effnode.outputs[outfac], sub.inputs[1])
             self.links.new(sub.outputs[0], self.pbr.inputs[PBR.SubsurfWeight])
             transwt = 1
             wttex = sub
@@ -277,11 +286,11 @@ class PbrTree(CyclesTree):
                 self.thickness = 1.0
         else:
             if transwt > 0:
-                gamma = self.addGamma(transcolor, transtex, "Gamma", 3.5)
+                transout = self.getTranslucencyColorOutput(transcolor, transtex, tex is not None)
                 mix,a,b,out = self.addMixRgbNode('MIX')
                 self.linkScalar(wttex, mix, transwt, 0)
                 self.linkColor(tex, mix, color, MixRGB.Color1)
-                self.links.new(gamma.outputs["Color"], b)
+                self.links.new(transout, b)
                 self.links.new(out, self.pbr.inputs["Base Color"])
                 self.thickness = 1.0
             else:
@@ -308,6 +317,69 @@ class PbrTree(CyclesTree):
         self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
         self.column += 1
         self.endSSS()
+
+
+    def useUberTranslucency(self, effect, color, tex, tint, transwt):
+        """Experimental Iray Uber translucency colour applies to this surface.
+
+        Iray Uber, not thin walled, Extended Principled, and the default build makes the translucency mix with a linked
+        base input (a colour-effect group or a diffuse texture). Surfaces with a constant base colour keep today's build.
+        """
+        if not (GS.useVolumeTranslucencyColor and
+                LS.materialMethod == 'EXTENDED_PRINCIPLED' and
+                self.owner.shader == 'UBER_IRAY' and
+                not self.owner.isThinWall and
+                not self.owner.useTranslucency and
+                not BLENDER3):
+            return False
+        group = (bool(effect) and (1-transwt) != 0 and not (isWhite(color) and isWhite(tint)))
+        return group or (transwt > 0 and tex is not None)
+
+
+    def addOneMinus(self, tex):
+        sub = self.addNode("ShaderNodeMath", self.column-1)
+        sub.operation = 'SUBTRACT'
+        sub.inputs[0].default_value = 1
+        self.links.new(colorOutput(tex), sub.inputs[1])
+        return sub
+
+
+    def getTranslucencyK(self, linkedBase):
+        """Per-channel interior reflectance K for the translucency colour, or None for the fixed power 3.5.
+
+        linkedBase: the mix's base input comes from a texture or a colour-effect group. Surfaces with a constant base
+        colour keep the fixed power (they are not covered by the tests the switches were verified with).
+        """
+        if LS.materialMethod != 'EXTENDED_PRINCIPLED' or not linkedBase:
+            return None
+        if getattr(self, "uberTranslucency", False):
+            from .uber_skin_color import interiorK
+            return interiorK(self.owner)
+        if GS.useVolumeTranslucencyColor:
+            from .pbr_skin_color import translucencyK
+            return translucencyK(self.owner)
+        return None
+
+
+    def getTranslucencyColorOutput(self, transcolor, transtex, linkedBase):
+        """Translucency colour as it enters the base colour mix: T^3.5 (default) or T^2 x K (experimental switch)."""
+        k = self.getTranslucencyK(linkedBase)
+        if k is None:
+            gamma = self.addGamma(transcolor, transtex, "Gamma", 3.5)
+            return gamma.outputs["Color"]
+        square,a,b,out = self.addMixRgbNode('MULTIPLY')
+        square.label = "Translucency Squared"
+        square.inputs[0].default_value = 1.0
+        for socket in (a, b):
+            socket.default_value[0:3] = transcolor
+            if transtex:
+                self.links.new(colorOutput(transtex), socket)
+        scale,a,b,kout = self.addMixRgbNode('MULTIPLY')
+        scale.label = "Translucency K"
+        scale.inputs[0].default_value = 1.0
+        self.links.new(out, a)
+        b.default_value[0:3] = k
+        return kout
 
     #-------------------------------------------------------------
     #   Metallic
