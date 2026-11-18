@@ -62,6 +62,7 @@ Modules = ["buildnumber", "settings", "utils", "error", "load_json", "driver", "
            "animation", "neighbor", "fix", "dbzfile", "panel", "erc",
            "tree", "dazimg", "material", "merge_materials", "localtex",
            "cycles", "cgroup", "pbr", "brick", "toon", "bake_lie", "hair_material",
+           "pbr_skin_color", "uber_skin_color", "volume_reflectance",
            "render", "camera", "light", "visibility",
            "guess", "convert", "files", "finger", "locks", "bone_chains",
            "merge_uvs", "merge_grafts", "merge_rigs", "empties",

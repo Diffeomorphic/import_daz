@@ -252,7 +252,7 @@ class PbrTree(CyclesTree):
         transwt,wttex,texslot = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0, isMask=True)
         transcolor,transtex,_ = self.getColorTex(["Translucency Color"], "COLOR", BLACK)
 
-        self.uberTranslucency = self.useUberTranslucency(effect, color, tex, tint, transwt)
+        self.uberTranslucency = self.checkUberTranslucency(effect, color, tex, tint, transwt)
         if self.uberTranslucency and transwt == 0:
             effect = None   # Iray Uber with Translucency Weight 0: a plain diffuse in the diffuse colour
         if effect:
@@ -319,13 +319,13 @@ class PbrTree(CyclesTree):
         self.endSSS()
 
 
-    def useUberTranslucency(self, effect, color, tex, tint, transwt):
+    def checkUberTranslucency(self, effect, color, tex, tint, transwt):
         """Experimental Iray Uber translucency colour applies to this surface.
 
         Iray Uber, not thin walled, Extended Principled, and the default build makes the translucency mix with a linked
         base input (a colour-effect group or a diffuse texture). Surfaces with a constant base colour keep today's build.
         """
-        if not (GS.useVolumeTranslucencyColor and
+        if not (GS.skinMethod == 'IRAY' and
                 LS.materialMethod == 'EXTENDED_PRINCIPLED' and
                 self.owner.shader == 'UBER_IRAY' and
                 not self.owner.isThinWall and
@@ -355,7 +355,7 @@ class PbrTree(CyclesTree):
         if getattr(self, "uberTranslucency", False):
             from .uber_skin_color import interiorK
             return interiorK(self.owner)
-        if GS.useVolumeTranslucencyColor:
+        if GS.skinMethod == 'IRAY':
             from .pbr_skin_color import translucencyK
             return translucencyK(self.owner)
         return None

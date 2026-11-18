@@ -59,12 +59,8 @@ class GlobalSettings:
         self.sssMethod = 'BURLEY_SKIN'
         self.displacementMethod = 'BOTH'
         self.toonMethod = 'FREESTYLE'
-        if bpy.app.version < (3,3,0):
-            self.skinMethod = 'IRAY'
-        else:
-            self.skinMethod = 'SSS'
+        self.skinMethod = 'IRAY'
         self.useSimplifiedCoat = False
-        self.useVolumeTranslucencyColor = False
         self.viewportColors = 'GUESS'
         self.skinColor0 = 0.6
         self.skinColor1 = 0.4
