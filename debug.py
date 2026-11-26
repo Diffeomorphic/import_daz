@@ -5,7 +5,7 @@
 # the F8 key. This is useful during development to reload modified files. If DEBUG is
 # disabled Blender must be restarted for code changes to take effect.
 
-DEBUG = True
+DEBUG = False
 
 # EXPERIMENTAL SUPPORT FOR ERC BONES IN MHX
 # If you imported ERC morphs then MHX will try to preserve them
